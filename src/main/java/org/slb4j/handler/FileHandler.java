@@ -44,6 +44,7 @@ import java.util.function.Supplier;
 public class FileHandler implements LogHandler, AutoCloseable {
 
     private final String name;
+    private final Object lock = new Object();
     private final Path path;
     private final boolean append;
     private @Nullable String filePattern;
@@ -218,7 +219,9 @@ public class FileHandler implements LogHandler, AutoCloseable {
                 checkRotation(instant);
                 if (out != null) {
                     try {
-                        logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
+                        synchronized (lock) {
+                            logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
+                        }
                     } catch (IOException e) {
                         System.err.println("Error writing log entry: " + e.getMessage());
                     }

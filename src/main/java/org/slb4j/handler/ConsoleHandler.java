@@ -63,6 +63,7 @@ public final class ConsoleHandler implements LogHandler {
     public static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     private final String name;
+    private final Object lock = new Object();
     private final PrintStream out;
     private volatile LogFilter filter = LogFilter.allPass();
     private volatile Map<LogLevel, ConsoleCode> colorMap = new EnumMap<>(LogLevel.class);
@@ -115,7 +116,9 @@ public final class ConsoleHandler implements LogHandler {
         if (filter.test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
             ConsoleCode consoleCodes = colorMap.get(lvl);
             try {
-                logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
+                synchronized (lock) {
+                    logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
+                }
             } catch (IOException e) {
                 System.err.println("Error writing log entry: " + e.getMessage());
             }
