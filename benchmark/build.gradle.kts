@@ -57,6 +57,7 @@ dependencies {
 }
 
 jmh {
+    val backendVal = project.findProperty("backend")?.toString() ?: "slb4j"
     warmupIterations.set(project.findProperty("warmupIterations")?.toString()?.toInt() ?: 2)
     iterations.set(project.findProperty("iterations")?.toString()?.toInt() ?: 3)
     fork.set(1)
@@ -74,6 +75,7 @@ jmh {
 
     val outputToFile = project.findProperty("outputToFile")?.toString() ?: "false"
     benchmarkParameters.put("outputToFile", project.objects.listProperty(String::class.java).value(listOf(outputToFile)))
+    benchmarkParameters.put("backend", project.objects.listProperty(String::class.java).value(listOf(backendVal)))
 
     val parametersProp = project.findProperty("jmh.parameters")?.toString()
     if (parametersProp != null) {

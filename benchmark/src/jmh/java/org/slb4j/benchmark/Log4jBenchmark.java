@@ -4,7 +4,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Setup;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -32,6 +34,8 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
 
     @Override
     protected void setupLogging() throws IOException {
+        this.category = category;
+        this.format = format;
         tempFile = Files.createTempFile("log4j-bench", ".log");
         System.setProperty("logFile", tempFile.toString());
         System.setProperty("log4j.configurationFile", "log4j2-bench.xml");
@@ -68,31 +72,36 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
         }
     }
 
+    @Setup(Level.Iteration)
+    public void setupIteration(org.openjdk.jmh.infra.BenchmarkParams params) {
+        updateLogMessage(params, category, format);
+    }
+
     @Benchmark
     public void slf4j() {
         if ("MARKER".equals(format)) {
-            slf4jLogger.info(slf4jMarker, MESSAGE);
+            slf4jLogger.info(slf4jMarker, logMessage);
         } else {
-            slf4jLogger.info(MESSAGE);
+            slf4jLogger.info(logMessage);
         }
     }
 
     @Benchmark
     public void log4j() {
         if ("MARKER".equals(format)) {
-            log4jLogger.info(log4jMarker, MESSAGE);
+            log4jLogger.info(log4jMarker, logMessage);
         } else {
-            log4jLogger.info(MESSAGE);
+            log4jLogger.info(logMessage);
         }
     }
 
     @Benchmark
     public void jul() {
-        julLogger.info(MESSAGE);
+        julLogger.info(logMessage);
     }
 
     @Benchmark
     public void jcl() {
-        jclLogger.info(MESSAGE);
+        jclLogger.info(logMessage);
     }
 }

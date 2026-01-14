@@ -15,7 +15,13 @@ public abstract class AbstractLoggingBenchmark {
     @Param({"false", "true"})
     public String outputToFile;
 
-    protected static final String MESSAGE = "Benchmark log message";
+    @Param({"slb4j", "log4j", "logback", "jul"})
+    public String backend;
+
+    public String category; // Will be set in subclasses
+    public String format;   // Will be set in subclasses
+
+    protected String logMessage;
     
     protected static class NullOutputStream extends OutputStream {
         @Override
@@ -44,6 +50,13 @@ public abstract class AbstractLoggingBenchmark {
             System.setErr(new PrintStream(new NullOutputStream()));
         }
         setupLogging();
+    }
+
+    protected void updateLogMessage(org.openjdk.jmh.infra.BenchmarkParams params, String category, String format) {
+        String benchmarkName = params.getBenchmark();
+        String frontend = benchmarkName.substring(benchmarkName.lastIndexOf('.') + 1);
+        logMessage = String.format("Benchmark backend=%s frontend=%s category=%s format=%s", 
+            backend, frontend, category, format);
     }
 
     @TearDown(Level.Trial)

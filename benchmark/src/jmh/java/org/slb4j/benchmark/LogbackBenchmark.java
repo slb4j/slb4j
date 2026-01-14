@@ -4,7 +4,9 @@ import ch.qos.logback.classic.LoggerContext;
 import ch.qos.logback.classic.joran.JoranConfigurator;
 import ch.qos.logback.core.joran.spi.JoranException;
 import org.openjdk.jmh.annotations.Benchmark;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Setup;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
@@ -31,6 +33,8 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
 
     @Override
     protected void setupLogging() throws IOException {
+        this.category = category;
+        this.format = format;
         tempFile = Files.createTempFile("logback-bench", ".log");
         
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
@@ -68,27 +72,32 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
         }
     }
 
+    @Setup(Level.Iteration)
+    public void setupIteration(org.openjdk.jmh.infra.BenchmarkParams params) {
+        updateLogMessage(params, category, format);
+    }
+
     @Benchmark
     public void slf4j() {
         if ("MARKER".equals(format)) {
-            slf4jLogger.info(marker, MESSAGE);
+            slf4jLogger.info(marker, logMessage);
         } else {
-            slf4jLogger.info(MESSAGE);
+            slf4jLogger.info(logMessage);
         }
     }
 
     @Benchmark
     public void log4j() {
-        log4jLogger.info(MESSAGE);
+        log4jLogger.info(logMessage);
     }
 
     @Benchmark
     public void jul() {
-        julLogger.info(MESSAGE);
+        julLogger.info(logMessage);
     }
 
     @Benchmark
     public void jcl() {
-        jclLogger.info(MESSAGE);
+        jclLogger.info(logMessage);
     }
 }
