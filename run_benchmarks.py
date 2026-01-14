@@ -44,7 +44,7 @@ def collect_results(args):
         if args.frontends:
             includes = []
             for frontend in args.frontends:
-                includes.append(f"{benchmark_class}\\.{frontend}")
+                includes.append(f"^{benchmark_class}\\.{frontend}$")
             cmd += f" -Pjmh.includes='({'|'.join(includes)})'"
         else:
             cmd += f" -Pjmh.includes='{benchmark_class}'"
@@ -120,14 +120,14 @@ def generate_markdown(results):
             rows = []
             col_widths = {
                 'backend': len('Backend'),
-                'benchmark': len('Benchmark'),
+                'frontend': len('Frontend'),
                 'score': len('Score (ops/s)'),
                 'error': len('Error')
             }
             
             for entry in entries:
                 backend = entry['backend']
-                benchmark = entry['benchmark'].split('.')[-1]
+                frontend = entry['benchmark'].split('.')[-1]
                 
                 primary_metric = entry.get('primaryMetric', {})
                 score = primary_metric.get('score', 0)
@@ -151,7 +151,7 @@ def generate_markdown(results):
                 
                 row = {
                     'backend': backend,
-                    'benchmark': benchmark,
+                    'frontend': frontend,
                     'score': score_str,
                     'error': error_str
                 }
@@ -162,14 +162,14 @@ def generate_markdown(results):
                     col_widths[k] = max(col_widths[k], len(row[k]))
 
             # Write header
-            header = f"| {'Backend':<{col_widths['backend']}} | {'Benchmark':<{col_widths['benchmark']}} | {'Score (ops/s)':>{col_widths['score']}} | {'Error':>{col_widths['error']}} |"
-            separator = f"| {'-' * col_widths['backend']} | {'-' * col_widths['benchmark']} | {'-' * col_widths['score']}: | {'-' * col_widths['error']}: |"
+            header = f"| {'Backend':<{col_widths['backend']}} | {'Frontend':<{col_widths['frontend']}} | {'Score (ops/s)':>{col_widths['score']}} | {'Error':>{col_widths['error']}} |"
+            separator = f"| {'-' * col_widths['backend']} | {'-' * col_widths['frontend']} | {'-' * col_widths['score']}: | {'-' * col_widths['error']}: |"
             f.write(header + "\n")
             f.write(separator + "\n")
             
             # Write rows
             for row in rows:
-                line = f"| {row['backend']:<{col_widths['backend']}} | {row['benchmark']:<{col_widths['benchmark']}} | {row['score']:>{col_widths['score']}} | {row['error']:>{col_widths['error']}} |"
+                line = f"| {row['backend']:<{col_widths['backend']}} | {row['frontend']:<{col_widths['frontend']}} | {row['score']:>{col_widths['score']}} | {row['error']:>{col_widths['error']}} |"
                 f.write(line + "\n")
                 
             f.write("\n")

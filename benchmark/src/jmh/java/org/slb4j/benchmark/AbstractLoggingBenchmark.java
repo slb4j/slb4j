@@ -23,15 +23,6 @@ public abstract class AbstractLoggingBenchmark {
 
     protected String logMessage;
     
-    protected static class NullOutputStream extends OutputStream {
-        @Override
-        public void write(int b) throws IOException {}
-        @Override
-        public void write(byte[] b) throws IOException {}
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {}
-    }
-
     protected PrintStream originalOut;
     protected PrintStream originalErr;
     protected FileOutputStream fileOut;
@@ -46,8 +37,8 @@ public abstract class AbstractLoggingBenchmark {
             System.setOut(ps);
             System.setErr(ps);
         } else {
-            System.setOut(new PrintStream(new NullOutputStream()));
-            System.setErr(new PrintStream(new NullOutputStream()));
+            System.setOut(new PrintStream(OutputStream.nullOutputStream()));
+            System.setErr(new PrintStream(OutputStream.nullOutputStream()));
         }
         setupLogging();
     }
