@@ -15,19 +15,26 @@
  */
 package org.slb4j.frontend.slf4j;
 
+import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
+import org.slb4j.SLB4J;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.jspecify.annotations.Nullable;
+import org.slb4j.support.StackWalkerLocationResolver;
+import org.slb4j.support.Util;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 import org.slf4j.helpers.AbstractLogger;
+import org.slf4j.helpers.MessageFormatter;
 import org.slf4j.spi.LocationAwareLogger;
 
 import java.io.NotSerializableException;
 import java.io.Serial;
+import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -43,6 +50,7 @@ public final class LoggerSlf4j extends AbstractLogger {
     private static final long serialVersionUID = 1L;
 
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
+    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(SLB4J.class.getPackageName(), "org.slf4j");
     private static final MDC MDC_INSTANCE = new MDC() {
         @Override
         public @Nullable String get(String key) {
@@ -89,6 +97,24 @@ public final class LoggerSlf4j extends AbstractLogger {
         return LogLevel.ERROR;
     }
 
+    /**
+     * Formats an SLF4J-style message pattern using the provided arguments.
+     * If the arguments are null or empty, the raw message pattern is returned.
+     *
+     * @param messagePattern the SLF4J-style message pattern to be formatted; must not be null
+     * @param arguments the arguments to replace placeholders in the message pattern;
+     *                  may be null or an empty array
+     * @return the formatted message if arguments are provided, or the raw message pattern
+     *         if no arguments are given
+     */
+    public static String formatSlf4jMessage(String messagePattern, @Nullable Object @Nullable [] arguments) {
+        if (arguments != null && arguments.length > 0) {
+            return MessageFormatter.arrayFormat(messagePattern, arguments).getMessage();
+        } else {
+            return messagePattern;
+        }
+    }
+
     @Override
     protected @Nullable String getFullyQualifiedCallerName() {
         return null;
@@ -96,7 +122,11 @@ public final class LoggerSlf4j extends AbstractLogger {
 
     @Override
     protected void handleNormalizedLoggingCall(Level level, @Nullable Marker marker, String messagePattern, @Nullable Object @Nullable [] arguments, @Nullable Throwable throwable) {
-        DISPATCHER.dispatchSlf4j(name, level, Objects.toString(marker, ""), MDC_INSTANCE, messagePattern, arguments, throwable);
+        LogLevel lvl = translateSlf4jLevel(level);
+        if (DISPATCHER.isLevelEnabled(lvl)) {
+            Supplier<String> msg = Util.cachingStringSupplier(() -> formatSlf4jMessage(messagePattern, arguments));
+            DISPATCHER.filterAndDispatch(Instant.now(), name, lvl, Objects.toString(marker, ""), MDC_INSTANCE, LOCATION_RESOLVER, msg, throwable);
+        }
     }
 
     /**

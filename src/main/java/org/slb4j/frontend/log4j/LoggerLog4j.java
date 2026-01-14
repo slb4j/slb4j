@@ -15,8 +15,11 @@
  */
 package org.slb4j.frontend.log4j;
 
+import org.apache.logging.log4j.message.ReusableMessage;
+import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
+import org.slb4j.SLB4J;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Marker;
@@ -25,8 +28,12 @@ import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.AbstractLogger;
 import org.apache.logging.log4j.spi.StandardLevel;
 import org.jspecify.annotations.Nullable;
+import org.slb4j.support.StackWalkerLocationResolver;
+import org.slb4j.support.Util;
 
+import java.time.Instant;
 import java.util.Map;
+import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 /**
@@ -35,6 +42,7 @@ import java.util.stream.Stream;
  */
 public final class LoggerLog4j extends AbstractLogger {
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
+    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(SLB4J.class.getPackageName(), "org.apache.logging");
 
     private static final MDC MDC_INSTANCE = new MDC() {
         @Override
@@ -165,7 +173,20 @@ public final class LoggerLog4j extends AbstractLogger {
 
     @Override
     public void logMessage(String fqcn, Level level, @Nullable Marker marker, Message message, @Nullable Throwable t) {
-        DISPATCHER.dispatchLog4j(name, level, marker, MDC_INSTANCE, message, t);
+        LogLevel lvl = translateLog4jLevel(level);
+
+        if (DISPATCHER.isLevelEnabled(lvl)) {
+            String mrk = marker == null ? null : marker.getName();
+            Supplier<String> msg;
+            if (message instanceof ReusableMessage rm) {
+                // for reusable messages, do eager evaluation
+                String m = rm.getFormattedMessage();
+                msg = () -> m;
+            } else {
+                msg = Util.cachingStringSupplier(message::getFormattedMessage);
+            }
+            DISPATCHER.filterAndDispatch(Instant.now(), name, lvl, mrk, MDC_INSTANCE, LOCATION_RESOLVER, msg, t);
+        }
     }
 
     @Override

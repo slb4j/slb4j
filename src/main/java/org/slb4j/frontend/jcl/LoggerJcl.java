@@ -15,9 +15,19 @@
  */
 package org.slb4j.frontend.jcl;
 
+import org.jspecify.annotations.Nullable;
+import org.slb4j.LocationResolver;
+import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
+import org.slb4j.SLB4J;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.apache.commons.logging.Log;
+import org.slb4j.support.StackWalkerLocationResolver;
+import org.slb4j.support.Util;
+
+import java.time.Instant;
+import java.util.Objects;
+import java.util.function.Supplier;
 
 /**
  * LoggerJcl is an implementation of the Apache commons Log interfac that forwards all logging
@@ -25,6 +35,7 @@ import org.apache.commons.logging.Log;
  */
 public final class LoggerJcl implements Log {
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
+    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(SLB4J.class.getPackageName(), "org.apache.commons.logging");
 
     private final String name;
 
@@ -39,42 +50,59 @@ public final class LoggerJcl implements Log {
 
     @Override
     public void debug(Object message) {
-        DISPATCHER.dispatchJcl(name, LogLevel.DEBUG, message, null);
+        dispatch(LogLevel.DEBUG, message, null);
+    }
+
+    /**
+     * Dispatches a log event using the JCL (Jakarta Commons Logging) mechanism.
+     * The method determines whether the log event should be handled based on its log level
+     * and dispatches it to all registered {@link LogHandler} instances that are enabled
+     * for the specified log level.
+     *
+     * @param level the log level of the event
+     * @param message the log message to be dispatched; can be null
+     * @param t an optional {@link Throwable} associated with the log event; can be null
+     */
+    private void dispatch(LogLevel level, @Nullable Object message, @Nullable Throwable t) {
+        if (DISPATCHER.isLevelEnabled(level)) {
+            Supplier<String> msg = Util.cachingStringSupplier(() -> Objects.toString(message, null));
+            DISPATCHER.filterAndDispatch(Instant.now(), name, level, null, null, LOCATION_RESOLVER, msg, t);
+        }
     }
 
     @Override
     public void debug(Object message, Throwable t) {
-        DISPATCHER.dispatchJcl(name, LogLevel.DEBUG, message, t);
+        dispatch(LogLevel.DEBUG, message, t);
     }
 
     @Override
     public void error(Object message) {
-        DISPATCHER.dispatchJcl(name, LogLevel.ERROR, message, null);
+        dispatch(LogLevel.ERROR, message, null);
     }
 
     @Override
     public void error(Object message, Throwable t) {
-        DISPATCHER.dispatchJcl(name, LogLevel.ERROR, message, t);
+        dispatch(LogLevel.ERROR, message, t);
     }
 
     @Override
     public void fatal(Object message) {
-        DISPATCHER.dispatchJcl(name, LogLevel.ERROR, message, null);
+        dispatch(LogLevel.ERROR, message, null);
     }
 
     @Override
     public void fatal(Object message, Throwable t) {
-        DISPATCHER.dispatchJcl(name, LogLevel.ERROR, message, t);
+        dispatch(LogLevel.ERROR, message, t);
     }
 
     @Override
     public void info(Object message) {
-        DISPATCHER.dispatchJcl(name, LogLevel.INFO, message, null);
+        dispatch(LogLevel.INFO, message, null);
     }
 
     @Override
     public void info(Object message, Throwable t) {
-        DISPATCHER.dispatchJcl(name, LogLevel.INFO, message, t);
+        dispatch(LogLevel.INFO, message, t);
     }
 
     @Override
@@ -110,22 +138,22 @@ public final class LoggerJcl implements Log {
 
     @Override
     public void trace(Object message) {
-        DISPATCHER.dispatchJcl(name, LogLevel.TRACE, message, null);
+        dispatch(LogLevel.TRACE, message, null);
     }
 
     @Override
     public void trace(Object message, Throwable t) {
-        DISPATCHER.dispatchJcl(name, LogLevel.TRACE, message, t);
+        dispatch(LogLevel.TRACE, message, t);
     }
 
     @Override
     public void warn(Object message) {
-        DISPATCHER.dispatchJcl(name, LogLevel.WARN, message, null);
+        dispatch(LogLevel.WARN, message, null);
     }
 
     @Override
     public void warn(Object message, Throwable t) {
-        DISPATCHER.dispatchJcl(name, LogLevel.WARN, message, t);
+        dispatch(LogLevel.WARN, message, t);
     }
 
 }
