@@ -133,13 +133,6 @@ public class SwingLogPaneSample {
                         }
                         default -> throw new IllegalStateException("integer out of range");
                     }
-
-                    int current = n.get();
-                    if (current % 100 == 0) {
-                        System.err.format("That was %d messages%n", current);
-                    } else if (current % 10 == 0) {
-                        System.out.format("That was %d messages%n", current);
-                    }
                 }
             }, "Logger-Thread-" + implementation);
             thread.setDaemon(true);

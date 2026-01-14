@@ -11,5 +11,5 @@ dependencies {
 }
 
 application {
-    mainClass.set("org.slb4j.ext.swing.samples.SwingLogWindowSample")
+    mainClass.set("org.slb4j.ext.swing.samples.SwingLogPaneSample")
 }
