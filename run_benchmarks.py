@@ -73,7 +73,16 @@ def collect_results(args):
             cmd += " -PoutputToFile=true"
 
         if args.dry_run:
-            print(f"Dry run: Would execute command: {cmd}")
+            print(f"Dry run: Would execute command for backend '{backend}':")
+            print(f"  Command: {cmd}")
+            print(f"  Frontends: {', '.join(args.frontends) if args.frontends else 'ALL'}")
+            print(f"  Categories: {', '.join(args.categories) if args.categories else 'ALL (CONSOLE, FILE)'}")
+            print(f"  Formats: {', '.join(args.formats) if args.formats else 'ALL (SIMPLE, MDC, MARKER, LOCATION, COLOR)'}")
+            print(f"  Message Types: {', '.join(msg_types)}")
+            print(f"  Warmup Iterations: {args.warmup if args.warmup is not None else 'Default (2)'}")
+            print(f"  Measurement Iterations: {args.iterations if args.iterations is not None else 'Default (3)'}")
+            print(f"  Time per Iteration: {args.time if args.time else 'Default (1s)'}")
+            print()
             continue
 
         if run_command(cmd):
@@ -239,8 +248,31 @@ if __name__ == "__main__":
     parser.add_argument("--time", help="Time per iteration (e.g. 1s)")
     parser.add_argument("--output-to-file", action="store_true", help="Write logging output to a file instead of a blackhole")
     parser.add_argument("--dry-run", action="store_true", help="Show the benchmarks that will run without actually executing them")
+    parser.add_argument("--complete", action="store_true", help="Run all benchmarks with 3 warmup-iterations, 5 iterations and 3s time")
+    parser.add_argument("--smoketest", action="store_true", help="Run all benchmarks with 0 warmup-iterations, 1 iteration and 50ms time")
+    parser.add_argument("--quick", action="store_true", help="Run all benchmarks with 2 warmup-iterations, 3 iterations and 1s time")
     
     args = parser.parse_args()
+
+    if args.complete or args.smoketest or args.quick:
+        if args.complete:
+            args.warmup = 3
+            args.iterations = 5
+            args.time = "3s"
+        elif args.smoketest:
+            args.warmup = 0
+            args.iterations = 1
+            args.time = "50ms"
+        elif args.quick:
+            args.warmup = 2
+            args.iterations = 3
+            args.time = "1s"
+            
+        args.backends = list(backends_map.keys())
+        args.frontends = None # ALL
+        args.categories = ["CONSOLE", "FILE"]
+        args.formats = ["SIMPLE", "MDC", "MARKER", "LOCATION", "COLOR"]
+        args.message_types = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
     
     if args.dry_run:
         collect_results(args)
