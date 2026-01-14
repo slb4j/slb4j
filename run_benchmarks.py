@@ -72,6 +72,10 @@ def collect_results(args):
         if args.output_to_file:
             cmd += " -PoutputToFile=true"
 
+        if args.dry_run:
+            print(f"Dry run: Would execute command: {cmd}")
+            continue
+
         if run_command(cmd):
             src_json = "benchmark/build/results/jmh/results.json"
             dest_json = os.path.join(results_dir, f"results_{backend}.json")
@@ -234,8 +238,12 @@ if __name__ == "__main__":
     parser.add_argument("--iterations", type=int, help="Number of measurement iterations")
     parser.add_argument("--time", help="Time per iteration (e.g. 1s)")
     parser.add_argument("--output-to-file", action="store_true", help="Write logging output to a file instead of a blackhole")
+    parser.add_argument("--dry-run", action="store_true", help="Show the benchmarks that will run without actually executing them")
     
     args = parser.parse_args()
     
-    results = collect_results(args)
-    generate_markdown(results)
+    if args.dry_run:
+        collect_results(args)
+    else:
+        results = collect_results(args)
+        generate_markdown(results)
