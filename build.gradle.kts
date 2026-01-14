@@ -91,16 +91,18 @@ val jacocoTestReport by tasks.getting(JacocoReport::class) {
 }
 
 allprojects {
-    apply(plugin = "com.dua3.gradle.jdkprovider")
+    if (project.name != "benchmark") {
+        apply(plugin = "com.dua3.gradle.jdkprovider")
+
+        jdk {
+            version = 21
+            javaFxBundled = true
+        }
+    }
 
     repositories {
         mavenLocal()
         mavenCentral()
-    }
-
-    jdk {
-        version = 21
-        javaFxBundled = true
     }
 
     // --- PUBLISHING ---
