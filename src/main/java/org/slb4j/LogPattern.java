@@ -50,7 +50,7 @@ public final class LogPattern {
      * 2026-01-11 15:19:09.573 INFO  com.example.Application - Message from SLF4J
      * </pre>
      */
-    public static final LogPattern DEFAULT_PATTERN = parse("%Cstart%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%Cend%n");
+    public static final LogPattern DEFAULT_PATTERN = parse("%Cstart%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%Cend%n%ex");
 
     /**
      * A compact log pattern used to format log entries in a concise and structured manner.
@@ -68,7 +68,7 @@ public final class LogPattern {
      * </ul>
      * Use when a compact and human-readable log format is preferred, such as console-based logging.
      */
-    public static final LogPattern COMPACT_PATTERN = parse("%Cstart%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg%Cend%n");
+    public static final LogPattern COMPACT_PATTERN = parse("%Cstart%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg%Cend%n%ex");
 
     /**
      * Defines an interface for formatting log entries in a customizable and extensible manner.
