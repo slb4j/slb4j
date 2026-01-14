@@ -18,6 +18,9 @@ public abstract class AbstractLoggingBenchmark {
     @Param({"slb4j", "log4j", "logback", "jul"})
     public String backend;
 
+    @Param({"CONSTANT", "ARGUMENTS", "LAMBDA"})
+    public String messageType;
+
     public String category; // Will be set in subclasses
     public String format;   // Will be set in subclasses
 
@@ -46,8 +49,8 @@ public abstract class AbstractLoggingBenchmark {
     protected void updateLogMessage(org.openjdk.jmh.infra.BenchmarkParams params, String category, String format) {
         String benchmarkName = params.getBenchmark();
         String frontend = benchmarkName.substring(benchmarkName.lastIndexOf('.') + 1);
-        logMessage = String.format("Benchmark backend=%s frontend=%s category=%s format=%s", 
-            backend, frontend, category, format);
+        logMessage = String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", 
+            backend, frontend, category, format, messageType);
     }
 
     @TearDown(Level.Trial)

@@ -142,8 +142,10 @@ jmh {
     }
 
     val outputToFile = project.findProperty("outputToFile")?.toString() ?: "false"
+    val messageType = project.findProperty("messageType")?.toString() ?: "CONSTANT,ARGUMENTS,LAMBDA"
     benchmarkParameters.put("outputToFile", project.objects.listProperty(String::class.java).value(listOf(outputToFile)))
     benchmarkParameters.put("backend", project.objects.listProperty(String::class.java).value(listOf(backendVal)))
+    benchmarkParameters.put("messageType", project.objects.listProperty(String::class.java).value(messageType.split(",")))
 
     val parametersProp = project.findProperty("jmh.parameters")?.toString()
     if (parametersProp != null) {

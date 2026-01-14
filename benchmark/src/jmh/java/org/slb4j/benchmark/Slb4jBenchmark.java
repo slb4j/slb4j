@@ -96,24 +96,51 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
     @Benchmark
     public void slf4j() {
         if ("MARKER".equals(format)) {
-            slf4jLogger.info(marker, logMessage);
+            switch (messageType) {
+                case "CONSTANT" -> slf4jLogger.info(marker, logMessage);
+                case "ARGUMENTS" -> slf4jLogger.info(marker, "Benchmark backend={} frontend={} category={} format={} messageType={}", backend, "slf4j", category, format, messageType);
+                case "LAMBDA" -> {
+                    if (slf4jLogger.isInfoEnabled()) {
+                        slf4jLogger.info(marker, String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "slf4j", category, format, messageType));
+                    }
+                }
+            }
         } else {
-            slf4jLogger.info(logMessage);
+            switch (messageType) {
+                case "CONSTANT" -> slf4jLogger.info(logMessage);
+                case "ARGUMENTS" -> slf4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend, "slf4j", category, format, messageType);
+                case "LAMBDA" -> {
+                    if (slf4jLogger.isInfoEnabled()) {
+                        slf4jLogger.info(String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "slf4j", category, format, messageType));
+                    }
+                }
+            }
         }
     }
 
     @Benchmark
     public void log4j() {
-        log4jLogger.info(logMessage);
+        switch (messageType) {
+            case "CONSTANT" -> log4jLogger.info(logMessage);
+            case "ARGUMENTS" -> log4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend, "log4j", category, format, messageType);
+            case "LAMBDA" -> log4jLogger.info(() -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "log4j", category, format, messageType));
+        }
     }
 
     @Benchmark
     public void jul() {
-        julLogger.info(logMessage);
+        switch (messageType) {
+            case "CONSTANT" -> julLogger.info(logMessage);
+            case "ARGUMENTS" -> julLogger.log(java.util.logging.Level.INFO, "Benchmark backend={0} frontend={1} category={2} format={3} messageType={4}", new Object[]{backend, "jul", category, format, messageType});
+            case "LAMBDA" -> julLogger.info(() -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "jul", category, format, messageType));
+        }
     }
 
     @Benchmark
     public void jcl() {
-        jclLogger.info(logMessage);
+        switch (messageType) {
+            case "CONSTANT" -> jclLogger.info(logMessage);
+            case "ARGUMENTS", "LAMBDA" -> jclLogger.info(String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "jcl", category, format, messageType));
+        }
     }
 }
