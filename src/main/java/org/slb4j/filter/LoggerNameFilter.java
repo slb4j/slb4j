@@ -25,11 +25,7 @@ import java.util.function.Predicate;
 import java.util.function.Supplier;
 
 /**
- * The DefaultLogEntryFilter class is an implementation of the LogEntryFilter interface
- * that filters log entries based on their log level and a user-defined filter.
- *
- * <p>DefaultLogEntryFilter provides methods to set and retrieve the log level and filter,
- * as well as a test method to determine if a LogEntry should be included or excluded.
+ * The LoggerNameFilter filters log entries based on their logger name and a user-defined filter.
  */
 public final class LoggerNameFilter implements LogFilter {
 
