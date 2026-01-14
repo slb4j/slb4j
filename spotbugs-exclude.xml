@@ -1,0 +1,41 @@
+<FindBugsFilter>
+
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+        <Class name="org.slb4j.handler.ConsoleHandler"/>
+        <Method name="getOut"/>
+    </Match>
+
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="org.slb4j.handler.ConsoleHandler"/>
+        <Method name="&lt;init&gt;"/>
+    </Match>
+
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP"/>
+        <Class name="org.slb4j.frontend.slf4j.LoggingServiceProviderSlf4j"/>
+        <Method name="getMDCAdapter"/>
+    </Match>
+
+    <Match>
+        <Bug pattern="MS_EXPOSE_REP"/>
+        <Class name="org.slb4j.SLB4J"/>
+        <Method name="getDispatcher"/>
+    </Match>
+
+    <Match>
+        <Bug pattern="CT_CONSTRUCTOR_THROW"/>
+    </Match>
+
+    <Match>
+        <Bug pattern="NP_LOAD_OF_KNOWN_NULL_VALUE"/>
+        <Class name="org.slb4j.filter.FiltersTest"/>
+    </Match>
+
+    <Match>
+        <Bug pattern="EI_EXPOSE_REP2"/>
+        <Class name="org.slb4j.support.CountingOutputStream"/>
+    </Match>
+
+</FindBugsFilter>
