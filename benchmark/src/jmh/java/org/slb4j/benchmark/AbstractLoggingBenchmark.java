@@ -41,7 +41,7 @@ public abstract class AbstractLoggingBenchmark {
         originalOut = System.out;
         originalErr = System.err;
         if ("true".equals(outputToFile)) {
-            fileOut = new FileOutputStream("benchmark.out");
+            fileOut = new FileOutputStream("benchmark.out", true);
             PrintStream ps = new PrintStream(fileOut);
             System.setOut(ps);
             System.setErr(ps);
