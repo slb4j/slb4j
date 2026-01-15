@@ -334,7 +334,7 @@ public class FxLogPane extends BorderPane implements LogPane {
         tableView.getColumns().setAll(
                 createColumn(texts.headerTimeColumn(), new LogPattern.DateEntry("HH:mm:ss,SSS"), true, "88:88:88,888"),
                 createColumn(texts.headerLevelColumn(), new LogPattern.LevelEntry(0, 0, false), true, Arrays.stream(LogLevel.values()).map(Object::toString).toArray(String[]::new)),
-                createColumn(texts.headerLoggerColumn(), new LogPattern.LoggerEntry(0, 0, true, 0), false, "X".repeat(40)),
+                createColumn(texts.headerLoggerColumn(), new LogPattern.LoggerEntry(0, 0, true, 0, false), false, "X".repeat(40)),
                 createColumn(texts.headerMessageColumn(), new LogPattern.MessageEntry(0, 0, false), false)
         );
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);

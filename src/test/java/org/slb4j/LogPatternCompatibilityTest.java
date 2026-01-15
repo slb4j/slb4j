@@ -94,7 +94,7 @@ class LogPatternCompatibilityTest {
             "[%t] %level %logger - %msg%n%throwable",
             "[%t] %level %logger - %msg%n%ex",
             "%d{yyyy-MM-dd HH:mm:ss} %-5p %C.%M(%F:%L) - %m%n",
-            // "%l - %m%n", // Failing
+            "%l - %m%n",
             "Marker: %marker %msg%n"
     })
     void testPatternCompatibility(String pattern) {

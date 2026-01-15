@@ -269,7 +269,7 @@ public class SwingLogPane extends JPanel implements LogPane {
 
         TableColumn colLogger = table.getColumnModel().getColumn(2);
         colLogger.setHeaderValue(texts.headerLoggerColumn());
-        colLogger.setCellRenderer(new LogEntryRenderer(new LogPattern.LoggerEntry(0, 0, true, 0)));
+        colLogger.setCellRenderer(new LogEntryRenderer(new LogPattern.LoggerEntry(0, 0, true, 0, false)));
         colLogger.setPreferredWidth(150);
 
         TableColumn colMessage = table.getColumnModel().getColumn(3);
