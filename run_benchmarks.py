@@ -11,6 +11,37 @@ backends_map = {
     "jul": "JulBenchmark"
 }
 
+VALID_CATEGORIES = ["CONSOLE", "FILE"]
+VALID_FORMATS = ["SIMPLE", "MDC", "MARKER", "LOCATION", "COLOR"]
+VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
+
+def validate_args(args):
+    if args.backends:
+        for b in args.backends:
+            if b not in backends_map:
+                print(f"Error: Invalid backend '{b}'. Valid backends are: {', '.join(backends_map.keys())}")
+                return False
+    
+    if args.categories:
+        for c in args.categories:
+            if c not in VALID_CATEGORIES:
+                print(f"Error: Invalid category '{c}'. Valid categories are: {', '.join(VALID_CATEGORIES)}")
+                return False
+                
+    if args.formats:
+        for f in args.formats:
+            if f not in VALID_FORMATS:
+                print(f"Error: Invalid format '{f}'. Valid formats are: {', '.join(VALID_FORMATS)}")
+                return False
+                
+    if args.message_types:
+        for mt in args.message_types:
+            if mt not in VALID_MESSAGE_TYPES:
+                print(f"Error: Invalid message type '{mt}'. Valid message types are: {', '.join(VALID_MESSAGE_TYPES)}")
+                return False
+                
+    return True
+
 def run_command(command):
     print(f"Running: {command}")
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
@@ -254,25 +285,27 @@ if __name__ == "__main__":
     
     args = parser.parse_args()
 
+    if not validate_args(args):
+        exit(1)
+
     if args.complete or args.smoketest or args.quick:
         if args.complete:
-            args.warmup = 3
-            args.iterations = 5
-            args.time = "3s"
+            if args.warmup is None: args.warmup = 3
+            if args.iterations is None: args.iterations = 5
+            if args.time is None: args.time = "3s"
         elif args.smoketest:
-            args.warmup = 0
-            args.iterations = 1
-            args.time = "50ms"
+            if args.warmup is None: args.warmup = 0
+            if args.iterations is None: args.iterations = 1
+            if args.time is None: args.time = "50ms"
         elif args.quick:
-            args.warmup = 2
-            args.iterations = 3
-            args.time = "1s"
+            if args.warmup is None: args.warmup = 2
+            if args.iterations is None: args.iterations = 3
+            if args.time is None: args.time = "1s"
             
-        args.backends = list(backends_map.keys())
-        args.frontends = None # ALL
-        args.categories = ["CONSOLE", "FILE"]
-        args.formats = ["SIMPLE", "MDC", "MARKER", "LOCATION", "COLOR"]
-        args.message_types = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
+        if args.backends is None: args.backends = list(backends_map.keys())
+        if args.categories is None: args.categories = ["CONSOLE", "FILE"]
+        if args.formats is None: args.formats = ["SIMPLE", "MDC", "MARKER", "LOCATION", "COLOR"]
+        if args.message_types is None: args.message_types = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
     
     if args.dry_run:
         collect_results(args)
