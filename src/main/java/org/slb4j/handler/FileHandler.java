@@ -16,35 +16,25 @@
 package org.slb4j.handler;
 
 import org.slb4j.LogFilter;
-import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.LogPattern;
 import org.slb4j.MDC;
-import org.slb4j.support.CountingOutputStream;
 import org.slb4j.LocationResolver;
 import org.jspecify.annotations.Nullable;
 
-import java.io.BufferedOutputStream;
-import java.io.BufferedWriter;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
 /**
  * A log handler that writes log entries to a file.
  * It supports log rotation triggered by file size, number of entries, or time.
  */
-public class FileHandler extends AbstractFileHandler {
+public final class FileHandler extends AbstractFileHandler {
 
     private static final StandardOpenOption[] OPTIONS_APPEND = {StandardOpenOption.CREATE, StandardOpenOption.APPEND};
     private static final StandardOpenOption[] OPTIONS_CREATE = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
@@ -72,12 +62,12 @@ public class FileHandler extends AbstractFileHandler {
     @Override
     public void handle(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
         if (filter.test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
-            synchronized (lock()) {
-                try {
+            try {
+                synchronized (lock()) {
                     logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
-                } catch (IOException e) {
-                    System.err.println("Error writing log entry: " + e.getMessage());
                 }
+            } catch (IOException e) {
+                System.err.println("Error writing log entry: " + e.getMessage());
             }
 
             if (lvl.ordinal() >= flushLevel.ordinal()) {
