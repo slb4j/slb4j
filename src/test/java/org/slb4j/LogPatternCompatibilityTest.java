@@ -1,0 +1,186 @@
+package org.slb4j;
+
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.Appender;
+import org.apache.logging.log4j.core.Filter;
+import org.apache.logging.log4j.core.Layout;
+import org.apache.logging.log4j.core.LogEvent;
+import org.apache.logging.log4j.core.LoggerContext;
+import org.apache.logging.log4j.core.appender.AbstractAppender;
+import org.apache.logging.log4j.core.config.Configuration;
+import org.apache.logging.log4j.core.config.Configurator;
+import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
+import org.slb4j.frontend.log4j.LoggerLog4j;
+
+import java.io.Serializable;
+import java.nio.charset.StandardCharsets;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Stream;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+class LogPatternCompatibilityTest {
+
+    private static final String APPENDER_NAME = "TestAppender";
+    private CompatibilityAppender appender;
+    private LoggerContext context;
+
+    @BeforeEach
+    void setUp() {
+        System.setProperty("log4j2.loggerContextFactory", "org.apache.logging.log4j.core.impl.Log4jContextFactory");
+    }
+
+    @AfterEach
+    void tearDown() {
+        if (context != null) {
+            Configurator.shutdown(context);
+        }
+        System.clearProperty("log4j2.loggerContextFactory");
+    }
+
+    private void configureLog4j(String pattern) {
+        context = (LoggerContext) LogManager.getContext(false);
+        Configuration config = context.getConfiguration();
+
+        PatternLayout log4jLayout = PatternLayout.newBuilder()
+                .withPattern(pattern)
+                .withConfiguration(config)
+                .build();
+
+        LogPattern slb4jPattern = LogPattern.parse(pattern);
+
+        appender = new CompatibilityAppender(APPENDER_NAME, null, log4jLayout, slb4jPattern);
+        appender.start();
+
+        config.addAppender(appender);
+        updateLoggers(config, appender);
+        context.updateLoggers();
+    }
+
+    private void updateLoggers(Configuration config, Appender appender) {
+        LoggerConfig rootConfig = config.getRootLogger();
+        rootConfig.addAppender(appender, Level.ALL, null);
+        rootConfig.setLevel(Level.ALL);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n",
+            "%level %msg%n",
+            "[%t] %logger %msg%n",
+            "%d{HH:mm:ss} %-5p %c{1} - %m%n",
+            "[%p] %c - %m%n",
+            "%d{yyyy-MM-dd'T'HH:mm:ss,SSS} [%t] %c{2} %X{userId} - %m%n",
+            "%d{ISO8601} [%t] %p %c - %m%n",
+            "%d{HH:mm:ss,SSS} %-5level %logger{1} - %message%n",
+            "%d{yyyyMMddHHmmss} %level %c{1.} %msg%n",
+            "%p %logger %X %m%n",
+            "%p %logger %X{user} %m%n",
+            "%p %logger %X{missing} %m%n",
+            "%-10p %10c %m%n",
+            "%.5p %.10c %m%n",
+            "%5.10p %-10.15c %m%n",
+            "[%t] %level %logger - %msg%n%throwable",
+            "[%t] %level %logger - %msg%n%ex",
+            "%d{yyyy-MM-dd HH:mm:ss} %-5p %C.%M(%F:%L) - %m%n",
+            // "%l - %m%n", // Failing
+            "Marker: %marker %msg%n"
+    })
+    void testPatternCompatibility(String pattern) {
+        configureLog4j(pattern);
+        Logger logger = LogManager.getLogger("org.slb4j.TestLogger");
+
+        org.apache.logging.log4j.ThreadContext.put("userId", "alice");
+        try {
+            logger.info("Test message");
+            logger.error("Error message");
+        } finally {
+            org.apache.logging.log4j.ThreadContext.clearMap();
+        }
+
+        assertTrue(appender.getDiscrepancies().isEmpty(), 
+            "Discrepancies found:\n" + String.join("\n", appender.getDiscrepancies()));
+    }
+
+    private static class CompatibilityAppender extends AbstractAppender {
+        private final LogPattern slb4jPattern;
+        private final List<String> discrepancies = new ArrayList<>();
+
+        protected CompatibilityAppender(String name, Filter filter, Layout<? extends Serializable> layout, LogPattern slb4jPattern) {
+            super(name, filter, layout, true, null);
+            this.slb4jPattern = slb4jPattern;
+        }
+
+        @Override
+        public void append(LogEvent event) {
+            // 1. Get Log4j output
+            byte[] log4jBytes = getLayout().toByteArray(event);
+            String log4jOutput = new String(log4jBytes, StandardCharsets.UTF_8);
+
+            // 2. Get SLB4J output
+            String slb4jOutput = formatWithSlb4j(event);
+
+            // 3. Compare
+            if (!log4jOutput.equals(slb4jOutput)) {
+                discrepancies.add(String.format("Pattern: %s%nLog4j: [%s]%nSLB4J: [%s]",
+                    ((PatternLayout)getLayout()).getConversionPattern(), log4jOutput, slb4jOutput));
+            }
+        }
+
+        private String formatWithSlb4j(LogEvent event) {
+            StringBuilder sb = new StringBuilder();
+            
+            Instant instant = Instant.ofEpochMilli(event.getTimeMillis());
+            String loggerName = event.getLoggerName();
+            LogLevel level = LoggerLog4j.translateLog4jLevel(event.getLevel());
+            String marker = event.getMarker() != null ? event.getMarker().getName() : null;
+            
+            MDC mdc = new MDC() {
+                @Override
+                public @Nullable String get(String key) {
+                    return event.getContextData().getValue(key);
+                }
+
+                @Override
+                public Stream<Map.Entry<String, String>> stream() {
+                    return event.getContextData().toMap().entrySet().stream();
+                }
+            };
+
+            LocationResolver locResolver = () -> {
+                StackTraceElement ste = event.getSource();
+                if (ste == null) return null;
+                return new Location() {
+                    @Override public @Nullable String getClassName() { return ste.getClassName(); }
+                    @Override public @Nullable String getMethodName() { return ste.getMethodName(); }
+                    @Override public int getLineNumber() { return ste.getLineNumber(); }
+                    @Override public @Nullable String getFileName() { return ste.getFileName(); }
+                };
+            };
+
+            try {
+                slb4jPattern.formatLogEntry(sb, instant, loggerName, level, marker, mdc, locResolver, 
+                    () -> event.getMessage().getFormattedMessage(), event.getThrown(), null);
+            } catch (java.io.IOException e) {
+                throw new RuntimeException(e);
+            }
+
+            return sb.toString();
+        }
+
+        public List<String> getDiscrepancies() {
+            return discrepancies;
+        }
+    }
+}

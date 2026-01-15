@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * The LogPattern class handles the formatting of log entries using Log4J-style format strings.
@@ -38,6 +39,8 @@ public final class LogPattern {
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)})?|%%");
+
+    private static final Pattern LOGGER_PRECISION_PATTERN = Pattern.compile("^(\\d+)(\\.)?$");
 
     /**
      * The default pattern used for log formatting.
@@ -314,11 +317,26 @@ public final class LogPattern {
         }
     }
 
-    private static String abbreviate(String name, int abbreviationLength) {
-        if (abbreviationLength <= 0) {
+    private static String abbreviate(String name, int abbreviationLength, boolean useDotAbbreviation) {
+        if (abbreviationLength <= 0 && !useDotAbbreviation) {
             return name;
         }
         String[] parts = name.split("\\.");
+        if (useDotAbbreviation) {
+            int length = abbreviationLength > 0 ? abbreviationLength : 1;
+            StringBuilder abbreviated = new StringBuilder();
+            for (int i = 0; i < parts.length - 1; i++) {
+                String part = parts[i];
+                if (part.length() > length) {
+                    abbreviated.append(part, 0, length);
+                } else {
+                    abbreviated.append(part);
+                }
+                abbreviated.append('.');
+            }
+            abbreviated.append(parts[parts.length - 1]);
+            return abbreviated.toString();
+        }
         if (parts.length <= abbreviationLength) {
             return name;
         }
@@ -341,6 +359,7 @@ public final class LogPattern {
      */
     public static class LoggerEntry extends AbstractLogPatternEntry {
         private final int abbreviationLength;
+        private final boolean useDotAbbreviation;
 
         /**
          * Constructs an instance of LoggerEntry, a specialized log format entry
@@ -356,22 +375,24 @@ public final class LogPattern {
          *                  If true, padding will be added to the right of the logger name;
          *                  otherwise, padding will be added to the left.
          * @param abbreviationLength the number of rightmost components of the logger name to keep.
+         * @param useDotAbbreviation a flag indicating whether to use dot abbreviation (e.g., "o.s.T").
          */
-        public LoggerEntry(int minWidth, int maxWidth, boolean leftAlign, int abbreviationLength) {
+        public LoggerEntry(int minWidth, int maxWidth, boolean leftAlign, int abbreviationLength, boolean useDotAbbreviation) {
             super("c", minWidth, maxWidth, leftAlign, false);
             this.abbreviationLength = abbreviationLength;
+            this.useDotAbbreviation = useDotAbbreviation;
         }
 
         @Override
         public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, abbreviate(loggerName, abbreviationLength), true);
+            appendFormatted(app, abbreviate(loggerName, abbreviationLength, useDotAbbreviation), true);
         }
 
         @Override
         public String getLog4jPattern() {
             String format = super.getLog4jPattern();
-            if (abbreviationLength > 0) {
-                format = format.replace(prefix, prefix + "{" + abbreviationLength + "}");
+            if (abbreviationLength > 0 || useDotAbbreviation) {
+                format = format.replace(prefix, prefix + "{" + abbreviationLength + (useDotAbbreviation ? "." : "") + "}");
             }
             return format;
         }
@@ -442,14 +463,9 @@ public final class LogPattern {
             if (key != null) {
                 appendFormatted(app, mdc.get(key));
             } else {
-                StringBuilder mdcSb = new StringBuilder();
-                mdc.stream().forEach(e -> {
-                    if (!mdcSb.isEmpty()) {
-                        mdcSb.append(", ");
-                    }
-                    mdcSb.append(e.getKey()).append("=").append(e.getValue());
-                });
-                appendFormatted(app, mdcSb.toString());
+                String mdcS = mdc.stream().map(item -> item.getKey() + "=" + item.getValue())
+                        .collect(Collectors.joining(", ", "{", "}"));
+                appendFormatted(app, mdcS);
             }
         }
 
@@ -523,6 +539,7 @@ public final class LogPattern {
 
     public static class ClassEntry extends AbstractLogPatternEntry {
         private final int abbreviationLength;
+        private final boolean useDotAbbreviation;
 
         /**
          * Constructs an instance of the ClassEntry, which represents a log entry
@@ -541,23 +558,25 @@ public final class LogPattern {
          * @param abbreviationLength The maximum number of dot-separated package name segments
          *                         to abbreviate in the class name. A value of 0 indicates
          *                         no abbreviation.
+         * @param useDotAbbreviation a flag indicating whether to use dot abbreviation (e.g., "o.s.T").
          */
-        public ClassEntry(int minWidth, int maxWidth, boolean leftAlign, int abbreviationLength) {
+        public ClassEntry(int minWidth, int maxWidth, boolean leftAlign, int abbreviationLength, boolean useDotAbbreviation) {
             super("C", minWidth, maxWidth, leftAlign, true);
             this.abbreviationLength = abbreviationLength;
+            this.useDotAbbreviation = useDotAbbreviation;
         }
 
         @Override
         public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
             String className = location != null ? location.getClassName() : null;
-            appendFormatted(app, className != null ? abbreviate(className, abbreviationLength) : null, true);
+            appendFormatted(app, className != null ? abbreviate(className, abbreviationLength, useDotAbbreviation) : null, true);
         }
 
         @Override
         public String getLog4jPattern() {
             String format = super.getLog4jPattern();
-            if (abbreviationLength > 0) {
-                format = format.replace(prefix, prefix + "{" + abbreviationLength + "}");
+            if (abbreviationLength > 0 || useDotAbbreviation) {
+                format = format.replace(prefix, prefix + "{" + abbreviationLength + (useDotAbbreviation ? "." : "") + "}");
             }
             return format;
         }
@@ -672,7 +691,26 @@ public final class LogPattern {
         @Override
         public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
             if (location != null) {
-                appendFormatted(app, location.toString());
+                StringBuilder sb = new StringBuilder();
+                String className = location.getClassName();
+                if (className != null) {
+                    sb.append(className);
+                }
+                String methodName = location.getMethodName();
+                if (methodName != null) {
+                    sb.append('.').append(methodName);
+                }
+                sb.append('(');
+                String fileName = location.getFileName();
+                if (fileName != null) {
+                    sb.append(fileName);
+                }
+                int lineNumber = location.getLineNumber();
+                if (lineNumber >= 0) {
+                    sb.append(':').append(lineNumber);
+                }
+                sb.append(')');
+                appendFormatted(app, sb.toString());
             } else {
                 appendFormatted(app, null);
             }
@@ -794,7 +832,7 @@ public final class LogPattern {
         public DateEntry(String pattern) {
             this.datePattern = pattern;
             this.formatter = switch (pattern) {
-                case "ISO8601" -> DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ssSSSZ");
+                case "ISO8601" -> DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss,SSS");
                 case "HH:mm:ss,SSS" -> DateTimeFormatter.ofPattern("HH:mm:ss,SSS");
                 case "yyyy-MM-dd HH:mm:ss,SSS" -> DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS");
                 case "yyyy-MM-dd HH:mm:ss" -> DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
@@ -950,17 +988,27 @@ public final class LogPattern {
                     case "p", "level" -> entries.add(new LevelEntry(minWidth, maxWidth, leftAlign));
                     case "c", "logger" -> {
                         int abbreviationLength = 0;
-                        if (options != null && options.matches("\\d+")) {
-                            abbreviationLength = Integer.parseInt(options);
+                        boolean useDotAbbreviation = false;
+                        if (options != null) {
+                            Matcher m = LOGGER_PRECISION_PATTERN.matcher(options);
+                            if (m.matches()) {
+                                abbreviationLength = Integer.parseInt(m.group(1));
+                                useDotAbbreviation = m.group(2) != null;
+                            }
                         }
-                        entries.add(new LoggerEntry(minWidth, maxWidth, leftAlign, abbreviationLength));
+                        entries.add(new LoggerEntry(minWidth, maxWidth, leftAlign, abbreviationLength, useDotAbbreviation));
                     }
                     case "C" -> {
                         int abbreviationLength = 0;
-                        if (options != null && options.matches("\\d+")) {
-                            abbreviationLength = Integer.parseInt(options);
+                        boolean useDotAbbreviation = false;
+                        if (options != null) {
+                            Matcher m = LOGGER_PRECISION_PATTERN.matcher(options);
+                            if (m.matches()) {
+                                abbreviationLength = Integer.parseInt(m.group(1));
+                                useDotAbbreviation = m.group(2) != null;
+                            }
                         }
-                        entries.add(new ClassEntry(minWidth, maxWidth, leftAlign, abbreviationLength));
+                        entries.add(new ClassEntry(minWidth, maxWidth, leftAlign, abbreviationLength, useDotAbbreviation));
                     }
                     case "M" -> entries.add(new MethodEntry(minWidth, maxWidth, leftAlign));
                     case "L" -> entries.add(new LineEntry(minWidth, maxWidth, leftAlign));

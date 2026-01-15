@@ -69,6 +69,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation(platform(libs.log4j.bom))
     testImplementation(libs.log4j.api)
+    testImplementation(libs.log4j.core)
     testImplementation(libs.slf4j.api)
     testImplementation(libs.commons.logging)
 
