@@ -14,15 +14,6 @@ dependencies {
 
     implementation(rootProject)
 
-    // All these should be compileOnly to avoid being on the default JMH runtime classpath
-    // We will add them back selectively for each forked process.
-    compileOnly(platform(libs.log4j.bom))
-    compileOnly(libs.slf4j.api)
-    compileOnly(libs.log4j.api)
-    compileOnly(libs.commons.logging)
-    compileOnly(libs.log4j.core)
-    compileOnly(libs.logback.classic)
-
     // We also need them for JMH compilation
     jmh(platform(libs.log4j.bom))
     jmh(libs.slf4j.api)
@@ -40,7 +31,7 @@ dependencies {
     jmh(libs.slf4j.jul)
     jmh(libs.log4j.to.slf4j)
 
-    // Define configurations for each backend to collect their runtime dependencies
+    // Use separate configurations for each backend to collect their runtime dependencies
     val log4jRuntime by configurations.creating
     val logbackRuntime by configurations.creating
     val julRuntime by configurations.creating
@@ -70,7 +61,6 @@ dependencies {
         julRuntime(libs.log4j.api)
         julRuntime(libs.commons.logging)
         julRuntime(libs.slf4j.jdk14) // slf4j to jul
-        // JCL to JUL is handled by JCL's default behavior or system properties
 
         slb4jRuntime(libs.slf4j.api)
         slb4jRuntime(platform(libs.log4j.bom))
@@ -92,20 +82,15 @@ jmh {
         else -> configurations.getByName("slb4jRuntime")
     }
 
-    // Add them to jvmArgs as a classpath addition
-    // We want to replace the default classpath with our isolated one.
-    // me.champeau.jmh plugin puts jmh.core and the benchmark classes on the classpath.
-    // If we use -cp in jvmArgs, it should override the default one if we are lucky,
-    // or we might need to include everything needed.
-    
+    // Filter the JMH configuration to remove unwanted logging backends
     val jmhJars = project.configurations.getByName("jmh").files.filter { file ->
         val name = file.name
-        // Exclude other backends and bridges that might be in the 'jmh' configuration
-        // We want ONLY the selected backend's JARs (which are added via runtimeConfigJars)
-        // and general JMH / non-logging JARs from the 'jmh' configuration.
         !name.contains("logback-classic") &&
+        !name.contains("logback-core") &&
         !name.contains("log4j-core") &&
         !name.contains("slf4j-jdk14") &&
+        !name.contains("slf4j-jcl") &&
+        !name.contains("slf4j-jul") &&
         !name.contains("log4j-slf4j") &&
         !name.contains("log4j-jcl") &&
         !name.contains("log4j-jul") &&
@@ -114,26 +99,22 @@ jmh {
         !name.contains("log4j-to-slf4j") &&
         !name.contains("slb4j")
     }
-    val jmhWorkerJars = project.configurations.findByName("jmhWorker")?.files ?: emptySet<File>()
-    val runtimeConfigJars = runtimeConfig.files
     
-    // Also need the benchmark classes themselves
+    // The benchmark classes
     val benchmarkClasses = project.tasks.getByName("jmhJar").outputs.files
     
-    val allJars = (jmhJars + jmhWorkerJars + runtimeConfigJars + benchmarkClasses).joinToString(File.pathSeparator)
+    val allJarsList = (jmhJars + runtimeConfig.files + benchmarkClasses)
     
-    if (allJars.isNotEmpty()) {
-        jvmArgs.add("-cp")
-        jvmArgs.add(allJars)
-    }
-    warmupIterations.set(project.findProperty("warmupIterations")?.toString()?.toInt() ?: 2)
+    // We must ensure JMH uses the correct classpath. 
+    // Since the plugin doesn't make it easy, we use a custom task to run JMH.
+    
+    jvmArgs.add("-Djmh.ignoreLock=true")
     iterations.set(project.findProperty("iterations")?.toString()?.toInt() ?: 3)
     fork.set(1)
     timeOnIteration = project.findProperty("timeOnIteration")?.toString() ?: "1s"
     resultFormat.set("JSON")
     duplicateClassesStrategy.set(DuplicatesStrategy.EXCLUDE)
     failOnError.set(true)
-    jvmArgs.add("-Djmh.ignoreLock=true")
     forceGC.set(true)
 
     val includesProp = project.findProperty("jmh.includes")?.toString()
@@ -156,4 +137,83 @@ jmh {
             }
         }
     }
+}
+
+tasks.register<JavaExec>("runJmh") {
+    dependsOn("jmhJar")
+    mainClass.set("org.openjdk.jmh.Main")
+    
+    val backendVal = project.findProperty("backend")?.toString() ?: "slb4j"
+    val runtimeConfig = when (backendVal) {
+        "log4j" -> configurations.getByName("log4jRuntime")
+        "logback" -> configurations.getByName("logbackRuntime")
+        "jul" -> configurations.getByName("julRuntime")
+        "slb4j" -> configurations.getByName("slb4jRuntime")
+        else -> configurations.getByName("slb4jRuntime")
+    }
+
+    val jmhJars = configurations.getByName("jmh").files.filter { file ->
+        val name = file.name
+        !name.contains("logback-classic") &&
+        !name.contains("logback-core") &&
+        !name.contains("log4j-core") &&
+        !name.contains("slf4j-jdk14") &&
+        !name.contains("slf4j-jcl") &&
+        !name.contains("slf4j-jul") &&
+        !name.contains("log4j-slf4j") &&
+        !name.contains("log4j-jcl") &&
+        !name.contains("log4j-jul") &&
+        !name.contains("jcl-over-slf4j") &&
+        !name.contains("jul-to-slf4j") &&
+        !name.contains("log4j-to-slf4j") &&
+        !name.contains("log4j-api") &&
+        !name.contains("log4j-slf4j2-impl") &&
+        !name.contains("slb4j")
+    }
+    
+    val benchmarkJar = tasks.named<org.gradle.jvm.tasks.Jar>("jmhJar").get().archiveFile
+    classpath = files(jmhJars, runtimeConfig, benchmarkJar)
+
+    // Pass arguments to JMH
+    val jmhArgs = mutableListOf<String>()
+    
+    project.findProperty("jmh.includes")?.toString()?.let { 
+        jmhArgs.addAll(it.split(","))
+    }
+
+    jmhArgs.add("-wi")
+    jmhArgs.add(project.findProperty("warmupIterations")?.toString() ?: "2")
+    jmhArgs.add("-i")
+    jmhArgs.add(project.findProperty("iterations")?.toString() ?: "3")
+    jmhArgs.add("-f")
+    jmhArgs.add("1")
+    jmhArgs.add("-t")
+    jmhArgs.add("1")
+    jmhArgs.add("-r")
+    jmhArgs.add(project.findProperty("timeOnIteration")?.toString() ?: "1s")
+    
+    // Parameters
+    val outputToFile = project.findProperty("outputToFile")?.toString() ?: "false"
+    val messageType = project.findProperty("messageType")?.toString() ?: "CONSTANT,ARGUMENTS,LAMBDA"
+    jmhArgs.add("-p")
+    jmhArgs.add("outputToFile=$outputToFile")
+    jmhArgs.add("-p")
+    jmhArgs.add("backend=$backendVal")
+    jmhArgs.add("-p")
+    jmhArgs.add("messageType=$messageType")
+
+    project.findProperty("jmh.parameters")?.toString()?.split(";")?.forEach { pair ->
+        val parts = pair.split("=")
+        if (parts.size == 2) {
+            jmhArgs.add("-p")
+            jmhArgs.add("${parts[0]}=${parts[1]}")
+        }
+    }
+
+    jmhArgs.add("-rf")
+    jmhArgs.add("JSON")
+    jmhArgs.add("-rff")
+    jmhArgs.add("jmh-results.json")
+
+    args = jmhArgs
 }

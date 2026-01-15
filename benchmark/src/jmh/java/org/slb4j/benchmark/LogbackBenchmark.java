@@ -38,16 +38,32 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
         tempFile = Files.createTempFile("logback-bench", ".log");
         
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        try {
-            JoranConfigurator configurator = new JoranConfigurator();
-            configurator.setContext(context);
-            context.reset();
-            context.putProperty("logFile", tempFile.toString());
-            // Note: For simplicity, we use one config. Real benchmark would vary pattern.
-            configurator.doConfigure(getClass().getResource("/logback-bench.xml"));
-        } catch (JoranException je) {
-            // StatusPrinter will handle this
+        context.reset();
+
+        ch.qos.logback.classic.encoder.PatternLayoutEncoder encoder = new ch.qos.logback.classic.encoder.PatternLayoutEncoder();
+        encoder.setContext(context);
+        encoder.setPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%n");
+        encoder.start();
+
+        ch.qos.logback.core.Appender appender;
+        if ("FILE".equals(category)) {
+            ch.qos.logback.core.FileAppender fileAppender = new ch.qos.logback.core.FileAppender();
+            fileAppender.setFile(tempFile.toString());
+            fileAppender.setEncoder(encoder);
+            appender = fileAppender;
+        } else {
+            ch.qos.logback.core.ConsoleAppender consoleAppender = new ch.qos.logback.core.ConsoleAppender();
+            consoleAppender.setEncoder(encoder);
+            appender = consoleAppender;
         }
+        appender.setContext(context);
+        appender.setName("Appender");
+        appender.start();
+
+        ch.qos.logback.classic.Logger root = context.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
+        root.detachAndStopAllAppenders();
+        root.addAppender(appender);
+        root.setLevel(ch.qos.logback.classic.Level.INFO);
 
         slf4jLogger = LoggerFactory.getLogger(LogbackBenchmark.class);
         log4jLogger = org.apache.logging.log4j.LogManager.getLogger(LogbackBenchmark.class);
@@ -116,7 +132,7 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
         switch (messageType) {
             case "CONSTANT" -> julLogger.info(logMessage);
             case "ARGUMENTS" -> julLogger.log(java.util.logging.Level.INFO, "Benchmark backend={0} frontend={1} category={2} format={3} messageType={4}", new Object[]{backend, "jul", category, format, messageType});
-            case "LAMBDA" -> julLogger.info(() -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "jul", category, format, messageType));
+            case "LAMBDA" -> julLogger.log(java.util.logging.Level.INFO, () -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "jul", category, format, messageType));
         }
     }
 

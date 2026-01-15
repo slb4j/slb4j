@@ -68,7 +68,7 @@ def collect_results(args):
         benchmark_class = backends_map[backend]
         print(f"Testing backend: {backend}")
         
-        cmd = f"./gradlew :benchmark:jmh -Pbackend={backend}"
+        cmd = f"./gradlew :benchmark:runJmh -Pbackend={backend}"
         
         # Build JMH includes/excludes based on frontend
         # Frontends are methods in the benchmark classes
@@ -117,7 +117,7 @@ def collect_results(args):
             continue
 
         if run_command(cmd):
-            src_json = "benchmark/build/results/jmh/results.json"
+            src_json = "benchmark/jmh-results.json"
             dest_json = os.path.join(results_dir, f"results_{backend}.json")
             if os.path.exists(src_json):
                 shutil.copy(src_json, dest_json)
