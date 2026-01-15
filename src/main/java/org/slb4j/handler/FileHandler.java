@@ -26,13 +26,16 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
@@ -51,7 +54,7 @@ public class FileHandler implements LogHandler, AutoCloseable {
     private volatile LogPattern logPattern = LogPattern.DEFAULT_PATTERN;
     private volatile LogFilter filter = LogFilter.allPass();
 
-    private @Nullable PrintStream out;
+    private @Nullable Writer out;
     private final LongAdder currentSize = new LongAdder();
     private long currentEntries;
     private @Nullable Instant nextRotationTime;
@@ -60,9 +63,7 @@ public class FileHandler implements LogHandler, AutoCloseable {
     private long maxEntries = -1;
     private @Nullable ChronoUnit rotationTimeUnit;
     private int maxBackupIndex = 1;
-    private LogLevel flushLevel = LogLevel.INFO;
-    private int flushEveryNEntries = 1;
-    private int entriesSinceLastFlush = 0;
+    private LogLevel flushLevel = LogLevel.TRACE;
 
     /**
      * Constructs a new FileHandler.
@@ -79,41 +80,47 @@ public class FileHandler implements LogHandler, AutoCloseable {
         openFile();
     }
 
-    private synchronized void openFile() throws IOException {
-        if (out != null) {
-            out.close();
-        }
+    private void openFile() throws IOException {
+        synchronized (lock) {
+            if (out != null) {
+                out.close();
+            }
 
-        Path parent = path.getParent();
-        if (parent != null) {
-            Files.createDirectories(parent);
-        }
+            Path parent = path.getParent();
+            if (parent != null) {
+                Files.createDirectories(parent);
+            }
 
-        StandardOpenOption[] options;
-        if (append) {
-            options = new StandardOpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.APPEND};
-        } else {
-            options = new StandardOpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
-        }
+            StandardOpenOption[] options;
+            if (append) {
+                options = new StandardOpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.APPEND};
+            } else {
+                options = new StandardOpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
+            }
 
-        this.out = newStream(options);
-        updateNextRotationTime();
+            this.out = newWriter(options);
+            updateNextRotationTime();
+        }
     }
 
-    private synchronized PrintStream newStream(StandardOpenOption[] options) throws IOException {
-        try {
-            return new PrintStream(
+    private Writer newWriter(StandardOpenOption[] options) throws IOException {
+        synchronized (lock) {
+            if (Arrays.asList(options).contains(StandardOpenOption.APPEND) && Files.exists(path)) {
+                currentSize.reset();
+                currentSize.add(Files.size(path));
+                currentEntries = countLines(path);
+            } else {
+                currentSize.reset();
+                currentEntries = 0;
+            }
+
+            return new OutputStreamWriter(
                     new CountingOutputStream(
                             new BufferedOutputStream(Files.newOutputStream(path, options)),
                             currentSize
                     ),
-                    false,
                     StandardCharsets.UTF_8
             );
-        } finally {
-            currentSize.reset();
-            currentSize.add(Files.size(path));
-            currentEntries = countLines(path);
         }
     }
 
@@ -139,8 +146,10 @@ public class FileHandler implements LogHandler, AutoCloseable {
      *
      * @param filePattern the file pattern
      */
-    public synchronized void setFilePattern(@Nullable String filePattern) {
-        this.filePattern = filePattern;
+    public void setFilePattern(@Nullable String filePattern) {
+        synchronized (lock) {
+            this.filePattern = filePattern;
+        }
     }
 
     /**
@@ -148,8 +157,10 @@ public class FileHandler implements LogHandler, AutoCloseable {
      *
      * @return the file pattern
      */
-    public synchronized @Nullable String getFilePattern() {
-        return filePattern;
+    public @Nullable String getFilePattern() {
+        synchronized (lock) {
+            return filePattern;
+        }
     }
 
     /**
@@ -157,8 +168,10 @@ public class FileHandler implements LogHandler, AutoCloseable {
      *
      * @param maxFileSize the maximum file size in bytes, or -1 for no limit
      */
-    public synchronized void setMaxFileSize(long maxFileSize) {
-        this.maxFileSize = maxFileSize;
+    public void setMaxFileSize(long maxFileSize) {
+        synchronized (lock) {
+            this.maxFileSize = maxFileSize;
+        }
     }
 
     /**
@@ -166,8 +179,10 @@ public class FileHandler implements LogHandler, AutoCloseable {
      *
      * @param maxEntries the maximum number of entries, or -1 for no limit
      */
-    public synchronized void setMaxEntries(long maxEntries) {
-        this.maxEntries = maxEntries;
+    public void setMaxEntries(long maxEntries) {
+        synchronized (lock) {
+            this.maxEntries = maxEntries;
+        }
     }
 
     /**
@@ -175,9 +190,11 @@ public class FileHandler implements LogHandler, AutoCloseable {
      *
      * @param rotationTimeUnit the time unit for rotation, or null for no time-based rotation
      */
-    public synchronized void setRotationTimeUnit(@Nullable ChronoUnit rotationTimeUnit) {
-        this.rotationTimeUnit = rotationTimeUnit;
-        updateNextRotationTime();
+    public void setRotationTimeUnit(@Nullable ChronoUnit rotationTimeUnit) {
+        synchronized (lock) {
+            this.rotationTimeUnit = rotationTimeUnit;
+            updateNextRotationTime();
+        }
     }
 
     /**
@@ -185,8 +202,10 @@ public class FileHandler implements LogHandler, AutoCloseable {
      *
      * @param maxBackupIndex the maximum number of backup files
      */
-    public synchronized void setMaxBackupIndex(int maxBackupIndex) {
-        this.maxBackupIndex = maxBackupIndex;
+    public void setMaxBackupIndex(int maxBackupIndex) {
+        synchronized (lock) {
+            this.maxBackupIndex = maxBackupIndex;
+        }
     }
 
     /**
@@ -194,17 +213,10 @@ public class FileHandler implements LogHandler, AutoCloseable {
      *
      * @param flushLevel the minimum log level to trigger a flush
      */
-    public synchronized void setFlushLevel(LogLevel flushLevel) {
-        this.flushLevel = Objects.requireNonNull(flushLevel);
-    }
-
-    /**
-     * Sets the number of entries after which a flush is triggered.
-     *
-     * @param flushEveryNEntries the number of entries, or -1 to disable entry-based flushing
-     */
-    public synchronized void setFlushEveryNEntries(int flushEveryNEntries) {
-        this.flushEveryNEntries = flushEveryNEntries;
+    public void setFlushLevel(LogLevel flushLevel) {
+        synchronized (lock) {
+            this.flushLevel = Objects.requireNonNull(flushLevel);
+        }
     }
 
     @Override
@@ -215,32 +227,25 @@ public class FileHandler implements LogHandler, AutoCloseable {
     @Override
     public void handle(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
         if (filter.test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
-            synchronized (this) {
+            synchronized (lock) {
                 checkRotation(instant);
                 if (out != null) {
                     try {
-                        synchronized (lock) {
-                            logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
-                        }
+                        logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
                     } catch (IOException e) {
                         System.err.println("Error writing log entry: " + e.getMessage());
                     }
                     currentEntries++;
-                    entriesSinceLastFlush++;
-                    if (shouldFlush(lvl)) {
-                        out.flush();
-                        entriesSinceLastFlush = 0;
+                    if (lvl.ordinal() >= flushLevel.ordinal()) {
+                        try {
+                            out.flush();
+                        } catch (IOException e) {
+                            System.err.println("Error flushing log file: " + e.getMessage());
+                        }
                     }
                 }
             }
         }
-    }
-
-    private boolean shouldFlush(LogLevel lvl) {
-        if (lvl.ordinal() >= flushLevel.ordinal()) {
-            return true;
-        }
-        return flushEveryNEntries > 0 && entriesSinceLastFlush >= flushEveryNEntries;
     }
 
     private void checkRotation(Instant now) {
@@ -257,20 +262,21 @@ public class FileHandler implements LogHandler, AutoCloseable {
         }
     }
 
-    private synchronized void rotate() throws IOException {
-        if (out != null) {
-            out.close();
-            out = null;
-            entriesSinceLastFlush = 0;
-        }
+    private void rotate() throws IOException {
+        synchronized (lock) {
+            if (out != null) {
+                out.close();
+                out = null;
+            }
 
-        if (filePattern != null && !filePattern.isEmpty()) {
-            rotateWithPattern();
-        } else {
-            rotateWithIndex();
-        }
+            if (filePattern != null && !filePattern.isEmpty()) {
+                rotateWithPattern();
+            } else {
+                rotateWithIndex();
+            }
 
-        openFile();
+            openFile();
+        }
     }
 
     private void rotateWithPattern() throws IOException {
@@ -316,21 +322,30 @@ public class FileHandler implements LogHandler, AutoCloseable {
     }
 
     @Override
-    public synchronized void setFilter(LogFilter filter) {
-        this.filter = Objects.requireNonNull(filter);
+    public void setFilter(LogFilter filter) {
+        synchronized (lock) {
+            this.filter = Objects.requireNonNull(filter);
+        }
     }
 
     @Override
-    public synchronized LogFilter getFilter() {
-        return filter;
+    public LogFilter getFilter() {
+        synchronized (lock) {
+            return filter;
+        }
     }
 
     @Override
-    public synchronized void close() {
-        if (out != null) {
-            out.close();
-            out = null;
-            entriesSinceLastFlush = 0;
+    public void close() {
+        synchronized (lock) {
+            if (out != null) {
+                try {
+                    out.close();
+                } catch (IOException e) {
+                    System.err.println("Error closing log file: " + e.getMessage());
+                }
+                out = null;
+            }
         }
     }
 
@@ -338,16 +353,20 @@ public class FileHandler implements LogHandler, AutoCloseable {
      * Sets the log pattern.
      * @param logPattern the log pattern string
      */
-    public synchronized void setPattern(LogPattern logPattern) {
-        this.logPattern = logPattern;
+    public void setPattern(LogPattern logPattern) {
+        synchronized (lock) {
+            this.logPattern = logPattern;
+        }
     }
 
     /**
      * Gets the log pattern.
      * @return the log pattern string
      */
-    public synchronized String getPattern() {
-        return logPattern.getPattern();
+    public String getPattern() {
+        synchronized (lock) {
+            return logPattern.getPattern();
+        }
     }
 
     /**
@@ -370,47 +389,49 @@ public class FileHandler implements LogHandler, AutoCloseable {
      * Gets the maximum file size before rotation.
      * @return the maximum file size in bytes, or -1 for no limit
      */
-    public synchronized long getMaxFileSize() {
-        return maxFileSize;
+    public long getMaxFileSize() {
+        synchronized (lock) {
+            return maxFileSize;
+        }
     }
 
     /**
      * Gets the maximum number of entries before rotation.
      * @return the maximum number of entries, or -1 for no limit
      */
-    public synchronized long getMaxEntries() {
-        return maxEntries;
+    public long getMaxEntries() {
+        synchronized (lock) {
+            return maxEntries;
+        }
     }
 
     /**
      * Gets the rotation time unit.
      * @return the rotation time unit, or null for no time-based rotation
      */
-    public synchronized @Nullable ChronoUnit getRotationTimeUnit() {
-        return rotationTimeUnit;
+    public @Nullable ChronoUnit getRotationTimeUnit() {
+        synchronized (lock) {
+            return rotationTimeUnit;
+        }
     }
 
     /**
      * Gets the maximum number of backup files to keep.
      * @return the maximum number of backup files
      */
-    public synchronized int getMaxBackupIndex() {
-        return maxBackupIndex;
+    public int getMaxBackupIndex() {
+        synchronized (lock) {
+            return maxBackupIndex;
+        }
     }
 
     /**
      * Gets the log level at which a flush is triggered.
      * @return the minimum log level to trigger a flush
      */
-    public synchronized LogLevel getFlushLevel() {
-        return flushLevel;
-    }
-
-    /**
-     * Gets the number of entries after which a flush is triggered.
-     * @return the number of entries, or -1 if entry-based flushing is disabled
-     */
-    public synchronized int getFlushEveryNEntries() {
-        return flushEveryNEntries;
+    public LogLevel getFlushLevel() {
+        synchronized (lock) {
+            return flushLevel;
+        }
     }
 }

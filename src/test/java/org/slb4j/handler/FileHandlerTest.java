@@ -149,7 +149,6 @@ class FileHandlerTest {
             handler.setPattern(LogPattern.parse("%msg")); // No newline to keep size predictable
             handler.setMaxFileSize(10);
             handler.setMaxBackupIndex(2);
-            handler.setFlushEveryNEntries(1); // Ensure flush happens for this test
 
             // Write 5 bytes
             handler.handle(Instant.now(), "test", LogLevel.INFO, null, null, LOC, () -> "12345", null);
@@ -215,7 +214,6 @@ class FileHandlerTest {
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
             handler.setPattern(LogPattern.parse("%msg"));
             handler.setFlushLevel(LogLevel.ERROR);
-            handler.setFlushEveryNEntries(-1); // Disable entry-based flush
 
             handler.handle(Instant.now(), "test", LogLevel.INFO, null, null, LOC, () -> "info", null);
             // Should be in buffer, not necessarily on disk. 
@@ -226,21 +224,5 @@ class FileHandlerTest {
             // This should trigger flush.
         }
         assertEquals("infoerror", Files.readString(logFile));
-
-        // 2. Test flush every N entries
-        Files.delete(logFile);
-        try (FileHandler handler = new FileHandler("test", logFile, false)) {
-            handler.setPattern(LogPattern.parse("%msg"));
-            handler.setFlushLevel(LogLevel.ERROR); // Only flush ERROR or higher
-            handler.setFlushEveryNEntries(3);
-
-            handler.handle(Instant.now(), "test", LogLevel.INFO, null, null, LOC, () -> "1", null);
-            handler.handle(Instant.now(), "test", LogLevel.INFO, null, null, LOC, () -> "2", null);
-            // No flush yet
-
-            handler.handle(Instant.now(), "test", LogLevel.INFO, null, null, LOC, () -> "3", null);
-            // This should trigger flush (3rd entry)
-        }
-        assertEquals("123", Files.readString(logFile));
     }
 }
