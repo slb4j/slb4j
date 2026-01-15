@@ -1,6 +1,7 @@
 package org.slb4j;
 
 import org.slb4j.handler.FileHandler;
+import org.slb4j.handler.RotatingFileHandler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -31,8 +32,8 @@ class LoggingConfigurationTest {
                 .findFirst()
                 .orElseThrow();
 
-        assertInstanceOf(FileHandler.class, handler);
-        FileHandler fileHandler = (FileHandler) handler;
+        assertInstanceOf(RotatingFileHandler.class, handler);
+        RotatingFileHandler fileHandler = (RotatingFileHandler) handler;
         
         assertEquals(logFile.toAbsolutePath(), fileHandler.getPath().toAbsolutePath());
         assertFalse(fileHandler.isAppend());
@@ -40,7 +41,7 @@ class LoggingConfigurationTest {
         assertEquals(1024L, fileHandler.getMaxFileSize());
         assertNotNull(fileHandler.getRotationTimeUnit());
         assertEquals(5, fileHandler.getMaxBackupIndex());
-        assertEquals("%m%n", fileHandler.getPattern());
+        assertEquals("%m%n", fileHandler.getPattern().getPattern());
 
         // Test addToProperties
         Properties outProps = new Properties();

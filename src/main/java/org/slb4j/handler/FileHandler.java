@@ -46,9 +46,9 @@ import java.util.function.Supplier;
  */
 public class FileHandler extends AbstractFileHandler {
 
-    public static final StandardOpenOption[] OPTIONS_APPEND = {StandardOpenOption.CREATE, StandardOpenOption.APPEND};
-    public static final StandardOpenOption[] OPTIONS_CREATE = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
-    private @Nullable String filePattern;
+    private static final StandardOpenOption[] OPTIONS_APPEND = {StandardOpenOption.CREATE, StandardOpenOption.APPEND};
+    private static final StandardOpenOption[] OPTIONS_CREATE = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
+
     private volatile LogPattern logPattern = LogPattern.DEFAULT_PATTERN;
     private volatile LogFilter filter = LogFilter.allPass();
 

@@ -29,7 +29,7 @@ import java.util.Objects;
  * A log handler that writes log entries to a file.
  * It supports log rotation triggered by file size, number of entries, or time.
  */
-abstract class AbstractFileHandler implements LogHandler, AutoCloseable {
+public abstract class AbstractFileHandler implements LogHandler, AutoCloseable {
 
     private final String name;
     private final Object lock = new Object();
@@ -37,8 +37,6 @@ abstract class AbstractFileHandler implements LogHandler, AutoCloseable {
     protected volatile LogPattern logPattern = LogPattern.DEFAULT_PATTERN;
     protected volatile LogFilter filter = LogFilter.allPass();
     protected LogLevel flushLevel = LogLevel.TRACE;
-
-    private @Nullable Writer out;
 
     /**
      * Constructs a new FileHandler.
@@ -100,9 +98,9 @@ abstract class AbstractFileHandler implements LogHandler, AutoCloseable {
      * Gets the log pattern.
      * @return the log pattern string
      */
-    public String getPattern() {
+    public LogPattern getPattern() {
         synchronized (lock) {
-            return logPattern.getPattern();
+            return logPattern;
         }
     }
 

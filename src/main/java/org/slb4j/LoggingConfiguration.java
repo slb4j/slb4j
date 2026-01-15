@@ -16,8 +16,10 @@
 package org.slb4j;
 
 import org.slb4j.filter.LoggerNamePrefixFilter;
+import org.slb4j.handler.AbstractFileHandler;
 import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.handler.FileHandler;
+import org.slb4j.handler.RotatingFileHandler;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -291,7 +293,7 @@ public final class LoggingConfiguration {
                 Path path = Paths.get(sPath);
                 boolean append = Boolean.parseBoolean(properties.getProperty(prefix + LOGGER_FILE_APPEND, "true").strip());
                 try {
-                    FileHandler fileHandler = new FileHandler(name, path, append);
+                    RotatingFileHandler fileHandler = new RotatingFileHandler(name, path, append);
                     handleProperty(properties, prefix + LOGGER_FILE_PATTERN, s -> s, fileHandler::setFilePattern, () -> null);
                     handleProperty(properties, prefix + LOGGER_FILE_MAX_SIZE, s -> parseSize(s), fileHandler::setMaxFileSize, () -> -1L);
                     handleProperty(properties, prefix + LOGGER_FILE_MAX_BACKUPS, Integer::parseInt, fileHandler::setMaxBackupIndex, () -> 1);
@@ -314,7 +316,7 @@ public final class LoggingConfiguration {
                 LogPattern::parse, p -> {
                     if (handler instanceof ConsoleHandler consoleHandler) {
                         consoleHandler.setPattern(p);
-                    } else if (handler instanceof FileHandler fileHandler) {
+                    } else if (handler instanceof AbstractFileHandler fileHandler) {
                         fileHandler.setPattern(p);
                     }
                 },
@@ -389,6 +391,11 @@ public final class LoggingConfiguration {
                     properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, consoleHandler.getPattern().getPattern());
                 }
                 case FileHandler fileHandler -> {
+                    properties.setProperty(prefix + LOGGING_TYPE, "File");
+                    properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
+                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getPattern().getPattern());
+                }
+                case RotatingFileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, fileHandler.getMaxFileSize() > 0 ? "RollingFile" : "File");
                     properties.setProperty(prefix + LOGGER_FILE_NAME, fileHandler.getPath().toString());
                     properties.setProperty(prefix + LOGGER_FILE_APPEND, String.valueOf(fileHandler.isAppend()));
@@ -400,7 +407,7 @@ public final class LoggingConfiguration {
                         properties.setProperty(prefix + LOGGER_FILE_MAX_BACKUPS, String.valueOf(fileHandler.getMaxBackupIndex()));
                     }
                     properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
-                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getPattern());
+                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getPattern().getPattern());
                 }
                 default -> {
                     // do nothing
