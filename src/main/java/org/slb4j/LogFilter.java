@@ -52,7 +52,7 @@ public interface LogFilter {
      */
     static LogFilter combine(LogFilter... filters) {
         LogFilter filter = allPass();
-        for (LogFilter next  : filters) {
+        for (LogFilter next : filters) {
             filter = filter.andThen(next);
         }
         return filter;

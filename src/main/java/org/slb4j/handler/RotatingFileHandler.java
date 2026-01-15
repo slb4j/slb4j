@@ -18,11 +18,11 @@ package org.slb4j.handler;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogFilter;
-import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.LogPattern;
 import org.slb4j.MDC;
 import org.slb4j.support.CountingOutputStream;
+import org.slb4j.support.Util;
 
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -35,7 +35,6 @@ import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Arrays;
-import java.util.Objects;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
@@ -221,7 +220,7 @@ public class RotatingFileHandler extends AbstractFileHandler {
                     try {
                         logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
                     } catch (IOException e) {
-                        System.err.println("Error writing log entry: " + e.getMessage());
+                        Util.err().println("Error writing log entry: " + e.getMessage());
                     }
                     currentEntries++;
                 }
@@ -233,7 +232,7 @@ public class RotatingFileHandler extends AbstractFileHandler {
                         try {
                             out.flush();
                         } catch (IOException e) {
-                            System.err.println("Error flushing log file: " + e.getMessage());
+                            Util.err().println("Error flushing log file: " + e.getMessage());
                         }
                     }
                 }
@@ -250,7 +249,7 @@ public class RotatingFileHandler extends AbstractFileHandler {
             try {
                 rotate();
             } catch (IOException e) {
-                System.err.println("Error during log rotation: " + e.getMessage());
+                Util.err().println("Error during log rotation: " + e.getMessage());
             }
         }
     }
@@ -315,23 +314,13 @@ public class RotatingFileHandler extends AbstractFileHandler {
     }
 
     @Override
-    public void setFilter(LogFilter filter) {
-        super.setFilter(filter);
-    }
-
-    @Override
-    public LogFilter getFilter() {
-        return super.getFilter();
-    }
-
-    @Override
     public void close() {
         synchronized (lock()) {
             if (out != null) {
                 try {
                     out.close();
                 } catch (IOException e) {
-                    System.err.println("Error closing log file: " + e.getMessage());
+                    Util.err().println("Error closing log file: " + e.getMessage());
                 }
                 out = null;
             }

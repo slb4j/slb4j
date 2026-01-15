@@ -15,14 +15,12 @@
  */
 package org.slb4j.handler;
 
-import org.jspecify.annotations.Nullable;
 import org.slb4j.LogFilter;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.LogPattern;
 
 import java.io.IOException;
-import java.io.Writer;
 import java.util.Objects;
 
 /**
@@ -42,11 +40,9 @@ public abstract class AbstractFileHandler implements LogHandler, AutoCloseable {
      * Constructs a new FileHandler.
      *
      * @param name   the name of the handler
-     * @param path   the path to the log file
-     * @param append if true, then bytes will be written to the end of the file rather than the beginning
      * @throws IOException if the file cannot be opened
      */
-    public AbstractFileHandler(String name) throws IOException {
+    protected AbstractFileHandler(String name) throws IOException {
         this.name = name;
     }
 

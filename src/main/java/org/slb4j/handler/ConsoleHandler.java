@@ -24,6 +24,7 @@ import org.slb4j.MDC;
 import org.slb4j.support.AnsiCode;
 import org.slb4j.LocationResolver;
 import org.jspecify.annotations.Nullable;
+import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.io.PrintStream;
@@ -120,7 +121,7 @@ public final class ConsoleHandler implements LogHandler {
                     logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
                 }
             } catch (IOException e) {
-                System.err.println("Error writing log entry: " + e.getMessage());
+                Util.err().println("Error writing log entry: " + e.getMessage());
             }
         }
     }

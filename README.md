@@ -47,3 +47,14 @@ Status
 
 ### Later
 - [ ] JSON output format
+- [ ] Read back JSON logs for later analysis
+
+### Not planned
+
+- Async loggers: I see no general use case for async logging. For console logging,
+  there should be no need - it is fast enough. For file appenders, you will finally
+  hit the hard limit of disk I/O. IMHO it would only be useful when the application
+  from time to time has log bursts that exceed what the filesystem can handle, but
+  if the log rate constantly is higher, ultimatively messages have to be dropped or
+  the application thread will be blocked until the filesystem can catch up. Given the
+  added cost, I think this is usually not worth it.

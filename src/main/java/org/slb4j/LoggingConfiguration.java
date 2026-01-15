@@ -295,7 +295,7 @@ public final class LoggingConfiguration {
                 try {
                     RotatingFileHandler fileHandler = new RotatingFileHandler(name, path, append);
                     handleProperty(properties, prefix + LOGGER_FILE_PATTERN, s -> s, fileHandler::setFilePattern, () -> null);
-                    handleProperty(properties, prefix + LOGGER_FILE_MAX_SIZE, s -> parseSize(s), fileHandler::setMaxFileSize, () -> -1L);
+                    handleProperty(properties, prefix + LOGGER_FILE_MAX_SIZE, LoggingConfiguration::parseSize, fileHandler::setMaxFileSize, () -> -1L);
                     handleProperty(properties, prefix + LOGGER_FILE_MAX_BACKUPS, Integer::parseInt, fileHandler::setMaxBackupIndex, () -> 1);
                     handleProperty(properties, prefix + LOGGER_FILE_TIME_INTERVAL, s -> {
                         // For now, we only support basic time rotation if an interval is set,

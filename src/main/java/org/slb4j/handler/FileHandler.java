@@ -21,6 +21,7 @@ import org.slb4j.LogPattern;
 import org.slb4j.MDC;
 import org.slb4j.LocationResolver;
 import org.jspecify.annotations.Nullable;
+import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -67,14 +68,14 @@ public final class FileHandler extends AbstractFileHandler {
                     logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
                 }
             } catch (IOException e) {
-                System.err.println("Error writing log entry: " + e.getMessage());
+                Util.err().println("Error writing log entry: " + e.getMessage());
             }
 
             if (lvl.ordinal() >= flushLevel.ordinal()) {
                 try {
                     out.flush();
                 } catch (IOException e) {
-                    System.err.println("Error flushing log file: " + e.getMessage());
+                    Util.err().println("Error flushing log file: " + e.getMessage());
                 }
             }
         }
@@ -86,7 +87,7 @@ public final class FileHandler extends AbstractFileHandler {
             try {
                 out.close();
             } catch (IOException e) {
-                System.err.println("Error closing log file: " + e.getMessage());
+                Util.err().println("Error closing log file: " + e.getMessage());
             }
         }
     }

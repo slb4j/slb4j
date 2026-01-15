@@ -17,6 +17,7 @@ package org.slb4j;
 
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.frontend.jul.JulHandler;
+import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -125,7 +126,7 @@ public final class SLB4J {
             }
         } catch (IOException e) {
             // write stacktrace to stderr because logging has not been initialized yet
-            e.printStackTrace(System.err);
+            e.printStackTrace(Util.err());
             return Optional.empty();
         }
     }

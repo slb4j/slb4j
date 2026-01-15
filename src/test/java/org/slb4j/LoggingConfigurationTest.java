@@ -1,6 +1,5 @@
 package org.slb4j;
 
-import org.slb4j.handler.FileHandler;
 import org.slb4j.handler.RotatingFileHandler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
