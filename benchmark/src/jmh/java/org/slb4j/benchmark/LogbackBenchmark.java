@@ -25,7 +25,7 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
     @Override
     protected void setupLogging() throws IOException {
         tempFile = Files.createTempFile("logback-bench", ".log");
-        
+
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.reset();
 
@@ -58,7 +58,7 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
         log4jLogger = org.apache.logging.log4j.LogManager.getLogger(LogbackBenchmark.class);
         julLogger = java.util.logging.Logger.getLogger(LogbackBenchmark.class.getName());
         jclLogger = org.apache.commons.logging.LogFactory.getLog(LogbackBenchmark.class);
-        
+
         if ("MDC".equals(format)) {
             org.slf4j.MDC.put("userId", "benchUser");
         }

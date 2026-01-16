@@ -28,7 +28,7 @@ public abstract class AbstractLoggingBenchmark {
     public String format;   // Will be set in subclasses
 
     protected String logMessage;
-    
+
     protected PrintStream originalOut;
     protected PrintStream originalErr;
     protected FileOutputStream fileOut;
@@ -60,8 +60,8 @@ public abstract class AbstractLoggingBenchmark {
     protected void updateLogMessage(org.openjdk.jmh.infra.BenchmarkParams params, String category, String format) {
         String benchmarkName = params.getBenchmark();
         String frontend = benchmarkName.substring(benchmarkName.lastIndexOf('.') + 1);
-        logMessage = String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", 
-            backend, frontend, category, format, messageType);
+        logMessage = String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s",
+                backend, frontend, category, format, messageType);
     }
 
     @TearDown(Level.Trial)
@@ -75,6 +75,7 @@ public abstract class AbstractLoggingBenchmark {
     }
 
     protected abstract void setupLogging() throws IOException;
+
     protected abstract void tearDownLogging();
 
 

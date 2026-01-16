@@ -20,11 +20,6 @@ public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
     @Param("SIMPLE")
     public String format;
 
-    private org.slf4j.Logger slf4jLogger;
-    private org.apache.logging.log4j.Logger log4jLogger;
-    private Logger julLogger;
-    private org.apache.commons.logging.Log jclLogger;
-    
     private Path tempFile;
     private FileHandler fileHandler;
 

@@ -34,7 +34,7 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
         SLB4J.init();
 
         tempFile = Files.createTempFile("slb4j-bench", ".log");
-        
+
         LogPattern pattern = switch (format) {
             case "MDC" -> LogPattern.parse("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger [%X{userId}] - %msg%n");
             case "MARKER" -> LogPattern.parse("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger (%marker) - %msg%n");
@@ -60,7 +60,7 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
         log4jLogger = org.apache.logging.log4j.LogManager.getLogger(Slb4jBenchmark.class);
         julLogger = java.util.logging.Logger.getLogger(Slb4jBenchmark.class.getName());
         jclLogger = org.apache.commons.logging.LogFactory.getLog(Slb4jBenchmark.class);
-        
+
         if ("MDC".equals(format)) {
             org.slf4j.MDC.put("userId", "benchUser");
         }

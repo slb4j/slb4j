@@ -33,7 +33,7 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
 
         // Note: For simplicity, we are using a single config file and the parameters are not fully reflected 
         // in Log4j2 config yet. In a real benchmark, we should programmatically configure Log4j2.
-        
+
         // Ensure Log4j2 is initialized
         Configurator.reconfigure();
 
@@ -41,7 +41,7 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
         log4jLogger = LogManager.getLogger(Log4jBenchmark.class);
         julLogger = java.util.logging.Logger.getLogger(Log4jBenchmark.class.getName());
         jclLogger = org.apache.commons.logging.LogFactory.getLog(Log4jBenchmark.class);
-        
+
         slf4jMarker = MarkerFactory.getMarker("BENCH");
         log4jMarker = org.apache.logging.log4j.MarkerManager.getMarker("BENCH");
 
