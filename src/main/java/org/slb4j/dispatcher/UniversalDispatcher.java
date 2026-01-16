@@ -25,11 +25,9 @@ import org.slb4j.MDC;
 import org.slb4j.support.StackWalkerLocationResolver;
 import org.jspecify.annotations.Nullable;
 
-import java.lang.ref.WeakReference;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
@@ -71,11 +69,9 @@ public final class UniversalDispatcher implements LogDispatcher {
     private LogFilter filter = LogFilter.allPass();
 
     /**
-     * A thread-safe list of weak references to LogHandler instances. This guarantees that the handlers
-     * can be accessed concurrently without external synchronization and minimizes memory retention by
-     * allowing garbage collection of handlers no longer in use.
+     * A thread-safe list of LogHandler instances.
      */
-    private final List<WeakReference<LogHandler>> handlers = new CopyOnWriteArrayList<>();
+    private final List<LogHandler> handlers = new CopyOnWriteArrayList<>();
 
     /**
      * Default constructor for the CommonDispatcher class.
@@ -111,12 +107,12 @@ public final class UniversalDispatcher implements LogDispatcher {
 
     @Override
     public void addLogHandler(LogHandler handler) {
-        handlers.add(new WeakReference<>(handler));
+        handlers.add(handler);
     }
 
     @Override
     public synchronized void removeLogHandler(LogHandler handler) {
-        handlers.removeIf(h -> h.get() == handler);
+        handlers.remove(handler);
     }
 
     @Override
@@ -131,7 +127,7 @@ public final class UniversalDispatcher implements LogDispatcher {
 
     @Override
     public Collection<LogHandler> getLogHandlers() {
-        return List.copyOf(handlers.stream().map(WeakReference::get).filter(Objects::nonNull).toList());
+        return List.copyOf(handlers);
     }
 
     /**
@@ -150,9 +146,8 @@ public final class UniversalDispatcher implements LogDispatcher {
      */
     public void filterAndDispatch(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver locationResolver, Supplier<String> msg, @Nullable Throwable t) {
         if (filter.test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
-            for (WeakReference<LogHandler> handlerRef : handlers) {
-                LogHandler handler = handlerRef.get();
-                if (handler != null && handler.isEnabled(lvl)) {
+            for (LogHandler handler : handlers) {
+                if (handler.isEnabled(lvl)) {
                     handler.handle(instant, loggerName, lvl, mrk, mdc, locationResolver, msg, t);
                 }
             }
