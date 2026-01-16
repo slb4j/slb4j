@@ -26,5 +26,11 @@ jobs:
           java-package: 'jdk+fx'
           cache: 'gradle'
 
+      - name: Start xvfb
+        if: runner.os == 'Linux'
+        run: Xvfb :99 -screen 0 1024x768x24 > /dev/null 2>&1 &
+
       - name: Build with Gradle
         run: ./gradlew build
+        env:
+          DISPLAY: ":99"
