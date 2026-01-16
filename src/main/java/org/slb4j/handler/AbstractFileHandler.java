@@ -15,20 +15,32 @@
  */
 package org.slb4j.handler;
 
+import org.jspecify.annotations.Nullable;
 import org.slb4j.LogFilter;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.LogPattern;
+import org.slb4j.support.IoStringBuilder;
 
 import java.io.IOException;
+import java.nio.file.StandardOpenOption;
 import java.util.Objects;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 /**
  * A log handler that writes log entries to a file.
  * It supports log rotation triggered by file size, number of entries, or time.
  */
-public abstract class AbstractFileHandler implements LogHandler, AutoCloseable {
+public abstract sealed class AbstractFileHandler implements LogHandler, AutoCloseable permits FileHandler, RotatingFileHandler {
 
+    protected static final int BUFFER_COUNT = 8;
+    protected static final int BUFFER_SIZE = 4096;
+
+    static final StandardOpenOption[] OPTIONS_APPEND = {StandardOpenOption.CREATE, StandardOpenOption.APPEND};
+    static final StandardOpenOption[] OPTIONS_CREATE = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
+
+    private final BlockingQueue<IoStringBuilder> bufferList;
     private final String name;
     private final Object lock = new Object();
 
@@ -44,6 +56,11 @@ public abstract class AbstractFileHandler implements LogHandler, AutoCloseable {
      */
     protected AbstractFileHandler(String name) throws IOException {
         this.name = name;
+        this.bufferList = new ArrayBlockingQueue<>(BUFFER_COUNT);
+        for (int i = 0; i < BUFFER_COUNT; i++) {
+            bufferList.add(new IoStringBuilder(BUFFER_SIZE));
+        }
+
     }
 
     @Override
@@ -51,8 +68,39 @@ public abstract class AbstractFileHandler implements LogHandler, AutoCloseable {
         return name;
     }
 
+    /**
+     * Provides access to the lock object used for synchronization in this handler.
+     *
+     * @return the lock object used for synchronizing access to critical sections of the handler
+     */
     protected final Object lock() {
         return lock;
+    }
+
+    /**
+     * Retrieves a reusable {@code IoStringBuilder} instance from the internal buffer pool.
+     * This method blocks if no buffers are currently available, waiting until one becomes free.
+     *
+     * @return an {@code IoStringBuilder} instance from the buffer pool
+     * @throws InterruptedException if the current thread is interrupted while waiting for a buffer
+     */
+    protected IoStringBuilder acquireBuffer() throws InterruptedException {
+        return bufferList.take();
+    }
+
+    /**
+     * Releases the specified {@code IoStringBuilder} buffer, resetting its state
+     * and adding it back to the internal buffer pool for reuse.
+     *
+     * @param buffer the {@code IoStringBuilder} buffer to be released; can be null.
+     *               If null, the method performs no operation.
+     */
+    protected void releaseBuffer(@Nullable IoStringBuilder buffer) {
+        if (buffer != null) {
+            buffer.reset(0);
+            boolean added = bufferList.offer(buffer);
+            assert added : "internal error: buffer not added back to queue, this should never happen";
+        }
     }
 
     /**

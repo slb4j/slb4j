@@ -17,11 +17,10 @@ package org.slb4j.handler;
 
 import org.jspecify.annotations.Nullable;
 import org.slb4j.LocationResolver;
-import org.slb4j.LogFilter;
 import org.slb4j.LogLevel;
-import org.slb4j.LogPattern;
 import org.slb4j.MDC;
 import org.slb4j.support.CountingOutputStream;
+import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
 
 import java.io.BufferedOutputStream;
@@ -34,7 +33,6 @@ import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
@@ -42,7 +40,7 @@ import java.util.function.Supplier;
  * A log handler that writes log entries to a file.
  * It supports log rotation triggered by file size, number of entries, or time.
  */
-public class RotatingFileHandler extends AbstractFileHandler {
+public final class RotatingFileHandler extends AbstractFileHandler {
 
     private final Path path;
     private final boolean append;
@@ -84,21 +82,16 @@ public class RotatingFileHandler extends AbstractFileHandler {
                 Files.createDirectories(parent);
             }
 
-            StandardOpenOption[] options;
-            if (append) {
-                options = new StandardOpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.APPEND};
-            } else {
-                options = new StandardOpenOption[]{StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
-            }
-
-            this.out = newWriter(options);
+            this.out = newWriter(append);
             updateNextRotationTime();
         }
     }
 
-    private Writer newWriter(StandardOpenOption[] options) throws IOException {
+    private Writer newWriter(boolean append) throws IOException {
         synchronized (lock()) {
-            if (Arrays.asList(options).contains(StandardOpenOption.APPEND) && Files.exists(path)) {
+            StandardOpenOption[] openOptions = append ? OPTIONS_APPEND : OPTIONS_CREATE;
+
+            if (append && Files.exists(path)) {
                 currentSize.reset();
                 currentSize.add(Files.size(path));
                 currentEntries = countLines(path);
@@ -109,7 +102,7 @@ public class RotatingFileHandler extends AbstractFileHandler {
 
             return new OutputStreamWriter(
                     new CountingOutputStream(
-                            new BufferedOutputStream(Files.newOutputStream(path, options)),
+                            new BufferedOutputStream(Files.newOutputStream(path, openOptions)),
                             currentSize
                     ),
                     StandardCharsets.UTF_8
@@ -201,42 +194,36 @@ public class RotatingFileHandler extends AbstractFileHandler {
         }
     }
 
-    /**
-     * Sets the log level at which a flush is triggered.
-     *
-     * @param flushLevel the minimum log level to trigger a flush
-     */
-    @Override
-    public void setFlushLevel(LogLevel flushLevel) {
-        super.setFlushLevel(flushLevel);
-    }
-
     @Override
     public void handle(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
         if (getFilter().test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
-            synchronized (lock()) {
-                checkRotation(instant);
-                if (out != null) {
-                    try {
-                        logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
-                    } catch (IOException e) {
-                        Util.err().println("Error writing log entry: " + e.getMessage());
-                    }
-                    currentEntries++;
-                }
-            }
-
-            if (lvl.ordinal() >= getFlushLevel().ordinal()) {
+            IoStringBuilder buffer = null;
+            try {
+                buffer = acquireBuffer();
+                logPattern.formatLogEntry(buffer, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
                 synchronized (lock()) {
+                    checkRotation(instant);
                     if (out != null) {
-                        try {
-                            out.flush();
-                        } catch (IOException e) {
-                            Util.err().println("Error flushing log file: " + e.getMessage());
+                        buffer.writeTo(out);
+
+                        if (lvl.ordinal() >= flushLevel.ordinal()) {
+                            try {
+                                out.flush();
+                            } catch (IOException e) {
+                                Util.err().println("Error flushing log file: " + e.getMessage());
+                            }
                         }
                     }
                 }
+            } catch (IOException e) {
+                Util.err().println("Error writing log entry: " + e.getMessage());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                Util.err().println("Logging thread interrupted: " + e.getMessage());
+            } finally {
+                releaseBuffer(buffer);
             }
+            currentEntries++;
         }
     }
 
@@ -324,28 +311,6 @@ public class RotatingFileHandler extends AbstractFileHandler {
                 }
                 out = null;
             }
-        }
-    }
-
-    /**
-     * Sets the log pattern.
-     * @param logPattern the log pattern string
-     */
-    @Override
-    public void setPattern(LogPattern logPattern) {
-        synchronized (lock()) {
-            this.logPattern = logPattern;
-        }
-    }
-
-    /**
-     * Gets the log pattern.
-     * @return the log pattern string
-     */
-    @Override
-    public LogPattern getPattern() {
-        synchronized (lock()) {
-            return logPattern;
         }
     }
 

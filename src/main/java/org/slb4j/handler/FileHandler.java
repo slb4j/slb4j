@@ -15,7 +15,6 @@
  */
 package org.slb4j.handler;
 
-import org.slb4j.LogFilter;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.slb4j.LocationResolver;
@@ -27,10 +26,7 @@ import java.io.IOException;
 import java.io.Writer;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 import java.util.function.Supplier;
 
 /**
@@ -39,17 +35,7 @@ import java.util.function.Supplier;
  */
 public final class FileHandler extends AbstractFileHandler {
 
-    private static final int BUFFER_COUNT = 8;
-    private static final int BUFFER_SIZE = 4096;
-
-    private static final StandardOpenOption[] OPTIONS_APPEND = {StandardOpenOption.CREATE, StandardOpenOption.APPEND};
-    private static final StandardOpenOption[] OPTIONS_CREATE = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
-
-    private volatile LogFilter filter = LogFilter.allPass();
-
     private final Writer out;
-
-    private final BlockingQueue<IoStringBuilder> bufferList;
 
     /**
      * Constructs a new FileHandler.
@@ -62,13 +48,7 @@ public final class FileHandler extends AbstractFileHandler {
     public FileHandler(String name, Path path, boolean append) throws IOException {
         super(name);
 
-        bufferList = new ArrayBlockingQueue<>(BUFFER_COUNT);
-        for (int i = 0; i < BUFFER_COUNT; i++) {
-            bufferList.add(new IoStringBuilder(BUFFER_SIZE));
-        }
-
-        StandardOpenOption[] options = append ? OPTIONS_APPEND : OPTIONS_CREATE;
-        this.out = Files.newBufferedWriter(path, options);
+        this.out = Files.newBufferedWriter(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
     }
 
     @Override
@@ -76,7 +56,7 @@ public final class FileHandler extends AbstractFileHandler {
         if (filter.test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
             IoStringBuilder buffer = null;
             try {
-                buffer = bufferList.take();
+                buffer = acquireBuffer();
                 logPattern.formatLogEntry(buffer, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
                 synchronized (lock()) {
                     buffer.writeTo(out);
@@ -95,11 +75,7 @@ public final class FileHandler extends AbstractFileHandler {
                 Thread.currentThread().interrupt();
                 Util.err().println("Logging thread interrupted: " + e.getMessage());
             } finally {
-                if (buffer != null) {
-                    buffer.reset(0);
-                    boolean added = bufferList.offer(buffer);
-                    assert added : "internal error: buffer not added back to queue, this should never happen";
-                }
+                releaseBuffer(buffer);
             }
         }
     }
