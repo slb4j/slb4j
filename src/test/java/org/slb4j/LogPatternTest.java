@@ -103,7 +103,7 @@ class LogPatternTest {
     )
     void testPattern(String pattern, String expected) throws IOException {
         String threadName = Thread.currentThread().getName();
-        String updatedExpected = expected.replace("main", threadName);
+        String updatedExpected = expected.replace("main", threadName).replaceAll("\n", System.lineSeparator());
         LogPattern fmt = LogPattern.parse(pattern);
 
         Instant instant = LocalDateTime.of(2026, 1, 10, 14, 23, 41, 123_000_000)
