@@ -17,10 +17,10 @@ package org.slb4j.handler;
 
 import org.slb4j.LogFilter;
 import org.slb4j.LogLevel;
-import org.slb4j.LogPattern;
 import org.slb4j.MDC;
 import org.slb4j.LocationResolver;
 import org.jspecify.annotations.Nullable;
+import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
 
 import java.io.IOException;
@@ -29,6 +29,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.function.Supplier;
 
 /**
@@ -37,13 +39,17 @@ import java.util.function.Supplier;
  */
 public final class FileHandler extends AbstractFileHandler {
 
+    private static final int BUFFER_COUNT = 8;
+    private static final int BUFFER_SIZE = 4096;
+
     private static final StandardOpenOption[] OPTIONS_APPEND = {StandardOpenOption.CREATE, StandardOpenOption.APPEND};
     private static final StandardOpenOption[] OPTIONS_CREATE = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
 
-    private volatile LogPattern logPattern = LogPattern.DEFAULT_PATTERN;
     private volatile LogFilter filter = LogFilter.allPass();
 
     private final Writer out;
+
+    private final BlockingQueue<IoStringBuilder> bufferList;
 
     /**
      * Constructs a new FileHandler.
@@ -56,6 +62,11 @@ public final class FileHandler extends AbstractFileHandler {
     public FileHandler(String name, Path path, boolean append) throws IOException {
         super(name);
 
+        bufferList = new ArrayBlockingQueue<>(BUFFER_COUNT);
+        for (int i = 0; i < BUFFER_COUNT; i++) {
+            bufferList.add(new IoStringBuilder(BUFFER_SIZE));
+        }
+
         StandardOpenOption[] options = append ? OPTIONS_APPEND : OPTIONS_CREATE;
         this.out = Files.newBufferedWriter(path, options);
     }
@@ -63,19 +74,31 @@ public final class FileHandler extends AbstractFileHandler {
     @Override
     public void handle(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
         if (filter.test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
+            IoStringBuilder buffer = null;
             try {
+                buffer = bufferList.take();
+                logPattern.formatLogEntry(buffer, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
                 synchronized (lock()) {
-                    logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
+                    buffer.writeTo(out);
+
+                    if (lvl.ordinal() >= flushLevel.ordinal()) {
+                        try {
+                            out.flush();
+                        } catch (IOException e) {
+                            Util.err().println("Error flushing log file: " + e.getMessage());
+                        }
+                    }
                 }
             } catch (IOException e) {
                 Util.err().println("Error writing log entry: " + e.getMessage());
-            }
-
-            if (lvl.ordinal() >= flushLevel.ordinal()) {
-                try {
-                    out.flush();
-                } catch (IOException e) {
-                    Util.err().println("Error flushing log file: " + e.getMessage());
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                Util.err().println("Logging thread interrupted: " + e.getMessage());
+            } finally {
+                if (buffer != null) {
+                    buffer.reset(0);
+                    boolean added = bufferList.offer(buffer);
+                    assert added : "internal error: buffer not added back to queue, this should never happen";
                 }
             }
         }
