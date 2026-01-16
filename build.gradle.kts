@@ -78,16 +78,13 @@ dependencies {
 
 tasks.test {
     useJUnitPlatform()
-    val samples = listOf("all", "jul", "jcl", "log4j", "slf4j")
-    dependsOn(samples.map { ":samples:$it:classes" })
-
-    doFirst {
-        samples.forEach { sample ->
-            systemProperty("slb4j.sample.classes.$sample", project(":samples:$sample").layout.buildDirectory.dir("classes/java/main").get().asFile.absolutePath)
-            systemProperty("slb4j.sample.resources.$sample", project(":samples:$sample").layout.buildDirectory.dir("resources/main").get().asFile.absolutePath)
-        }
-        systemProperty("slb4j.main.classes", project.layout.buildDirectory.dir("classes/java/main").get().asFile.absolutePath)
-    }
+    dependsOn(
+        ":samples:all:classes",
+        ":samples:jul:classes",
+        ":samples:jcl:classes",
+        ":samples:log4j:classes",
+        ":samples:slf4j:classes"
+    )
 }
 
 val jacocoTestReport by tasks.getting(JacocoReport::class) {
@@ -222,9 +219,6 @@ allprojects {
 
     // SpotBugs for non-BOM projects
     if (!project.name.endsWith("-bom") && pluginManager.hasPlugin("com.github.spotbugs")) {
-        tasks.named<Test>("test") {
-            dependsOn(tasks.named("spotbugsTest"))
-        }
 
         // === SPOTBUGS ===
         configure<com.github.spotbugs.snom.SpotBugsExtension> {
