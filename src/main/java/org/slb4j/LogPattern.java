@@ -317,25 +317,13 @@ public final class LogPattern {
         }
     }
 
-    private static String abbreviate(String name, int abbreviationLength, boolean useDotAbbreviation) {
+    private static CharSequence abbreviate(String name, int abbreviationLength, boolean useDotAbbreviation) {
         if (abbreviationLength <= 0 && !useDotAbbreviation) {
             return name;
         }
         String[] parts = name.split("\\.");
         if (useDotAbbreviation) {
-            int length = abbreviationLength > 0 ? abbreviationLength : 1;
-            StringBuilder abbreviated = new StringBuilder();
-            for (int i = 0; i < parts.length - 1; i++) {
-                String part = parts[i];
-                if (part.length() > length) {
-                    abbreviated.append(part, 0, length);
-                } else {
-                    abbreviated.append(part);
-                }
-                abbreviated.append('.');
-            }
-            abbreviated.append(parts[parts.length - 1]);
-            return abbreviated.toString();
+            return joinAbbreviations(abbreviationLength, parts);
         }
         if (parts.length <= abbreviationLength) {
             return name;
@@ -347,7 +335,23 @@ public final class LogPattern {
             }
             abbreviated.append(parts[i]);
         }
-        return abbreviated.toString();
+        return abbreviated;
+    }
+
+    private static CharSequence joinAbbreviations(int abbreviationLength, String[] parts) {
+        int length = abbreviationLength > 0 ? abbreviationLength : 1;
+        StringBuilder abbreviated = new StringBuilder();
+        for (int i = 0; i < parts.length - 1; i++) {
+            String part = parts[i];
+            if (part.length() > length) {
+                abbreviated.append(part, 0, length);
+            } else {
+                abbreviated.append(part);
+            }
+            abbreviated.append('.');
+        }
+        abbreviated.append(parts[parts.length - 1]);
+        return abbreviated;
     }
 
     /**
