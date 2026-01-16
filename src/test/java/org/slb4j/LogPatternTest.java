@@ -158,7 +158,8 @@ class LogPatternTest {
         String actual = baos.toString(StandardCharsets.UTF_8);
 
         // Check if message and exception details are present
-        String expectedStart = "An error occurred\njava.lang.RuntimeException: Test exception\n";
+        String expectedStart = "An error occurred\njava.lang.RuntimeException: Test exception\n"
+                .replaceAll("\n", System.lineSeparator());
         assertEquals(expectedStart, actual.substring(0, expectedStart.length()));
         // Check if it contains some stack trace elements
         org.junit.jupiter.api.Assertions.assertTrue(actual.contains("at org.slb4j.LogPatternTest.testPatternWithThrowable"));
