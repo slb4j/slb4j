@@ -1,3 +1,20 @@
+/*
+ * Copyright 2026 Axel Howind - axh@dua3.com
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package org.slb4j.support;
+
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
@@ -20,10 +37,21 @@ public final class IoStringBuilder implements Appendable {
      */
     private static final int MIN_CAPACITY = 16;
 
+    private final int initialCapacity;
     /**
      * The buffer that provides the underlying character storage for this {@code IoStringBuilder}.
      */
     private CharBuffer buffer;
+
+    /**
+     * Constructs a new {@code IoStringBuilder} with a default initial capacity.
+     *
+     * This constructor initializes the underlying {@code CharBuffer} to the default
+     * minimum capacity defined by {@code MIN_CAPACITY}.
+     */
+    public IoStringBuilder() {
+        this(MIN_CAPACITY);
+    }
 
     /**
      * Constructs a new {@code IoStringBuilder} with the specified initial capacity.
@@ -33,7 +61,8 @@ public final class IoStringBuilder implements Appendable {
      * @throws IllegalArgumentException if the specified {@code initialCapacity} is negative
      */
     public IoStringBuilder(int initialCapacity) {
-        this.buffer = CharBuffer.allocate(Math.max(initialCapacity, MIN_CAPACITY));
+        this.initialCapacity = Math.max(initialCapacity, MIN_CAPACITY);
+        this.buffer = CharBuffer.allocate(initialCapacity);
     }
 
     /**
@@ -55,6 +84,56 @@ public final class IoStringBuilder implements Appendable {
             newBuffer.put(buffer);
             this.buffer = newBuffer;
         }
+    }
+
+    /**
+     * Appends the string representation of the specified integer to this {@code IoStringBuilder}.
+     *
+     * @param n the integer to be appended
+     * @return this {@code IoStringBuilder} instance, allowing for method chaining
+     */
+    public IoStringBuilder append(int n) {
+        return append(Integer.toString(n));
+    }
+
+    /**
+     * Appends the string representation of the specified {@code long} value to this {@code IoStringBuilder}.
+     *
+     * @param n the {@code long} value whose string representation is to be appended
+     * @return this {@code IoStringBuilder} instance with the appended content
+     */
+    public IoStringBuilder append(long n) {
+        return append(Long.toString(n));
+    }
+
+    /**
+     * Appends the string representation of the specified floating-point value to this {@code IoStringBuilder}.
+     *
+     * @param f the floating-point value to append
+     * @return this {@code IoStringBuilder} instance with the appended value
+     */
+    public IoStringBuilder append(float f) {
+        return append(Float.toString(f));
+    }
+
+    /**
+     * Appends the string representation of the specified double value to this {@code IoStringBuilder}.
+     *
+     * @param f the double value to be appended
+     * @return this {@code IoStringBuilder} instance, allowing for method chaining
+     */
+    public IoStringBuilder append(double f) {
+        return append(Double.toString(f));
+    }
+
+    /**
+     * Appends the string representation of the specified boolean value to this instance.
+     *
+     * @param b the boolean value to append
+     * @return this {@code IoStringBuilder} instance, allowing method chaining
+     */
+    public IoStringBuilder append(boolean b) {
+        return append(String.valueOf(b));
     }
 
     @Override
@@ -133,6 +212,15 @@ public final class IoStringBuilder implements Appendable {
     }
 
     /**
+     * Checks if the {@code IoStringBuilder} is empty.
+     *
+     * @return {@code true} if the buffer is empty, {@code false} otherwise
+     */
+    public boolean isEmpty() {
+        return buffer.position() == 0;
+    }
+
+    /**
      * Returns the character at the specified index.
      *
      * @param index the zero-based index of the character to return
@@ -159,6 +247,7 @@ public final class IoStringBuilder implements Appendable {
      * The internal buffer will be trimmed if the capacity exceeds the provided {@code maxCapacity}.
      */
     public void reset(int maxCapacity) {
+        maxCapacity = Math.max(maxCapacity, initialCapacity);
         if (buffer.capacity() <= maxCapacity) {
             buffer.clear();
         } else {
