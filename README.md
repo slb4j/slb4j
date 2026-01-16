@@ -59,7 +59,7 @@ static {
 
 SLB4J provides a unified logging interface, so you can remove other logging backends and bridge implementations from your project.
 
-Keep **only the frontends you use**:
+**Keep only the frontends you use**:
 
 | Frontend / API          | Artifact Name   | Description                                                                                                                     |
 |-------------------------|-----------------|---------------------------------------------------------------------------------------------------------------------------------|
@@ -68,7 +68,7 @@ Keep **only the frontends you use**:
 | java.util.logging (JUL) | (part of JDK)   | Built-in Java logging API since Java 1.4. Often bridged to SLF4J for consistent logging.                                        |
 | Commons Logging (JCL)   | commons-logging | Lightweight logging facade, mostly used in older libraries; usually bridged to SLF4J today.                                     |
 
-Remove **backends, bridges, and bindings** if you have them in your project:
+**Remove backends, bridges, and bindings** if you have them in your project:
 
 | Title                   | Artifact Name    | Description                            |
 |-------------------------|------------------|----------------------------------------|
@@ -104,10 +104,10 @@ Remove **backends, bridges, and bindings** if you have them in your project:
 - Filters
 - UI components for live monitoring
 - Benchmarks
+- Setup CI
 
 ### Todo
 
-- Setup CI
 - Publish to Maven Central
 - Publish Javadoc
 - Add benchmark results
