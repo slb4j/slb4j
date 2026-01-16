@@ -28,7 +28,6 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -69,14 +68,16 @@ class SamplesTest {
         String javaHome = System.getProperty("java.home");
         String javaBin = javaHome + File.separator + "bin" + File.separator + "java";
 
-        Path projectRoot = Objects.requireNonNull(Paths.get(System.getProperty("user.dir")));
-        if (projectRoot.endsWith("slb4j")) {
-            projectRoot = Objects.requireNonNull(projectRoot.getParent());
-        }
+        Path projectRoot = Paths.get(System.getProperty("user.dir"));
 
-        Path slb4jClasses = projectRoot.resolve("slb4j/build/classes/java/main");
-        Path sampleClasses = projectRoot.resolve("slb4j/samples/" + sampleName + "/build/classes/java/main");
-        Path sampleResources = projectRoot.resolve("slb4j/samples/" + sampleName + "/build/resources/main");
+        String slb4jClassesProp = System.getProperty("slb4j.main.classes");
+        Path slb4jClasses = slb4jClassesProp != null ? Paths.get(slb4jClassesProp) : projectRoot.resolve("build/classes/java/main");
+
+        String sampleClassesProp = System.getProperty("slb4j.sample.classes." + sampleName);
+        Path sampleClasses = sampleClassesProp != null ? Paths.get(sampleClassesProp) : projectRoot.resolve("samples/" + sampleName + "/build/classes/java/main");
+
+        String sampleResourcesProp = System.getProperty("slb4j.sample.resources." + sampleName);
+        Path sampleResources = sampleResourcesProp != null ? Paths.get(sampleResourcesProp) : projectRoot.resolve("samples/" + sampleName + "/build/resources/main");
 
         String classpath = System.getProperty("java.class.path");
         String combinedClasspath = String.join(File.pathSeparator,
@@ -98,7 +99,7 @@ class SamplesTest {
             if (arg.startsWith("-javaagent:") && arg.contains("jacoco")) {
                 String jacocoArg = arg;
                 if (jacocoArg.contains("destfile=")) {
-                    Path execFile = projectRoot.resolve("slb4j/build/jacoco/samples-" + sampleName + ".exec");
+                    Path execFile = projectRoot.resolve("build/jacoco/samples-" + sampleName + ".exec");
                     jacocoArg = jacocoArg.replaceAll("destfile=[^,]+", "destfile=" + execFile);
                 }
                 // Exclude Log4j from instrumentation to avoid initialization issues
