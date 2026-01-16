@@ -29,7 +29,6 @@ public class SwingLogPaneSample {
     private static final Log JCL_LOGGER = LogFactory.getLog("JCL." + SwingLogPaneSample.class.getName());
     private static final java.util.logging.Logger JUL_LOGGER = java.util.logging.Logger.getLogger("JUL." + SwingLogPaneSample.class.getName());
     private static final org.apache.logging.log4j.Logger LOG4J_LOGGER = org.apache.logging.log4j.LogManager.getLogger("LOG4J." + SwingLogPaneSample.class.getName());
-    private final SwingLogPane logPane;
     private final SecureRandom random = new SecureRandom();
     private final AtomicInteger n = new AtomicInteger();
 
@@ -38,7 +37,7 @@ public class SwingLogPaneSample {
     }
 
     public SwingLogPaneSample() {
-        logPane = new SwingLogPane(LOG_BUFFER_SIZE);
+        SwingLogPane logPane = new SwingLogPane(LOG_BUFFER_SIZE);
 
         JFrame frame = new JFrame(getClass().getSimpleName());
         frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);

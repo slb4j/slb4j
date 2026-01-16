@@ -404,9 +404,4 @@ public class RotatingFileHandler extends AbstractFileHandler {
             return maxBackupIndex;
         }
     }
-
-    @Override
-    public LogLevel getFlushLevel() {
-        return super.getFlushLevel();
-    }
 }
