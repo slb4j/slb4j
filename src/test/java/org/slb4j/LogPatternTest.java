@@ -75,6 +75,8 @@ class LogPatternTest {
                     "%logger %msg%n|'com.example.service.OrderService Order 4711 processed\n'",
                     "%logger{1} %msg%n|'OrderService Order 4711 processed\n'",
                     "%logger{2} %msg%n|'service.OrderService Order 4711 processed\n'",
+                    "%logger{1.} %msg%n|'c.e.s.OrderService Order 4711 processed\n'",
+                    "%logger{2.} %msg%n|'co.ex.se.OrderService Order 4711 processed\n'",
 
                     // Location patterns
                     "%C|'com.example.service.OrderService'",
