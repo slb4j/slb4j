@@ -23,6 +23,54 @@ backends = ["slb4j", "log4j", "logback", "jul"]
 frontends = ["slf4j", "log4j"]
 threads = [1, 2, 4, 8, 16, 64, 128]
 
+def parse_time(time_str):
+    if not time_str:
+        return 1.0
+    if time_str.endswith("ms"):
+        return float(time_str[:-2]) / 1000.0
+    if time_str.endswith("s"):
+        return float(time_str[:-1])
+    return float(time_str)
+
+def get_estimated_runtime(args):
+    num_backends = len(args.backends) if args.backends else len(backends)
+    num_frontends = len(args.frontends) if args.frontends else len(frontends)
+    num_threads = len(args.threads) if args.threads else len(threads)
+    
+    warmup = args.warmup if args.warmup is not None else 2
+    iterations = args.iterations if args.iterations is not None else 3
+    time_per_iter = parse_time(args.time if args.time else "1s")
+    
+    # JMH overhead estimation
+    gradle_startup_overhead = 5.0 # seconds per backend
+    
+    # Determine number of forks
+    forks = 1
+    if args.mode == "smoketest":
+        forks = 0
+    
+    jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
+    
+    total_benchmarks_per_backend = num_frontends * num_threads
+    time_per_benchmark = (warmup + iterations) * time_per_iter + jmh_fork_overhead
+    
+    total_time = num_backends * (gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark)
+    
+    return total_time
+
+def format_duration(seconds):
+    if seconds < 1.0:
+        return f"{seconds*1000:.0f}ms"
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = int(seconds % 60)
+    if hours > 0:
+        return f"{hours}h {minutes}m {seconds}s"
+    elif minutes > 0:
+        return f"{minutes}m {seconds}s"
+    else:
+        return f"{seconds}s"
+
 def validate_args(args):
     if args.backends:
         for b in args.backends:
@@ -55,10 +103,15 @@ def run_command(command):
 
 def collect_results(args):
     all_results = []
-    results_dir = "parallel_benchmark_results_json"
+    results_dir = "benchmark_results"
     if os.path.exists(results_dir):
-        shutil.rmtree(results_dir)
-    os.makedirs(results_dir)
+        # We don't want to delete the whole directory if it's shared
+        # but for this script's purposes, it was parallel_benchmark_results_json
+        # which was dedicated. benchmark_results might be shared with run_benchmarks.py.
+        # run_benchmarks.py uses benchmark_results_json.
+        pass 
+    else:
+        os.makedirs(results_dir)
 
     selected_backends = args.backends if args.backends else backends
     
@@ -86,16 +139,63 @@ def collect_results(args):
             cmd += f" -Piterations={args.iterations}"
         if args.time:
             cmd += f" -PtimeOnIteration={args.time}"
+        
+        forks = 0 if args.mode == "smoketest" else 1
+        cmd += f" -Pforks={forks}"
 
         if args.dry_run:
             print(f"Dry run: Would execute command for backend '{backend}':")
             print(f"  Command: {cmd}")
+            
+            # Local estimation for this backend
+            num_frontends = len(target_frontends)
+            num_threads = len(target_threads)
+            warmup = args.warmup if args.warmup is not None else 2
+            iterations = args.iterations if args.iterations is not None else 3
+            time_per_iter = parse_time(args.time if args.time else "1s")
+            
+            gradle_startup_overhead = 5.0
+            
+            # Determine number of forks
+            forks = 1
+            if args.mode == "smoketest":
+                forks = 0
+            
+            jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
+            
+            total_benchmarks_per_backend = num_frontends * num_threads
+            time_per_benchmark = (warmup + iterations) * time_per_iter + jmh_fork_overhead
+            estimated_backend = gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark
+            
+            print(f"  Estimated runtime for this backend: {format_duration(estimated_backend)}")
             print()
             continue
 
+        # Print estimation for this backend when starting
+        num_frontends = len(target_frontends)
+        num_threads = len(target_threads)
+        warmup = args.warmup if args.warmup is not None else 2
+        iterations = args.iterations if args.iterations is not None else 3
+        time_per_iter = parse_time(args.time if args.time else "1s")
+        
+        gradle_startup_overhead = 5.0
+        
+        # Determine number of forks
+        forks = 1
+        if args.mode == "smoketest":
+            forks = 0
+            
+        jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
+        
+        total_benchmarks_per_backend = num_frontends * num_threads
+        time_per_benchmark = (warmup + iterations) * time_per_iter + jmh_fork_overhead
+        estimated_backend = gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark
+        
+        print(f"Estimated runtime for backend '{backend}': {format_duration(estimated_backend)}")
+        
         if run_command(cmd):
             src_json = "benchmark/jmh-results.json"
-            dest_json = os.path.join(results_dir, f"results_{backend}.json")
+            dest_json = os.path.join(results_dir, f"results_{backend}_parallel.json")
             if os.path.exists(src_json):
                 shutil.copy(src_json, dest_json)
                 with open(dest_json, 'r') as f:
@@ -167,28 +267,40 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run SLB4J parallel benchmarks.")
     parser.add_argument("--backends", nargs="+", help="Backends to test (slb4j, log4j, logback, jul)")
     parser.add_argument("--frontends", nargs="+", help="Frontends to test (slf4j, log4j)")
+    parser.add_argument("--handlers", nargs="+", help="Handlers to test (not currently used by this script but for compatibility with run_benchmarks.py)")
     parser.add_argument("--threads", type=int, nargs="+", help="Thread counts to test (1, 2, 4, 8, 16, 64, 128)")
     parser.add_argument("--warmup", type=int, help="Number of warmup iterations")
     parser.add_argument("--iterations", type=int, help="Number of measurement iterations")
     parser.add_argument("--time", help="Time per iteration (e.g. 1s)")
     parser.add_argument("--dry-run", action="store_true", help="Show the benchmarks that will run without actually executing them")
-    parser.add_argument("--smoketest", action="store_true", help="Run with 0 warmup, 1 iteration, 50ms time")
-    parser.add_argument("--quick", action="store_true", help="Run with 1 warmup, 2 iterations, 500ms time")
+    parser.add_argument("--mode", choices=["smoketest", "quick", "full"], help="Benchmark mode")
     
     args = parser.parse_args()
 
     if not validate_args(args):
         exit(1)
 
-    if args.smoketest:
-        if args.warmup is None: args.warmup = 0
-        if args.iterations is None: args.iterations = 1
-        if args.time is None: args.time = "50ms"
-    elif args.quick:
-        if args.warmup is None: args.warmup = 1
-        if args.iterations is None: args.iterations = 2
-        if args.time is None: args.time = "500ms"
+    if args.mode:
+        if args.mode == "full":
+            if args.warmup is None: args.warmup = 3
+            if args.iterations is None: args.iterations = 5
+            if args.time is None: args.time = "1s"
+        elif args.mode == "smoketest":
+            if args.warmup is None: args.warmup = 0
+            if args.iterations is None: args.iterations = 1
+            if args.time is None: args.time = "50ms"
+        elif args.mode == "quick":
+            if args.warmup is None: args.warmup = 1
+            if args.iterations is None: args.iterations = 2
+            if args.time is None: args.time = "500ms"
             
+        if args.backends is None: args.backends = backends
+        if args.frontends is None: args.frontends = frontends
+        if args.threads is None: args.threads = threads
+
+    estimated_total = get_estimated_runtime(args)
+    print(f"Estimated total runtime: {format_duration(estimated_total)}")
+
     if args.dry_run:
         collect_results(args)
     else:

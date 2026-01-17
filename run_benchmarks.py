@@ -30,6 +30,62 @@ VALID_CATEGORIES = ["CONSOLE", "FILE"]
 VALID_FORMATS = ["SIMPLE", "MDC", "MARKER", "LOCATION", "COLOR"]
 VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
 
+def parse_time(time_str):
+    if not time_str:
+        return 1.0
+    if time_str.endswith("ms"):
+        return float(time_str[:-2]) / 1000.0
+    if time_str.endswith("s"):
+        return float(time_str[:-1])
+    return float(time_str)
+
+def get_estimated_runtime(args):
+    # backends_map is defined in global scope
+    num_backends = len(args.backends) if args.backends else len(backends_map)
+    
+    # Frontends: 4 if not specified (slf4j, log4j, jul, jcl)
+    num_frontends = len(args.frontends) if args.frontends else 4
+    
+    num_handlers = len(args.handlers) if args.handlers else 2 # CONSOLE, FILE
+    num_formats = len(args.formats) if args.formats else 5 # SIMPLE, MDC, MARKER, LOCATION, COLOR
+    
+    msg_types = args.message_types if args.message_types else ["CONSTANT", "ARGUMENTS", "LAMBDA"]
+    num_msg_types = len(msg_types)
+    
+    warmup = args.warmup if args.warmup is not None else 2
+    iterations = args.iterations if args.iterations is not None else 3
+    time_per_iter = parse_time(args.time if args.time else "1s")
+    
+    # JMH overhead estimation
+    gradle_startup_overhead = 5.0 # seconds per backend
+    
+    # Determine number of forks
+    forks = 1
+    if args.mode == "smoketest":
+        forks = 0
+    
+    jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
+    
+    total_benchmarks_per_backend = num_frontends * num_handlers * num_formats * num_msg_types
+    time_per_benchmark = (warmup + iterations) * time_per_iter + jmh_fork_overhead
+    
+    total_time = num_backends * (gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark)
+    
+    return total_time
+
+def format_duration(seconds):
+    if seconds < 1.0:
+        return f"{seconds*1000:.0f}ms"
+    hours = int(seconds // 3600)
+    minutes = int((seconds % 3600) // 60)
+    seconds = int(seconds % 60)
+    if hours > 0:
+        return f"{hours}h {minutes}m {seconds}s"
+    elif minutes > 0:
+        return f"{minutes}m {seconds}s"
+    else:
+        return f"{seconds}s"
+
 def validate_args(args):
     if args.backends:
         for b in args.backends:
@@ -37,10 +93,10 @@ def validate_args(args):
                 print(f"Error: Invalid backend '{b}'. Valid backends are: {', '.join(backends_map.keys())}")
                 return False
     
-    if args.categories:
-        for c in args.categories:
+    if args.handlers:
+        for c in args.handlers:
             if c not in VALID_CATEGORIES:
-                print(f"Error: Invalid category '{c}'. Valid categories are: {', '.join(VALID_CATEGORIES)}")
+                print(f"Error: Invalid handler '{c}'. Valid handlers are: {', '.join(VALID_CATEGORIES)}")
                 return False
                 
     if args.formats:
@@ -90,8 +146,8 @@ def collect_results(args):
         if args.frontends:
             includes = []
             for frontend in args.frontends:
-                includes.append(f"^{benchmark_class}\\.{frontend}$")
-            cmd += f" -Pjmh.includes='({'|'.join(includes)})'"
+                includes.append(f"{benchmark_class}\\.{frontend}")
+            cmd += f" -Pjmh.includes='{','.join(includes)}'"
         else:
             cmd += f" -Pjmh.includes='{benchmark_class}'"
 
@@ -99,8 +155,8 @@ def collect_results(args):
         params = []
         if args.formats:
             params.append(f"format={','.join(args.formats)}")
-        if args.categories:
-            params.append(f"category={','.join(args.categories)}")
+        if args.handlers:
+            params.append(f"category={','.join(args.handlers)}")
         
         msg_types = args.message_types if args.message_types else ["CONSTANT", "ARGUMENTS", "LAMBDA"]
         params.append(f"messageType={','.join(msg_types)}")
@@ -115,6 +171,10 @@ def collect_results(args):
             cmd += f" -Piterations={args.iterations}"
         if args.time:
             cmd += f" -PtimeOnIteration={args.time}"
+        
+        forks = 0 if args.mode == "smoketest" else 1
+        cmd += f" -Pforks={forks}"
+        
         if args.output_to_file:
             cmd += " -PoutputToFile=true"
 
@@ -122,15 +182,63 @@ def collect_results(args):
             print(f"Dry run: Would execute command for backend '{backend}':")
             print(f"  Command: {cmd}")
             print(f"  Frontends: {', '.join(args.frontends) if args.frontends else 'ALL'}")
-            print(f"  Categories: {', '.join(args.categories) if args.categories else 'ALL (CONSOLE, FILE)'}")
+            print(f"  Handlers: {', '.join(args.handlers) if args.handlers else 'ALL (CONSOLE, FILE)'}")
             print(f"  Formats: {', '.join(args.formats) if args.formats else 'ALL (SIMPLE, MDC, MARKER, LOCATION, COLOR)'}")
             print(f"  Message Types: {', '.join(msg_types)}")
             print(f"  Warmup Iterations: {args.warmup if args.warmup is not None else 'Default (2)'}")
             print(f"  Measurement Iterations: {args.iterations if args.iterations is not None else 'Default (3)'}")
             print(f"  Time per Iteration: {args.time if args.time else 'Default (1s)'}")
+            
+            # Local estimation for this backend
+            num_frontends = len(args.frontends) if args.frontends else 4
+            num_handlers = len(args.handlers) if args.handlers else 2
+            num_formats = len(args.formats) if args.formats else 5
+            num_msg_types = len(msg_types)
+            warmup = args.warmup if args.warmup is not None else 2
+            iterations = args.iterations if args.iterations is not None else 3
+            time_per_iter = parse_time(args.time if args.time else "1s")
+            
+            gradle_startup_overhead = 5.0
+            
+            # Determine number of forks
+            forks = 1
+            if args.mode == "smoketest":
+                forks = 0
+            
+            jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
+            
+            total_benchmarks_per_backend = num_frontends * num_handlers * num_formats * num_msg_types
+            time_per_benchmark = (warmup + iterations) * time_per_iter + jmh_fork_overhead
+            estimated_backend = gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark
+            
+            print(f"  Estimated runtime for this backend: {format_duration(estimated_backend)}")
             print()
             continue
 
+        # Print estimation for this backend when starting
+        num_frontends = len(args.frontends) if args.frontends else 4
+        num_handlers = len(args.handlers) if args.handlers else 2
+        num_formats = len(args.formats) if args.formats else 5
+        num_msg_types = len(msg_types)
+        warmup = args.warmup if args.warmup is not None else 2
+        iterations = args.iterations if args.iterations is not None else 3
+        time_per_iter = parse_time(args.time if args.time else "1s")
+        
+        gradle_startup_overhead = 5.0
+        
+        # Determine number of forks
+        forks = 1
+        if args.mode == "smoketest":
+            forks = 0
+            
+        jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
+        
+        total_benchmarks_per_backend = num_frontends * num_handlers * num_formats * num_msg_types
+        time_per_benchmark = (warmup + iterations) * time_per_iter + jmh_fork_overhead
+        estimated_backend = gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark
+        
+        print(f"Estimated runtime for backend '{backend}': {format_duration(estimated_backend)}")
+        
         if run_command(cmd):
             src_json = "benchmark/jmh-results.json"
             dest_json = os.path.join(results_dir, f"results_{backend}.json")
@@ -286,7 +394,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run SLB4J benchmarks.")
     parser.add_argument("--backends", nargs="+", help="Backends to test (slb4j, log4j, logback, jul)")
     parser.add_argument("--frontends", nargs="+", help="Frontends to test (slf4j, log4j, jul, jcl)")
-    parser.add_argument("--categories", nargs="+", help="Categories to test (CONSOLE, FILE)")
+    parser.add_argument("--handlers", nargs="+", help="Categories/Handlers to test (CONSOLE, FILE)")
     parser.add_argument("--formats", nargs="+", help="Formats to test (SIMPLE, MDC, MARKER, LOCATION, COLOR)")
     parser.add_argument("--message-types", nargs="+", help="Message types to test (CONSTANT, ARGUMENTS, LAMBDA)")
     parser.add_argument("--warmup", type=int, help="Number of warmup iterations")
@@ -294,34 +402,35 @@ if __name__ == "__main__":
     parser.add_argument("--time", help="Time per iteration (e.g. 1s)")
     parser.add_argument("--output-to-file", action="store_true", help="Write logging output to a file instead of a blackhole")
     parser.add_argument("--dry-run", action="store_true", help="Show the benchmarks that will run without actually executing them")
-    parser.add_argument("--complete", action="store_true", help="Run all benchmarks with 3 warmup-iterations, 5 iterations and 3s time")
-    parser.add_argument("--smoketest", action="store_true", help="Run all benchmarks with 0 warmup-iterations, 1 iteration and 50ms time")
-    parser.add_argument("--quick", action="store_true", help="Run all benchmarks with 2 warmup-iterations, 3 iterations and 1s time")
-    
+    parser.add_argument("--mode", choices=["smoketest", "quick", "full"], help="Benchmark mode")
+
     args = parser.parse_args()
 
     if not validate_args(args):
         exit(1)
 
-    if args.complete or args.smoketest or args.quick:
-        if args.complete:
+    if args.mode:
+        if args.mode == "full":
             if args.warmup is None: args.warmup = 3
             if args.iterations is None: args.iterations = 5
-            if args.time is None: args.time = "3s"
-        elif args.smoketest:
+            if args.time is None: args.time = "1s"
+        elif args.mode == "smoketest":
             if args.warmup is None: args.warmup = 0
             if args.iterations is None: args.iterations = 1
             if args.time is None: args.time = "50ms"
-        elif args.quick:
+        elif args.mode == "quick":
             if args.warmup is None: args.warmup = 2
             if args.iterations is None: args.iterations = 3
             if args.time is None: args.time = "1s"
             
         if args.backends is None: args.backends = list(backends_map.keys())
-        if args.categories is None: args.categories = ["CONSOLE", "FILE"]
+        if args.handlers is None: args.handlers = ["CONSOLE", "FILE"]
         if args.formats is None: args.formats = ["SIMPLE", "MDC", "MARKER", "LOCATION", "COLOR"]
         if args.message_types is None: args.message_types = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
     
+    estimated_total = get_estimated_runtime(args)
+    print(f"Estimated total runtime: {format_duration(estimated_total)}")
+
     if args.dry_run:
         collect_results(args)
     else:
