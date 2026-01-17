@@ -81,7 +81,7 @@ class SupportTest {
 
     @Test
     void testAnsiCode() {
-        assertEquals("\033[0m", AnsiCode.reset());
+        assertEquals("\033[m", AnsiCode.reset());
         assertEquals("\033[1m", AnsiCode.bold(true));
         assertEquals("\033[22m", AnsiCode.bold(false));
         assertEquals("\033[38;2;255;0;0m", AnsiCode.fg(255, 0, 0));

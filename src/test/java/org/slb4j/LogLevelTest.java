@@ -41,13 +41,13 @@ class LogLevelTest {
 
     @Test
     void testConsoleCode() {
-        ConsoleCode cc = ConsoleCode.of("\033[1m", "\033[0m");
+        ConsoleCode cc = ConsoleCode.of("\033[1m", "\033[m");
         assertEquals("\033[1m", cc.start());
-        assertEquals("\033[0m", cc.end());
+        assertEquals("\033[m", cc.end());
 
         ConsoleCode ansi = ConsoleCode.ofAnsi("\033[3m");
         assertEquals("\033[3m", ansi.start());
-        assertEquals("\033[0m", ansi.end());
+        assertEquals("\033[m", ansi.end());
 
         ConsoleCode empty = ConsoleCode.empty();
         assertEquals("", empty.start());

@@ -32,55 +32,55 @@ public final class AnsiCode {
     /**
      * ESC: reset.
      */
-    private static final char RESET = 0;
+    public static final char RESET = 0;
     /**
      * ESC: enable BOLD output.
      */
-    private static final char BOLD_ON = 1;
+    public static final char BOLD_ON = 1;
     /**
      * ESC: disable BOLD output.
      */
-    private static final char BOLD_OFF = 22;
+    public static final char BOLD_OFF = 22;
     /**
      * ESC: enable REVERSE video output.
      */
-    private static final char REVERSE_VIDEO_ON = 7;
+    public static final char REVERSE_VIDEO_ON = 7;
     /**
      * ESC: disable REVERSE video output.
      */
-    private static final char REVERSE_VIDEO_OFF = 27;
+    public static final char REVERSE_VIDEO_OFF = 27;
     /**
      * ESC: enable ITALIC output.
      */
-    private static final char ITALIC_ON = 3;
+    public static final char ITALIC_ON = 3;
     /**
      * ESC: disable ITALIC output.
      */
-    private static final char ITALIC_OFF = 23;
+    public static final char ITALIC_OFF = 23;
     /**
      * ESC: enable UNDERLINE output.
      */
-    private static final char UNDERLINE_ON = 4;
+    public static final char UNDERLINE_ON = 4;
     /**
      * ESC: disable UNDERLINE output.
      */
-    private static final char UNDERLINE_OFF = 24;
+    public static final char UNDERLINE_OFF = 24;
     /**
      * ESC: enable STRIKETHROUGH output.
      */
-    private static final char STRIKE_THROUGH_ON = 9;
+    public static final char STRIKE_THROUGH_ON = 9;
     /**
      * ESC: disable STRIKETHROUGH output.
      */
-    private static final char STRIKE_THROUGH_OFF = 29;
+    public static final char STRIKE_THROUGH_OFF = 29;
     /**
      * ESC: start a color sequence.
      */
-    private static final char COLOR = 38;
+    public static final char COLOR = 38;
     /**
      * ESC: start a background color sequence.
      */
-    private static final char BACKGROUND_COLOR = 48;
+    public static final char BACKGROUND_COLOR = 48;
 
     private AnsiCode() { /* utility class */ }
 
@@ -132,7 +132,7 @@ public final class AnsiCode {
      * @return the ESC string
      */
     public static String reset() {
-        return esc(RESET);
+        return esc();
     }
 
     /**

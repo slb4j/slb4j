@@ -96,6 +96,9 @@ class LogPatternTest {
                     "%% %msg%n|'% Order 4711 processed\n'",
                     "\"%msg\"%n|'\"Order 4711 processed\"\n'",
 
+                    // Highlight
+                    "%highlight{%level %msg}%n|'INFO Order 4711 processed\n'",
+
                     // Composite
                     "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{2} [%marker] %X{userId} - %msg%n"
                             + "|'2026-01-10 14:23:41.123 [main] INFO  service.OrderService [AUDIT] alice - Order 4711 processed\n'"
@@ -140,6 +143,27 @@ class LogPatternTest {
     }
 
     @Test
+    void testPatternWithHighlight() throws IOException {
+        String pattern = "%highlight{%level %msg}%n";
+        LogPattern fmt = LogPattern.parse(pattern);
+
+        Instant instant = Instant.now();
+        String loggerName = "test.Logger";
+        LogLevel level = LogLevel.ERROR;
+        Supplier<String> msg = () -> "An error occurred";
+        ConsoleCode consoleCodes = ConsoleCode.of("START", "END");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8)) {
+            fmt.formatLogEntry(out, instant, loggerName, level, null, null, LOC, msg, null, consoleCodes);
+        }
+
+        String actual = baos.toString(StandardCharsets.UTF_8);
+        String expected = "START" + "ERROR An error occurred" + "END" + System.lineSeparator();
+        assertEquals(expected, actual);
+    }
+
+    @Test
     void testPatternWithThrowable() throws IOException {
         String pattern = "%msg%n%ex";
         LogPattern fmt = LogPattern.parse(pattern);
@@ -152,7 +176,7 @@ class LogPatternTest {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8)) {
-            fmt.formatLogEntry(out, instant, loggerName, level, null, null, LOC, msg, t, null);
+            fmt.formatLogEntry(out, instant, loggerName, level, null, null, LOC, msg, t, ConsoleCode.empty());
         }
 
         String actual = baos.toString(StandardCharsets.UTF_8);

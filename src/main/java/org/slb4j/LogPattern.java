@@ -38,7 +38,9 @@ public final class LogPattern {
     private static final String NEWLINE = System.lineSeparator();
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
-    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)})?|%%");
+    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?|%%|%n");
+
+    private static final Pattern HIGHLIGHT_PATTERN = Pattern.compile("%highlight\\{(.*)}");
 
     private static final Pattern LOGGER_PRECISION_PATTERN = Pattern.compile("^(\\d+)(\\.)?$");
 
@@ -53,7 +55,7 @@ public final class LogPattern {
      * 2026-01-11 15:19:09.573 INFO  com.example.Application - Message from SLF4J
      * </pre>
      */
-    public static final LogPattern DEFAULT_PATTERN = parse("%Cstart%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%Cend%n%ex");
+    public static final LogPattern DEFAULT_PATTERN = parse("%highlight{%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg}%n%ex");
 
     /**
      * A compact log pattern used to format log entries in a concise and structured manner.
@@ -62,7 +64,7 @@ public final class LogPattern {
      * <p>
      * Pattern description:
      * <ul>
-     * <li>`%Cstart` and `%Cend`: Markers for console color codes (if supported by the logging system).
+     * <li>`%highlight{...}`: Highlights the enclosed pattern with console color codes (if supported by the logging system).
      * <li>`%d{HH:mm:ss.SSS}`: The timestamp of the log entry without the date.
      * <li>`%-5level`: The log level, left-aligned with a width of 5 characters.
      * <li>`%-30.30c{1.}`: The logger name, left-aligned and truncated to a maximum of 30 characters, showing only the first fragment of the name.
@@ -71,7 +73,26 @@ public final class LogPattern {
      * </ul>
      * Use when a compact and human-readable log format is preferred, such as console-based logging.
      */
-    public static final LogPattern COMPACT_PATTERN = parse("%Cstart%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg%Cend%n%ex");
+    public static final LogPattern COMPACT_PATTERN = parse("%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%n%ex");
+
+    /**
+     * A predefined {@link LogPattern} instance representing a detailed log format.
+     *
+     * The format includes the following components:
+     * - Timestamp in the format yyyy-MM-dd HH:mm:ss.SSS
+     * - Thread name enclosed in square brackets
+     * - Log level with a minimum width of 5 characters
+     * - Marker, if present
+     * - Logger name truncated to a maximum of 36 characters
+     * - Mapped Diagnostic Context (MDC) key-value pairs enclosed in square brackets
+     * - Fully qualified class name, method name, file name, and line number
+     * - Log message
+     * - Throwable stack trace (if any)
+     *
+     * This format provides comprehensive information about log events, including contextual
+     * details, useful for debugging and auditing purposes.
+     */
+    public static final LogPattern DETAILED_PATTERN = parse("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable");
 
     /**
      * Defines an interface for formatting log entries in a customizable and extensible manner.
@@ -93,10 +114,10 @@ public final class LogPattern {
          * @param location an optional {@link Location} detailing the source of the log event, or null if unknown
          * @param msg a {@link Supplier} providing the log message, or null if not available
          * @param t an optional {@link Throwable} associated with the log event, or null if no exception occurred
-         * @param consoleCodes an optional {@link ConsoleCode} defining console-specific format codes, or null if not used
+         * @param consoleCodes a {@link ConsoleCode} defining console-specific format codes
          * @throws IOException if an I/O error occurs while appending to the {@link Appendable} instance
          */
-        void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException;
+        void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException;
 
         /**
          * Retrieves the Log4j-compatible pattern string used for formatting log entries.
@@ -278,7 +299,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             app.append(literal);
         }
 
@@ -312,7 +333,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, lvl.name());
         }
     }
@@ -388,7 +409,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, abbreviate(loggerName, abbreviationLength, useDotAbbreviation), true);
         }
 
@@ -424,7 +445,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, Thread.currentThread().getName());
         }
     }
@@ -460,7 +481,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             if (mdc == null) {
                 return;
             }
@@ -508,7 +529,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, mrk);
         }
     }
@@ -536,7 +557,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, msg.get());
         }
     }
@@ -571,7 +592,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             String className = location != null ? location.getClassName() : null;
             appendFormatted(app, className != null ? abbreviate(className, abbreviationLength, useDotAbbreviation) : null, true);
         }
@@ -605,7 +626,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, location != null ? location.getMethodName() : null);
         }
     }
@@ -634,7 +655,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, location != null ? String.valueOf(location.getLineNumber()) : null);
         }
     }
@@ -662,7 +683,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, location != null ? location.getFileName() : null);
         }
     }
@@ -693,7 +714,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             if (location != null) {
                 StringBuilder sb = new StringBuilder();
                 String className = location.getClassName();
@@ -748,7 +769,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             if (t != null) {
                 Util.appendStackTrace(app, t);
             }
@@ -781,8 +802,8 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, consoleCodes == null ? "" : consoleCodes.start());
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+            appendFormatted(app, consoleCodes.start());
         }
     }
 
@@ -811,8 +832,8 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, consoleCodes == null ? "" : consoleCodes.end());
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+            appendFormatted(app, consoleCodes.end());
         }
     }
 
@@ -850,7 +871,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) {
             formatter.formatTo(instant.atZone(ZONE_ID), app);
         }
 
@@ -870,7 +891,7 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             app.append(NEWLINE);
         }
 
@@ -947,7 +968,7 @@ public final class LogPattern {
      * @param consoleCodes the color codes for the log level (start and end)
      * @throws IOException if an I/O error occurs while writing to the appendable
      */
-    public void formatLogEntry(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<@Nullable String> msg, @Nullable Throwable t, @Nullable ConsoleCode consoleCodes) throws IOException {
+    public void formatLogEntry(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
         Location location = isLocationNeeded() ? loc.resolve() : null;
         for (LogPatternEntry entry : entries) {
             entry.format(app, instant, loggerName, lvl, mrk, mdc, location, msg, t, consoleCodes);
@@ -966,75 +987,99 @@ public final class LogPattern {
      */
     private static List<LogPatternEntry> parseLog4jPatternString(String pattern) {
         List<LogPatternEntry> entries = new ArrayList<>();
+        int lastEnd = 0;
+        Matcher highlightMatcher = HIGHLIGHT_PATTERN.matcher(pattern);
+        while (highlightMatcher.find()) {
+            if (highlightMatcher.start() > lastEnd) {
+                entries.addAll(parseLog4jPatternStringSimple(pattern.substring(lastEnd, highlightMatcher.start())));
+            }
+            entries.add(new ColorStartEntry(0, 0, false));
+            entries.addAll(parseLog4jPatternStringSimple(highlightMatcher.group(1)));
+            entries.add(new ColorEndEntry(0, 0, false));
+            lastEnd = highlightMatcher.end();
+        }
+        if (lastEnd < pattern.length()) {
+            entries.addAll(parseLog4jPatternStringSimple(pattern.substring(lastEnd)));
+        }
+        return entries;
+    }
+
+    private static List<LogPatternEntry> parseLog4jPatternStringSimple(String pattern) {
+        List<LogPatternEntry> entries = new ArrayList<>();
         Matcher matcher = PATTERN.matcher(pattern);
         int lastEnd = 0;
         while (matcher.find()) {
             if (matcher.start() > lastEnd) {
-                entries.add(new LiteralEntry(pattern.substring(lastEnd, matcher.start())));
+                String literal = pattern.substring(lastEnd, matcher.start());
+                entries.addAll(parseLiterals(literal));
             }
 
             String match = matcher.group();
-            if (match.equals("%%")) {
-                entries.add(new LiteralEntry("%"));
-            } else if (match.equals("%n")) {
-                entries.add(new NewlineEntry());
-            } else {
-                String minWidthStr = matcher.group(1);
-                String maxWidthStr = matcher.group(2);
-                String type = matcher.group(3);
-                String options = matcher.group(5);
+            String minWidthStr = matcher.group(1);
+            String maxWidthStr = matcher.group(2);
+            String type = matcher.group(3);
+            String options = matcher.group(5);
 
-                boolean leftAlign = minWidthStr != null && minWidthStr.startsWith("-");
-                int minWidth = (minWidthStr != null && !minWidthStr.isEmpty()) ? Math.abs(Integer.parseInt(minWidthStr)) : 0;
-                int maxWidth = (maxWidthStr != null && maxWidthStr.length() > 1) ? Integer.parseInt(maxWidthStr.substring(1)) : 0;
+            boolean leftAlign = minWidthStr != null && minWidthStr.startsWith("-");
+            int minWidth = (minWidthStr != null && !minWidthStr.isEmpty()) ? Math.abs(Integer.parseInt(minWidthStr)) : 0;
+            int maxWidth = (maxWidthStr != null && maxWidthStr.length() > 1) ? Integer.parseInt(maxWidthStr.substring(1)) : 0;
 
-                switch (type) {
-                    case "p", "level" -> entries.add(new LevelEntry(minWidth, maxWidth, leftAlign));
-                    case "c", "logger" -> {
-                        int abbreviationLength = 0;
-                        boolean useDotAbbreviation = false;
-                        if (options != null) {
-                            Matcher m = LOGGER_PRECISION_PATTERN.matcher(options);
-                            if (m.matches()) {
-                                abbreviationLength = Integer.parseInt(m.group(1));
-                                useDotAbbreviation = m.group(2) != null;
-                            }
+            switch (type != null ? type : match) {
+                case "p", "level" -> entries.add(new LevelEntry(minWidth, maxWidth, leftAlign));
+                case "c", "logger" -> {
+                    int abbreviationLength = 0;
+                    boolean useDotAbbreviation = false;
+                    if (options != null) {
+                        Matcher m = LOGGER_PRECISION_PATTERN.matcher(options);
+                        if (m.matches()) {
+                            abbreviationLength = Integer.parseInt(m.group(1));
+                            useDotAbbreviation = m.group(2) != null;
                         }
-                        entries.add(new LoggerEntry(minWidth, maxWidth, leftAlign, abbreviationLength, useDotAbbreviation));
                     }
-                    case "C" -> {
-                        int abbreviationLength = 0;
-                        boolean useDotAbbreviation = false;
-                        if (options != null) {
-                            Matcher m = LOGGER_PRECISION_PATTERN.matcher(options);
-                            if (m.matches()) {
-                                abbreviationLength = Integer.parseInt(m.group(1));
-                                useDotAbbreviation = m.group(2) != null;
-                            }
-                        }
-                        entries.add(new ClassEntry(minWidth, maxWidth, leftAlign, abbreviationLength, useDotAbbreviation));
-                    }
-                    case "M" -> entries.add(new MethodEntry(minWidth, maxWidth, leftAlign));
-                    case "L" -> entries.add(new LineEntry(minWidth, maxWidth, leftAlign));
-                    case "F" -> entries.add(new FileEntry(minWidth, maxWidth, leftAlign));
-                    case "marker" -> entries.add(new MarkerEntry(minWidth, maxWidth, leftAlign));
-                    case "m", "msg", "message" -> entries.add(new MessageEntry(minWidth, maxWidth, leftAlign));
-                    case "l", "location" -> entries.add(new LocationEntry(minWidth, maxWidth, leftAlign));
-                    case "t", "thread" -> entries.add(new ThreadEntry(minWidth, maxWidth, leftAlign));
-                    case "X", "mdc" -> entries.add(new MdcEntry(minWidth, maxWidth, leftAlign, options));
-                    case "ex", "exception", "throwable" ->
-                            entries.add(new ExceptionEntry(minWidth, maxWidth, leftAlign));
-                    case "Cstart" -> entries.add(new ColorStartEntry(minWidth, maxWidth, leftAlign));
-                    case "Cend" -> entries.add(new ColorEndEntry(minWidth, maxWidth, leftAlign));
-                    case "d" -> entries.add(new DateEntry(options != null ? options : ""));
-                    default -> entries.add(new LiteralEntry(match));
+                    entries.add(new LoggerEntry(minWidth, maxWidth, leftAlign, abbreviationLength, useDotAbbreviation));
                 }
+                case "C", "class" -> {
+                    int abbreviationLength = 0;
+                    boolean useDotAbbreviation = false;
+                    if (options != null) {
+                        Matcher m = LOGGER_PRECISION_PATTERN.matcher(options);
+                        if (m.matches()) {
+                            abbreviationLength = Integer.parseInt(m.group(1));
+                            useDotAbbreviation = m.group(2) != null;
+                        }
+                    }
+                    entries.add(new ClassEntry(minWidth, maxWidth, leftAlign, abbreviationLength, useDotAbbreviation));
+                }
+                case "M", "method" -> entries.add(new MethodEntry(minWidth, maxWidth, leftAlign));
+                case "L", "line" -> entries.add(new LineEntry(minWidth, maxWidth, leftAlign));
+                case "F", "file" -> entries.add(new FileEntry(minWidth, maxWidth, leftAlign));
+                case "marker" -> entries.add(new MarkerEntry(minWidth, maxWidth, leftAlign));
+                case "m", "msg", "message" -> entries.add(new MessageEntry(minWidth, maxWidth, leftAlign));
+                case "l", "location" -> entries.add(new LocationEntry(minWidth, maxWidth, leftAlign));
+                case "t", "thread" -> entries.add(new ThreadEntry(minWidth, maxWidth, leftAlign));
+                case "X", "mdc" -> entries.add(new MdcEntry(minWidth, maxWidth, leftAlign, options));
+                case "ex", "exception", "throwable" ->
+                        entries.add(new ExceptionEntry(minWidth, maxWidth, leftAlign));
+                case "Cstart" -> entries.add(new ColorStartEntry(minWidth, maxWidth, leftAlign));
+                case "Cend" -> entries.add(new ColorEndEntry(minWidth, maxWidth, leftAlign));
+                case "d" -> entries.add(new DateEntry(options != null ? options : ""));
+                case "%%" -> entries.add(new LiteralEntry("%"));
+                case "%n" -> entries.add(new NewlineEntry());
+                case "n" -> entries.add(new NewlineEntry());
+                default -> entries.add(new LiteralEntry(match));
             }
             lastEnd = matcher.end();
         }
         if (lastEnd < pattern.length()) {
-            entries.add(new LiteralEntry(pattern.substring(lastEnd)));
+            String literal = pattern.substring(lastEnd);
+            entries.add(new LiteralEntry(literal));
         }
+        return entries;
+    }
+
+    private static List<LogPatternEntry> parseLiterals(String literal) {
+        List<LogPatternEntry> entries = new ArrayList<>();
+        entries.add(new LiteralEntry(literal));
         return entries;
     }
 }

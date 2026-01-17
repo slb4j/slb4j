@@ -34,6 +34,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slb4j.frontend.log4j.LoggerLog4j;
+import org.slb4j.handler.ConsoleHandler;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
@@ -110,7 +111,13 @@ class LogPatternCompatibilityTest {
             "[%t] %level %logger - %msg%n%ex",
             "%d{yyyy-MM-dd HH:mm:ss} %-5p %C.%M(%F:%L) - %m%n",
             "%l - %m%n",
-            "Marker: %marker %msg%n"
+            "Marker: %marker %msg%n",
+            // predefined patterns: COMPACT
+            "%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%n%ex",
+            // predefined patterns: DEFAULT
+            "%highlight{%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg}%n%ex",
+            // predefined patterns: DETAILED
+            "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable"
     })
     void testPatternCompatibility(String pattern) {
         configureLog4j(pattern);
@@ -118,7 +125,10 @@ class LogPatternCompatibilityTest {
 
         org.apache.logging.log4j.ThreadContext.put("userId", "alice");
         try {
+            logger.trace("Trace message");
+            logger.debug("Debug message");
             logger.info("Test message");
+            logger.warn("Warning message");
             logger.error("Error message");
         } finally {
             org.apache.logging.log4j.ThreadContext.clearMap();
@@ -186,7 +196,7 @@ class LogPatternCompatibilityTest {
 
             try {
                 slb4jPattern.formatLogEntry(sb, instant, loggerName, level, marker, mdc, locResolver, 
-                    () -> event.getMessage().getFormattedMessage(), event.getThrown(), null);
+                    () -> event.getMessage().getFormattedMessage(), event.getThrown(), ConsoleHandler.COLOR_MAP_DEFAULT.getOrDefault(level, ConsoleCode.empty()));
             } catch (java.io.IOException e) {
                 throw new RuntimeException(e);
             }
