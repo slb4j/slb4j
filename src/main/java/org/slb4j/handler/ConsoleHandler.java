@@ -128,9 +128,9 @@ public final class ConsoleHandler implements LogHandler {
             ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
             try {
                 synchronized (lock) {
-                    buffer.reset(0);
                     logPattern.formatLogEntry(buffer, instant, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
                     buffer.writeTo(writer);
+                    buffer.reset(0);
                     writer.flush();
                 }
             } catch (IOException e) {
