@@ -153,7 +153,7 @@ def calculate_runtime(args, parallel):
         num_threads = len(args.threads) if args.threads else len(PARALLEL_THREADS)
         total_benchmarks_per_backend = num_frontends * num_threads
     else:
-        num_frontends = 4
+        num_frontends = len(args.frontends) if args.frontends else 4
         num_handlers = len(args.handlers) if args.handlers else 2
         num_formats = len(args.formats) if args.formats else 3
         msg_types = args.message_types if args.message_types else VALID_MESSAGE_TYPES
