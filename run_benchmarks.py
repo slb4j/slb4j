@@ -79,13 +79,14 @@ def get_system_info():
     return "\n".join(info)
 
 def validate_args(args):
-    backends = args.backends if args.backends else (PARALLEL_BACKENDS if args.parallel else list(SEQUENTIAL_BACKENDS_MAP.keys()))
+    is_parallel = args.parallel or args.all
+    backends = args.backends if args.backends else (PARALLEL_BACKENDS if is_parallel else list(SEQUENTIAL_BACKENDS_MAP.keys()))
     for b in backends:
-        if args.parallel:
+        if is_parallel:
             if b not in PARALLEL_BACKENDS:
                 print(f"Error: Invalid parallel backend {b}. Valid backends are: {PARALLEL_BACKENDS}")
                 return False
-        else:
+        if not args.parallel: # Check sequential backends if not exclusively parallel
             if b not in SEQUENTIAL_BACKENDS_MAP:
                 print(f"Error: Invalid backend {b}. Valid backends are: {list(SEQUENTIAL_BACKENDS_MAP.keys())}")
                 return False
@@ -126,25 +127,33 @@ def run_command(command):
     return result.returncode == 0
 
 def get_estimated_runtime(args):
-    selected_backends = args.backends if args.backends else (PARALLEL_BACKENDS if args.parallel else list(SEQUENTIAL_BACKENDS_MAP.keys()))
+    total_time = 0
+    if args.all or not args.parallel:
+        total_time += calculate_runtime(args, parallel=False)
+    if args.all or args.parallel:
+        total_time += calculate_runtime(args, parallel=True)
+    return total_time
+
+def calculate_runtime(args, parallel):
+    selected_backends = args.backends if args.backends else (PARALLEL_BACKENDS if parallel else list(SEQUENTIAL_BACKENDS_MAP.keys()))
     num_backends = len(selected_backends)
     
     warmup = args.warmup if args.warmup is not None else 2
     iterations = args.iterations if args.iterations is not None else 3
     time_per_iter = parse_time(args.time if args.time else "1s")
     
-    gradle_startup_overhead = 5.0
+    gradle_startup_overhead = 15.0
     forks = 0 if args.mode == "smoketest" else 1
     if args.forks is not None:
         forks = args.forks
-    jmh_fork_overhead = 0.5 if forks > 0 else 0.05
+    jmh_fork_overhead = 1.0 if forks > 0 else 0.1
 
-    if args.parallel:
+    if parallel:
         num_frontends = len(args.frontends) if args.frontends else len(PARALLEL_FRONTENDS)
         num_threads = len(args.threads) if args.threads else len(PARALLEL_THREADS)
         total_benchmarks_per_backend = num_frontends * num_threads
     else:
-        num_frontends = len(args.frontends) if args.frontends else 4
+        num_frontends = 4
         num_handlers = len(args.handlers) if args.handlers else 2
         num_formats = len(args.formats) if args.formats else 3
         msg_types = args.message_types if args.message_types else VALID_MESSAGE_TYPES
@@ -152,19 +161,18 @@ def get_estimated_runtime(args):
         total_benchmarks_per_backend = num_frontends * num_handlers * num_formats * num_msg_types
 
     time_per_benchmark = (warmup + iterations) * time_per_iter + jmh_fork_overhead
-    total_time = num_backends * (gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark)
-    
-    return total_time
+    return num_backends * (gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark)
 
-def collect_results(args, timestamp, results_dir):
+def collect_results(args, timestamp, results_dir, force_parallel=None):
     all_results = []
-    selected_backends = args.backends if args.backends else (PARALLEL_BACKENDS if args.parallel else list(SEQUENTIAL_BACKENDS_MAP.keys()))
+    is_parallel = force_parallel if force_parallel is not None else args.parallel
+    selected_backends = args.backends if args.backends else (PARALLEL_BACKENDS if is_parallel else list(SEQUENTIAL_BACKENDS_MAP.keys()))
     
     for backend in selected_backends:
         print(f"Testing backend: {backend}")
         cmd = f"./gradlew :benchmark:runJmh -Pbackend={backend}"
         
-        if args.parallel:
+        if is_parallel:
             benchmark_class = "ParallelLoggingBenchmark"
             includes = []
             target_frontends = args.frontends if args.frontends else PARALLEL_FRONTENDS
@@ -204,7 +212,7 @@ def collect_results(args, timestamp, results_dir):
             forks = args.forks
         cmd += f" -Pforks={forks}"
 
-        if not args.parallel and args.output_to_file:
+        if not is_parallel and args.output_to_file:
             cmd += " -PoutputToFile=true"
 
         if args.dry_run:
@@ -214,7 +222,7 @@ def collect_results(args, timestamp, results_dir):
 
         if run_command(cmd):
             src_json = "benchmark/jmh-results.json"
-            suffix = "_parallel" if args.parallel else ""
+            suffix = "_parallel" if is_parallel else ""
             dest_json = os.path.join(results_dir, f"results_{backend}{suffix}_{timestamp}.json")
             if os.path.exists(src_json):
                 shutil.copy(src_json, dest_json)
@@ -382,6 +390,7 @@ def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Run SLB4J benchmarks.")
     parser.add_argument("--parallel", action="store_true", help="Run parallel benchmarks instead of sequential ones")
+    parser.add_argument("--all", action="store_true", help="Run both sequential and parallel benchmarks")
     parser.add_argument("--backends", nargs="+", help="Backends to test")
     parser.add_argument("--frontends", nargs="+", help="Frontends to test")
     parser.add_argument("--handlers", nargs="+", help="Handlers to test (CONSOLE, FILE)")
@@ -434,9 +443,20 @@ if __name__ == "__main__":
     cmd_line = "python3 " + " ".join(sys.argv)
     sys_info = get_system_info()
     
-    results = collect_results(args, timestamp, results_dir)
-    if not args.dry_run:
-        if args.parallel:
-            generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line)
-        else:
-            generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line)
+    if args.all:
+        print("--- Running Sequential Benchmarks ---")
+        results_seq = collect_results(args, timestamp, results_dir, force_parallel=False)
+        if not args.dry_run:
+            generate_markdown_sequential(results_seq, args, timestamp, results_dir, sys_info, cmd_line)
+        
+        print("\n--- Running Parallel Benchmarks ---")
+        results_par = collect_results(args, timestamp, results_dir, force_parallel=True)
+        if not args.dry_run:
+            generate_markdown_parallel(results_par, args, timestamp, results_dir, sys_info, cmd_line)
+    else:
+        results = collect_results(args, timestamp, results_dir)
+        if not args.dry_run:
+            if args.parallel:
+                generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line)
+            else:
+                generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line)

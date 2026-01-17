@@ -215,6 +215,8 @@ tasks.register<JavaExec>("runJmh") {
     jmhArgs.add("1")
     jmhArgs.add("-r")
     jmhArgs.add(project.findProperty("timeOnIteration")?.toString() ?: "1s")
+    jmhArgs.add("-w")
+    jmhArgs.add(project.findProperty("timeOnIteration")?.toString() ?: "1s")
 
     // Parameters
     val outputToFile = project.findProperty("outputToFile")?.toString() ?: "false"
