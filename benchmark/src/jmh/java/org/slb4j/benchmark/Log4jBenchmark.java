@@ -35,7 +35,7 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
     @Param({"CONSOLE", "FILE"})
     public String category;
 
-    @Param({"SIMPLE", "MDC", "MARKER", "LOCATION", "COLOR"})
+    @Param({"COMPACT", "DEFAULT", "DETAILED"})
     public String format;
 
     private Path tempFile;
@@ -43,14 +43,46 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
     @Override
     protected void setupLogging() throws IOException {
         tempFile = Files.createTempFile("log4j-bench", ".log");
-        System.setProperty("logFile", tempFile.toString());
-        System.setProperty("log4j.configurationFile", "log4j2-bench.xml");
 
-        // Note: For simplicity, we are using a single config file and the parameters are not fully reflected 
-        // in Log4j2 config yet. In a real benchmark, we should programmatically configure Log4j2.
+        org.apache.logging.log4j.core.LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
+        org.apache.logging.log4j.core.config.Configuration config = context.getConfiguration();
 
-        // Ensure Log4j2 is initialized
-        Configurator.reconfigure();
+        String pattern = switch (format) {
+            case "COMPACT" -> "%d{HH:mm:ss.SSS} %-5p %-30.30c{1.} - %m%n";
+            case "DETAILED" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5p %X{userId} (%C.%M(%F:%L)) - %m%n";
+            default -> "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p %c - %m%n";
+        };
+
+        org.apache.logging.log4j.core.layout.PatternLayout layout = org.apache.logging.log4j.core.layout.PatternLayout.newBuilder()
+                .withPattern(pattern)
+                .build();
+
+        org.apache.logging.log4j.core.Appender appender;
+        if ("FILE".equals(category)) {
+            appender = org.apache.logging.log4j.core.appender.FileAppender.newBuilder()
+                    .setName("File")
+                    .withFileName(tempFile.toString())
+                    .setLayout(layout)
+                    .build();
+        } else {
+            appender = org.apache.logging.log4j.core.appender.ConsoleAppender.newBuilder()
+                    .setName("Console")
+                    .setTarget(org.apache.logging.log4j.core.appender.ConsoleAppender.Target.SYSTEM_OUT)
+                    .setLayout(layout)
+                    .build();
+        }
+
+        appender.start();
+        config.addAppender(appender);
+        org.apache.logging.log4j.core.config.AppenderRef ref = org.apache.logging.log4j.core.config.AppenderRef.createAppenderRef(appender.getName(), null, null);
+        org.apache.logging.log4j.core.config.AppenderRef[] refs = new org.apache.logging.log4j.core.config.AppenderRef[]{ref};
+
+        org.apache.logging.log4j.core.config.LoggerConfig loggerConfig = config.getRootLogger();
+        loggerConfig.getAppenders().forEach((name, a) -> loggerConfig.removeAppender(name));
+        loggerConfig.addAppender(appender, null, null);
+        loggerConfig.setLevel(org.apache.logging.log4j.Level.INFO);
+
+        context.updateLoggers();
 
         slf4jLogger = LoggerFactory.getLogger(Log4jBenchmark.class);
         log4jLogger = LogManager.getLogger(Log4jBenchmark.class);
@@ -60,7 +92,7 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
         slf4jMarker = MarkerFactory.getMarker("BENCH");
         log4jMarker = org.apache.logging.log4j.MarkerManager.getMarker("BENCH");
 
-        if ("MDC".equals(format)) {
+        if ("DETAILED".equals(format)) {
             org.slf4j.MDC.put("userId", "benchUser");
             org.apache.logging.log4j.ThreadContext.put("userId", "benchUser");
         }

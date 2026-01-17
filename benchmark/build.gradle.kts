@@ -210,7 +210,7 @@ tasks.register<JavaExec>("runJmh") {
     jmhArgs.add("-i")
     jmhArgs.add(project.findProperty("iterations")?.toString() ?: "3")
     jmhArgs.add("-f")
-    jmhArgs.add("1")
+    jmhArgs.add(project.findProperty("forks")?.toString() ?: "1")
     jmhArgs.add("-t")
     jmhArgs.add("1")
     jmhArgs.add("-r")

@@ -32,7 +32,7 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
     @Param({"CONSOLE", "FILE"})
     public String category;
 
-    @Param({"SIMPLE", "MDC", "MARKER", "LOCATION", "COLOR"})
+    @Param({"COMPACT", "DEFAULT", "DETAILED"})
     public String format;
 
     private Path tempFile;
@@ -44,9 +44,15 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.reset();
 
+        String pattern = switch (format) {
+            case "COMPACT" -> "%d{HH:mm:ss.SSS} %-5level %-30.30logger{0} - %msg%n";
+            case "DETAILED" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %X{userId} (%class.%method\\(%file:%line\\)) - %msg%n";
+            default -> "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%n";
+        };
+
         ch.qos.logback.classic.encoder.PatternLayoutEncoder encoder = new ch.qos.logback.classic.encoder.PatternLayoutEncoder();
         encoder.setContext(context);
-        encoder.setPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%n");
+        encoder.setPattern(pattern);
         encoder.start();
 
         ch.qos.logback.core.Appender appender;
@@ -74,7 +80,7 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
         julLogger = java.util.logging.Logger.getLogger(LogbackBenchmark.class.getName());
         jclLogger = org.apache.commons.logging.LogFactory.getLog(LogbackBenchmark.class);
 
-        if ("MDC".equals(format)) {
+        if ("DETAILED".equals(format)) {
             org.slf4j.MDC.put("userId", "benchUser");
         }
     }

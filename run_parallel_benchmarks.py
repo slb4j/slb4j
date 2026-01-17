@@ -48,6 +48,8 @@ def get_estimated_runtime(args):
     forks = 1
     if args.mode == "smoketest":
         forks = 0
+    elif args.forks is not None:
+        forks = args.forks
     
     jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
     
@@ -141,6 +143,8 @@ def collect_results(args):
             cmd += f" -PtimeOnIteration={args.time}"
         
         forks = 0 if args.mode == "smoketest" else 1
+        if args.forks is not None:
+            forks = args.forks
         cmd += f" -Pforks={forks}"
 
         if args.dry_run:
@@ -160,6 +164,8 @@ def collect_results(args):
             forks = 1
             if args.mode == "smoketest":
                 forks = 0
+            elif args.forks is not None:
+                forks = args.forks
             
             jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
             
@@ -184,6 +190,8 @@ def collect_results(args):
         forks = 1
         if args.mode == "smoketest":
             forks = 0
+        elif args.forks is not None:
+            forks = args.forks
             
         jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
         
@@ -272,6 +280,7 @@ if __name__ == "__main__":
     parser.add_argument("--warmup", type=int, help="Number of warmup iterations")
     parser.add_argument("--iterations", type=int, help="Number of measurement iterations")
     parser.add_argument("--time", help="Time per iteration (e.g. 1s)")
+    parser.add_argument("--forks", type=int, help="Number of forks")
     parser.add_argument("--dry-run", action="store_true", help="Show the benchmarks that will run without actually executing them")
     parser.add_argument("--mode", choices=["smoketest", "quick", "full"], help="Benchmark mode")
     

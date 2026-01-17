@@ -27,7 +27,7 @@ backends_map = {
 }
 
 VALID_CATEGORIES = ["CONSOLE", "FILE"]
-VALID_FORMATS = ["SIMPLE", "MDC", "MARKER", "LOCATION", "COLOR"]
+VALID_FORMATS = ["COMPACT", "DEFAULT", "DETAILED"]
 VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
 
 def parse_time(time_str):
@@ -47,7 +47,7 @@ def get_estimated_runtime(args):
     num_frontends = len(args.frontends) if args.frontends else 4
     
     num_handlers = len(args.handlers) if args.handlers else 2 # CONSOLE, FILE
-    num_formats = len(args.formats) if args.formats else 5 # SIMPLE, MDC, MARKER, LOCATION, COLOR
+    num_formats = len(args.formats) if args.formats else 3 # COMPACT, DEFAULT, DETAILED
     
     msg_types = args.message_types if args.message_types else ["CONSTANT", "ARGUMENTS", "LAMBDA"]
     num_msg_types = len(msg_types)
@@ -63,6 +63,8 @@ def get_estimated_runtime(args):
     forks = 1
     if args.mode == "smoketest":
         forks = 0
+    elif args.forks is not None:
+        forks = args.forks
     
     jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
     
@@ -173,6 +175,8 @@ def collect_results(args):
             cmd += f" -PtimeOnIteration={args.time}"
         
         forks = 0 if args.mode == "smoketest" else 1
+        if args.forks is not None:
+            forks = args.forks
         cmd += f" -Pforks={forks}"
         
         if args.output_to_file:
@@ -183,7 +187,7 @@ def collect_results(args):
             print(f"  Command: {cmd}")
             print(f"  Frontends: {', '.join(args.frontends) if args.frontends else 'ALL'}")
             print(f"  Handlers: {', '.join(args.handlers) if args.handlers else 'ALL (CONSOLE, FILE)'}")
-            print(f"  Formats: {', '.join(args.formats) if args.formats else 'ALL (SIMPLE, MDC, MARKER, LOCATION, COLOR)'}")
+            print(f"  Formats: {', '.join(args.formats) if args.formats else 'ALL (COMPACT, DEFAULT, DETAILED)'}")
             print(f"  Message Types: {', '.join(msg_types)}")
             print(f"  Warmup Iterations: {args.warmup if args.warmup is not None else 'Default (2)'}")
             print(f"  Measurement Iterations: {args.iterations if args.iterations is not None else 'Default (3)'}")
@@ -192,7 +196,7 @@ def collect_results(args):
             # Local estimation for this backend
             num_frontends = len(args.frontends) if args.frontends else 4
             num_handlers = len(args.handlers) if args.handlers else 2
-            num_formats = len(args.formats) if args.formats else 5
+            num_formats = len(args.formats) if args.formats else 3
             num_msg_types = len(msg_types)
             warmup = args.warmup if args.warmup is not None else 2
             iterations = args.iterations if args.iterations is not None else 3
@@ -204,6 +208,8 @@ def collect_results(args):
             forks = 1
             if args.mode == "smoketest":
                 forks = 0
+            elif args.forks is not None:
+                forks = args.forks
             
             jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
             
@@ -218,7 +224,7 @@ def collect_results(args):
         # Print estimation for this backend when starting
         num_frontends = len(args.frontends) if args.frontends else 4
         num_handlers = len(args.handlers) if args.handlers else 2
-        num_formats = len(args.formats) if args.formats else 5
+        num_formats = len(args.formats) if args.formats else 3
         num_msg_types = len(msg_types)
         warmup = args.warmup if args.warmup is not None else 2
         iterations = args.iterations if args.iterations is not None else 3
@@ -230,6 +236,8 @@ def collect_results(args):
         forks = 1
         if args.mode == "smoketest":
             forks = 0
+        elif args.forks is not None:
+            forks = args.forks
             
         jmh_fork_overhead = 0.5 if forks > 0 else 0.05 # seconds per benchmark
         
@@ -395,11 +403,12 @@ if __name__ == "__main__":
     parser.add_argument("--backends", nargs="+", help="Backends to test (slb4j, log4j, logback, jul)")
     parser.add_argument("--frontends", nargs="+", help="Frontends to test (slf4j, log4j, jul, jcl)")
     parser.add_argument("--handlers", nargs="+", help="Categories/Handlers to test (CONSOLE, FILE)")
-    parser.add_argument("--formats", nargs="+", help="Formats to test (SIMPLE, MDC, MARKER, LOCATION, COLOR)")
+    parser.add_argument("--formats", nargs="+", help="Formats to test (COMPACT, DEFAULT, DETAILED)")
     parser.add_argument("--message-types", nargs="+", help="Message types to test (CONSTANT, ARGUMENTS, LAMBDA)")
     parser.add_argument("--warmup", type=int, help="Number of warmup iterations")
     parser.add_argument("--iterations", type=int, help="Number of measurement iterations")
     parser.add_argument("--time", help="Time per iteration (e.g. 1s)")
+    parser.add_argument("--forks", type=int, help="Number of forks")
     parser.add_argument("--output-to-file", action="store_true", help="Write logging output to a file instead of a blackhole")
     parser.add_argument("--dry-run", action="store_true", help="Show the benchmarks that will run without actually executing them")
     parser.add_argument("--mode", choices=["smoketest", "quick", "full"], help="Benchmark mode")
@@ -425,7 +434,7 @@ if __name__ == "__main__":
             
         if args.backends is None: args.backends = list(backends_map.keys())
         if args.handlers is None: args.handlers = ["CONSOLE", "FILE"]
-        if args.formats is None: args.formats = ["SIMPLE", "MDC", "MARKER", "LOCATION", "COLOR"]
+        if args.formats is None: args.formats = ["COMPACT", "DEFAULT", "DETAILED"]
         if args.message_types is None: args.message_types = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
     
     estimated_total = get_estimated_runtime(args)

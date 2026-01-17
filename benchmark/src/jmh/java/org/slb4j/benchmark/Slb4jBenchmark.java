@@ -38,7 +38,7 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
     @Param({"CONSOLE", "FILE"})
     public String category;
 
-    @Param({"SIMPLE", "MDC", "MARKER", "LOCATION", "COLOR"})
+    @Param({"COMPACT", "DEFAULT", "DETAILED"})
     public String format;
 
     private Path tempFile;
@@ -51,18 +51,16 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
         tempFile = Files.createTempFile("slb4j-bench", ".log");
 
         LogPattern pattern = switch (format) {
-            case "MDC" -> LogPattern.parse("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger [%X{userId}] - %msg%n");
-            case "MARKER" -> LogPattern.parse("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger (%marker) - %msg%n");
-            case "LOCATION" -> LogPattern.parse("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger (%file:%line) - %msg%n");
-            case "COLOR" -> LogPattern.parse("%Cstart%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%Cend%n");
-            default -> LogPattern.parse("%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%n");
+            case "COMPACT" -> LogPattern.COMPACT_PATTERN;
+            case "DETAILED" -> LogPattern.DETAILED_PATTERN;
+            default -> LogPattern.DEFAULT_PATTERN;
         };
 
         UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
         dispatcher.getLogHandlers().forEach(dispatcher::removeLogHandler);
 
         if ("CONSOLE".equals(category)) {
-            ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, "COLOR".equals(format));
+            ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, "DETAILED".equals(format) ? false : true);
             consoleHandler.setPattern(pattern);
             dispatcher.addLogHandler(consoleHandler);
         } else {
@@ -76,7 +74,7 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
         julLogger = java.util.logging.Logger.getLogger(Slb4jBenchmark.class.getName());
         jclLogger = org.apache.commons.logging.LogFactory.getLog(Slb4jBenchmark.class);
 
-        if ("MDC".equals(format)) {
+        if ("DETAILED".equals(format)) {
             org.slf4j.MDC.put("userId", "benchUser");
         }
     }
