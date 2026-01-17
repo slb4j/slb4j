@@ -24,7 +24,10 @@ import java.time.Instant;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -151,8 +154,6 @@ public final class LogPattern {
         protected final int minWidth;
         protected final int maxWidth;
         protected final boolean leftAlign;
-        protected final int abbreviationLength;
-        protected final boolean useDotAbbreviation;
         private final boolean locationNeeded;
 
         /**
@@ -173,14 +174,12 @@ public final class LogPattern {
          *                  to the left.
          * @param locationNeeded A flag indicating whether this entry requires location information.
          */
-        protected AbstractLogPatternEntry(String prefix, int minWidth, int maxWidth, boolean leftAlign, boolean locationNeeded, int abbreviationLength, boolean useDotAbbreviation) {
+        protected AbstractLogPatternEntry(String prefix, int minWidth, int maxWidth, boolean leftAlign, boolean locationNeeded) {
             this.prefix = prefix;
             this.minWidth = minWidth;
             this.maxWidth = maxWidth;
             this.leftAlign = leftAlign;
             this.locationNeeded = locationNeeded;
-            this.abbreviationLength = abbreviationLength;
-            this.useDotAbbreviation = useDotAbbreviation;
         }
 
         private static final int N_SPACES = 20;
@@ -243,70 +242,26 @@ public final class LogPattern {
                 value = "";
             }
 
-            int valueStart = 0;
-            if (abbreviationLength > 0 && value.length() > abbreviationLength) {
-                int start = 0;
-                int len = value.length();
-                int written = 0;
-                if (useDotAbbreviation) {
-                    int limit = abbreviationLength;
-                    int lastDot = -1;
-                    int dot = Util.indexOf(value, '.');
-                    while (dot != -1) {
-                        int partLen = dot - lastDot - 1;
-                        if (partLen > limit) {
-                            app.append(value, lastDot + 1, lastDot + 1 + limit);
-                            written += limit;
-                        } else {
-                            app.append(value, lastDot + 1, dot);
-                            written += value.length() - lastDot;
-                        }
-                        app.append('.');
-                        written++;
-                        lastDot = dot;
-                        dot = Util.indexOf(value, '.', lastDot + 1);
-                    }
-                    app.append(value, lastDot + 1, len);
-                    written += len - lastDot - 1;
-                    appendSpaces(app, Math.max(0, minWidth - written));
-                    return;
-                } else {
-                    int dotsFound = 0;
-                    for (int i = len - 1; i >= 0; i--) {
-                        if (value.charAt(i) == '.') {
-                            dotsFound++;
-                            if (dotsFound == abbreviationLength) {
-                                start = i + 1;
-                                break;
-                            }
-                        }
-                    }
-                }
-                if (start > 0) {
-                    valueStart = start;
-                }
-            }
-
-            if (maxWidth > 0 && value.length() - valueStart > maxWidth) {
+            if (maxWidth > 0 && value.length() > maxWidth) {
                 if (leftTruncate) {
                     app.append(value, value.length() - maxWidth, value.length());
                 } else {
-                    app.append(value, valueStart, maxWidth);
+                    app.append(value, 0, maxWidth);
                 }
                 return;
             }
 
-            if (value.length() - valueStart < minWidth) {
-                int padding = minWidth - (value.length() - valueStart);
+            if (value.length() < minWidth) {
+                int padding = minWidth - value.length();
                 if (leftAlign) {
-                    app.append(value, valueStart, value.length());
+                    app.append(value);
                     appendSpaces(app, padding);
                 } else {
                     appendSpaces(app, padding);
-                    app.append(value, valueStart, value.length());
+                    app.append(value);
                 }
             } else {
-                app.append(value, valueStart, value.length());
+                app.append(value);
             }
         }
 
@@ -377,7 +332,7 @@ public final class LogPattern {
          *                  padding will be added to the left.
          */
         public LevelEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("p", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
+            super("p", minWidth, maxWidth, leftAlign, false);
         }
 
         @Override
@@ -386,6 +341,42 @@ public final class LogPattern {
         }
     }
 
+    private static CharSequence abbreviate(String name, int abbreviationLength, boolean useDotAbbreviation) {
+        if (abbreviationLength <= 0 && !useDotAbbreviation) {
+            return name;
+        }
+        String[] parts = name.split("\\.");
+        if (useDotAbbreviation) {
+            return joinAbbreviations(abbreviationLength, parts);
+        }
+        if (parts.length <= abbreviationLength) {
+            return name;
+        }
+        StringBuilder abbreviated = new StringBuilder();
+        for (int i = parts.length - abbreviationLength; i < parts.length; i++) {
+            if (!abbreviated.isEmpty()) {
+                abbreviated.append('.');
+            }
+            abbreviated.append(parts[i]);
+        }
+        return abbreviated;
+    }
+
+    private static CharSequence joinAbbreviations(int abbreviationLength, String[] parts) {
+        int length = abbreviationLength > 0 ? abbreviationLength : 1;
+        StringBuilder abbreviated = new StringBuilder();
+        for (int i = 0; i < parts.length - 1; i++) {
+            String part = parts[i];
+            if (part.length() > length) {
+                abbreviated.append(part, 0, length);
+            } else {
+                abbreviated.append(part);
+            }
+            abbreviated.append('.');
+        }
+        abbreviated.append(parts[parts.length - 1]);
+        return abbreviated;
+    }
 
     /**
      * A specialized log format entry for formatting and appending logger names to log messages.
@@ -395,6 +386,9 @@ public final class LogPattern {
      * settings. If truncation is required, the logger name will be truncated from the left.
      */
     public static final class LoggerEntry extends AbstractLogPatternEntry {
+        private final int abbreviationLength;
+        private final boolean useDotAbbreviation;
+        private final Map<String, String> loggerNames = new ConcurrentHashMap<>(128);
 
         /**
          * Constructs an instance of LoggerEntry, a specialized log format entry
@@ -413,12 +407,15 @@ public final class LogPattern {
          * @param useDotAbbreviation a flag indicating whether to use dot abbreviation (e.g., "o.s.T").
          */
         public LoggerEntry(int minWidth, int maxWidth, boolean leftAlign, int abbreviationLength, boolean useDotAbbreviation) {
-            super("c", minWidth, maxWidth, leftAlign, false, abbreviationLength, useDotAbbreviation);
+            super("c", minWidth, maxWidth, leftAlign, false);
+            this.abbreviationLength = abbreviationLength;
+            this.useDotAbbreviation = useDotAbbreviation;
         }
 
         @Override
         public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, loggerName, true);
+            String logger = loggerNames.computeIfAbsent(loggerName, logn -> abbreviate(logn, abbreviationLength, useDotAbbreviation).toString());
+            appendFormatted(app, logger, true);
         }
 
         @Override
@@ -449,7 +446,7 @@ public final class LogPattern {
          *                  formatted thread name; otherwise, padding will be added to the left.
          */
         public ThreadEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("t", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
+            super("t", minWidth, maxWidth, leftAlign, false);
         }
 
         @Override
@@ -484,7 +481,7 @@ public final class LogPattern {
          *            be formatted as a key-value string.
          */
         public MdcEntry(int minWidth, int maxWidth, boolean leftAlign, @Nullable String key) {
-            super("X", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
+            super("X", minWidth, maxWidth, leftAlign, false);
             this.key = key;
         }
 
@@ -533,7 +530,7 @@ public final class LogPattern {
          *                  otherwise, padding will be added to the left.
          */
         public MarkerEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("marker", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
+            super("marker", minWidth, maxWidth, leftAlign, false);
         }
 
         @Override
@@ -561,7 +558,7 @@ public final class LogPattern {
          *                  added to the left.
          */
         public MessageEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("m", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
+            super("m", minWidth, maxWidth, leftAlign, false);
         }
 
         @Override
@@ -571,6 +568,10 @@ public final class LogPattern {
     }
 
     public static final class ClassEntry extends AbstractLogPatternEntry {
+        private final int abbreviationLength;
+        private final boolean useDotAbbreviation;
+        private final Map<String, String> classNames = new ConcurrentHashMap<>(128);
+
         /**
          * Constructs an instance of the ClassEntry, which represents a log entry
          * for the class name of the log event's location. This entry supports
@@ -591,12 +592,16 @@ public final class LogPattern {
          * @param useDotAbbreviation a flag indicating whether to use dot abbreviation (e.g., "o.s.T").
          */
         public ClassEntry(int minWidth, int maxWidth, boolean leftAlign, int abbreviationLength, boolean useDotAbbreviation) {
-            super("C", minWidth, maxWidth, leftAlign, true, abbreviationLength, useDotAbbreviation);
+            super("C", minWidth, maxWidth, leftAlign, true);
+            this.abbreviationLength = abbreviationLength;
+            this.useDotAbbreviation = useDotAbbreviation;
         }
 
         @Override
         public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            String className = location != null ? location.getClassName() : null;
+            String className = location != null
+                    ? classNames.computeIfAbsent(location.getClassName(), clsn -> abbreviate(clsn, abbreviationLength, useDotAbbreviation).toString())
+                    : null;
             appendFormatted(app, className, true);
         }
 
@@ -625,7 +630,7 @@ public final class LogPattern {
          *  to the left.
          */
         public MethodEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("M", minWidth, maxWidth, leftAlign, true, Integer.MAX_VALUE, false);
+            super("M", minWidth, maxWidth, leftAlign, true);
         }
 
         @Override
@@ -654,7 +659,7 @@ public final class LogPattern {
          *                  of the formatted output; otherwise, it will be added to the left.
          */
         public LineEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("L", minWidth, maxWidth, leftAlign, true, Integer.MAX_VALUE, false);
+            super("L", minWidth, maxWidth, leftAlign, true);
         }
 
         @Override
@@ -682,7 +687,7 @@ public final class LogPattern {
          *                  will be added to the left.
          */
         public FileEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("F", minWidth, maxWidth, leftAlign, true, Integer.MAX_VALUE, false);
+            super("F", minWidth, maxWidth, leftAlign, true);
         }
 
         @Override
@@ -713,13 +718,13 @@ public final class LogPattern {
          *                  formatted output; otherwise, padding will be added to the left.
          */
         public LocationEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("l", minWidth, maxWidth, leftAlign, true, Integer.MAX_VALUE, false);
+            super("l", minWidth, maxWidth, leftAlign, true);
         }
 
         @Override
         public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             if (location != null) {
-                StringBuilder sb = new StringBuilder(256);
+                StringBuilder sb = new StringBuilder();
                 String className = location.getClassName();
                 if (className != null) {
                     sb.append(className);
@@ -738,7 +743,7 @@ public final class LogPattern {
                     sb.append(':').append(lineNumber);
                 }
                 sb.append(')');
-                appendFormatted(app, sb);
+                appendFormatted(app, sb.toString());
             } else {
                 appendFormatted(app, null);
             }
@@ -768,7 +773,7 @@ public final class LogPattern {
          *                  to the left.
          */
         public ExceptionEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("ex", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
+            super("ex", minWidth, maxWidth, leftAlign, false);
         }
 
         @Override
@@ -801,7 +806,7 @@ public final class LogPattern {
          *                  to the left.
          */
         public ColorStartEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("Cstart", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
+            super("Cstart", minWidth, maxWidth, leftAlign, false);
         }
 
         @Override
@@ -831,7 +836,7 @@ public final class LogPattern {
          *                  to the left.
          */
         public ColorEndEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("Cend", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
+            super("Cend", minWidth, maxWidth, leftAlign, false);
         }
 
         @Override
