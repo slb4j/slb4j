@@ -215,7 +215,7 @@ public final class LogPattern {
          * @param app the {@code Appendable} to which the formatted value will be appended
          * @param value the string value to format and append; if {@code null}, it will be treated as an empty string
          */
-        protected void appendFormatted(Appendable app, @Nullable CharSequence value) throws IOException {
+        protected final void appendFormatted(Appendable app, @Nullable CharSequence value) throws IOException {
             appendFormatted(app, value, false);
         }
 
@@ -234,7 +234,7 @@ public final class LogPattern {
          * @param value the string value to format and append; if {@code null}, it will be treated as an empty string
          * @param leftTruncate a flag indicating whether to truncate the string from the left when its length exceeds the maximum width
          */
-        protected void appendFormatted(Appendable app, @Nullable CharSequence value, boolean leftTruncate) throws IOException {
+        protected final void appendFormatted(Appendable app, @Nullable CharSequence value, boolean leftTruncate) throws IOException {
             if (value == null) {
                 value = "";
             }
@@ -280,7 +280,7 @@ public final class LogPattern {
     /**
      * Represents a literal string entry in a log format.
      */
-    public static class LiteralEntry implements LogPatternEntry {
+    public static final class LiteralEntry implements LogPatternEntry {
         private final String literal;
 
         /**
@@ -316,7 +316,7 @@ public final class LogPattern {
      * and applying formatting options such as alignment and truncation based on the
      * parent class's configuration.
      */
-    public static class LevelEntry extends AbstractLogPatternEntry {
+    public static final class LevelEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a LevelEntry instance with the specified formatting configuration.
          *
@@ -382,7 +382,7 @@ public final class LogPattern {
      * with formatting applied according to the specified minimum width, maximum width, and alignment
      * settings. If truncation is required, the logger name will be truncated from the left.
      */
-    public static class LoggerEntry extends AbstractLogPatternEntry {
+    public static final class LoggerEntry extends AbstractLogPatternEntry {
         private final int abbreviationLength;
         private final boolean useDotAbbreviation;
 
@@ -426,7 +426,7 @@ public final class LogPattern {
     /**
      * Represents a log format entry for the thread name.
      */
-    public static class ThreadEntry extends AbstractLogPatternEntry {
+    public static final class ThreadEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a new ThreadEntry instance, representing a log format entry for the thread name.
          *
@@ -453,7 +453,7 @@ public final class LogPattern {
     /**
      * Represents a log format entry for the MDC (Mapped Diagnostic Context).
      */
-    public static class MdcEntry extends AbstractLogPatternEntry {
+    public static final class MdcEntry extends AbstractLogPatternEntry {
         private final @Nullable String key;
 
         /**
@@ -508,7 +508,7 @@ public final class LogPattern {
      * Represents a log format entry that formats and appends a marker value to a log output.
      * A marker is a string that can be used in log messages to provide additional context or categorization.
      */
-    public static class MarkerEntry extends AbstractLogPatternEntry {
+    public static final class MarkerEntry extends AbstractLogPatternEntry {
         /**
          * Constructs an instance of MarkerEntry with the specified formatting parameters.
          * A MarkerEntry formats and appends a marker value to the log output. A marker is
@@ -540,7 +540,7 @@ public final class LogPattern {
      * log message text according to the provided parameters for minimum width, maximum width,
      * and alignment.
      */
-    public static class MessageEntry extends AbstractLogPatternEntry {
+    public static final class MessageEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a new instance of MessageEntry with the specified formatting parameters.
          *
@@ -562,7 +562,7 @@ public final class LogPattern {
         }
     }
 
-    public static class ClassEntry extends AbstractLogPatternEntry {
+    public static final class ClassEntry extends AbstractLogPatternEntry {
         private final int abbreviationLength;
         private final boolean useDotAbbreviation;
 
@@ -612,7 +612,7 @@ public final class LogPattern {
      * This class is a concrete implementation of {@link AbstractLogPatternEntry}, responsible for
      * formatting and appending the method name of the log's location information to the output.
      */
-    public static class MethodEntry extends AbstractLogPatternEntry {
+    public static final class MethodEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a {@code MethodEntry} instance for formatting log messages to include the method name of the log's location.
          *
@@ -636,7 +636,7 @@ public final class LogPattern {
      * log entries by appending the line number from the logging location. If the
      * location is null, it appends a null value.
      */
-    public static class LineEntry extends AbstractLogPatternEntry {
+    public static final class LineEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a LineEntry instance with specified formatting parameters for log entries.
          *
@@ -664,7 +664,7 @@ public final class LogPattern {
      * A concrete implementation of {@link AbstractLogPatternEntry} that formats and appends
      * the name of the file associated with the location of the log event.
      */
-    public static class FileEntry extends AbstractLogPatternEntry {
+    public static final class FileEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a FileEntry instance, which is a concrete implementation of
          * {@link AbstractLogPatternEntry} that formats and appends the file name
@@ -693,7 +693,7 @@ public final class LogPattern {
      * <p>
      * This class formats the location string according to specified width and alignment constraints.
      */
-    public static class LocationEntry extends AbstractLogPatternEntry {
+    public static final class LocationEntry extends AbstractLogPatternEntry {
         /**
          * Constructs an instance of the LocationEntry class. This constructor initializes
          * a log format entry responsible for formatting and displaying the location
@@ -747,7 +747,7 @@ public final class LogPattern {
      * for handling and formatting exception-related log entries. It formats the exception information
      * into the log output, including the exception type and message.
      */
-    public static class ExceptionEntry extends AbstractLogPatternEntry {
+    public static final class ExceptionEntry extends AbstractLogPatternEntry {
         /**
          * Constructs an instance of ExceptionEntry, a specialized log format entry
          * that handles the formatting of exceptions in a logging framework. This
@@ -782,7 +782,7 @@ public final class LogPattern {
      * The color code to be inserted is specified via a pair of color codes passed as a parameter
      * during formatting.
      */
-    public static class ColorStartEntry extends AbstractLogPatternEntry {
+    public static final class ColorStartEntry extends AbstractLogPatternEntry {
         /**
          * Constructs an instance of ColorStartEntry with the specified formatting parameters.
          *
@@ -811,7 +811,7 @@ public final class LogPattern {
      * Represents a specific type of log format entry designed to insert an ending
      * color code into a log message.
      */
-    public static class ColorEndEntry extends AbstractLogPatternEntry {
+    public static final class ColorEndEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a ColorEndEntry instance used for formatting log entries with
          * specific width constraints and alignment settings.
@@ -842,7 +842,7 @@ public final class LogPattern {
      * This class implements the {@code LogPatternEntry} interface and provides functionality
      * to format a log entry's timestamp according to various date-time patterns.
      */
-    public static class DateEntry implements LogPatternEntry {
+    public static final class DateEntry implements LogPatternEntry {
         private final String datePattern;
         private final DateTimeFormatter formatter;
 
@@ -884,7 +884,7 @@ public final class LogPattern {
     /**
      * Represents a log format entry that inserts a newline character into the log output.
      */
-    public static class NewlineEntry implements LogPatternEntry {
+    public static final class NewlineEntry implements LogPatternEntry {
         @Override
         public String toString() {
             return getLog4jPattern();
