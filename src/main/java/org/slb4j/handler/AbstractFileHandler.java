@@ -34,8 +34,8 @@ import java.util.concurrent.BlockingQueue;
  */
 public abstract sealed class AbstractFileHandler implements LogHandler, AutoCloseable permits FileHandler, RotatingFileHandler {
 
-    protected static final int BUFFER_COUNT = 8;
-    protected static final int BUFFER_SIZE = 4096;
+    private static final int BUFFER_COUNT = 8;
+    private static final int BUFFER_SIZE = 4096;
 
     static final StandardOpenOption[] OPTIONS_APPEND = {StandardOpenOption.CREATE, StandardOpenOption.APPEND};
     static final StandardOpenOption[] OPTIONS_CREATE = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
