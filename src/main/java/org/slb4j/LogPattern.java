@@ -856,13 +856,13 @@ public final class LogPattern {
          */
         public DateEntry(String pattern) {
             this.datePattern = pattern;
-            this.formatter = switch (pattern) {
+            this.formatter = (switch (pattern) {
                 case "ISO8601" -> DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss,SSS");
                 case "HH:mm:ss,SSS" -> DateTimeFormatter.ofPattern("HH:mm:ss,SSS");
                 case "yyyy-MM-dd HH:mm:ss,SSS" -> DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS");
                 case "yyyy-MM-dd HH:mm:ss" -> DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
                 default -> DateTimeFormatter.ofPattern(pattern.isEmpty() ? "HH:mm:ss" : pattern);
-            };
+            }).withZone(ZONE_ID);
         }
 
         @Override
@@ -872,7 +872,7 @@ public final class LogPattern {
 
         @Override
         public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) {
-            formatter.formatTo(instant.atZone(ZONE_ID), app);
+            formatter.formatTo(instant, app);
         }
 
         @Override

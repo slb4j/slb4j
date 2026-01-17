@@ -60,7 +60,6 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
         for (int i = 0; i < BUFFER_COUNT; i++) {
             bufferList.add(new IoStringBuilder(BUFFER_SIZE));
         }
-
     }
 
     @Override
