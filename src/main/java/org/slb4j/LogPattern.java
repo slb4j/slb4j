@@ -151,6 +151,8 @@ public final class LogPattern {
         protected final int minWidth;
         protected final int maxWidth;
         protected final boolean leftAlign;
+        protected final int abbreviationLength;
+        protected final boolean useDotAbbreviation;
         private final boolean locationNeeded;
 
         /**
@@ -171,12 +173,14 @@ public final class LogPattern {
          *                  to the left.
          * @param locationNeeded A flag indicating whether this entry requires location information.
          */
-        protected AbstractLogPatternEntry(String prefix, int minWidth, int maxWidth, boolean leftAlign, boolean locationNeeded) {
+        protected AbstractLogPatternEntry(String prefix, int minWidth, int maxWidth, boolean leftAlign, boolean locationNeeded, int abbreviationLength, boolean useDotAbbreviation) {
             this.prefix = prefix;
             this.minWidth = minWidth;
             this.maxWidth = maxWidth;
             this.leftAlign = leftAlign;
             this.locationNeeded = locationNeeded;
+            this.abbreviationLength = abbreviationLength;
+            this.useDotAbbreviation = useDotAbbreviation;
         }
 
         private static final int N_SPACES = 20;
@@ -237,6 +241,8 @@ public final class LogPattern {
         protected final void appendFormatted(Appendable app, @Nullable CharSequence value, boolean leftTruncate) throws IOException {
             if (value == null) {
                 value = "";
+            } else if (abbreviationLength > 0 && value.length() > abbreviationLength) {
+                value = abbreviate(value.toString(), abbreviationLength, useDotAbbreviation);
             }
 
             if (maxWidth > 0 && value.length() > maxWidth) {
@@ -329,7 +335,7 @@ public final class LogPattern {
          *                  padding will be added to the left.
          */
         public LevelEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("p", minWidth, maxWidth, leftAlign, false);
+            super("p", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
         }
 
         @Override
@@ -349,7 +355,7 @@ public final class LogPattern {
         if (parts.length <= abbreviationLength) {
             return name;
         }
-        StringBuilder abbreviated = new StringBuilder();
+        StringBuilder abbreviated = new StringBuilder(abbreviationLength);
         for (int i = parts.length - abbreviationLength; i < parts.length; i++) {
             if (!abbreviated.isEmpty()) {
                 abbreviated.append('.');
@@ -361,7 +367,7 @@ public final class LogPattern {
 
     private static CharSequence joinAbbreviations(int abbreviationLength, String[] parts) {
         int length = abbreviationLength > 0 ? abbreviationLength : 1;
-        StringBuilder abbreviated = new StringBuilder();
+        StringBuilder abbreviated = new StringBuilder(abbreviationLength);
         for (int i = 0; i < parts.length - 1; i++) {
             String part = parts[i];
             if (part.length() > length) {
@@ -383,8 +389,6 @@ public final class LogPattern {
      * settings. If truncation is required, the logger name will be truncated from the left.
      */
     public static final class LoggerEntry extends AbstractLogPatternEntry {
-        private final int abbreviationLength;
-        private final boolean useDotAbbreviation;
 
         /**
          * Constructs an instance of LoggerEntry, a specialized log format entry
@@ -403,14 +407,12 @@ public final class LogPattern {
          * @param useDotAbbreviation a flag indicating whether to use dot abbreviation (e.g., "o.s.T").
          */
         public LoggerEntry(int minWidth, int maxWidth, boolean leftAlign, int abbreviationLength, boolean useDotAbbreviation) {
-            super("c", minWidth, maxWidth, leftAlign, false);
-            this.abbreviationLength = abbreviationLength;
-            this.useDotAbbreviation = useDotAbbreviation;
+            super("c", minWidth, maxWidth, leftAlign, false, abbreviationLength, useDotAbbreviation);
         }
 
         @Override
         public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, abbreviate(loggerName, abbreviationLength, useDotAbbreviation), true);
+            appendFormatted(app, loggerName, true);
         }
 
         @Override
@@ -441,7 +443,7 @@ public final class LogPattern {
          *                  formatted thread name; otherwise, padding will be added to the left.
          */
         public ThreadEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("t", minWidth, maxWidth, leftAlign, false);
+            super("t", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
         }
 
         @Override
@@ -476,7 +478,7 @@ public final class LogPattern {
          *            be formatted as a key-value string.
          */
         public MdcEntry(int minWidth, int maxWidth, boolean leftAlign, @Nullable String key) {
-            super("X", minWidth, maxWidth, leftAlign, false);
+            super("X", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
             this.key = key;
         }
 
@@ -525,7 +527,7 @@ public final class LogPattern {
          *                  otherwise, padding will be added to the left.
          */
         public MarkerEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("marker", minWidth, maxWidth, leftAlign, false);
+            super("marker", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
         }
 
         @Override
@@ -553,7 +555,7 @@ public final class LogPattern {
          *                  added to the left.
          */
         public MessageEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("m", minWidth, maxWidth, leftAlign, false);
+            super("m", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
         }
 
         @Override
@@ -563,9 +565,6 @@ public final class LogPattern {
     }
 
     public static final class ClassEntry extends AbstractLogPatternEntry {
-        private final int abbreviationLength;
-        private final boolean useDotAbbreviation;
-
         /**
          * Constructs an instance of the ClassEntry, which represents a log entry
          * for the class name of the log event's location. This entry supports
@@ -586,15 +585,13 @@ public final class LogPattern {
          * @param useDotAbbreviation a flag indicating whether to use dot abbreviation (e.g., "o.s.T").
          */
         public ClassEntry(int minWidth, int maxWidth, boolean leftAlign, int abbreviationLength, boolean useDotAbbreviation) {
-            super("C", minWidth, maxWidth, leftAlign, true);
-            this.abbreviationLength = abbreviationLength;
-            this.useDotAbbreviation = useDotAbbreviation;
+            super("C", minWidth, maxWidth, leftAlign, true, abbreviationLength, useDotAbbreviation);
         }
 
         @Override
         public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             String className = location != null ? location.getClassName() : null;
-            appendFormatted(app, className != null ? abbreviate(className, abbreviationLength, useDotAbbreviation) : null, true);
+            appendFormatted(app, className, true);
         }
 
         @Override
@@ -622,7 +619,7 @@ public final class LogPattern {
          *  to the left.
          */
         public MethodEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("M", minWidth, maxWidth, leftAlign, true);
+            super("M", minWidth, maxWidth, leftAlign, true, Integer.MAX_VALUE, false);
         }
 
         @Override
@@ -651,7 +648,7 @@ public final class LogPattern {
          *                  of the formatted output; otherwise, it will be added to the left.
          */
         public LineEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("L", minWidth, maxWidth, leftAlign, true);
+            super("L", minWidth, maxWidth, leftAlign, true, Integer.MAX_VALUE, false);
         }
 
         @Override
@@ -679,7 +676,7 @@ public final class LogPattern {
          *                  will be added to the left.
          */
         public FileEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("F", minWidth, maxWidth, leftAlign, true);
+            super("F", minWidth, maxWidth, leftAlign, true, Integer.MAX_VALUE, false);
         }
 
         @Override
@@ -710,7 +707,7 @@ public final class LogPattern {
          *                  formatted output; otherwise, padding will be added to the left.
          */
         public LocationEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("l", minWidth, maxWidth, leftAlign, true);
+            super("l", minWidth, maxWidth, leftAlign, true, Integer.MAX_VALUE, false);
         }
 
         @Override
@@ -765,7 +762,7 @@ public final class LogPattern {
          *                  to the left.
          */
         public ExceptionEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("ex", minWidth, maxWidth, leftAlign, false);
+            super("ex", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
         }
 
         @Override
@@ -798,7 +795,7 @@ public final class LogPattern {
          *                  to the left.
          */
         public ColorStartEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("Cstart", minWidth, maxWidth, leftAlign, false);
+            super("Cstart", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
         }
 
         @Override
@@ -828,7 +825,7 @@ public final class LogPattern {
          *                  to the left.
          */
         public ColorEndEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            super("Cend", minWidth, maxWidth, leftAlign, false);
+            super("Cend", minWidth, maxWidth, leftAlign, false, Integer.MAX_VALUE, false);
         }
 
         @Override
