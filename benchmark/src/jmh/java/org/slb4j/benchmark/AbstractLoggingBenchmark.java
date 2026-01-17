@@ -57,9 +57,15 @@ public abstract class AbstractLoggingBenchmark {
     protected org.apache.logging.log4j.Marker log4jMarker;
 
     @Setup(Level.Trial)
-    public void setup() throws IOException {
+    public void setup(org.openjdk.jmh.infra.BenchmarkParams params) throws IOException {
         originalOut = System.out;
         originalErr = System.err;
+
+        // Print testing info only once per fork/trial
+        String benchmarkName = params.getBenchmark();
+        String frontend = benchmarkName.substring(benchmarkName.lastIndexOf('.') + 1);
+        originalOut.println("Testing " + backend + "-" + frontend + " ...");
+
         if ("true".equals(outputToFile)) {
             fileOut = new FileOutputStream("benchmark.out", true);
             PrintStream ps = new PrintStream(fileOut);
