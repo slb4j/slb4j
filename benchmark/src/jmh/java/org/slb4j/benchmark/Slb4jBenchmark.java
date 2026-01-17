@@ -15,7 +15,6 @@
  */
 package org.slb4j.benchmark;
 
-import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
@@ -24,10 +23,7 @@ import org.slb4j.SLB4J;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.handler.FileHandler;
-import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
-import org.slf4j.MarkerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;

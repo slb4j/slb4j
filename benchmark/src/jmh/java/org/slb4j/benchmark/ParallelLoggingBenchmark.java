@@ -15,17 +15,7 @@
  */
 package org.slb4j.benchmark;
 
-import ch.qos.logback.classic.LoggerContext;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configurator;
 import org.openjdk.jmh.annotations.*;
-import org.openjdk.jmh.infra.BenchmarkParams;
-import org.slb4j.LogPattern;
-import org.slb4j.SLB4J;
-import org.slb4j.dispatcher.UniversalDispatcher;
-import org.slb4j.handler.FileHandler;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -33,7 +23,6 @@ import java.io.PrintStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.SimpleFormatter;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
