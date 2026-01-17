@@ -1,4 +1,4 @@
-import org.gradle.internal.extensions.stdlib.toDefaultLowerCase
+import java.util.Locale
 
 /*
  * Copyright 2026 Axel Howind - axh@dua3.com
@@ -25,6 +25,11 @@ plugins {
     jacoco
 }
 
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
+
 /////////////////////////////////////////////////////////////////////////////
 // Meta data object
 /////////////////////////////////////////////////////////////////////////////
@@ -49,13 +54,13 @@ version = Meta.VERSION
 
 // check for development/release version
 fun isDevelopmentVersion(versionString: String): Boolean {
-    val v = versionString.toDefaultLowerCase()
+    val v = versionString.lowercase()
     val markers = listOf("snapshot", "alpha", "beta")
     return markers.any { marker -> v.contains("-$marker") || v.contains(".$marker") }
 }
 
 val isReleaseVersion = !isDevelopmentVersion(project.version.toString())
-val isSnapshot = project.version.toString().toDefaultLowerCase().contains("snapshot")
+val isSnapshot = project.version.toString().lowercase().contains("snapshot")
 
 dependencies {
     implementation(libs.jspecify)
@@ -122,6 +127,15 @@ allprojects {
                             password = System.getenv("SONATYPE_PASSWORD")
                         }
                     }
+                } else {
+                    maven {
+                        name = "OSSRH"
+                        url = uri("https://central.sonatype.com/service/local/staging/deploy/maven2/")
+                        credentials {
+                            username = System.getenv("SONATYPE_USERNAME")
+                            password = System.getenv("SONATYPE_PASSWORD")
+                        }
+                    }
                 }
 
                 // Always add root-level staging directory for JReleaser
@@ -142,8 +156,8 @@ allprojects {
                         version = project.version.toString()
 
                         pom {
-                            name.set(project.name)
-                            description.set(project.description)
+                            name.set("slb4j")
+                            description.set(Meta.DESCRIPTION)
                             url.set(Meta.SCM)
 
                             licenses {
@@ -185,7 +199,14 @@ allprojects {
         if (pluginManager.hasPlugin("signing")) {
             configure<SigningExtension> {
                 val shouldSign = !project.version.toString().lowercase().contains("snapshot")
-                setRequired(shouldSign && gradle.taskGraph.hasTask("publish"))
+                setRequired(shouldSign && (gradle.taskGraph.hasTask("publish") || gradle.taskGraph.hasTask("publishToMavenLocal")))
+
+                if (shouldSign) {
+                    useInMemoryPgpKeys(
+                        System.getenv("GPG_SIGNING_KEY"),
+                        System.getenv("GPG_PASSPHRASE")
+                    )
+                }
 
                 val publishing = project.extensions.findByType<PublishingExtension>() ?: return@configure
 

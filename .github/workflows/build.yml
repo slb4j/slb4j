@@ -3,6 +3,7 @@ name: Build
 on:
   push:
     branches: [ main ]
+    tags: [ 'v*' ]
   pull_request:
     branches: [ main ]
 
@@ -34,3 +35,81 @@ jobs:
         run: ./gradlew build
         env:
           DISPLAY: ":99"
+
+  publish:
+    name: Publish to Maven Central
+    needs: build
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && github.repository == 'slb4j/slb4j'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Azul Zulu JDK 21 (Full)
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'zulu'
+          java-package: 'jdk+fx'
+          cache: 'gradle'
+
+      - name: Check if version is not SNAPSHOT
+        run: |
+          VERSION=$(./gradlew properties -q | grep "^version:" | awk '{print $2}')
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          if [[ $VERSION == *"SNAPSHOT"* ]]; then
+            echo "SNAPSHOT version detected. Skipping publishing."
+            exit 1
+          fi
+
+      - name: Publish to Maven Central
+        run: ./gradlew publishAllPublicationsToOSSRHRepository
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          GPG_SIGNING_KEY: ${{ secrets.GPG_SIGNING_KEY }}
+          GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}
+
+      - name: Upload Javadoc to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: build/docs/javadoc
+          target-folder: javadoc/${{ env.VERSION }}
+
+      - name: Increment patch version and add SNAPSHOT
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          
+          # Logic to increment patch version
+          # Assuming version is in Meta.VERSION in build.gradle.kts
+          CURRENT_VERSION=${{ env.VERSION }}
+          # Handle both x.y and x.y.z formats
+          if [[ $CURRENT_VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            PATCH="${BASH_REMATCH[3]}"
+            NEW_PATCH=$((PATCH + 1))
+            NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}-SNAPSHOT"
+          elif [[ $CURRENT_VERSION =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+            MAJOR="${BASH_REMATCH[1]}"
+            MINOR="${BASH_REMATCH[2]}"
+            NEW_VERSION="${MAJOR}.${MINOR}.1-SNAPSHOT"
+          else
+            echo "Unexpected version format: $CURRENT_VERSION"
+            exit 1
+          fi
+          
+          sed -i "s/const val VERSION = \"$CURRENT_VERSION\"/const val VERSION = \"$NEW_VERSION\"/" build.gradle.kts
+          
+          git add build.gradle.kts
+          git commit -m "Prepare for next development cycle: $NEW_VERSION"
+          git push origin main
