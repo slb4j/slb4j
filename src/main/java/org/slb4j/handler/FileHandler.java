@@ -57,7 +57,7 @@ public final class FileHandler extends AbstractFileHandler {
             IoStringBuilder buffer = null;
             try {
                 buffer = acquireBuffer();
-                logPattern.formatLogEntry(buffer, instant, loggerName, lvl, mrk, mdc, loc, msg, t, null);
+                logPattern.formatLogEntry(buffer, instant, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
                 synchronized (lock()) {
                     buffer.writeTo(out);
 
