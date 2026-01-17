@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 #
 # Copyright 2026 Axel Howind - axh@dua3.com
 #
@@ -37,6 +38,36 @@ PARALLEL_THREADS = [1, 2, 4, 8, 16, 64, 128]
 VALID_HANDLERS = ["CONSOLE", "FILE"]
 VALID_FORMATS = ["COMPACT", "DEFAULT", "DETAILED"]
 VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
+
+# ANSI colors
+BLACK = "\033[0;30m"
+DARK_GRAY = "\033[90m"
+RED = "\033[0;31m"
+BOLD_RED = "\033[1;31m"
+LIGHT_RED = "\033[91m"
+GREEN = "\033[0;32m"
+BOLD_GREEN = "\033[1;32m"
+LIGHT_GREEN = "\033[92m"
+YELLOW = "\033[0;33m"
+BOLD_YELLOW = "\033[1;33m"
+LIGHT_YELLOW = "\033[93m"
+BLUE = "\033[0;34m"
+BOLD_BLUE = "\033[1;34m"
+LIGHT_BLUE = "\033[94m"
+MAGENTA = "\033[0;35m"
+BOLD_MAGENTA = "\033[1;35m"
+LIGHT_MAGENTA = "\033[95m"
+CYAN = "\033[0;36m"
+BOLD_CYAN = "\033[1;36m"
+LIGHT_CYAN = "\033[96m"
+WHITE = "\033[0;37m"
+BOLD_WHITE = "\033[1;37m"
+
+# Special Styles
+BOLD = "\033[1m"
+UNDERLINE = "\033[4m"
+REVERSE = "\033[7m"
+RESET = "\033[0m"
 
 def parse_time(time_str):
     if not time_str:
@@ -84,35 +115,35 @@ def validate_args(args):
     for b in backends:
         if is_parallel:
             if b not in PARALLEL_BACKENDS:
-                print(f"Error: Invalid parallel backend {b}. Valid backends are: {PARALLEL_BACKENDS}")
+                print(f"{BOLD_RED}Error: Invalid parallel backend {b}. Valid backends are: {PARALLEL_BACKENDS}{RESET}")
                 return False
         if not args.parallel: # Check sequential backends if not exclusively parallel
             if b not in SEQUENTIAL_BACKENDS_MAP:
-                print(f"Error: Invalid backend {b}. Valid backends are: {list(SEQUENTIAL_BACKENDS_MAP.keys())}")
+                print(f"{BOLD_RED}Error: Invalid backend {b}. Valid backends are: {list(SEQUENTIAL_BACKENDS_MAP.keys())}{RESET}")
                 return False
     
     if args.handlers:
         for c in args.handlers:
             if c not in VALID_HANDLERS:
-                print(f"Error: Invalid handler {c}. Valid handlers are: {VALID_HANDLERS}")
+                print(f"{BOLD_RED}Error: Invalid handler {c}. Valid handlers are: {VALID_HANDLERS}{RESET}")
                 return False
                 
     if not args.parallel and args.formats:
         for f in args.formats:
             if f not in VALID_FORMATS:
-                print(f"Error: Invalid format {f}. Valid formats are: {VALID_FORMATS}")
+                print(f"{BOLD_RED}Error: Invalid format {f}. Valid formats are: {VALID_FORMATS}{RESET}")
                 return False
                 
     if not args.parallel and args.message_types:
         for mt in args.message_types:
             if mt not in VALID_MESSAGE_TYPES:
-                print(f"Error: Invalid message type {mt}. Valid message types are: {VALID_MESSAGE_TYPES}")
+                print(f"{BOLD_RED}Error: Invalid message type {mt}. Valid message types are: {VALID_MESSAGE_TYPES}{RESET}")
                 return False
 
     if args.parallel and args.threads:
         for t in args.threads:
             if t not in PARALLEL_THREADS:
-                print(f"Error: Invalid thread count {t}. Valid thread counts are: {PARALLEL_THREADS}")
+                print(f"{BOLD_RED}Error: Invalid thread count {t}. Valid thread counts are: {PARALLEL_THREADS}{RESET}")
                 return False
                 
     return True
@@ -121,7 +152,7 @@ def run_command(command):
     print(f"Running: {command}")
     result = subprocess.run(command, shell=True, capture_output=True, text=True)
     if result.returncode != 0:
-        print(f"Command failed with return code {result.returncode}")
+        print(f"{BOLD_RED}Command failed with return code {result.returncode}{RESET}")
         print(f"STDOUT: {result.stdout}")
         print(f"STDERR: {result.stderr}")
     return result.returncode == 0
@@ -169,7 +200,7 @@ def collect_results(args, timestamp, results_dir, force_parallel=None):
     selected_backends = args.backends if args.backends else (PARALLEL_BACKENDS if is_parallel else list(SEQUENTIAL_BACKENDS_MAP.keys()))
     
     for backend in selected_backends:
-        print(f"Testing backend: {backend}")
+        print(f"{LIGHT_CYAN}Testing backend: {backend}{RESET}")
         cmd = f"./gradlew :benchmark:runJmh -Pbackend={backend}"
         
         if is_parallel:
@@ -216,7 +247,7 @@ def collect_results(args, timestamp, results_dir, force_parallel=None):
             cmd += " -PoutputToFile=true"
 
         if args.dry_run:
-            print(f"Dry run: Would execute command for backend {backend}:")
+            print(f"{LIGHT_YELLOW}Dry run: Would execute command for backend {backend}:{RESET}")
             print(f"  Command: {cmd}")
             continue
 
@@ -234,7 +265,7 @@ def collect_results(args, timestamp, results_dir, force_parallel=None):
             else:
                 print(f"Warning: Result file {src_json} not found for {backend}")
         else:
-            print(f"Error: Benchmark failed for {backend}")
+            print(f"{BOLD_RED}Error: Benchmark failed for {backend}{RESET}")
 
     return all_results
 
@@ -438,7 +469,7 @@ if __name__ == "__main__":
     if not os.path.exists(results_dir):
         os.makedirs(results_dir)
 
-    print(f"Estimated total runtime: {format_duration(get_estimated_runtime(args))}")
+    print(f"{BOLD_GREEN}Estimated total runtime: {format_duration(get_estimated_runtime(args))}{RESET}")
     
     cmd_line = "python3 " + " ".join(sys.argv)
     sys_info = get_system_info()
