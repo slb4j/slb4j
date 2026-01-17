@@ -241,30 +241,72 @@ public final class LogPattern {
         protected final void appendFormatted(Appendable app, @Nullable CharSequence value, boolean leftTruncate) throws IOException {
             if (value == null) {
                 value = "";
-            } else if (abbreviationLength > 0 && value.length() > abbreviationLength) {
-                value = abbreviate(value.toString(), abbreviationLength, useDotAbbreviation);
             }
 
-            if (maxWidth > 0 && value.length() > maxWidth) {
+            int valueStart = 0;
+            if (abbreviationLength > 0 && value.length() > abbreviationLength) {
+                int start = 0;
+                int len = value.length();
+                int written = 0;
+                if (useDotAbbreviation) {
+                    int limit = abbreviationLength;
+                    int lastDot = -1;
+                    int dot = Util.indexOf(value, '.');
+                    while (dot != -1) {
+                        int partLen = dot - lastDot - 1;
+                        if (partLen > limit) {
+                            app.append(value, lastDot + 1, lastDot + 1 + limit);
+                            written += limit;
+                        } else {
+                            app.append(value, lastDot + 1, dot);
+                            written += value.length() - lastDot;
+                        }
+                        app.append('.');
+                        written++;
+                        lastDot = dot;
+                        dot = Util.indexOf(value, '.', lastDot + 1);
+                    }
+                    app.append(value, lastDot + 1, len);
+                    written += len - lastDot - 1;
+                    appendSpaces(app, Math.max(0, minWidth - written));
+                    return;
+                } else {
+                    int dotsFound = 0;
+                    for (int i = len - 1; i >= 0; i--) {
+                        if (value.charAt(i) == '.') {
+                            dotsFound++;
+                            if (dotsFound == abbreviationLength) {
+                                start = i + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (start > 0) {
+                    valueStart = start;
+                }
+            }
+
+            if (maxWidth > 0 && value.length() - valueStart > maxWidth) {
                 if (leftTruncate) {
                     app.append(value, value.length() - maxWidth, value.length());
                 } else {
-                    app.append(value, 0, maxWidth);
+                    app.append(value, valueStart, maxWidth);
                 }
                 return;
             }
 
-            if (value.length() < minWidth) {
-                int padding = minWidth - value.length();
+            if (value.length() - valueStart < minWidth) {
+                int padding = minWidth - (value.length() - valueStart);
                 if (leftAlign) {
-                    app.append(value);
+                    app.append(value, valueStart, value.length());
                     appendSpaces(app, padding);
                 } else {
                     appendSpaces(app, padding);
-                    app.append(value);
+                    app.append(value, valueStart, value.length());
                 }
             } else {
-                app.append(value);
+                app.append(value, valueStart, value.length());
             }
         }
 
@@ -344,42 +386,6 @@ public final class LogPattern {
         }
     }
 
-    private static CharSequence abbreviate(String name, int abbreviationLength, boolean useDotAbbreviation) {
-        if (abbreviationLength <= 0 && !useDotAbbreviation) {
-            return name;
-        }
-        String[] parts = name.split("\\.");
-        if (useDotAbbreviation) {
-            return joinAbbreviations(abbreviationLength, parts);
-        }
-        if (parts.length <= abbreviationLength) {
-            return name;
-        }
-        StringBuilder abbreviated = new StringBuilder(abbreviationLength);
-        for (int i = parts.length - abbreviationLength; i < parts.length; i++) {
-            if (!abbreviated.isEmpty()) {
-                abbreviated.append('.');
-            }
-            abbreviated.append(parts[i]);
-        }
-        return abbreviated;
-    }
-
-    private static CharSequence joinAbbreviations(int abbreviationLength, String[] parts) {
-        int length = abbreviationLength > 0 ? abbreviationLength : 1;
-        StringBuilder abbreviated = new StringBuilder(abbreviationLength);
-        for (int i = 0; i < parts.length - 1; i++) {
-            String part = parts[i];
-            if (part.length() > length) {
-                abbreviated.append(part, 0, length);
-            } else {
-                abbreviated.append(part);
-            }
-            abbreviated.append('.');
-        }
-        abbreviated.append(parts[parts.length - 1]);
-        return abbreviated;
-    }
 
     /**
      * A specialized log format entry for formatting and appending logger names to log messages.
@@ -713,7 +719,7 @@ public final class LogPattern {
         @Override
         public void format(Appendable app, Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             if (location != null) {
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new StringBuilder(256);
                 String className = location.getClassName();
                 if (className != null) {
                     sb.append(className);
@@ -732,7 +738,7 @@ public final class LogPattern {
                     sb.append(':').append(lineNumber);
                 }
                 sb.append(')');
-                appendFormatted(app, sb.toString());
+                appendFormatted(app, sb);
             } else {
                 appendFormatted(app, null);
             }
