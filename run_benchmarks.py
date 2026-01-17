@@ -150,12 +150,9 @@ def validate_args(args):
 
 def run_command(command):
     print(f"Running: {command}")
-    result = subprocess.run(command, shell=True, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"{BOLD_RED}Command failed with return code {result.returncode}{RESET}")
-        print(f"STDOUT: {result.stdout}")
-        print(f"STDERR: {result.stderr}")
-    return result.returncode == 0
+    process = subprocess.Popen(command, shell=True, text=True)
+    process.wait()
+    return process.returncode == 0
 
 def get_estimated_runtime(args):
     total_time = 0
