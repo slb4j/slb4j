@@ -20,8 +20,6 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 
-import java.time.Instant;
-
 /**
  * The LogEntry record encapsulates information about a single log event.
  * It is an immutable and thread-safe representation of a log message
@@ -32,9 +30,9 @@ public interface LogEntry {
     /**
      * Retrieves the timestamp of when the log event occurred.
      *
-     * @return an {@link Instant} representing the exact time the log event was recorded.
+     * @return the timestamp of the log event (milliseconds since epoch).
      */
-    Instant time();
+    long time();
 
     /**
      * Retrieves the name of the logger that generated the log event.
@@ -116,7 +114,7 @@ public interface LogEntry {
      * @return an instance of LogEntry representing the log event with the given data.
      */
     static LogEntry of(
-            Instant time,
+            long time,
             String logger,
             LogLevel level,
             @Nullable String marker,
@@ -139,7 +137,7 @@ public interface LogEntry {
 }
 
 record LogEntryRecord(
-        Instant time,
+        long time,
         String logger,
         LogLevel level,
         @Nullable String marker,

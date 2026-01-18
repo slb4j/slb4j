@@ -23,7 +23,7 @@ dependencies {
     implementation(project(":slb4j-ext:slb4j-ext-fx"))
     implementation(libs.slf4j.api)
     implementation(libs.log4j.api)
-    implementation(libs.commons.logging)
+    implementation(libs.jcl)
 }
 
 application {

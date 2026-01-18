@@ -30,11 +30,7 @@ import java.io.IOException;
 @OutputTimeUnit(TimeUnit.SECONDS)
 public abstract class AbstractLoggingBenchmark {
 
-    @Param({"false", "true"})
-    public String outputToFile;
-
-    @Param({"slb4j", "log4j", "logback", "jul"})
-    public String backend;
+    public String outputToFile = "false";
 
     @Param({"CONSTANT", "ARGUMENTS", "LAMBDA"})
     public String messageType;
@@ -56,10 +52,18 @@ public abstract class AbstractLoggingBenchmark {
     protected Marker slf4jMarker;
     protected org.apache.logging.log4j.Marker log4jMarker;
 
+    public abstract String backend();
+
     @Setup(Level.Trial)
-    public void setup() throws IOException {
+    public void setup(org.openjdk.jmh.infra.BenchmarkParams params) throws IOException {
         originalOut = System.out;
         originalErr = System.err;
+
+        // Print testing info only once per fork/trial
+        String benchmarkName = params.getBenchmark();
+        String frontend = benchmarkName.substring(benchmarkName.lastIndexOf('.') + 1);
+        originalOut.println("Testing " + backend() + "-" + frontend + " ...");
+
         if ("true".equals(outputToFile)) {
             fileOut = new FileOutputStream("benchmark.out", true);
             PrintStream ps = new PrintStream(fileOut);
@@ -76,7 +80,7 @@ public abstract class AbstractLoggingBenchmark {
         String benchmarkName = params.getBenchmark();
         String frontend = benchmarkName.substring(benchmarkName.lastIndexOf('.') + 1);
         logMessage = String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s",
-                backend, frontend, category, format, messageType);
+                backend(), frontend, category, format, messageType);
     }
 
     @TearDown(Level.Trial)
@@ -99,20 +103,20 @@ public abstract class AbstractLoggingBenchmark {
         if ("MARKER".equals(format)) {
             switch (messageType) {
                 case "CONSTANT" -> slf4jLogger.info(slf4jMarker, logMessage);
-                case "ARGUMENTS" -> slf4jLogger.info(slf4jMarker, "Benchmark backend={} frontend={} category={} format={} messageType={}", backend, "slf4j", category, format, messageType);
+                case "ARGUMENTS" -> slf4jLogger.info(slf4jMarker, "Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "slf4j", category, format, messageType);
                 case "LAMBDA" -> {
                     if (slf4jLogger.isInfoEnabled()) {
-                        slf4jLogger.info(slf4jMarker, String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "slf4j", category, format, messageType));
+                        slf4jLogger.info(slf4jMarker, String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend(), "slf4j", category, format, messageType));
                     }
                 }
             }
         } else {
             switch (messageType) {
                 case "CONSTANT" -> slf4jLogger.info(logMessage);
-                case "ARGUMENTS" -> slf4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend, "slf4j", category, format, messageType);
+                case "ARGUMENTS" -> slf4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "slf4j", category, format, messageType);
                 case "LAMBDA" -> {
                     if (slf4jLogger.isInfoEnabled()) {
-                        slf4jLogger.info(String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "slf4j", category, format, messageType));
+                        slf4jLogger.info(String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend(), "slf4j", category, format, messageType));
                     }
                 }
             }
@@ -124,14 +128,14 @@ public abstract class AbstractLoggingBenchmark {
         if ("MARKER".equals(format)) {
             switch (messageType) {
                 case "CONSTANT" -> log4jLogger.info(log4jMarker, logMessage);
-                case "ARGUMENTS" -> log4jLogger.info(log4jMarker, "Benchmark backend={} frontend={} category={} format={} messageType={}", backend, "log4j", category, format, messageType);
-                case "LAMBDA" -> log4jLogger.info(log4jMarker, () -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "log4j", category, format, messageType));
+                case "ARGUMENTS" -> log4jLogger.info(log4jMarker, "Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "log4j", category, format, messageType);
+                case "LAMBDA" -> log4jLogger.info(log4jMarker, () -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend(), "log4j", category, format, messageType));
             }
         } else {
             switch (messageType) {
                 case "CONSTANT" -> log4jLogger.info(logMessage);
-                case "ARGUMENTS" -> log4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend, "log4j", category, format, messageType);
-                case "LAMBDA" -> log4jLogger.info(() -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "log4j", category, format, messageType));
+                case "ARGUMENTS" -> log4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "log4j", category, format, messageType);
+                case "LAMBDA" -> log4jLogger.info(() -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend(), "log4j", category, format, messageType));
             }
         }
     }
@@ -140,8 +144,8 @@ public abstract class AbstractLoggingBenchmark {
     public void jul() {
         switch (messageType) {
             case "CONSTANT" -> julLogger.info(logMessage);
-            case "ARGUMENTS" -> julLogger.log(java.util.logging.Level.INFO, "Benchmark backend={0} frontend={1} category={2} format={3} messageType={4}", new Object[]{backend, "jul", category, format, messageType});
-            case "LAMBDA" -> julLogger.info(() -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "jul", category, format, messageType));
+            case "ARGUMENTS" -> julLogger.log(java.util.logging.Level.INFO, "Benchmark backend={0} frontend={1} category={2} format={3} messageType={4}", new Object[]{backend(), "jul", category, format, messageType});
+            case "LAMBDA" -> julLogger.info(() -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend(), "jul", category, format, messageType));
         }
     }
 
@@ -149,7 +153,7 @@ public abstract class AbstractLoggingBenchmark {
     public void jcl() {
         switch (messageType) {
             case "CONSTANT" -> jclLogger.info(logMessage);
-            case "ARGUMENTS", "LAMBDA" -> jclLogger.info(String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend, "jcl", category, format, messageType));
+            case "ARGUMENTS", "LAMBDA" -> jclLogger.info(String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend(), "jcl", category, format, messageType));
         }
     }
 }

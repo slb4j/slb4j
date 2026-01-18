@@ -14,5 +14,5 @@
  * limitations under the License.
  */
 dependencies {
-    implementation(libs.commons.logging)
+    implementation(libs.jcl)
 }

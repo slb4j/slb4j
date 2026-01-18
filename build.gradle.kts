@@ -1,5 +1,3 @@
-import java.util.Locale
-
 /*
  * Copyright 2026 Axel Howind - axh@dua3.com
  *
@@ -68,7 +66,7 @@ dependencies {
     compileOnly(platform(libs.log4j.bom))
     compileOnly(libs.log4j.api)
     compileOnly(libs.slf4j.api)
-    compileOnly(libs.commons.logging)
+    compileOnly(libs.jcl)
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
@@ -76,7 +74,7 @@ dependencies {
     testImplementation(libs.log4j.api)
     testImplementation(libs.log4j.core)
     testImplementation(libs.slf4j.api)
-    testImplementation(libs.commons.logging)
+    testImplementation(libs.jcl)
 
     testRuntimeOnly(libs.junit.platform.launcher)
 }
@@ -97,7 +95,7 @@ val jacocoTestReport by tasks.getting(JacocoReport::class) {
 }
 
 allprojects {
-    if (project.name != "benchmark") {
+    if (!project.name.contains("benchmark")) {
         apply(plugin = "com.dua3.gradle.jdkprovider")
 
         jdk {

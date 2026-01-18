@@ -49,7 +49,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     private @Nullable Writer out;
     private final LongAdder currentSize = new LongAdder();
     private long currentEntries;
-    private @Nullable Instant nextRotationTime;
+    private long nextRotationTime = -1;
 
     private long maxFileSize = -1;
     private long maxEntries = -1;
@@ -120,9 +120,9 @@ public final class RotatingFileHandler extends AbstractFileHandler {
 
     private void updateNextRotationTime() {
         if (rotationTimeUnit != null) {
-            nextRotationTime = Instant.now().truncatedTo(rotationTimeUnit).plus(1, rotationTimeUnit);
+            nextRotationTime = Instant.now().truncatedTo(rotationTimeUnit).plus(1, rotationTimeUnit).toEpochMilli();
         } else {
-            nextRotationTime = null;
+            nextRotationTime = -1;
         }
     }
 
@@ -195,14 +195,14 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     @Override
-    public void handle(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
-        if (getFilter().test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
+        if (getFilter().test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             IoStringBuilder buffer = null;
             try {
                 buffer = acquireBuffer();
-                logPattern.formatLogEntry(buffer, instant, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
+                logPattern.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
                 synchronized (lock()) {
-                    checkRotation(instant);
+                    checkRotation(timestamp);
                     if (out != null) {
                         buffer.writeTo(out);
 
@@ -227,10 +227,10 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         }
     }
 
-    private void checkRotation(Instant now) {
+    private void checkRotation(long timestamp) {
         boolean rotate = (maxFileSize > 0 && currentSize.longValue() >= maxFileSize)
                 || (maxEntries > 0 && currentEntries >= maxEntries)
-                || (nextRotationTime != null && !now.isBefore(nextRotationTime));
+                || (nextRotationTime != -1 && timestamp >= nextRotationTime);
 
         if (rotate) {
             try {

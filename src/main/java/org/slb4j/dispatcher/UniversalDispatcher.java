@@ -25,7 +25,6 @@ import org.slb4j.MDC;
 import org.slb4j.support.StackWalkerLocationResolver;
 import org.jspecify.annotations.Nullable;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -135,7 +134,7 @@ public final class UniversalDispatcher implements LogDispatcher {
      * This method evaluates if a log event passes the predefined filter criteria
      * and dispatches it to all handlers enabled for the specified log level.
      *
-     * @param instant the timestamp of the log event; must not be null
+     * @param timestamp the timestamp of the log event (milliseconds since epoch)
      * @param loggerName the name of the logger emitting the event; must not be null
      * @param lvl the level of the log event; must not be null
      * @param mrk an optional marker associated with the log event; may be null
@@ -144,11 +143,11 @@ public final class UniversalDispatcher implements LogDispatcher {
      * @param msg the supplier for the log message; must not be null
      * @param t an optional {@code Throwable} associated with the log event; may be null
      */
-    public void filterAndDispatch(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver locationResolver, Supplier<String> msg, @Nullable Throwable t) {
-        if (filter.test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
+    public void filterAndDispatch(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver locationResolver, Supplier<String> msg, @Nullable Throwable t) {
+        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             for (LogHandler handler : handlers) {
                 if (handler.isEnabled(lvl)) {
-                    handler.handle(instant, loggerName, lvl, mrk, mdc, locationResolver, msg, t);
+                    handler.handle(timestamp, loggerName, lvl, mrk, mdc, locationResolver, msg, t);
                 }
             }
         }

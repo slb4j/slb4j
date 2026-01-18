@@ -7,7 +7,6 @@ import org.slb4j.MDC;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogFilter;
 
-import java.time.Instant;
 import java.util.Collection;
 import java.util.function.Supplier;
 
@@ -40,7 +39,7 @@ class UniversalDispatcherTest {
         }
 
         @Override
-        public void handle(Instant instant, String loggerName, LogLevel lvl, String mrk, MDC mdc, LocationResolver locationResolver, Supplier<String> msg, Throwable t) {
+        public void handle(long timestamp, String loggerName, LogLevel lvl, String mrk, MDC mdc, LocationResolver locationResolver, Supplier<String> msg, Throwable t) {
             // No-op
         }
 

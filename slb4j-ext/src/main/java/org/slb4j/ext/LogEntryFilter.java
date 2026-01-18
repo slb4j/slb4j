@@ -20,7 +20,6 @@ import org.slb4j.LogFilter;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 
-import java.time.Instant;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -68,7 +67,7 @@ public final class LogEntryFilter implements LogFilter, Predicate<LogEntry> {
     }
 
     @Override
-    public boolean test(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
-        return filter.test(instant, loggerName, lvl, mrk, mdc, msg, t);
+    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
+        return filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t);
     }
 }

@@ -31,7 +31,7 @@ import org.slf4j.spi.LocationAwareLogger;
 
 import java.io.NotSerializableException;
 import java.io.Serial;
-import java.time.Instant;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -59,7 +59,8 @@ public final class LoggerSlf4j extends AbstractLogger {
 
         @Override
         public Stream<Map.Entry<String, String>> stream() {
-            return org.slf4j.MDC.getCopyOfContextMap().entrySet().stream();
+            Map<String, String> map = org.slf4j.MDC.getCopyOfContextMap();
+            return map == null ? Stream.empty() : map.entrySet().stream();
         }
     };
 
@@ -125,7 +126,7 @@ public final class LoggerSlf4j extends AbstractLogger {
         LogLevel lvl = translateSlf4jLevel(level);
         if (DISPATCHER.isLevelEnabled(lvl)) {
             Supplier<String> msg = Util.cachingStringSupplier(() -> formatSlf4jMessage(messagePattern, arguments));
-            DISPATCHER.filterAndDispatch(Instant.now(), name, lvl, Objects.toString(marker, ""), MDC_INSTANCE, LOCATION_RESOLVER, msg, throwable);
+            DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, lvl, Objects.toString(marker, ""), MDC_INSTANCE, LOCATION_RESOLVER, msg, throwable);
         }
     }
 

@@ -18,7 +18,6 @@ package org.slb4j;
 import org.slb4j.filter.CombinedFilter;
 import org.jspecify.annotations.Nullable;
 
-import java.time.Instant;
 import java.util.function.Supplier;
 
 /**
@@ -97,7 +96,7 @@ public interface LogFilter {
     /**
      * Tests if a log entry, specified by its components, should be processed.
      *
-     * @param instant    the timestamp of the log entry
+     * @param timestamp  the timestamp of the log entry (milliseconds since epoch)
      * @param loggerName the name of the logger that generated the log entry
      * @param lvl        the log level of the log entry
      * @param mrk        the marker associated with the log entry, can be {@code null}
@@ -106,7 +105,7 @@ public interface LogFilter {
      * @param t          the throwable associated with the log entry, can be {@code null}
      * @return {@code true}, if the log entry should be processed, {@code false} if it should be filtered out
      */
-    boolean test(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t);
+    boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t);
 
     /**
      * Determines if logging is enabled for a specific name, log level, and optional marker.
@@ -158,7 +157,7 @@ final class LogFilterConstants {
         }
 
         @Override
-        public boolean test(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
+        public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
             return true;
         }
 
@@ -185,7 +184,7 @@ final class LogFilterConstants {
         }
 
         @Override
-        public boolean test(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
+        public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
             return false;
         }
 

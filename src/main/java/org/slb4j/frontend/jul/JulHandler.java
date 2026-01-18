@@ -24,7 +24,6 @@ import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.support.StackWalkerLocationResolver;
 import org.slb4j.support.Util;
 
-import java.time.Instant;
 import java.util.function.Supplier;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -105,7 +104,7 @@ public final class JulHandler extends Handler {
                 Supplier<String> msg = Util.cachingStringSupplier(() -> formatJulMessage(logRecord.getMessage(), logRecord.getParameters()));
                 Throwable t = logRecord.getThrown();
 
-                DISPATCHER.filterAndDispatch(Instant.now(), loggerName1, lvl, null, null, LOCATION_RESOLVER, msg, t);
+                DISPATCHER.filterAndDispatch(logRecord.getMillis(), loggerName1, lvl, null, null, LOCATION_RESOLVER, msg, t);
             }
         }
     }

@@ -16,14 +16,10 @@
 package org.slb4j.benchmark;
 
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-import org.apache.logging.log4j.core.config.Configurator;
-import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 import org.slf4j.LoggerFactory;
-import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 import java.io.IOException;
@@ -39,6 +35,11 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
     public String format;
 
     private Path tempFile;
+
+    @Override
+    public String backend() {
+        return "log4j";
+    }
 
     @Override
     protected void setupLogging() throws IOException {

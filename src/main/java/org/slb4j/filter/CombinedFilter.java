@@ -20,7 +20,6 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 
-import java.time.Instant;
 import java.util.Arrays;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -53,9 +52,9 @@ public final class CombinedFilter implements LogFilter {
     }
 
     @Override
-    public boolean test(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
+    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
         for (LogFilter filter : filters) {
-            if (!filter.test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
+            if (!filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
                 return false;
             }
         }

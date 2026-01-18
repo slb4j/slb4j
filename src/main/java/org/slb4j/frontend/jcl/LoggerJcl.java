@@ -25,7 +25,6 @@ import org.apache.commons.logging.Log;
 import org.slb4j.support.StackWalkerLocationResolver;
 import org.slb4j.support.Util;
 
-import java.time.Instant;
 import java.util.Objects;
 import java.util.function.Supplier;
 
@@ -66,7 +65,7 @@ public final class LoggerJcl implements Log {
     private void dispatch(LogLevel level, @Nullable Object message, @Nullable Throwable t) {
         if (DISPATCHER.isLevelEnabled(level)) {
             Supplier<String> msg = Util.cachingStringSupplier(() -> Objects.toString(message, null));
-            DISPATCHER.filterAndDispatch(Instant.now(), name, level, null, null, LOCATION_RESOLVER, msg, t);
+            DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, level, null, null, LOCATION_RESOLVER, msg, t);
         }
     }
 

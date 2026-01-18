@@ -109,6 +109,35 @@ public final class Util {
         }
     }
 
+    /**
+     * Finds the first occurrence of the specified character within the given {@link CharSequence}.
+     *
+     * @param cs the character sequence to search, must not be null
+     * @param c the character to find
+     * @return the index of the first occurrence of the character, or -1 if the character is not found
+     */
+    public static int indexOf(CharSequence cs, char c) {
+        return indexOf(cs, c, 0);
+    }
+
+    /**
+     * Finds the first occurrence of the specified character within the given {@link CharSequence},
+     * starting the search from the specified index.
+     *
+     * @param cs the character sequence to search; must not be null
+     * @param c the character to find
+     * @param start the index to start the search from; must be non-negative and less than the length of the character sequence
+     * @return the index of the first occurrence of the character, or -1 if the character is not found
+     */
+    public static int indexOf(CharSequence cs, char c, int start) {
+        for (int i = start; i < cs.length(); i++) {
+            if (cs.charAt(i) == c) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
     private static final class CachingStringSupplier implements Supplier<String> {
         private final Supplier<String> supplier;
         private @Nullable String s;
@@ -127,5 +156,17 @@ public final class Util {
         public String toString() {
             return get();
         }
+    }
+
+    /**
+     * Checks if the specified class is available on the classpath.
+     *
+     * @param className the fully qualified name of the class to check (e.g., "java.util.List")
+     * @return {@code true} if the class is found on the classpath, {@code false} otherwise
+     */
+    public static boolean isClassOnClasspath(String className) {
+        String classResource = className.replace('.', '/') + ".class";
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        return loader.getResource(classResource) != null;
     }
 }

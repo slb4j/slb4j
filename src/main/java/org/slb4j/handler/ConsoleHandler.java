@@ -24,13 +24,15 @@ import org.slb4j.MDC;
 import org.slb4j.support.AnsiCode;
 import org.slb4j.LocationResolver;
 import org.jspecify.annotations.Nullable;
+import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
 
 import java.io.IOException;
+import java.io.OutputStreamWriter;
 import java.io.PrintStream;
-import java.time.Instant;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
-import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -40,13 +42,15 @@ import java.util.function.Supplier;
  */
 public final class ConsoleHandler implements LogHandler {
 
+    private static final int BUFFER_SIZE = 4096;
+
     public static final Map<LogLevel, ConsoleCode> COLOR_MAP_DEFAULT = Map.of(
             LogLevel.TRACE, ConsoleCode.ofAnsi(AnsiCode.esc(30)),  // Cyan
             LogLevel.DEBUG, ConsoleCode.ofAnsi(AnsiCode.esc(36)),  // Blue
             LogLevel.INFO,  ConsoleCode.ofAnsi(AnsiCode.esc(32)),  // Green
             LogLevel.WARN,  ConsoleCode.ofAnsi(AnsiCode.esc(33)),  // Yellow
-            LogLevel.ERROR, ConsoleCode.ofAnsi(AnsiCode.esc(AnsiCode.BOLD_ON, 31))   // Red
-    );
+            LogLevel.ERROR, ConsoleCode.ofAnsi(AnsiCode.esc(AnsiCode.BOLD_ON, 31)  // Red
+    ));
 
     public static final Map<LogLevel, ConsoleCode> COLOR_MAP_MONOCHROME = Map.of(
             LogLevel.TRACE, ConsoleCode.empty(),
@@ -55,6 +59,8 @@ public final class ConsoleHandler implements LogHandler {
             LogLevel.WARN, ConsoleCode.empty(),
             LogLevel.ERROR, ConsoleCode.empty()
     );
+
+    private final ConsoleCode[] codesByLevelIdx = new ConsoleCode[LogLevel.values().length];
 
     /**
      * The default time zone used for timestamp formatting in the log messages.
@@ -66,10 +72,11 @@ public final class ConsoleHandler implements LogHandler {
     private final String name;
     private final Object lock = new Object();
     private final PrintStream out;
+    private final Writer writer;
     private volatile boolean colored = true;
     private volatile LogFilter filter = LogFilter.allPass();
-    private volatile Map<LogLevel, ConsoleCode> colorMap = new EnumMap<>(LogLevel.class);
     private volatile LogPattern logPattern = LogPattern.DEFAULT_PATTERN;
+    private final IoStringBuilder buffer = new IoStringBuilder(BUFFER_SIZE);
 
     /**
      * Set the format pattern.
@@ -97,6 +104,7 @@ public final class ConsoleHandler implements LogHandler {
     public ConsoleHandler(String name, PrintStream out, boolean colored) {
         this.name = name;
         this.out = out;
+        this.writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
         setColored(colored);
     }
 
@@ -114,12 +122,15 @@ public final class ConsoleHandler implements LogHandler {
     }
 
     @Override
-    public void handle(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
-        if (filter.test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
-            ConsoleCode consoleCodes = colorMap.getOrDefault(lvl, ConsoleCode.empty());
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
+        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
+            ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
             try {
                 synchronized (lock) {
-                    logPattern.formatLogEntry(out, instant, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
+                    logPattern.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
+                    buffer.writeTo(writer);
+                    buffer.reset(0);
+                    writer.flush();
                 }
             } catch (IOException e) {
                 Util.err().println("Error writing log entry: " + e.getMessage());
@@ -132,8 +143,11 @@ public final class ConsoleHandler implements LogHandler {
      * @param colored true, if output use colors
      */
     public void setColored(boolean colored) {
-        colorMap = colored ? COLOR_MAP_DEFAULT : COLOR_MAP_MONOCHROME;
-        this.colored = colored;
+        synchronized (lock) {
+            this.colored = colored;
+            (colored ? COLOR_MAP_DEFAULT : COLOR_MAP_MONOCHROME)
+                    .forEach((lvl, code) -> codesByLevelIdx[lvl.ordinal()] = code);
+        }
     }
 
     /**
