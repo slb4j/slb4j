@@ -21,6 +21,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.lang.StackWalker.StackFrame;
 import java.util.List;
+import java.util.stream.Stream;
 
 /**
  * A utility class responsible for determining the originating stack frame outside of
@@ -54,16 +55,28 @@ public final class StackWalkerLocationResolver implements LocationResolver {
      *         frame exists in the stack trace.
      */
     public @Nullable Location resolve() {
-        StackFrame frame = StackWalker.getInstance().walk(stream -> stream
-                // 1. Skip frames until we hit ANY logging infrastructure
-                .dropWhile(f -> !isInfra(f.getClassName()))
-                // 2. Skip EVERYTHING that is still logging infrastructure
-                .dropWhile(f -> isInfra(f.getClassName()))
-                // 3. The first non-infra frame is the user
-                .findFirst()
-                .orElse(null)
-        );
+        return StackWalker.getInstance().walk(this::findStackFrame);
+    }
 
+    private @Nullable StackFrameLocation findStackFrame(Stream<StackFrame> stream) {
+        StackFrame foundFrame = null;
+        boolean foundInfra = false;
+        boolean skippedInfra = false;
+
+        StackFrame frame = null;
+        java.util.Iterator<StackFrame> iterator = stream.iterator();
+
+        // 1. Skip frames until we hit ANY logging infrastructure
+        while (iterator.hasNext() && !isInfra((frame = iterator.next()).getClassName())) {
+            frame = null; // not the one we look for
+        }
+
+        // 2. Skip EVERYTHING that is still logging infrastructure
+        while (iterator.hasNext() && isInfra((frame = iterator.next()).getClassName())) {
+            frame = null; // not the one we look for
+        }
+
+        // 3. The first non-infra frame is the user
         return frame == null ? null : new StackFrameLocation(frame);
     }
 
