@@ -157,4 +157,16 @@ public final class Util {
             return get();
         }
     }
+
+    /**
+     * Checks if the specified class is available on the classpath.
+     *
+     * @param className the fully qualified name of the class to check (e.g., "java.util.List")
+     * @return {@code true} if the class is found on the classpath, {@code false} otherwise
+     */
+    public static boolean isClassOnClasspath(String className) {
+        String classResource = className.replace('.', '/') + ".class";
+        ClassLoader loader = Thread.currentThread().getContextClassLoader();
+        return loader.getResource(classResource) != null;
+    }
 }

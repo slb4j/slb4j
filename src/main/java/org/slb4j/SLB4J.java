@@ -21,9 +21,11 @@ import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.ServiceConfigurationError;
+import java.util.stream.Stream;
 
 /**
  * Utility class for logging operations.
@@ -35,6 +37,40 @@ public final class SLB4J {
     private static final LogDispatcher DISPATCHER;
 
     static {
+        // === check classpath pollution
+        record ClassInfo(String framework, String className, String type, String description) {}
+
+        Stream.of(
+                // Backends
+                new ClassInfo("log4j", "org.apache.logging.log4j.core.LoggerContext", "backend", "Log4J backend"),
+                new ClassInfo("logback-classic", "ch.qos.logback.classic.Logger", "backend", "Logback classic backend"),
+                new ClassInfo("logback", "ch.qos.logback.core.Appender", "backend", "Logback backend"),
+
+                // Bridges - log4j
+                new ClassInfo("log4j-slf4j-impl", "org.apache.logging.log4j.slf4j.Log4jLoggerFactory", "bridge", "Log4J to SLF4J bridge"),
+                new ClassInfo("log4j-to-slf4j", "org.apache.logging.slf4j.Log4jLoggerFactory", "bridge", "Log4J to SLF4J bridge"),
+                new ClassInfo("log4j-jcl", "org.apache.logging.log4j.jcl.LogFactoryImpl", "bridge", "Log4J to JCL bridge"),
+                new ClassInfo("log4j-jul", "org.apache.logging.log4j.jul.LogManager", "bridge", "Log4J to JUL bridge"),
+
+                // Bridges - slf4j
+                new ClassInfo("slf4j-log4j12", "org.slf4j.impl.Log4jLoggerFactory", "bridge", "SLF4J to Log4J 1.2 bridge"),
+                new ClassInfo("slf4j-jdk14", "org.slf4j.impl.JDK14LoggerFactory", "bridge", "SLF4J to JUL bridge"),
+                new ClassInfo("slf4j-jcl", "org.slf4j.impl.JCLLoggerFactory", "bridge", "SLF4J to JCL bridge"),
+                new ClassInfo("slf4j-simple", "org.slf4j.simple.SimpleLogger", "bridge", "SLF4J simple backend"),
+                // ignore: new ClassInfo("slf4j-nop", "org.slf4j.helpers.NOPLogger", "bridge", "SLF4J NOP backend"),
+
+                // Bridges - jcl
+                new ClassInfo("jcl-over-slf4j", "org.apache.commons.logging.impl.SLF4JLogFactory", "bridge", "JCL to SLF4J bridge"),
+
+                // Bridges - jul
+                new ClassInfo("jul-to-slf4j", "org.slf4j.bridge.SLF4JBridgeHandler", "bridge", "JUL to SLF4J bridge")
+        ).forEach(ci -> {
+            // Warn about conflicting logging implementations on classpath
+            if (Util.isClassOnClasspath(ci.className()) && !Objects.equals("slb4j", ci.framework())) {
+                System.err.println(String.format("WARNING: Classpath contains conflicting %s implementation: %s", ci.type(), ci.description()));
+            }
+        });
+
         // === register the dispatcher
         DISPATCHER = UniversalDispatcher.getInstance();
 
