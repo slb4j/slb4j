@@ -37,6 +37,11 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
     private Path tempFile;
 
     @Override
+    public String backend() {
+        return "log4j";
+    }
+
+    @Override
     protected void setupLogging() throws IOException {
         tempFile = Files.createTempFile("log4j-bench", ".log");
 

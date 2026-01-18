@@ -21,22 +21,38 @@ spotbugs = { id = "com.github.spotbugs", version.ref = "spotbugs" }
 jmh = { id = "me.champeau.jmh", version.ref = "jmh-gradle" }
 
 [libraries]
+# basic modules
 jspecify = { group = "org.jspecify", name = "jspecify", version.ref = "jspecify" }
-slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
-slf4j-jdk14 = { group = "org.slf4j", name = "slf4j-jdk14", version.ref = "slf4j" }
-slf4j-jcl = { group = "org.slf4j", name = "jcl-over-slf4j", version.ref = "slf4j" }
-slf4j-jul = { group = "org.slf4j", name = "jul-to-slf4j", version.ref = "slf4j" }
-log4j-api = { group = "org.apache.logging.log4j", name = "log4j-api" }
-log4j-core = { group = "org.apache.logging.log4j", name = "log4j-core" }
-log4j-bom = { group = "org.apache.logging.log4j", name = "log4j-bom", version.ref = "log4j" }
-log4j-slf4j2 = { group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl" }
-log4j-jcl = { group = "org.apache.logging.log4j", name = "log4j-jcl" }
-log4j-jul = { group = "org.apache.logging.log4j", name = "log4j-jul" }
-log4j-to-slf4j = { group = "org.apache.logging.log4j", name = "log4j-to-slf4j" }
-commons-logging = { group = "commons-logging", name = "commons-logging", version.ref = "commons-logging" }
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit-bom" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter" }
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }
+
+# JMH
 jmh-core = { group = "org.openjdk.jmh", name = "jmh-core", version.ref = "jmh" }
 jmh-generator = { group = "org.openjdk.jmh", name = "jmh-generator-annprocess", version.ref = "jmh" }
+
+# common
+log4j-bom = { group = "org.apache.logging.log4j", name = "log4j-bom", version.ref = "log4j" }
+
+# facades
+jcl = { group = "commons-logging", name = "commons-logging", version.ref = "commons-logging" }
+log4j-api = { group = "org.apache.logging.log4j", name = "log4j-api" }
+slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
+
+# backends
 logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
+log4j-core = { group = "org.apache.logging.log4j", name = "log4j-core" }
+
+# bridges
+jcl-to-log4j = { group = "org.apache.logging.log4j", name = "log4j-jcl" }
+jcl-to-slf4j = { group = "org.slf4j", name = "jcl-over-slf4j", version.ref = "slf4j" }
+
+jul-to-slf4j = { group = "org.slf4j", name = "jul-to-slf4j", version.ref = "slf4j" }
+jul-to-log4j = { group = "org.apache.logging.log4j", name = "log4j-jul" }
+
+log4j-to-slf4j = { group = "org.apache.logging.log4j", name = "log4j-to-slf4j" }
+log4j-to-jul = { group = "org.apache.logging.log4j", name = "log4j-to-jul" }
+
+slf4j-to-jul = { group = "org.slf4j", name = "slf4j-jdk14", version.ref = "slf4j" }
+slf4j-to-log4j = { group = "org.apache.logging.log4j", name = "log4j-slf4j2-impl" }
+

@@ -39,6 +39,11 @@ public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
     private FileHandler fileHandler;
 
     @Override
+    public String backend() {
+        return "jul";
+    }
+
+    @Override
     protected void setupLogging() throws IOException {
         // 1. JCL Bridge Property (Must be first)
         System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
@@ -74,16 +79,6 @@ public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
         this.slf4jLogger = org.slf4j.LoggerFactory.getLogger(JulBenchmark.class);
         this.jclLogger = org.apache.commons.logging.LogFactory.getLog(JulBenchmark.class);
         this.log4jLogger = org.apache.logging.log4j.LogManager.getLogger(JulBenchmark.class);
-
-        // 6. Force-check Log4j (Sometimes bridge needs a nudge)
-        if (!log4jLogger.isInfoEnabled()) {
-            System.out.println("LOG4J STILL DISABLED - FORCING...");
-            // This is a last-resort hack for some log4j-to-jul versions
-            org.apache.logging.log4j.core.config.Configurator.setLevel(
-                    JulBenchmark.class.getName(),
-                    org.apache.logging.log4j.Level.INFO
-            );
-        }
 
         System.out.println("JCL INFO: " + jclLogger.isInfoEnabled());
         System.out.println("Log4j INFO: " + log4jLogger.isInfoEnabled());

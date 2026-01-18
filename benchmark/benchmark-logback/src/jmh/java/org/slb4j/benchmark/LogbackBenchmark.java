@@ -35,6 +35,12 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
 
     private Path tempFile;
 
+
+    @Override
+    public String backend() {
+        return "logback";
+    }
+
     @Override
     protected void setupLogging() throws IOException {
         tempFile = Files.createTempFile("logback-bench", ".log");

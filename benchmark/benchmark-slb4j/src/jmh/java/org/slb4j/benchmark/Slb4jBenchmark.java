@@ -40,6 +40,12 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
     private Path tempFile;
     private FileHandler fileHandler;
 
+
+    @Override
+    public String backend() {
+        return "slb4j";
+    }
+
     @Override
     protected void setupLogging() throws IOException {
         SLB4J.init();

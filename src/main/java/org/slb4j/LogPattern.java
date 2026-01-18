@@ -900,8 +900,6 @@ public final class LogPattern {
         return getPattern();
     }
 
-    private final List<LogPatternEntry> entries;
-
     /**
      * Parses a Log4J-style pattern string and creates a new {@code LogPattern} instance.
      *
@@ -912,6 +910,9 @@ public final class LogPattern {
         return new LogPattern(pattern);
     }
 
+    private final List<LogPatternEntry> entries;
+    private final boolean locationNeeded;
+
     /**
      * Constructs a LogPattern using the supplied pattern.
      *
@@ -919,6 +920,15 @@ public final class LogPattern {
      */
     private LogPattern(String pattern) {
         this.entries = parseLog4jPatternString(pattern);
+
+        boolean locationNeeded = false;
+        for (LogPatternEntry entry : entries) {
+            if (entry.isLocationNeeded()) {
+                locationNeeded = true;
+                break;
+            }
+        }
+        this.locationNeeded = locationNeeded;
     }
 
     /**
@@ -939,12 +949,7 @@ public final class LogPattern {
      * @return {@code true} if this pattern requires location information, otherwise {@code false}
      */
     public boolean isLocationNeeded() {
-        for (LogPatternEntry entry : entries) {
-            if (entry.isLocationNeeded()) {
-                return true;
-            }
-        }
-        return false;
+        return locationNeeded;
     }
 
     /**
@@ -995,6 +1000,7 @@ public final class LogPattern {
         if (lastEnd < pattern.length()) {
             entries.addAll(parseLog4jPatternStringSimple(pattern.substring(lastEnd)));
         }
+
         return entries;
     }
 
