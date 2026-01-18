@@ -4,15 +4,18 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 
 public class TimeStampFormatter {
     private final Part[] compiledParts;
     private final ZoneId zoneId;
+    private final TimeZoneOffsetProvider offsetProvider;
 
     private TimeStampFormatter(Part[] parts, ZoneId zoneId) {
         this.compiledParts = parts;
         this.zoneId = zoneId;
+        this.offsetProvider = new TimeZoneOffsetProvider(zoneId);
     }
 
     public static TimeStampFormatter parse(String pattern) {
@@ -68,20 +71,44 @@ public class TimeStampFormatter {
     }
 
     public void appendTo(long timestamp, Appendable app) throws IOException {
-        ZonedDateTime zdt = ZonedDateTime.ofInstant(Instant.ofEpochMilli(timestamp), zoneId);
+        // Step 1: Get the offset for this specific moment (Required for DST)
+        // Note: Java 21+ JIT often eliminates this Instant via Escape Analysis
+        int offset = offsetProvider.getOffset(timestamp);
 
-        int y = zdt.getYear();
-        int m = zdt.getMonthValue();
-        int d = zdt.getDayOfMonth();
-        int hour = zdt.getHour();
-        int minute = zdt.getMinute();
-        int second = zdt.getSecond();
-        int millis = zdt.get(java.time.temporal.ChronoField.MILLI_OF_SECOND);
+        long localSecond = Math.floorDiv(timestamp, 1000L) + offset;
+        int millis = (int) Math.floorMod(timestamp, 1000L);
 
-        // 3. Execute compiled parts
+        // Step 2: Epoch Day Math
+        long epochDay = Math.floorDiv(localSecond, 86400L);
+        int secsOfDay = (int) Math.floorMod(localSecond, 86400L);
+
+        // March-Epoch shift logic (Corrected)
+        long marchDot = epochDay + 719468L;
+        long era = (marchDot >= 0 ? marchDot : marchDot - 146096L) / 146097L;
+        int doe = (int) (marchDot - era * 146097L);
+        int yoe = (doe - doe / 1460 + doe / 36524 - doe / 146096) / 365;
+        int y = (int) (yoe + era * 400);
+        int doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+        int mp = (5 * doy + 2) / 153;
+
+        int d = doy - (153 * mp + 2) / 5 + 1;
+        int m = mp + (mp < 10 ? 3 : -9);
+
+        // Final Correction: If month is Jan/Feb, it belongs to the 'next' year
+        // because the algorithm starts the year in March.
+        if (m <= 2) y++;
+
+        int hour = secsOfDay / 3600;
+        int minute = (secsOfDay % 3600) / 60;
+        int second = secsOfDay % 60;
+
         for (Part part : compiledParts) {
             part.append(app, y, m, d, hour, minute, second, millis);
         }
+    }
+
+    private int getOffset(long timestamp) {
+        return zoneId.getRules().getOffset(Instant.ofEpochMilli(timestamp)).getTotalSeconds();
     }
 
     @FunctionalInterface
