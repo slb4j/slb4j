@@ -4,10 +4,35 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
-import java.time.ZonedDateTime;
 
 public class TimeStampFormatter {
+
+    private static final char[] DIGIT_TENS = {
+            '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
+            '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
+            '2', '2', '2', '2', '2', '2', '2', '2', '2', '2',
+            '3', '3', '3', '3', '3', '3', '3', '3', '3', '3',
+            '4', '4', '4', '4', '4', '4', '4', '4', '4', '4',
+            '5', '5', '5', '5', '5', '5', '5', '5', '5', '5',
+            '6', '6', '6', '6', '6', '6', '6', '6', '6', '6',
+            '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
+            '8', '8', '8', '8', '8', '8', '8', '8', '8', '8',
+            '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
+    } ;
+
+    private static final char[] DIGIT_ONES = {
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+            '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+    } ;
+
     private final Part[] compiledParts;
     private final ZoneId zoneId;
     private final TimeZoneOffsetProvider offsetProvider;
@@ -72,7 +97,6 @@ public class TimeStampFormatter {
 
     public void appendTo(long timestamp, Appendable app) throws IOException {
         // Step 1: Get the offset for this specific moment (Required for DST)
-        // Note: Java 21+ JIT often eliminates this Instant via Escape Analysis
         int offset = offsetProvider.getOffset(timestamp);
 
         long localSecond = Math.floorDiv(timestamp, 1000L) + offset;
@@ -107,10 +131,6 @@ public class TimeStampFormatter {
         }
     }
 
-    private int getOffset(long timestamp) {
-        return zoneId.getRules().getOffset(Instant.ofEpochMilli(timestamp)).getTotalSeconds();
-    }
-
     @FunctionalInterface
     private interface Part {
         void append(Appendable app, int y, int M, int d, int H, int m, int s, int S) throws IOException;
@@ -139,28 +159,25 @@ public class TimeStampFormatter {
                     yield (app, y, M, d, H, m, s, S) -> app.append(literal);
                 }
             };
-
         };
     }
 
     private static void appendInt(int val, int digits, Appendable app) throws IOException {
         switch (digits) {
             case 2 -> app
-                    .append((char) ('0' + (val / 10)))
-                    .append((char) ('0' + (val % 10)));
-            case 3 -> app
-                    .append((char) ('0' + (val / 100)))
-                    .append((char) ('0' + ((val / 10) % 10)))
-                    .append((char) ('0' + (val % 10)));
+                    .append(DIGIT_TENS[val])
+                    .append(DIGIT_ONES[val]);
+            case 3 -> {
+                int q = val / 100;
+                app.append(DIGIT_ONES[q]);
+                q = val % 100;
+                app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
+            }
             case 4 -> {
-                int q = val / 1000;
-                app.append((char) ('0' + q));
-                val -= q * 1000;
-                q = val / 100;
-                app.append((char) ('0' + q));
-                val -= q * 100;
-                app.append((char) ('0' + (val / 10)));
-                app.append((char) ('0' + (val % 10)));
+                int q = val / 100;
+                app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
+                q = val % 100;
+                app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
             }
             default -> app.append(Integer.toString(val));
         }
