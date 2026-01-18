@@ -24,7 +24,6 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Map;
@@ -111,9 +110,10 @@ class LogPatternTest {
         String updatedExpected = expected.replace("main", threadName).replaceAll("\n", System.lineSeparator());
         LogPattern fmt = LogPattern.parse(pattern);
 
-        Instant instant = LocalDateTime.of(2026, 1, 10, 14, 23, 41, 123_000_000)
+        long timestamp = LocalDateTime.of(2026, 1, 10, 14, 23, 41, 123_000_000)
                 .atZone(ZoneId.systemDefault())
-                .toInstant();
+                .toInstant()
+                .toEpochMilli();
         String loggerName = "com.example.service.OrderService";
         LogLevel level = LogLevel.INFO;
         String marker = "AUDIT";
@@ -136,7 +136,7 @@ class LogPatternTest {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8)) {
-            fmt.formatLogEntry(out, instant, loggerName, level, marker, mdc, LOC, msg, t, consoleCodes);
+            fmt.formatLogEntry(out, timestamp, loggerName, level, marker, mdc, LOC, msg, t, consoleCodes);
         }
 
         String actual = baos.toString(StandardCharsets.UTF_8);
@@ -149,7 +149,7 @@ class LogPatternTest {
         String pattern = "%highlight{%level %msg}%n";
         LogPattern fmt = LogPattern.parse(pattern);
 
-        Instant instant = Instant.now();
+        long timestamp = System.currentTimeMillis();
         String loggerName = "test.Logger";
         LogLevel level = LogLevel.ERROR;
         Supplier<String> msg = () -> "An error occurred";
@@ -157,7 +157,7 @@ class LogPatternTest {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8)) {
-            fmt.formatLogEntry(out, instant, loggerName, level, null, null, LOC, msg, null, consoleCodes);
+            fmt.formatLogEntry(out, timestamp, loggerName, level, null, null, LOC, msg, null, consoleCodes);
         }
 
         String actual = baos.toString(StandardCharsets.UTF_8);
@@ -170,7 +170,7 @@ class LogPatternTest {
         String pattern = "%msg%n%ex";
         LogPattern fmt = LogPattern.parse(pattern);
 
-        Instant instant = Instant.now();
+        long timestamp = System.currentTimeMillis();
         String loggerName = "test.Logger";
         LogLevel level = LogLevel.ERROR;
         Supplier<String> msg = () -> "An error occurred";
@@ -178,7 +178,7 @@ class LogPatternTest {
 
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         try (PrintStream out = new PrintStream(baos, true, StandardCharsets.UTF_8)) {
-            fmt.formatLogEntry(out, instant, loggerName, level, null, null, LOC, msg, t, ConsoleCode.empty());
+            fmt.formatLogEntry(out, timestamp, loggerName, level, null, null, LOC, msg, t, ConsoleCode.empty());
         }
 
         String actual = baos.toString(StandardCharsets.UTF_8);

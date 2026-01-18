@@ -29,7 +29,6 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -217,7 +216,7 @@ public class LogBuffer implements LogHandler, Externalizable {
             // Serialize individual fields to avoid non-serializable components
             out.writeObject(entry.message());
             out.writeObject(entry.logger());
-            out.writeObject(entry.time());
+            out.writeLong(entry.time());
             out.writeObject(entry.level());
             out.writeObject(entry.marker());
             out.writeObject(entry.location());
@@ -246,7 +245,7 @@ public class LogBuffer implements LogHandler, Externalizable {
         for (int i = 0; i < n; i++) {
             String message = (String) in.readObject();
             String loggerName = (String) in.readObject();
-            Instant time = (Instant) in.readObject();
+            long time = in.readLong();
             LogLevel level = (LogLevel) in.readObject();
             String marker = (String) in.readObject();
             MDC mdc = (MDC) in.readObject();
@@ -309,10 +308,10 @@ public class LogBuffer implements LogHandler, Externalizable {
     }
 
     @Override
-    public void handle(Instant instant, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
-        if (filter.test(instant, loggerName, lvl, mrk, mdc, msg, t)) {
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
+        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             Location location = resolveLocation ? loc.resolve() : null;
-            LogEntry entry = LogEntry.of(instant, loggerName, lvl, mrk, mdc, location, msg.get(), t);
+            LogEntry entry = LogEntry.of(timestamp, loggerName, lvl, mrk, mdc, location, msg.get(), t);
             int removed;
             synchronized (buffer) {
                 removed = buffer.put(entry) ? 0 : 1;

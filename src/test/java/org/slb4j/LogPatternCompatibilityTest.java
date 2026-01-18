@@ -38,7 +38,6 @@ import org.slb4j.handler.ConsoleHandler;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -166,7 +165,7 @@ class LogPatternCompatibilityTest {
         private String formatWithSlb4j(LogEvent event) {
             StringBuilder sb = new StringBuilder();
             
-            Instant instant = Instant.ofEpochMilli(event.getTimeMillis());
+            long timestamp = event.getTimeMillis();
             String loggerName = event.getLoggerName();
             LogLevel level = LoggerLog4j.translateLog4jLevel(event.getLevel());
             String marker = event.getMarker() != null ? event.getMarker().getName() : null;
@@ -195,7 +194,7 @@ class LogPatternCompatibilityTest {
             };
 
             try {
-                slb4jPattern.formatLogEntry(sb, instant, loggerName, level, marker, mdc, locResolver, 
+                slb4jPattern.formatLogEntry(sb, timestamp, loggerName, level, marker, mdc, locResolver, 
                     () -> event.getMessage().getFormattedMessage(), event.getThrown(), ConsoleHandler.COLOR_MAP_DEFAULT.getOrDefault(level, ConsoleCode.empty()));
             } catch (java.io.IOException e) {
                 throw new RuntimeException(e);

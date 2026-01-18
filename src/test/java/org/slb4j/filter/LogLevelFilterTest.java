@@ -19,7 +19,6 @@ import org.slb4j.LogLevel;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 
-import java.time.Instant;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
@@ -62,7 +61,7 @@ class LogLevelFilterTest {
         assertEquals(expected, filter.isEnabled("any.logger", level, "any.marker"),
                 () -> "isEnabled failed for threshold " + threshold + " and level " + level);
 
-        assertEquals(expected, filter.test(Instant.now(), "any.logger", level, "any.marker", null, () -> "msg", null),
+        assertEquals(expected, filter.test(System.currentTimeMillis(), "any.logger", level, "any.marker", null, () -> "msg", null),
                 () -> "test failed for threshold " + threshold + " and level " + level);
     }
 }

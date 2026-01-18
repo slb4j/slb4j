@@ -31,7 +31,6 @@ import org.jspecify.annotations.Nullable;
 import org.slb4j.support.StackWalkerLocationResolver;
 import org.slb4j.support.Util;
 
-import java.time.Instant;
 import java.util.Map;
 import java.util.function.Supplier;
 import java.util.stream.Stream;
@@ -185,7 +184,7 @@ public final class LoggerLog4j extends AbstractLogger {
             } else {
                 msg = Util.cachingStringSupplier(message::getFormattedMessage);
             }
-            DISPATCHER.filterAndDispatch(Instant.now(), name, lvl, mrk, MDC_INSTANCE, LOCATION_RESOLVER, msg, t);
+            DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, lvl, mrk, MDC_INSTANCE, LOCATION_RESOLVER, msg, t);
         }
     }
 
