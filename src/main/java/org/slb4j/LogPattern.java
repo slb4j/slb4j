@@ -15,6 +15,7 @@
  */
 package org.slb4j;
 
+import org.slb4j.support.TimeStampFormatter;
 import org.slb4j.support.Util;
 import org.jspecify.annotations.Nullable;
 
@@ -838,7 +839,7 @@ public final class LogPattern {
      */
     public static final class DateEntry implements LogPatternEntry {
         private final String datePattern;
-        private final DateTimeFormatter formatter;
+        private final TimeStampFormatter formatter;
 
         /**
          * Constructs a {@code DateEntry} instance with the specified date-time pattern.
@@ -851,12 +852,12 @@ public final class LogPattern {
         public DateEntry(String pattern) {
             this.datePattern = pattern;
             this.formatter = (switch (pattern) {
-                case "ISO8601" -> DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss,SSS");
-                case "HH:mm:ss,SSS" -> DateTimeFormatter.ofPattern("HH:mm:ss,SSS");
-                case "yyyy-MM-dd HH:mm:ss,SSS" -> DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss,SSS");
-                case "yyyy-MM-dd HH:mm:ss" -> DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-                default -> DateTimeFormatter.ofPattern(pattern.isEmpty() ? "HH:mm:ss" : pattern);
-            }).withZone(ZONE_ID);
+                case "ISO8601" -> TimeStampFormatter.parse("yyyy-MM-dd'T'HH:mm:ss,SSS", ZONE_ID);
+                case "HH:mm:ss,SSS" -> TimeStampFormatter.parse("HH:mm:ss,SSS", ZONE_ID);
+                case "yyyy-MM-dd HH:mm:ss,SSS" -> TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID);
+                case "yyyy-MM-dd HH:mm:ss" -> TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss", ZONE_ID);
+                default -> TimeStampFormatter.parse(pattern.isEmpty() ? "HH:mm:ss" : pattern, ZONE_ID);
+            });
         }
 
         @Override
@@ -865,8 +866,8 @@ public final class LogPattern {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) {
-            formatter.formatTo(Instant.ofEpochMilli(timestamp), app);
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+            formatter.appendTo(timestamp, app);
         }
 
         @Override
