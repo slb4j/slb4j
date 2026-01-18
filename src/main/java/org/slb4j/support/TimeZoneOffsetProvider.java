@@ -33,23 +33,23 @@ public class TimeZoneOffsetProvider {
     }
 
     public int getOffset(long timestamp) {
-        // 1. Check the interval that was valid at startup (99% of the time)
         OffsetInterval startup = intervals[startupIdx];
         if (timestamp >= startup.start && timestamp < startup.end) {
             return startup.offset;
         }
 
-        // 2. Fallback: Search the array.
-        // No volatile, no state updates. Just a pure, thread-safe read.
-        int start = timestamp < startup.start ? 0 : startupIdx + 1;
-        int end = timestamp < startup.start ? startupIdx : intervals.length;
+        // Directional search: search only the half of the array where the timestamp could be
+        boolean isPast = timestamp < startup.start;
+        int start = isPast ? 0 : startupIdx + 1;
+        int end = isPast ? startupIdx : intervals.length;
+
         for (int i = start; i < end; i++) {
-            OffsetInterval interval = intervals[i];
-            if (interval.contains(timestamp)) {
-                return interval.offset;
+            if (intervals[i].contains(timestamp)) {
+                return intervals[i].offset;
             }
         }
 
+        // Fallback using temporary instant
         return zoneId.getRules().getOffset(Instant.ofEpochMilli(timestamp)).getTotalSeconds();
     }
 
