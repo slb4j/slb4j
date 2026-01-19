@@ -467,7 +467,7 @@ if __name__ == "__main__":
         if args.mode == "full":
             if args.warmup is None: args.warmup = 5
             if args.iterations is None: args.iterations = 5
-            if args.time is None: args.time = "2s"
+            if args.time is None: args.time = "5s"
         elif args.mode == "smoketest":
             if args.warmup is None: args.warmup = 1
             if args.iterations is None: args.iterations = 1
