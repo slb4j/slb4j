@@ -159,7 +159,7 @@ def calculate_runtime(args):
     time_per_iter = parse_time(args.time if args.time else "1s")
     
     gradle_startup_overhead = 15.0
-    forks = 0 if args.mode == "smoketest" else 1
+    forks = 1
     if args.forks is not None:
         forks = args.forks
     jmh_fork_overhead = 1.0 if forks > 0 else 0.1
@@ -180,7 +180,7 @@ def collect_results(args, timestamp, results_dir):
     
     for backend in selected_backends:
         print(f"{LIGHT_CYAN}Testing backend: {backend}{RESET}")
-        cmd = f"./gradlew :benchmark:benchmark-{backend}:jmh"
+        cmd = f"./gradlew --quiet :benchmark:benchmark-{backend}:jmh"
         
         benchmark_class = SEQUENTIAL_BACKENDS_MAP[backend]
         includes = []
@@ -214,7 +214,7 @@ def collect_results(args, timestamp, results_dir):
         if args.time:
             cmd += f" -Pjmh.timeOnIteration={args.time} -Pjmh.warmupTime={args.time}"
         
-        forks = 0 if args.mode == "smoketest" else 1
+        forks = 1
         if args.forks is not None:
             forks = args.forks
         cmd += f" -Pjmh.forks={forks}"
