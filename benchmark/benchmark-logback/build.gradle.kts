@@ -35,7 +35,11 @@ jmh {
     timeOnIteration.set(project.findProperty("jmh.timeOnIteration")?.toString())
 
     project.findProperty("jmh.includes")?.toString()?.let {
-        includes.set(it.split(","))
+        includes.set(listOf(it))
+    }
+
+    project.findProperty("jmh.excludes")?.toString()?.let {
+        excludes.set(it.split(","))
     }
 
     project.findProperty("jmh.parameters")?.toString()?.let { params ->

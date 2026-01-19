@@ -31,7 +31,7 @@ import org.slf4j.spi.LocationAwareLogger;
 
 import java.io.NotSerializableException;
 import java.io.Serial;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -108,11 +108,17 @@ public final class LoggerSlf4j extends AbstractLogger {
      * @return the formatted message if arguments are provided, or the raw message pattern
      *         if no arguments are given
      */
-    public static String formatSlf4jMessage(String messagePattern, @Nullable Object @Nullable [] arguments) {
+    public static Supplier<String> formatSlf4jMessage(String messagePattern, @Nullable Object @Nullable [] arguments) {
         if (arguments != null && arguments.length > 0) {
-            return MessageFormatter.arrayFormat(messagePattern, arguments).getMessage();
+            return Util.cachingStringSupplier(() -> {
+                try {
+                    return MessageFormatter.arrayFormat(messagePattern, arguments).getMessage();
+                } catch (Exception e) {
+                    return messagePattern + " " + Arrays.toString(arguments);
+                }
+            });
         } else {
-            return messagePattern;
+            return messagePattern::toString;
         }
     }
 
@@ -125,7 +131,7 @@ public final class LoggerSlf4j extends AbstractLogger {
     protected void handleNormalizedLoggingCall(Level level, @Nullable Marker marker, String messagePattern, @Nullable Object @Nullable [] arguments, @Nullable Throwable throwable) {
         LogLevel lvl = translateSlf4jLevel(level);
         if (DISPATCHER.isLevelEnabled(lvl)) {
-            Supplier<String> msg = Util.cachingStringSupplier(() -> formatSlf4jMessage(messagePattern, arguments));
+            Supplier<String> msg = formatSlf4jMessage(messagePattern, arguments);
             DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, lvl, Objects.toString(marker, ""), MDC_INSTANCE, LOCATION_RESOLVER, msg, throwable);
         }
     }

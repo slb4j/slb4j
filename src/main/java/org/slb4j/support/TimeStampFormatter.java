@@ -2,7 +2,6 @@ package org.slb4j.support;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.time.Instant;
 import java.time.ZoneId;
 
 public class TimeStampFormatter {

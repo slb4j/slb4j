@@ -21,6 +21,7 @@ import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.LogPattern;
 import org.slb4j.support.IoStringBuilder;
+import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.nio.file.StandardOpenOption;
@@ -154,6 +155,19 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     public LogLevel getFlushLevel() {
         synchronized (lock) {
             return flushLevel;
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        synchronized (lock()) {
+            try {
+                close();
+                bufferList.clear();
+            } catch (Exception e) {
+                Util.err().format("Error closing handler '%s': %s", name(), e.getMessage());
+                e.printStackTrace(Util.err());
+            }
         }
     }
 }

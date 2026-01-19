@@ -34,7 +34,7 @@ SEQUENTIAL_BACKENDS_MAP = {
 
 VALID_HANDLERS = ["CONSOLE", "FILE"]
 VALID_FORMATS = ["COMPACT", "DEFAULT", "DETAILED"]
-VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
+VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
 
 # ANSI colors
 BLACK = "\033[0;30m"
@@ -177,76 +177,134 @@ def calculate_runtime(args):
 def collect_results(args, timestamp, results_dir):
     all_results = []
     selected_backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
+    success = True
     
     for backend in selected_backends:
         print(f"{LIGHT_CYAN}Testing backend: {backend}{RESET}")
-        cmd = f"./gradlew --quiet :benchmark:benchmark-{backend}:jmh"
         
-        benchmark_class = SEQUENTIAL_BACKENDS_MAP[backend]
-        includes = []
-        if args.frontends:
-            includes = [f"{benchmark_class}\\.{f}" for f in args.frontends]
-        else:
-            includes = [f"{benchmark_class}"]
-        
-        # JMH arguments via project properties
-        cmd += f" -Pjmh.includes='{','.join(includes)}'"
-
-        params = []
-        if args.output_to_file:
-            params.append("outputToFile=true")
-        else:
-            params.append("outputToFile=false")
-
-        if args.formats:
-            params.append(f"format={','.join(args.formats)}")
-        if args.handlers:
-            params.append(f"category={','.join(args.handlers)}")
         msg_types = args.message_types if args.message_types else VALID_MESSAGE_TYPES
-        params.append(f"messageType={','.join(msg_types)}")
-        if params:
-            cmd += f" -Pjmh.parameters='{';'.join(params)}'"
-
-        if args.warmup is not None:
-            cmd += f" -Pjmh.warmupIterations={args.warmup}"
-        if args.iterations is not None:
-            cmd += f" -Pjmh.iterations={args.iterations}"
-        if args.time:
-            cmd += f" -Pjmh.timeOnIteration={args.time} -Pjmh.warmupTime={args.time}"
         
-        forks = 1
-        if args.forks is not None:
-            forks = args.forks
-        cmd += f" -Pjmh.forks={forks}"
-
-        if args.profile:
-            cmd += f" -Pjmh.profilers='{','.join(args.profile)}'"
-
-        jvm_args = ["-Djmh.ignoreLock=true"]
-        cmd += f" -Pjmh.jvmArgs='{' '.join(jvm_args)}'"
-
-        if args.dry_run:
-            print(f"{LIGHT_YELLOW}Dry run: Would execute command for backend {backend}:{RESET}")
-            print(f"  Command: {cmd}")
-            continue
-
-        output_file = None
-        if args.profile:
-            output_file = os.path.join(results_dir, f"profile_{backend}.txt")
-
-        if run_command(cmd, output_file):
-            src_json = f"benchmark/benchmark-{backend}/build/results/jmh/results.json"
-            dest_json = os.path.join(results_dir, f"results_{backend}.json")
-            if os.path.exists(src_json):
-                shutil.copy(src_json, dest_json)
-                with open(dest_json, "r") as f:
-                    data = json.load(f)
-                    for entry in data:
-                        entry["backend_param"] = backend 
-                    all_results.extend(data)
+        # We need to handle JCL and JUL specially.
+        # JCL: doesn't support ARGUMENTS, MESSAGE_SUPPLIER, and LAMBDA_PARAMETER.
+        # JUL: doesn't support LAMBDA_PARAMETER.
+        runs = []
+        if "CONSTANT" in msg_types:
+            runs.append({
+                "msg_types": ["CONSTANT"],
+                "exclude": None
+            })
+        
+        other_types = [mt for mt in msg_types if mt != "CONSTANT"]
+        if other_types:
+            if "LAMBDA_PARAMETER" in other_types:
+                # Run other types except LAMBDA_PARAMETER for JCL (already excluded below)
+                # and run LAMBDA_PARAMETER only for those that support it.
+                non_lambda_others = [mt for mt in other_types if mt != "LAMBDA_PARAMETER"]
+                if non_lambda_others:
+                    runs.append({
+                        "msg_types": non_lambda_others,
+                        "exclude": ".*jcl.*" if not args.frontends or "jcl" in args.frontends else None
+                    })
+                
+                # LAMBDA_PARAMETER is not supported by JCL and JUL
+                runs.append({
+                    "msg_types": ["LAMBDA_PARAMETER"],
+                    "exclude": ".*(jcl|jul).*" if not args.frontends or any(f in args.frontends for f in ["jcl", "jul"]) else None
+                })
             else:
-                print(f"Warning: Result file {src_json} not found for {backend}")
+                runs.append({
+                    "msg_types": other_types,
+                    "exclude": ".*jcl.*" if not args.frontends or "jcl" in args.frontends else None
+                })
+
+        for i, run in enumerate(runs):
+            benchmark_class = SEQUENTIAL_BACKENDS_MAP[backend]
+            effective_frontends = args.frontends if args.frontends else ["slf4j", "log4j", "jul", "jcl"]
             
+            # Filter out jcl for non-CONSTANT message types
+            if run["exclude"] and ".*jcl.*" in run["exclude"]:
+                effective_frontends = [f for f in effective_frontends if f != "jcl"]
+            
+            if not effective_frontends:
+                if args.dry_run:
+                    print(f"{LIGHT_YELLOW}Dry run (Run {i+1}/{len(runs)}): Skipping backend {backend} for messageTypes {run['msg_types']} (no frontends to test){RESET}")
+                else:
+                    print(f"  Skipping Run {i+1}/{len(runs)} for backend {backend} (no frontends to test)")
+                continue
+
+            if not args.dry_run and len(runs) > 1:
+                print(f"  Run {i+1}/{len(runs)}: messageType={run['msg_types']}, exclude={run['exclude']}")
+            
+            cmd = f"./gradlew --quiet :benchmark:benchmark-{backend}:jmh"
+            
+            includes = [f"{benchmark_class}\\.{f}" for f in effective_frontends]
+            include_pattern = f"{benchmark_class}\\.({'|'.join(effective_frontends)})"
+            
+            # JMH arguments via project properties
+            cmd += f" -Pjmh.includes='{include_pattern}'"
+            if run["exclude"]:
+                cmd += f" -Pjmh.excludes='{run['exclude']}'"
+
+            params = []
+            if args.output_to_file:
+                params.append("outputToFile=true")
+            else:
+                params.append("outputToFile=false")
+
+            if args.formats:
+                params.append(f"format={','.join(args.formats)}")
+            if args.handlers:
+                params.append(f"category={','.join(args.handlers)}")
+            
+            params.append(f"messageType={','.join(run['msg_types'])}")
+            if params:
+                cmd += f" -Pjmh.parameters='{';'.join(params)}'"
+
+            if args.warmup is not None:
+                cmd += f" -Pjmh.warmupIterations={args.warmup}"
+            if args.iterations is not None:
+                cmd += f" -Pjmh.iterations={args.iterations}"
+            if args.time:
+                cmd += f" -Pjmh.timeOnIteration={args.time} -Pjmh.warmupTime={args.time}"
+            
+            forks = 1
+            if args.forks is not None:
+                forks = args.forks
+            cmd += f" -Pjmh.forks={forks}"
+
+            if args.profile:
+                cmd += f" -Pjmh.profilers='{','.join(args.profile)}'"
+
+            jvm_args = ["-Djmh.ignoreLock=true"]
+            cmd += f" -Pjmh.jvmArgs='{' '.join(jvm_args)}'"
+
+            if args.dry_run:
+                print(f"{LIGHT_YELLOW}Dry run (Run {i+1}/{len(runs)}): Would execute command for backend {backend}:{RESET}")
+                print(f"  Command: {cmd}")
+                continue
+
+            output_file = None
+            if args.profile:
+                suffix = f"_{i}" if len(runs) > 1 else ""
+                output_file = os.path.join(results_dir, f"profile_{backend}{suffix}.txt")
+
+            if run_command(cmd, output_file):
+                src_json = f"benchmark/benchmark-{backend}/build/results/jmh/results.json"
+                dest_json = os.path.join(results_dir, f"results_{backend}_{i}.json")
+                if os.path.exists(src_json):
+                    shutil.copy(src_json, dest_json)
+                    with open(dest_json, "r") as f:
+                        data = json.load(f)
+                        for entry in data:
+                            entry["backend_param"] = backend 
+                        all_results.extend(data)
+                else:
+                    print(f"Warning: Result file {src_json} not found for {backend}")
+            elif not args.dry_run:
+                print(f"{BOLD_RED}Error: Benchmark failed for {backend} (run {i}){RESET}")
+                success = False
+        
+        if not args.dry_run:
             # Check for profiler output files in the root directory and move them
             if args.profile:
                 # JMH profilers often create files in the current directory or backend sub-module directory
@@ -290,7 +348,9 @@ def collect_results(args, timestamp, results_dir):
                             print(f"Moved profiler output {f} from {backend_dir} to {dest_f}")
 
         else:
-            print(f"{BOLD_RED}Error: Benchmark failed for {backend}{RESET}")
+            if not args.dry_run:
+                print(f"{BOLD_RED}Error: Benchmark failed for {backend}{RESET}")
+                success = False
 
     return all_results
 
@@ -340,30 +400,79 @@ def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info
             category, fmt = key
             f.write(f"### Category: {category}, Format: {fmt}\n\n")
             pairs = grouped[key]
-            all_msg_types = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
+            all_msg_types = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
+
+            # Calculate min/max scores for each frontend and each column
+            frontend_scores = {} # frontend -> mt -> list of scores
+            for (backend, frontend), data in pairs.items():
+                if frontend not in frontend_scores:
+                    frontend_scores[frontend] = {mt: [] for mt in all_msg_types + ["AVERAGE"]}
+                
+                total_score = 0.0
+                count = 0
+                for mt in all_msg_types:
+                    if mt in data:
+                        s = data[mt]["score"]
+                        frontend_scores[frontend][mt].append(s)
+                        total_score += s
+                        count += 1
+                if count > 0:
+                    frontend_scores[frontend]["AVERAGE"].append(total_score / count)
+
+            min_max = {} # frontend -> mt -> (min, max)
+            for frontend, mts in frontend_scores.items():
+                min_max[frontend] = {}
+                for mt, scores in mts.items():
+                    if scores:
+                        min_max[frontend][mt] = (min(scores), max(scores))
+                    else:
+                        min_max[frontend][mt] = (None, None)
+
             rows = []
             for (backend, frontend), data in pairs.items():
                 row = {"backend": backend, "frontend": frontend, "scores": {}, "errors": {}}
                 total_score = 0.0
                 count = 0
                 for mt in all_msg_types:
-                    if mt in data:
+                    is_excluded = (frontend == "jcl" and mt in ["ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]) or \
+                                  (frontend == "jul" and mt == "LAMBDA_PARAMETER")
+                    if is_excluded:
+                        row["scores"][mt] = "N/A"
+                        row["errors"][mt] = "N/A"
+                    elif mt in data:
                         s = data[mt]["score"]
                         e = data[mt]["error"]
-                        row["scores"][mt] = f"{s:,.2f}"
+                        
+                        s_str = f"{s:,.2f}"
+                        if min_max[frontend][mt][0] is not None and min_max[frontend][mt][1] is not None and min_max[frontend][mt][0] != min_max[frontend][mt][1]:
+                            if s == min_max[frontend][mt][1]:
+                                s_str = f"**{s_str}**"
+                            elif s == min_max[frontend][mt][0]:
+                                s_str = f"*{s_str}*"
+                        
+                        row["scores"][mt] = s_str
                         row["errors"][mt] = f"{e:,.2f}" if e is not None else "N/A"
                         total_score += s
                         count += 1
                     else:
                         row["scores"][mt] = ""
                         row["errors"][mt] = ""
+                
                 avg_score = total_score / count if count > 0 else 0.0
                 row["avg_score_val"] = avg_score
-                row["avg_score"] = f"{avg_score:,.2f}" if count > 0 else ""
+                
+                avg_score_str = f"{avg_score:,.2f}" if count > 0 else ""
+                if count > 0 and min_max[frontend]["AVERAGE"][0] is not None and min_max[frontend]["AVERAGE"][1] is not None and min_max[frontend]["AVERAGE"][0] != min_max[frontend]["AVERAGE"][1]:
+                    if avg_score == min_max[frontend]["AVERAGE"][1]:
+                        avg_score_str = f"**{avg_score_str}**"
+                    elif avg_score == min_max[frontend]["AVERAGE"][0]:
+                        avg_score_str = f"*{avg_score_str}*"
+                
+                row["avg_score"] = avg_score_str
                 row["avg_error"] = "N/A" if count > 0 else ""
                 rows.append(row)
-            
-            rows.sort(key=lambda x: x["avg_score_val"], reverse=True)
+        
+            rows.sort(key=lambda x: (x["backend"], x["frontend"]))
             col_widths = {
                 "backend": max(len("Backend"), max(len(r["backend"]) for r in rows) if rows else 0),
                 "frontend": max(len("Frontend"), max(len(r["frontend"]) for r in rows) if rows else 0),
@@ -371,8 +480,10 @@ def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info
                 "CONSTANT_error": max(len("Error"), max(len(r["errors"]["CONSTANT"]) for r in rows) if rows else 0),
                 "ARGUMENTS_score": max(len("Argument (ops/s)"), max(len(r["scores"]["ARGUMENTS"]) for r in rows) if rows else 0),
                 "ARGUMENTS_error": max(len("Error"), max(len(r["errors"]["ARGUMENTS"]) for r in rows) if rows else 0),
-                "LAMBDA_score": max(len("Lambda (ops/s)"), max(len(r["scores"]["LAMBDA"]) for r in rows) if rows else 0),
-                "LAMBDA_error": max(len("Error"), max(len(r["errors"]["LAMBDA"]) for r in rows) if rows else 0),
+                "MESSAGE_SUPPLIER_score": max(len("Msg Supp (ops/s)"), max(len(r["scores"]["MESSAGE_SUPPLIER"]) for r in rows) if rows else 0),
+                "MESSAGE_SUPPLIER_error": max(len("Error"), max(len(r["errors"]["MESSAGE_SUPPLIER"]) for r in rows) if rows else 0),
+                "LAMBDA_PARAMETER_score": max(len("Lambda Param (ops/s)"), max(len(r["scores"]["LAMBDA_PARAMETER"]) for r in rows) if rows else 0),
+                "LAMBDA_PARAMETER_error": max(len("Error"), max(len(r["errors"]["LAMBDA_PARAMETER"]) for r in rows) if rows else 0),
                 "avg_score": max(len("Average (ops/s)"), max(len(r["avg_score"]) for r in rows) if rows else 0),
                 "avg_error": max(len("Error"), max(len(r['avg_error']) for r in rows) if rows else 0),
             }
@@ -380,21 +491,24 @@ def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info
             header = (f"| {'Backend':<{col_widths['backend']}} | {'Frontend':<{col_widths['frontend']}} | "
                      f"{'Constant (ops/s)':>{col_widths['CONSTANT_score']}} | {'Error':>{col_widths['CONSTANT_error']}} | "
                      f"{'Argument (ops/s)':>{col_widths['ARGUMENTS_score']}} | {'Error':>{col_widths['ARGUMENTS_error']}} | "
-                     f"{'Lambda (ops/s)':>{col_widths['LAMBDA_score']}} | {'Error':>{col_widths['LAMBDA_error']}} | "
+                     f"{'Msg Supp (ops/s)':>{col_widths['MESSAGE_SUPPLIER_score']}} | {'Error':>{col_widths['MESSAGE_SUPPLIER_error']}} | "
+                     f"{'Lambda Param (ops/s)':>{col_widths['LAMBDA_PARAMETER_score']}} | {'Error':>{col_widths['LAMBDA_PARAMETER_error']}} | "
                      f"{'Average (ops/s)':>{col_widths['avg_score']}} | {'Error':>{col_widths['avg_error']}} |")
-            
+        
             separator = (f"| {'-' * col_widths['backend']} | {'-' * col_widths['frontend']} | "
                         f"{'-' * (col_widths['CONSTANT_score'] - 1)}: | {'-' * (col_widths['CONSTANT_error'] - 1)}: | "
                         f"{'-' * (col_widths['ARGUMENTS_score'] - 1)}: | {'-' * (col_widths['ARGUMENTS_error'] - 1)}: | "
-                        f"{'-' * (col_widths['LAMBDA_score'] - 1)}: | {'-' * (col_widths['LAMBDA_error'] - 1)}: | "
+                        f"{'-' * (col_widths['MESSAGE_SUPPLIER_score'] - 1)}: | {'-' * (col_widths['MESSAGE_SUPPLIER_error'] - 1)}: | "
+                        f"{'-' * (col_widths['LAMBDA_PARAMETER_score'] - 1)}: | {'-' * (col_widths['LAMBDA_PARAMETER_error'] - 1)}: | "
                         f"{'-' * (col_widths['avg_score'] - 1)}: | {'-' * (col_widths['avg_error'] - 1)}: |")
-            
+        
             f.write(header + "\n" + separator + "\n")
             for r in rows:
                 line = (f"| {r['backend']:<{col_widths['backend']}} | {r['frontend']:<{col_widths['frontend']}} | "
                         f"{r['scores']['CONSTANT']:>{col_widths['CONSTANT_score']}} | {r['errors']['CONSTANT']:>{col_widths['CONSTANT_error']}} | "
                         f"{r['scores']['ARGUMENTS']:>{col_widths['ARGUMENTS_score']}} | {r['errors']['ARGUMENTS']:>{col_widths['ARGUMENTS_error']}} | "
-                        f"{r['scores']['LAMBDA']:>{col_widths['LAMBDA_score']}} | {r['errors']['LAMBDA']:>{col_widths['LAMBDA_error']}} | "
+                        f"{r['scores']['MESSAGE_SUPPLIER']:>{col_widths['MESSAGE_SUPPLIER_score']}} | {r['errors']['MESSAGE_SUPPLIER']:>{col_widths['MESSAGE_SUPPLIER_error']}} | "
+                        f"{r['scores']['LAMBDA_PARAMETER']:>{col_widths['LAMBDA_PARAMETER_score']}} | {r['errors']['LAMBDA_PARAMETER']:>{col_widths['LAMBDA_PARAMETER_error']}} | "
                         f"{r['avg_score']:>{col_widths['avg_score']}} | {r['avg_error']:>{col_widths['avg_error']}} |")
                 f.write(line + "\n")
             f.write("\n")
@@ -419,6 +533,26 @@ def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, 
         score = entry.get("primaryMetric", {}).get("score", 0)
         grouped[backend][frontend][thread_count] = score
 
+    # Calculate min/max scores for each frontend and thread count
+    frontend_thread_scores = {} # frontend -> thread_count -> list of scores
+    for backend, frontends in grouped.items():
+        for frontend, threads in frontends.items():
+            if frontend not in frontend_thread_scores:
+                frontend_thread_scores[frontend] = {}
+            for t, score in threads.items():
+                if t not in frontend_thread_scores[frontend]:
+                    frontend_thread_scores[frontend][t] = []
+                frontend_thread_scores[frontend][t].append(score)
+    
+    min_max_parallel = {} # frontend -> thread_count -> (min, max)
+    for frontend, threads in frontend_thread_scores.items():
+        min_max_parallel[frontend] = {}
+        for t, scores in threads.items():
+            if scores:
+                min_max_parallel[frontend][t] = (min(scores), max(scores))
+            else:
+                min_max_parallel[frontend][t] = (None, None)
+
     report_path = os.path.join(results_dir, "PARALLEL_BENCHMARK_RESULTS.md")
     with open(report_path, "w") as f:
         f.write("# Parallel Logging Benchmark Results\n\n")
@@ -438,7 +572,15 @@ def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, 
                 row = f"| {backend} | {frontend} |"
                 for t in all_threads:
                     score = grouped[backend][frontend].get(t, 0)
-                    row += f" {score:,.2f} |"
+                    score_str = f"{score:,.2f}"
+                    if score > 0 and t in min_max_parallel.get(frontend, {}):
+                        min_val, max_val = min_max_parallel[frontend][t]
+                        if min_val is not None and max_val is not None and min_val != max_val:
+                            if score == max_val:
+                                score_str = f"**{score_str}**"
+                            elif score == min_val:
+                                score_str = f"*{score_str}*"
+                    row += f" {score_str} |"
                 f.write(row + "\n")
                 
     print(f"Markdown report generated: {report_path}")
@@ -481,7 +623,7 @@ if __name__ == "__main__":
             args.backends = list(SEQUENTIAL_BACKENDS_MAP.keys())
         if args.handlers is None: args.handlers = ["CONSOLE", "FILE"]
         if args.formats is None: args.formats = ["COMPACT", "DEFAULT", "DETAILED"]
-        if args.message_types is None: args.message_types = ["CONSTANT", "ARGUMENTS", "LAMBDA"]
+        if args.message_types is None: args.message_types = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     results_dir = os.path.join("benchmark_results", timestamp)

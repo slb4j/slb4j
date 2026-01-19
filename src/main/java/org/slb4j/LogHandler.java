@@ -18,6 +18,7 @@ package org.slb4j;
 import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.jspecify.annotations.Nullable;
 
+import java.io.Closeable;
 import java.util.function.Supplier;
 
 /**
@@ -69,4 +70,13 @@ public interface LogHandler {
      * @return the LogEntryFilter that is currently set; never {@code null}
      */
     LogFilter getFilter();
+
+    /**
+     * Initiates the shutdown process for the log handler.
+     * This method should be called to release any resources, perform cleanup tasks,
+     * and ensure finalization work for the logging system associated with this handler.
+     * Once this method is invoked, the log handler should not be expected to process
+     * any further log entries.
+     */
+    void shutdown();
 }

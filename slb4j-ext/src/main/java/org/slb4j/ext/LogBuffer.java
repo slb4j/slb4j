@@ -334,6 +334,11 @@ public class LogBuffer implements LogHandler, Externalizable {
         return filter;
     }
 
+    @Override
+    public void shutdown() {
+        // do nothing
+    }
+
     /**
      * Clear the LogBuffer.
      * Synchronized method that clears the buffer and notifies all registered LogBufferListeners to clear their logs as well.

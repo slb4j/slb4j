@@ -54,6 +54,11 @@ class UniversalDispatcherTest {
         }
 
         @Override
+        public void shutdown() {
+            // nothing to do
+        }
+
+        @Override
         public boolean isEnabled(LogLevel level) {
             return true;
         }

@@ -64,9 +64,17 @@ public final class LoggerJcl implements Log {
      */
     private void dispatch(LogLevel level, @Nullable Object message, @Nullable Throwable t) {
         if (DISPATCHER.isLevelEnabled(level)) {
-            Supplier<String> msg = Util.cachingStringSupplier(() -> Objects.toString(message, null));
+            Supplier<String> msg = formatMessageJcl(message);
             DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, level, null, null, LOCATION_RESOLVER, msg, t);
         }
+    }
+
+    private static Supplier<String> formatMessageJcl(@Nullable Object message) {
+        return switch (message) {
+            case null -> "null"::toString;
+            case String s -> s::toString;
+            default -> Util.cachingStringSupplier(message::toString);
+        };
     }
 
     @Override

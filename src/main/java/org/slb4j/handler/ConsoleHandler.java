@@ -180,4 +180,11 @@ public final class ConsoleHandler implements LogHandler {
     public LogFilter getFilter() {
         return filter;
     }
+
+    @Override
+    public void shutdown() {
+        synchronized (lock) {
+            buffer.reset(0);
+        }
+    }
 }

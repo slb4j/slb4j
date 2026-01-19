@@ -76,15 +76,17 @@ public final class JulHandler extends Handler {
      * @return the formatted message if formatting is successful, or the raw pattern if
      *         no parameters are provided or an error occurs during formatting
      */
-    public static String formatJulMessage(String pattern, @Nullable Object @Nullable [] params) {
+    public static Supplier<String> formatJulMessage(String pattern, @Nullable Object @Nullable [] params) {
         if (params == null || params.length == 0) {
-            return pattern;
+            return pattern::toString;
         }
-        try {
-            return java.text.MessageFormat.format(pattern, params);
-        } catch (Exception e) {
-            return pattern; // Fallback to the raw pattern on error
-        }
+        return Util.cachingStringSupplier(() -> {
+            try {
+                return java.text.MessageFormat.format(pattern, params);
+            } catch (Exception e) {
+                return pattern;
+            }
+        });
     }
 
     @Override
@@ -101,7 +103,7 @@ public final class JulHandler extends Handler {
             LogLevel lvl = translateJulLevel(logRecord.getLevel());
             if (DISPATCHER.isLevelEnabled(lvl)) {
                 String loggerName1 = logRecord.getLoggerName();
-                Supplier<String> msg = Util.cachingStringSupplier(() -> formatJulMessage(logRecord.getMessage(), logRecord.getParameters()));
+                Supplier<String> msg = formatJulMessage(logRecord.getMessage(), logRecord.getParameters());
                 Throwable t = logRecord.getThrown();
 
                 DISPATCHER.filterAndDispatch(logRecord.getMillis(), loggerName1, lvl, null, null, LOCATION_RESOLVER, msg, t);

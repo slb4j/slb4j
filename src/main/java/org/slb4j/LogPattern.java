@@ -229,6 +229,11 @@ public final class LogPattern {
                 value = "";
             }
 
+            if (value.isEmpty()) {
+                appendSpaces(app, minWidth);
+                return;
+            }
+
             if (maxWidth > 0 && value.length() > maxWidth) {
                 if (leftTruncate) {
                     app.append(value, value.length() - maxWidth, value.length());

@@ -180,9 +180,9 @@ public final class LoggerLog4j extends AbstractLogger {
             if (message instanceof ReusableMessage rm) {
                 // for reusable messages, do eager evaluation
                 String m = rm.getFormattedMessage();
-                msg = () -> m;
+                msg = m::toString;
             } else {
-                msg = Util.cachingStringSupplier(message::getFormattedMessage);
+                msg = message::getFormattedMessage;
             }
             DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, lvl, mrk, MDC_INSTANCE, LOCATION_RESOLVER, msg, t);
         }

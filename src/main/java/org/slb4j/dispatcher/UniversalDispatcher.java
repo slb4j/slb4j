@@ -24,7 +24,10 @@ import org.slb4j.SLB4J;
 import org.slb4j.MDC;
 import org.slb4j.support.StackWalkerLocationResolver;
 import org.jspecify.annotations.Nullable;
+import org.slb4j.support.Util;
 
+import java.io.Closeable;
+import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -79,7 +82,28 @@ public final class UniversalDispatcher implements LogDispatcher {
      * without any specific configuration or parameters.
      */
     public UniversalDispatcher() {
-        // nothing to do
+        Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown, "UniversalDispatcher-ShutdownHook"));
+    }
+
+    /**
+     * Shuts down the {@code UniversalDispatcher} by invoking the shutdown process
+     * for each registered {@code LogHandler} instance. This method ensures that
+     * all associated resources are released, cleanup tasks are performed, and any
+     * finalization work related to logging is completed.
+     *
+     * This operation iterates over all the log handlers currently managed by the
+     * dispatcher and invokes their respective {@code shutdown()} methods to finalize
+     * their activities. After this method is called, the dispatcher and its handlers
+     * should not be expected to process any further log entries.
+     */
+    public void shutdown() {
+        for (LogHandler handler : handlers) {
+            try {
+                handler.shutdown();
+            } catch (Exception e) {
+                Util.err().println("Error shutting down log handler: '" +handler.name() + "': " + e.getMessage());
+            }
+        }
     }
 
     /**
