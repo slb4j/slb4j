@@ -1,3 +1,6 @@
+import com.github.benmanes.gradle.versions.updates.DependencyUpdatesTask
+import org.gradle.kotlin.dsl.withType
+
 /*
  * Copyright 2026 Axel Howind - axh@dua3.com
  *
@@ -20,6 +23,7 @@ plugins {
     alias(libs.plugins.jdkprovider)
     alias(libs.plugins.cabe)
     alias(libs.plugins.spotbugs)
+    alias(libs.plugins.versions)
     jacoco
 }
 
@@ -258,6 +262,25 @@ allprojects {
                 outputLocation.set(layout.buildDirectory.file("reports/spotbugs/test.html"))
                 setStylesheet("fancy-hist.xsl")
             }
+        }
+    }
+
+    // configure the versions plugin
+    fun isStable(version: String): Boolean {
+        val stableKeyword = listOf("RELEASE", "FINAL", "GA").any { version.uppercase().contains(it) }
+        val regex = "[0-9,.v-]+-(rc|ea|alpha|beta|b|M|SNAPSHOT)([+-]?[0-9]*)?".toRegex()
+        return stableKeyword || !regex.matches(version)
+    }
+
+    tasks.withType<DependencyUpdatesTask> {
+        // refuse non-stable versions
+        rejectVersionIf {
+            !isStable(candidate.version)
+        }
+
+        // dependencyUpdates fails in parallel mode with Gradle 9+ (https://github.com/ben-manes/gradle-versions-plugin/issues/968)
+        doFirst {
+            gradle.startParameter.isParallelProjectExecutionEnabled = false
         }
     }
 }
