@@ -162,7 +162,7 @@ def calculate_runtime(args):
     forks = 1
     if args.forks is not None:
         forks = args.forks
-    jmh_fork_overhead = 1.0 if forks > 0 else 0.1
+    jmh_fork_overhead = 0.1 if forks > 0 else 0
 
     num_frontends = len(args.frontends) if args.frontends else 4
     num_handlers = len(args.handlers) if args.handlers else 2
