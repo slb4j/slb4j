@@ -82,6 +82,19 @@ SLB4J provides a unified logging interface, so you can remove other logging back
 | Log4J2 → SLF4J bridge   | log4j-to-slf4j   | Routes Log4J2 API to SLF4J             |
 | JCL → SLF4J bridge      | jcl-over-slf4j   | Routes Commons Logging (JCL) to SLF4J  |
 
+## Benchmarks
+
+The repository contains a `run_benchmarks.py` script for benchmarking different logging
+backends and frontends. The script provides a comprehensive comparison of performance
+across the logging systems, including JUL, Log4J2, SLF4J, JCL, and their respective
+bindings and bridges.
+
+Run `run_benchmarks.py --help` to display the options that can be passed to the script.
+
+Note: the  smoketest mode does not produce usable numbers; it is intended for testing
+the benchmark script and that the different backends and frontends are configured
+correctly.
+
 ## Status
 
 ### Done
