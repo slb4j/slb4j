@@ -36,12 +36,34 @@ public abstract class ParallelLoggingBenchmark {
     private PrintStream originalErr;
 
     public abstract String backend();
+    public abstract String category();
 
     @Setup(Level.Trial)
-    public abstract void setup() throws IOException;
+    public void setup(org.openjdk.jmh.infra.BenchmarkParams params) throws IOException {
+        originalOut = System.out;
+        originalErr = System.err;
+
+        // Print testing info only once per fork/trial
+        String benchmarkName = params.getBenchmark();
+        String frontend = benchmarkName.substring(benchmarkName.lastIndexOf('.') + 1);
+        originalOut.println("Testing parallel " + backend() + "-" + frontend + " ...");
+
+        System.setOut(new PrintStream(OutputStream.nullOutputStream()));
+        System.setErr(new PrintStream(OutputStream.nullOutputStream()));
+
+        setupLogging();
+    }
 
     @TearDown(Level.Trial)
-    public abstract void tearDown() throws IOException;
+    public void tearDown() throws IOException {
+        System.setOut(originalOut);
+        System.setErr(originalErr);
+        tearDownLogging();
+    }
+
+    protected abstract void setupLogging() throws IOException;
+
+    protected abstract void tearDownLogging();
 
     @Benchmark
     @Threads(1)

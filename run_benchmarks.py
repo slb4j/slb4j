@@ -32,6 +32,13 @@ SEQUENTIAL_BACKENDS_MAP = {
     "jul": "JulBenchmark"
 }
 
+PARALLEL_BACKENDS_MAP = {
+    "slb4j": "Slb4jParallelBenchmark",
+    "log4j": "Log4jParallelBenchmark",
+    "logback": "LogbackParallelBenchmark",
+    "jul": "JulParallelBenchmark"
+}
+
 VALID_HANDLERS = ["CONSOLE", "FILE"]
 VALID_FORMATS = ["COMPACT", "DEFAULT", "DETAILED"]
 VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
@@ -107,10 +114,11 @@ def get_system_info():
     return "\n".join(info)
 
 def validate_args(args):
-    backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
+    backends_map = PARALLEL_BACKENDS_MAP if args.parallel else SEQUENTIAL_BACKENDS_MAP
+    backends = args.backends if args.backends else list(backends_map.keys())
     for b in backends:
-        if b not in SEQUENTIAL_BACKENDS_MAP:
-            print(f"{BOLD_RED}Error: Invalid backend {b}. Valid backends are: {list(SEQUENTIAL_BACKENDS_MAP.keys())}{RESET}")
+        if b not in backends_map:
+            print(f"{BOLD_RED}Error: Invalid backend {b}. Valid backends are: {list(backends_map.keys())}{RESET}")
             return False
     
     if args.handlers:
@@ -164,15 +172,83 @@ def calculate_runtime(args):
         forks = args.forks
     jmh_fork_overhead = 0.1 if forks > 0 else 0
 
-    num_frontends = len(args.frontends) if args.frontends else 4
-    num_handlers = len(args.handlers) if args.handlers else 2
-    num_formats = len(args.formats) if args.formats else 3
-    msg_types = args.message_types if args.message_types else VALID_MESSAGE_TYPES
-    num_msg_types = len(msg_types)
-    total_benchmarks_per_backend = num_frontends * num_handlers * num_formats * num_msg_types
+    if args.parallel:
+        num_frontends = 2 # slf4j, log4j
+        num_threads = 7 # 1, 2, 4, 8, 16, 64, 128
+        num_handlers = len(args.handlers) if args.handlers else 2
+        total_benchmarks_per_backend = num_frontends * num_threads * num_handlers
+    else:
+        num_frontends = len(args.frontends) if args.frontends else 4
+        num_handlers = len(args.handlers) if args.handlers else 2
+        num_formats = len(args.formats) if args.formats else 3
+        msg_types = args.message_types if args.message_types else VALID_MESSAGE_TYPES
+        num_msg_types = len(msg_types)
+        total_benchmarks_per_backend = num_frontends * num_handlers * num_formats * num_msg_types
 
     time_per_benchmark = (warmup + iterations) * time_per_iter + jmh_fork_overhead
     return num_backends * (gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark)
+
+def collect_parallel_results(args, timestamp, results_dir):
+    all_results = []
+    selected_backends = args.backends if args.backends else list(PARALLEL_BACKENDS_MAP.keys())
+    success = True
+    
+    for backend in selected_backends:
+        print(f"{LIGHT_CYAN}Testing parallel backend: {backend}{RESET}")
+        
+        benchmark_class = PARALLEL_BACKENDS_MAP[backend]
+        effective_frontends = args.frontends if args.frontends else ["slf4j", "log4j"]
+        
+        include_pattern = f"{benchmark_class}\\.({'|'.join(effective_frontends)})_.*"
+        
+        cmd = f"./gradlew --quiet :benchmark:benchmark-{backend}:jmh"
+        cmd += f" -Pjmh.includes='{include_pattern}'"
+        
+        params = []
+        if args.handlers:
+            params.append(f"category={','.join(args.handlers)}")
+        
+        if params:
+            cmd += f" -Pjmh.params='{';'.join(params)}'"
+        
+        if args.warmup is not None: cmd += f" -Pjmh.warmupIterations={args.warmup}"
+        if args.iterations is not None: cmd += f" -Pjmh.iterations={args.iterations}"
+        if args.time is not None: cmd += f" -Pjmh.timeOnIteration={args.time} -Pjmh.warmupTime={args.time}"
+        if args.forks is not None:
+            cmd += f" -Pjmh.forks={args.forks}"
+        else:
+            cmd += " -Pjmh.forks=1"
+        if args.profile: cmd += f" -Pjmh.profilers='{','.join(args.profile)}'"
+        
+        # Determine the results file location. 
+        # The JMH plugin for Gradle by default puts results in build/results/jmh/results.json
+        # We'll use this default and move it afterwards.
+        # Note: We can't easily change the output file from property if not supported in build.gradle.kts
+        results_file_src = os.path.join("benchmark", f"benchmark-{backend}", "build", "results", "jmh", "results.json")
+        results_file_dst = os.path.join(results_dir, f"parallel_results_{backend}.json")
+        
+        if args.dry_run:
+            print(f"{LIGHT_YELLOW}Dry run: {cmd}{RESET}")
+        else:
+            # Remove old result file if exists
+            if os.path.exists(results_file_src):
+                os.remove(results_file_src)
+
+            if run_command(cmd, os.path.join(results_dir, f"parallel_benchmark_{backend}.log")):
+                if os.path.exists(results_file_src):
+                    shutil.copy2(results_file_src, results_file_dst)
+                    with open(results_file_dst, 'r') as f:
+                        backend_results = json.load(f)
+                        for r in backend_results:
+                            r["backend_param"] = backend
+                        all_results.extend(backend_results)
+                else:
+                    print(f"{YELLOW}Warning: No results found for backend {backend} at {results_file_src}{RESET}")
+            else:
+                print(f"{BOLD_RED}Parallel benchmark failed for backend: {backend}{RESET}")
+                success = False
+                
+    return all_results
 
 def collect_results(args, timestamp, results_dir):
     all_results = []
@@ -353,6 +429,82 @@ def collect_results(args, timestamp, results_dir):
                 success = False
 
     return all_results
+
+def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line):
+    if not results:
+        print(f"{BOLD_RED}No results to generate parallel report.{RESET}")
+        return
+
+    grouped = {}
+    present_threads = set()
+    for entry in results:
+        backend = entry["backend_param"]
+        benchmark_full_name = entry["benchmark"]
+        # benchmark_full_name is something like "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_1"
+        benchmark_name = benchmark_full_name.split(".")[-1]
+        try:
+            frontend, thread_count = benchmark_name.split("_")
+            thread_count = int(thread_count)
+            present_threads.add(thread_count)
+            if backend not in grouped: grouped[backend] = {}
+            if frontend not in grouped[backend]: grouped[backend][frontend] = {}
+            score = entry.get("primaryMetric", {}).get("score", 0)
+            grouped[backend][frontend][thread_count] = score
+        except ValueError:
+            print(f"{BOLD_RED}Warning: Could not parse benchmark name: {benchmark_name}{RESET}")
+            continue
+
+    # Calculate min/max scores for each frontend and thread count
+    frontend_thread_scores = {} # frontend -> thread_count -> list of scores
+    for backend, frontends in grouped.items():
+        for frontend, threads in frontends.items():
+            if frontend not in frontend_thread_scores:
+                frontend_thread_scores[frontend] = {}
+            for t, score in threads.items():
+                if t not in frontend_thread_scores[frontend]:
+                    frontend_thread_scores[frontend][t] = []
+                frontend_thread_scores[frontend][t].append(score)
+    
+    min_max_parallel = {} # frontend -> thread_count -> (min, max)
+    for frontend, threads in frontend_thread_scores.items():
+        min_max_parallel[frontend] = {}
+        for t, scores in threads.items():
+            if scores:
+                min_max_parallel[frontend][t] = (min(scores), max(scores))
+            else:
+                min_max_parallel[frontend][t] = (None, None)
+
+    report_path = os.path.join(results_dir, "PARALLEL_BENCHMARK_RESULTS.md")
+    with open(report_path, "w") as f:
+        f.write("# Parallel Logging Benchmark Results\n\n")
+        f.write(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
+        f.write("## Command Line\n```bash\n" + cmd_line + "\n```\n\n")
+        f.write("## System Information\n```\n" + sys_info + "\n```\n\n")
+        f.write("Throughput (ops/s) for different thread counts.\n\n")
+        
+        sorted_backends = sorted(grouped.keys())
+        all_threads = sorted(list(present_threads))
+        header = "| Backend | Frontend | " + " | ".join([f"{t} Threads" for t in all_threads]) + " |"
+        separator = "| :--- | :--- | " + " | ".join([":---:" for _ in all_threads]) + " |"
+        f.write(header + "\n" + separator + "\n")
+        for backend in sorted_backends:
+            sorted_frontends = sorted(grouped[backend].keys())
+            for frontend in sorted_frontends:
+                row = f"| {backend} | {frontend} |"
+                for t in all_threads:
+                    score = grouped[backend][frontend].get(t, 0)
+                    score_str = f"{score:,.2f}"
+                    if score > 0 and t in min_max_parallel.get(frontend, {}):
+                        min_val, max_val = min_max_parallel[frontend][t]
+                        if min_val is not None and max_val is not None and min_val != max_val:
+                            if score == max_val:
+                                score_str = f"**{score_str}**"
+                            elif score == min_val:
+                                score_str = f"*{score_str}*"
+                    row += f" {score_str} |"
+                f.write(row + "\n")
+                
+    print(f"Markdown report generated: {report_path}")
 
 def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line):
     if not results:
@@ -600,6 +752,7 @@ if __name__ == "__main__":
     parser.add_argument("--dry-run", action="store_true", help="Show the benchmarks that will run without actually executing them")
     parser.add_argument("--mode", choices=["smoketest", "quick", "full"], help="Benchmark mode")
     parser.add_argument("--profile", nargs="+", help="JMH profilers to use (gc, stack, cl, comp, jfr, pauses safepoints)")
+    parser.add_argument("--parallel", action="store_true", help="Run parallel benchmarks")
     
     args = parser.parse_args()
     if not validate_args(args):
@@ -620,7 +773,8 @@ if __name__ == "__main__":
             if args.time is None: args.time = "1s"
             
         if args.backends is None:
-            args.backends = list(SEQUENTIAL_BACKENDS_MAP.keys())
+            backends_map = PARALLEL_BACKENDS_MAP if args.parallel else SEQUENTIAL_BACKENDS_MAP
+            args.backends = list(backends_map.keys())
         if args.handlers is None: args.handlers = ["CONSOLE", "FILE"]
         if args.formats is None: args.formats = ["COMPACT", "DEFAULT", "DETAILED"]
         if args.message_types is None: args.message_types = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
@@ -635,6 +789,11 @@ if __name__ == "__main__":
     cmd_line = "python3 " + " ".join(sys.argv)
     sys_info = get_system_info()
     
-    results = collect_results(args, timestamp, results_dir)
-    if not args.dry_run:
-        generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line)
+    if args.parallel:
+        results = collect_parallel_results(args, timestamp, results_dir)
+        if not args.dry_run:
+            generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line)
+    else:
+        results = collect_results(args, timestamp, results_dir)
+        if not args.dry_run:
+            generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line)
