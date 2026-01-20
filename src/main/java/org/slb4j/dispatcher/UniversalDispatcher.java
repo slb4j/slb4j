@@ -20,14 +20,10 @@ import org.slb4j.LogDispatcher;
 import org.slb4j.LogFilter;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
-import org.slb4j.SLB4J;
 import org.slb4j.MDC;
-import org.slb4j.support.StackWalkerLocationResolver;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.support.Util;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -64,9 +60,6 @@ public final class UniversalDispatcher implements LogDispatcher {
     public static UniversalDispatcher getInstance() {
         return SingletonHolder.INSTANCE;
     }
-
-    // definition of location resolvers
-    private static final LocationResolver LOCATION_RESOLVER_LOG4J = new StackWalkerLocationResolver(SLB4J.class.getPackageName(), "org.apache.logging");
 
     private LogFilter filter = LogFilter.allPass();
 
