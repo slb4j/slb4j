@@ -114,12 +114,27 @@ def get_system_info():
     return "\n".join(info)
 
 def validate_args(args):
-    backends_map = PARALLEL_BACKENDS_MAP if args.parallel else SEQUENTIAL_BACKENDS_MAP
-    backends = args.backends if args.backends else list(backends_map.keys())
-    for b in backends:
-        if b not in backends_map:
-            print(f"{BOLD_RED}Error: Invalid backend {b}. Valid backends are: {list(backends_map.keys())}{RESET}")
-            return False
+    # If neither serial nor parallel is specified, we run both
+    run_serial = args.serial or not args.parallel
+    run_parallel = args.parallel or not args.serial
+
+    # Validate backends for serial if needed
+    if run_serial:
+        backends_map = SEQUENTIAL_BACKENDS_MAP
+        backends = args.backends if args.backends else list(backends_map.keys())
+        for b in backends:
+            if b not in backends_map:
+                print(f"{BOLD_RED}Error: Invalid serial backend {b}. Valid backends are: {list(backends_map.keys())}{RESET}")
+                return False
+
+    # Validate backends for parallel if needed
+    if run_parallel:
+        backends_map = PARALLEL_BACKENDS_MAP
+        backends = args.backends if args.backends else list(backends_map.keys())
+        for b in backends:
+            if b not in backends_map:
+                print(f"{BOLD_RED}Error: Invalid parallel backend {b}. Valid backends are: {list(backends_map.keys())}{RESET}")
+                return False
     
     if args.handlers:
         for c in args.handlers:
@@ -159,8 +174,10 @@ def get_estimated_runtime(args):
     return calculate_runtime(args)
 
 def calculate_runtime(args):
-    selected_backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
-    num_backends = len(selected_backends)
+    run_serial = args.serial or not args.parallel
+    run_parallel = args.parallel or not args.serial
+    
+    total_runtime = 0.0
     
     warmup = args.warmup if args.warmup is not None else 2
     iterations = args.iterations if args.iterations is not None else 3
@@ -171,24 +188,82 @@ def calculate_runtime(args):
     if args.forks is not None:
         forks = args.forks
     jmh_fork_overhead = 0.1 if forks > 0 else 0
+    
+    time_per_benchmark = (warmup + iterations) * time_per_iter + jmh_fork_overhead
 
-    if args.parallel:
-        num_frontends = 2 # slf4j, log4j
-        num_threads = 7 # 1, 2, 4, 8, 16, 64, 128
-        num_handlers = len(args.handlers) if args.handlers else 2
-        total_benchmarks_per_backend = num_frontends * num_threads * num_handlers
-    else:
+    if run_serial:
+        selected_backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
+        num_backends = len(selected_backends)
+        
         num_frontends = len(args.frontends) if args.frontends else 4
         num_handlers = len(args.handlers) if args.handlers else 2
         num_formats = len(args.formats) if args.formats else 3
         msg_types = args.message_types if args.message_types else VALID_MESSAGE_TYPES
         num_msg_types = len(msg_types)
         total_benchmarks_per_backend = num_frontends * num_handlers * num_formats * num_msg_types
+        
+        total_runtime += num_backends * (gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark)
 
-    time_per_benchmark = (warmup + iterations) * time_per_iter + jmh_fork_overhead
-    return num_backends * (gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark)
+    if run_parallel:
+        selected_backends = args.backends if args.backends else list(PARALLEL_BACKENDS_MAP.keys())
+        num_backends = len(selected_backends)
+        
+        num_frontends = 2 # slf4j, log4j
+        num_threads = 7 # 1, 2, 4, 8, 16, 64, 128
+        num_handlers = len(args.handlers) if args.handlers else 2
+        total_benchmarks_per_backend = num_frontends * num_threads * num_handlers
+        
+        total_runtime += num_backends * (gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark)
 
-def collect_parallel_results(args, timestamp, results_dir):
+    return total_runtime
+
+def move_profiler_outputs(backend, results_dir, profiler_subdir):
+    # Determine destination directory
+    dest_dir = os.path.join(results_dir, profiler_subdir) if profiler_subdir else results_dir
+    if not os.path.exists(dest_dir):
+        os.makedirs(dest_dir)
+
+    # JMH profilers often create files in the current directory or backend sub-module directory
+    # Common extensions for JMH profilers: .txt, .csv, .bin, .html, .svg, .jfr
+    
+    # Check root directory
+    for f in os.listdir("."):
+        if os.path.isfile(f) and f.endswith((".csv", ".bin", ".html", ".svg", ".txt", ".prof", ".jfr")):
+            # Also avoid moving run_benchmarks.py if it somehow matches (unlikely)
+            if f == "run_benchmarks.py" or f == "requirements.txt":
+                continue
+
+            dest_f = os.path.join(dest_dir, f"{backend}_{f}")
+            shutil.move(f, dest_f)
+            print(f"Moved profiler output {f} to {dest_f}")
+
+    # Check backend directory for JFR or other profiler directories
+    backend_dir = f"benchmark/benchmark-{backend}"
+    if os.path.exists(backend_dir):
+        for f in os.listdir(backend_dir):
+            full_path = os.path.join(backend_dir, f)
+            # JMH JFR profiler often creates directories named after the benchmark
+            if os.path.isdir(full_path) and "Benchmark" in f:
+                # Look for .jfr files inside this directory
+                for sub_f in os.listdir(full_path):
+                    if sub_f.endswith(".jfr"):
+                        sub_full_path = os.path.join(full_path, sub_f)
+                        # Rename to something more useful: backend_benchmarkname_profile.jfr
+                        dest_name = f"{backend}_{f}_{sub_f}"
+                        dest_f = os.path.join(dest_dir, dest_name)
+                        shutil.move(sub_full_path, dest_f)
+                        print(f"Moved profiler output {sub_f} from {f} to {dest_f}")
+                # Try to remove the now possibly empty directory
+                try:
+                    shutil.rmtree(full_path)
+                except:
+                    pass
+            elif os.path.isfile(full_path) and f.endswith((".csv", ".bin", ".html", ".svg", ".txt", ".prof", ".jfr")):
+                dest_f = os.path.join(dest_dir, f"{backend}_{f}")
+                shutil.move(full_path, dest_f)
+                print(f"Moved profiler output {f} from {backend_dir} to {dest_f}")
+
+def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None):
     all_results = []
     selected_backends = args.backends if args.backends else list(PARALLEL_BACKENDS_MAP.keys())
     success = True
@@ -209,7 +284,7 @@ def collect_parallel_results(args, timestamp, results_dir):
             params.append(f"category={','.join(args.handlers)}")
         
         if params:
-            cmd += f" -Pjmh.params='{';'.join(params)}'"
+            cmd += f" -Pjmh.parameters='{';'.join(params)}'"
         
         if args.warmup is not None: cmd += f" -Pjmh.warmupIterations={args.warmup}"
         if args.iterations is not None: cmd += f" -Pjmh.iterations={args.iterations}"
@@ -218,7 +293,13 @@ def collect_parallel_results(args, timestamp, results_dir):
             cmd += f" -Pjmh.forks={args.forks}"
         else:
             cmd += " -Pjmh.forks=1"
-        if args.profile: cmd += f" -Pjmh.profilers='{','.join(args.profile)}'"
+        if args.profile: 
+            cmd += f" -Pjmh.profilers='{','.join(args.profile)}'"
+            if profiler_subdir:
+                prof_dir = os.path.join(results_dir, profiler_subdir)
+                if not os.path.exists(prof_dir):
+                    os.makedirs(prof_dir)
+                cmd += f" -Pjmh.profilerOutput='{prof_dir}'"
         
         # Determine the results file location. 
         # The JMH plugin for Gradle by default puts results in build/results/jmh/results.json
@@ -247,10 +328,13 @@ def collect_parallel_results(args, timestamp, results_dir):
             else:
                 print(f"{BOLD_RED}Parallel benchmark failed for backend: {backend}{RESET}")
                 success = False
+        
+        if not args.dry_run and args.profile:
+            move_profiler_outputs(backend, results_dir, profiler_subdir)
                 
     return all_results
 
-def collect_results(args, timestamp, results_dir):
+def collect_results(args, timestamp, results_dir, profiler_subdir=None):
     all_results = []
     selected_backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
     success = True
@@ -350,6 +434,11 @@ def collect_results(args, timestamp, results_dir):
 
             if args.profile:
                 cmd += f" -Pjmh.profilers='{','.join(args.profile)}'"
+                if profiler_subdir:
+                    prof_dir = os.path.join(results_dir, profiler_subdir)
+                    if not os.path.exists(prof_dir):
+                        os.makedirs(prof_dir)
+                    cmd += f" -Pjmh.profilerOutput='{prof_dir}'"
 
             jvm_args = ["-Djmh.ignoreLock=true"]
             cmd += f" -Pjmh.jvmArgs='{' '.join(jvm_args)}'"
@@ -383,50 +472,7 @@ def collect_results(args, timestamp, results_dir):
         if not args.dry_run:
             # Check for profiler output files in the root directory and move them
             if args.profile:
-                # JMH profilers often create files in the current directory or backend sub-module directory
-                # Common extensions for JMH profilers: .txt, .csv, .bin, .html, .svg, .jfr
-                
-                # Check root directory
-                for f in os.listdir("."):
-                    if os.path.isfile(f) and f.endswith((".csv", ".bin", ".html", ".svg", ".txt", ".prof", ".jfr")):
-                        # Also avoid moving run_benchmarks.py if it somehow matches (unlikely)
-                        if f == "run_benchmarks.py" or f == "requirements.txt":
-                            continue
-
-                        dest_f = os.path.join(results_dir, f"{backend}_{f}")
-                        shutil.move(f, dest_f)
-                        print(f"Moved profiler output {f} to {dest_f}")
-
-                # Check backend directory for JFR or other profiler directories
-                backend_dir = f"benchmark/benchmark-{backend}"
-                if os.path.exists(backend_dir):
-                    for f in os.listdir(backend_dir):
-                        full_path = os.path.join(backend_dir, f)
-                        # JMH JFR profiler often creates directories named after the benchmark
-                        if os.path.isdir(full_path) and "Benchmark" in f:
-                            # Look for .jfr files inside this directory
-                            for sub_f in os.listdir(full_path):
-                                if sub_f.endswith(".jfr"):
-                                    sub_full_path = os.path.join(full_path, sub_f)
-                                    # Rename to something more useful: backend_benchmarkname_profile.jfr
-                                    dest_name = f"{backend}_{f}_{sub_f}"
-                                    dest_f = os.path.join(results_dir, dest_name)
-                                    shutil.move(sub_full_path, dest_f)
-                                    print(f"Moved profiler output {sub_f} from {f} to {dest_f}")
-                            # Try to remove the now possibly empty directory
-                            try:
-                                shutil.rmtree(full_path)
-                            except:
-                                pass
-                        elif os.path.isfile(full_path) and f.endswith((".csv", ".bin", ".html", ".svg", ".txt", ".prof", ".jfr")):
-                            dest_f = os.path.join(results_dir, f"{backend}_{f}")
-                            shutil.move(full_path, dest_f)
-                            print(f"Moved profiler output {f} from {backend_dir} to {dest_f}")
-
-        else:
-            if not args.dry_run:
-                print(f"{BOLD_RED}Error: Benchmark failed for {backend}{RESET}")
-                success = False
+                move_profiler_outputs(backend, results_dir, profiler_subdir)
 
     return all_results
 
@@ -767,6 +813,7 @@ if __name__ == "__main__":
     parser.add_argument("--dry-run", action="store_true", help="Show the benchmarks that will run without actually executing them")
     parser.add_argument("--mode", choices=["smoketest", "quick", "full"], help="Benchmark mode")
     parser.add_argument("--profile", nargs="+", help="JMH profilers to use (gc, stack, cl, comp, jfr, pauses safepoints)")
+    parser.add_argument("--serial", action="store_true", help="Run single-threaded (serial) benchmarks")
     parser.add_argument("--parallel", action="store_true", help="Run parallel benchmarks")
     
     args = parser.parse_args()
@@ -788,8 +835,14 @@ if __name__ == "__main__":
             if args.time is None: args.time = "1s"
             
         if args.backends is None:
-            backends_map = PARALLEL_BACKENDS_MAP if args.parallel else SEQUENTIAL_BACKENDS_MAP
-            args.backends = list(backends_map.keys())
+            run_serial = args.serial or not args.parallel
+            run_parallel = args.parallel or not args.serial
+            backends = set()
+            if run_serial:
+                backends.update(SEQUENTIAL_BACKENDS_MAP.keys())
+            if run_parallel:
+                backends.update(PARALLEL_BACKENDS_MAP.keys())
+            args.backends = sorted(list(backends))
         if args.handlers is None: args.handlers = ["CONSOLE", "FILE"]
         if args.formats is None: args.formats = ["COMPACT", "DEFAULT", "DETAILED"]
         if args.message_types is None: args.message_types = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
@@ -804,11 +857,17 @@ if __name__ == "__main__":
     cmd_line = "python3 " + " ".join(sys.argv)
     sys_info = get_system_info()
     
-    if args.parallel:
-        results = collect_parallel_results(args, timestamp, results_dir)
-        if not args.dry_run:
-            generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line)
-    else:
-        results = collect_results(args, timestamp, results_dir)
+    run_serial = args.serial or not args.parallel
+    run_parallel = args.parallel or not args.serial
+
+    if run_serial:
+        profiler_subdir = "profile-serial" if args.profile else None
+        results = collect_results(args, timestamp, results_dir, profiler_subdir=profiler_subdir)
         if not args.dry_run:
             generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line)
+    
+    if run_parallel:
+        profiler_subdir = "profile-parallel" if args.profile else None
+        results = collect_parallel_results(args, timestamp, results_dir, profiler_subdir=profiler_subdir)
+        if not args.dry_run:
+            generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line)
