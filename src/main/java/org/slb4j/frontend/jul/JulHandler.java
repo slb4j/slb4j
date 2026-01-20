@@ -28,6 +28,7 @@ import java.util.function.Supplier;
 import java.util.logging.Handler;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 
 /**
  * Custom Java Util Logging (JUL) {@link Handler} implementation that dispatches log records to
@@ -39,7 +40,7 @@ import java.util.logging.LogRecord;
 public final class JulHandler extends Handler {
 
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
-    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(SLB4J.class.getPackageName(), "java.util.logging");
+    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(Logger.class.getName(), "java.util.logging");
 
     /**
      * Constructs a new instance of the {@code JulHandler}.

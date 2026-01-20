@@ -50,7 +50,7 @@ public final class LoggerSlf4j extends AbstractLogger {
     private static final long serialVersionUID = 1L;
 
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
-    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(SLB4J.class.getPackageName(), "org.slf4j");
+    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(LoggerSlf4j.class.getName(), "org.slf4j");
     private static final MDC MDC_INSTANCE = new MDC() {
         @Override
         public @Nullable String get(String key) {

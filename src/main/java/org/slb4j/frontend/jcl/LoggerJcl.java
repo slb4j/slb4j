@@ -25,7 +25,6 @@ import org.apache.commons.logging.Log;
 import org.slb4j.support.StackWalkerLocationResolver;
 import org.slb4j.support.Util;
 
-import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -34,7 +33,7 @@ import java.util.function.Supplier;
  */
 public final class LoggerJcl implements Log {
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
-    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(SLB4J.class.getPackageName(), "org.apache.commons.logging");
+    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(LoggerJcl.class.getName(), "org.slb4j.frontend.jcl");
 
     private final String name;
 

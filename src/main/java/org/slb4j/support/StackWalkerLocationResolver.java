@@ -20,7 +20,7 @@ import org.slb4j.LocationResolver;
 import org.jspecify.annotations.Nullable;
 
 import java.lang.StackWalker.StackFrame;
-import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.stream.Stream;
 
 /**
@@ -31,7 +31,8 @@ import java.util.stream.Stream;
  */
 public final class StackWalkerLocationResolver implements LocationResolver {
 
-    private final List<String> infraPackages;
+    private final String loggerClassName;
+    private final String infraPackage;
 
     /**
      * Constructs a new {@code LocationResolver} instance with the specified list of
@@ -39,12 +40,13 @@ public final class StackWalkerLocationResolver implements LocationResolver {
      * which package names to treat as part of the logging infrastructure when analyzing
      * the call stack.
      *
-     * @param infraPackages a list of package name prefixes representing the
+     * @param infraPackage a list of package name prefixes representing the
      *                      infrastructure components to be excluded when resolving
      *                      the relevant stack frame
      */
-    public StackWalkerLocationResolver(String... infraPackages) {
-        this.infraPackages = List.of(infraPackages);
+    public StackWalkerLocationResolver(String loggerClassName, String infraPackage) {
+        this.loggerClassName = loggerClassName;
+        this.infraPackage = infraPackage;
     }
 
     /**
@@ -59,34 +61,28 @@ public final class StackWalkerLocationResolver implements LocationResolver {
     }
 
     private @Nullable StackFrameLocation findStackFrame(Stream<StackFrame> stream) {
-        StackFrame foundFrame = null;
-        boolean foundInfra = false;
-        boolean skippedInfra = false;
+        try {
+            java.util.Iterator<StackFrame> iterator = stream.iterator();
 
-        StackFrame frame = null;
-        java.util.Iterator<StackFrame> iterator = stream.iterator();
+            // 1. Skip the StackWalkerLocationResolver.resolve() frame
+            iterator.next();
 
-        // 1. Skip frames until we hit ANY logging infrastructure
-        while (iterator.hasNext() && !isInfra((frame = iterator.next()).getClassName())) {
-            frame = null; // not the one we look for
-        }
-
-        // 2. Skip EVERYTHING that is still logging infrastructure
-        while (iterator.hasNext() && isInfra((frame = iterator.next()).getClassName())) {
-            frame = null; // not the one we look for
-        }
-
-        // 3. The first non-infra frame is the user
-        return frame == null ? null : new StackFrameLocation(frame);
-    }
-
-    private boolean isInfra(String className) {
-        for (String pkg : infraPackages) {
-            if (className.startsWith(pkg)) {
-                return true;
+            // 2. Skip frames until we hit the logger instance
+            while (!loggerClassName.equals(iterator.next().getClassName())) {
+                // nothing to do
             }
+
+            // 3. Skip EVERYTHING that is still logging infrastructure
+            StackFrame frame;
+            while ((frame = iterator.next()).getClassName().startsWith(infraPackage)) {
+                // nothing to do
+            }
+
+            // 4. The first non-infra frame is the logging call site
+            return new StackFrameLocation(frame);
+        } catch (NoSuchElementException e) {
+            throw new IllegalStateException("Internal error - no stack frame found", e);
         }
-        return false;
     }
 
     private static class StackFrameLocation implements Location {
