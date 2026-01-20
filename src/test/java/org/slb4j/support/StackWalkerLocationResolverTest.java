@@ -24,7 +24,11 @@ class StackWalkerLocationResolverTest {
 
     @Test
     void testResolve() {
-        StackWalkerLocationResolver resolver = new StackWalkerLocationResolver("org.slb4j.support.StackWalkerLocationResolverTest$Infra");
+        // loggerClassName is Infra, infraPackage is also Infra
+        StackWalkerLocationResolver resolver = new StackWalkerLocationResolver(
+                Infra.class.getName(),
+                "org.slb4j.support.StackWalkerLocationResolverTest$Infra"
+        );
 
         Location location = Infra.call(resolver);
 
@@ -34,55 +38,45 @@ class StackWalkerLocationResolverTest {
     }
 
     @Test
-    void testResolveWithMultipleInfraPackages() {
+    void testResolveWithOtherInfra() {
+        // Logger is Infra, but it calls OtherInfra which is also part of infraPackage
         StackWalkerLocationResolver resolver = new StackWalkerLocationResolver(
-                "org.slb4j.support.StackWalkerLocationResolverTest$Infra",
-                "org.slb4j.support.StackWalkerLocationResolverTest$OtherInfra"
+                Infra.class.getName(),
+                "org.slb4j.support.StackWalkerLocationResolverTest$"
         );
 
         Location location = Infra.callOther(resolver);
 
         assertNotNull(location);
         assertEquals(StackWalkerLocationResolverTest.class.getName(), location.getClassName());
-        assertEquals("testResolveWithMultipleInfraPackages", location.getMethodName());
-    }
-
-    @Test
-    void testResolveNoInfraFound() {
-        // If it never hits infra, dropWhile(!isInfra) will exhaust the stream
-        StackWalkerLocationResolver resolver = new StackWalkerLocationResolver("non.existent.Package");
-
-        Location location = resolver.resolve();
-
-        assertNull(location, "Should be null if no infra frame is found because of .dropWhile(f -> !isInfra(f.getClassName()))");
-    }
-
-    @Test
-    void testResolveOnlyInfraFound() {
-        StackWalkerLocationResolver resolver = new StackWalkerLocationResolver("org.slb4j.support.StackWalkerLocationResolverTest$Infra");
-
-        // Simulating a call where Infra is the last frame (not possible in a real JVM but we can try to hit it)
-        // Actually we can just call it from Infra directly.
-        Location location = Infra.call(resolver);
-        // Wait, if Infra calls resolver.resolve(), the caller of Infra is testResolveOnlyInfraFound which is NOT infra.
-        // So it should find testResolveOnlyInfraFound.
-        assertNotNull(location);
-        assertEquals("testResolveOnlyInfraFound", location.getMethodName());
+        assertEquals("testResolveWithOtherInfra", location.getMethodName());
     }
 
     @Test
     void testResolveWithInternalFramesBeforeInfra() {
-        // Resolver is NOT infra.
-        // SomeInternalClass.doSomething is NOT infra.
-        // Logger.log IS infra.
-        // User.main is NOT infra.
-
-        StackWalkerLocationResolver resolver = new StackWalkerLocationResolver("org.slb4j.support.StackWalkerLocationResolverTest$Infra");
+        // NotInfra.callInfra calls Infra.call, which calls resolver.resolve()
+        // The logger class is Infra.
+        // It should find NotInfra.callInfra as the caller.
+        StackWalkerLocationResolver resolver = new StackWalkerLocationResolver(
+                Infra.class.getName(),
+                "org.slb4j.support.StackWalkerLocationResolverTest$Infra"
+        );
 
         Location location = NotInfra.callInfra(resolver);
 
         assertNotNull(location);
+        assertEquals(NotInfra.class.getName(), location.getClassName());
         assertEquals("callInfra", location.getMethodName());
+    }
+
+    @Test
+    void testResolveNoLoggerFound() {
+        StackWalkerLocationResolver resolver = new StackWalkerLocationResolver(
+                "non.existent.Logger",
+                "org.slb4j"
+        );
+
+        assertThrows(IllegalStateException.class, resolver::resolve);
     }
 
     static class NotInfra {
