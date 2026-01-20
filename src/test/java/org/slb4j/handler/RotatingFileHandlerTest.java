@@ -116,28 +116,6 @@ class RotatingFileHandlerTest {
     }
 
     @Test
-    void testEntryRotation() throws IOException {
-        Path logFile = tempDir.resolve("test-entries.log");
-        try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, false)) {
-            handler.setPattern(LogPattern.parse("%msg%n"));
-            handler.setMaxEntries(2);
-            handler.setMaxBackupIndex(2);
-
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Line 1", null);
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Line 2", null);
-            // 3rd entry triggers rotation because currentEntries (2) >= maxEntries (2)
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Line 3", null);
-        }
-
-        assertTrue(Files.exists(logFile));
-        assertTrue(Files.exists(tempDir.resolve("test-entries.log.1")));
-
-        assertEquals("Line 3", Files.readAllLines(logFile).getFirst());
-        assertEquals("Line 1", Files.readAllLines(tempDir.resolve("test-entries.log.1")).get(0));
-        assertEquals("Line 2", Files.readAllLines(tempDir.resolve("test-entries.log.1")).get(1));
-    }
-
-    @Test
     void testTimeRotation() throws Exception {
         Path logFile = tempDir.resolve("test-time.log");
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, false)) {
@@ -191,7 +169,7 @@ class RotatingFileHandlerTest {
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, false)) {
             handler.setPattern(LogPattern.parse("%msg%n"));
             handler.setFilePattern("test-archived-%i.log");
-            handler.setMaxEntries(1);
+            handler.setMaxFileSize(1); // force rotation after write
 
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Line 1", null);
             // Next one triggers rotation
@@ -209,7 +187,7 @@ class RotatingFileHandlerTest {
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, true)) {
             handler.setPattern(LogPattern.parse("%msg%n"));
             handler.setFilePattern("test-archived-%i.log");
-            handler.setMaxEntries(1);
+            handler.setMaxFileSize(1); // force rotation after write
 
             // currentEntries is 1 because logFile has "Line 2"
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Line 3", null);

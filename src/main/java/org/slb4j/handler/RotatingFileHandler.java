@@ -19,21 +19,18 @@ import org.jspecify.annotations.Nullable;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
-import org.slb4j.support.CountingOutputStream;
 import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
 
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.StandardOpenOption;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.atomic.LongAdder;
 import java.util.function.Supplier;
 
 /**
@@ -47,12 +44,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     private @Nullable String filePattern;
 
     private @Nullable Writer out;
-    private final LongAdder currentSize = new LongAdder();
-    private long currentEntries;
+    private @Nullable FileChannel channel;
+
     private long nextRotationTime = -1;
 
     private long maxFileSize = -1;
-    private long maxEntries = -1;
     private @Nullable ChronoUnit rotationTimeUnit;
     private int maxBackupIndex = 1;
 
@@ -82,39 +78,12 @@ public final class RotatingFileHandler extends AbstractFileHandler {
                 Files.createDirectories(parent);
             }
 
-            this.out = newWriter(append);
-            updateNextRotationTime();
-        }
-    }
-
-    private Writer newWriter(boolean append) throws IOException {
-        synchronized (lock()) {
-            StandardOpenOption[] openOptions = append ? OPTIONS_APPEND : OPTIONS_CREATE;
-
-            if (append && Files.exists(path)) {
-                currentSize.reset();
-                currentSize.add(Files.size(path));
-                currentEntries = countLines(path);
-            } else {
-                currentSize.reset();
-                currentEntries = 0;
+            synchronized (lock()) {
+                this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
+                this.out = Channels.newWriter(channel, StandardCharsets.UTF_8);
             }
 
-            return new OutputStreamWriter(
-                    new CountingOutputStream(
-                            new BufferedOutputStream(Files.newOutputStream(path, openOptions)),
-                            currentSize
-                    ),
-                    StandardCharsets.UTF_8
-            );
-        }
-    }
-
-    private long countLines(Path path) {
-        try (var lines = Files.lines(path)) {
-            return lines.count();
-        } catch (IOException e) {
-            return 0;
+            updateNextRotationTime();
         }
     }
 
@@ -157,17 +126,6 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     public void setMaxFileSize(long maxFileSize) {
         synchronized (lock()) {
             this.maxFileSize = maxFileSize;
-        }
-    }
-
-    /**
-     * Sets the maximum number of entries before rotation.
-     *
-     * @param maxEntries the maximum number of entries, or -1 for no limit
-     */
-    public void setMaxEntries(long maxEntries) {
-        synchronized (lock()) {
-            this.maxEntries = maxEntries;
         }
     }
 
@@ -223,13 +181,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
             } finally {
                 releaseBuffer(buffer);
             }
-            currentEntries++;
         }
     }
 
-    private void checkRotation(long timestamp) {
-        boolean rotate = (maxFileSize > 0 && currentSize.longValue() >= maxFileSize)
-                || (maxEntries > 0 && currentEntries >= maxEntries)
+    private void checkRotation(long timestamp) throws IOException {
+        boolean rotate = (maxFileSize > 0 && channel.position() >= maxFileSize)
                 || (nextRotationTime != -1 && timestamp >= nextRotationTime);
 
         if (rotate) {
@@ -337,16 +293,6 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     public long getMaxFileSize() {
         synchronized (lock()) {
             return maxFileSize;
-        }
-    }
-
-    /**
-     * Gets the maximum number of entries before rotation.
-     * @return the maximum number of entries, or -1 for no limit
-     */
-    public long getMaxEntries() {
-        synchronized (lock()) {
-            return maxEntries;
         }
     }
 

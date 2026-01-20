@@ -24,7 +24,9 @@ import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.nio.file.Files;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.util.function.Supplier;
 
@@ -34,6 +36,7 @@ import java.util.function.Supplier;
  */
 public final class FileHandler extends AbstractFileHandler {
 
+    private final FileChannel channel;
     private final Writer out;
 
     /**
@@ -46,8 +49,8 @@ public final class FileHandler extends AbstractFileHandler {
      */
     public FileHandler(String name, Path path, boolean append) throws IOException {
         super(name);
-
-        this.out = Files.newBufferedWriter(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
+        this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
+        this.out = Channels.newWriter(channel, StandardCharsets.UTF_8);
     }
 
     @Override
