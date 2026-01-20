@@ -67,7 +67,7 @@ public final class SLB4J {
         ).forEach(ci -> {
             // Warn about conflicting logging implementations on classpath
             if (Util.isClassOnClasspath(ci.className()) && !Objects.equals("slb4j", ci.framework())) {
-                System.err.println(String.format("WARNING: Classpath contains conflicting %s implementation: %s", ci.type(), ci.description()));
+                Util.err().println(String.format("WARNING: Classpath contains conflicting %s implementation: %s", ci.type(), ci.description()));
             }
         });
 
