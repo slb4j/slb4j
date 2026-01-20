@@ -20,8 +20,6 @@ import org.openjdk.jmh.annotations.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)

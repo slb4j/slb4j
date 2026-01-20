@@ -672,38 +672,45 @@ def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, 
         print("No results to process.")
         return
 
+    # grouped[category][backend][frontend][thread_count] = score
     grouped = {}
     present_threads = set()
     for entry in results:
+        category = entry.get("params", {}).get("category", "DEFAULT")
         backend = entry["backend_param"]
         benchmark_name = entry["benchmark"].split(".")[-1]
         frontend, thread_count = benchmark_name.split("_")
         thread_count = int(thread_count)
         present_threads.add(thread_count)
-        if backend not in grouped: grouped[backend] = {}
-        if frontend not in grouped[backend]: grouped[backend][frontend] = {}
+        
+        if category not in grouped: grouped[category] = {}
+        if backend not in grouped[category]: grouped[category][backend] = {}
+        if frontend not in grouped[category][backend]: grouped[category][backend][frontend] = {}
+        
         score = entry.get("primaryMetric", {}).get("score", 0)
-        grouped[backend][frontend][thread_count] = score
+        grouped[category][backend][frontend][thread_count] = score
 
-    # Calculate min/max scores for each frontend and thread count
-    frontend_thread_scores = {} # frontend -> thread_count -> list of scores
-    for backend, frontends in grouped.items():
-        for frontend, threads in frontends.items():
-            if frontend not in frontend_thread_scores:
-                frontend_thread_scores[frontend] = {}
-            for t, score in threads.items():
-                if t not in frontend_thread_scores[frontend]:
-                    frontend_thread_scores[frontend][t] = []
-                frontend_thread_scores[frontend][t].append(score)
-    
-    min_max_parallel = {} # frontend -> thread_count -> (min, max)
-    for frontend, threads in frontend_thread_scores.items():
-        min_max_parallel[frontend] = {}
-        for t, scores in threads.items():
-            if scores:
-                min_max_parallel[frontend][t] = (min(scores), max(scores))
-            else:
-                min_max_parallel[frontend][t] = (None, None)
+    # Calculate min/max scores for each category, frontend and thread count
+    min_max_parallel = {} # category -> frontend -> thread_count -> (min, max)
+    for category, backends in grouped.items():
+        min_max_parallel[category] = {}
+        frontend_thread_scores = {} # frontend -> thread_count -> list of scores
+        for backend, frontends in backends.items():
+            for frontend, threads in frontends.items():
+                if frontend not in frontend_thread_scores:
+                    frontend_thread_scores[frontend] = {}
+                for t, score in threads.items():
+                    if t not in frontend_thread_scores[frontend]:
+                        frontend_thread_scores[frontend][t] = []
+                    frontend_thread_scores[frontend][t].append(score)
+        
+        for frontend, threads in frontend_thread_scores.items():
+            min_max_parallel[category][frontend] = {}
+            for t, scores in threads.items():
+                if scores:
+                    min_max_parallel[category][frontend][t] = (min(scores), max(scores))
+                else:
+                    min_max_parallel[category][frontend][t] = (None, None)
 
     report_path = os.path.join(results_dir, "PARALLEL_BENCHMARK_RESULTS.md")
     with open(report_path, "w") as f:
@@ -713,27 +720,35 @@ def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, 
         f.write("## System Information\n```\n" + sys_info + "\n```\n\n")
         f.write("Throughput (ops/s) for different thread counts.\n\n")
         
-        sorted_backends = sorted(grouped.keys())
         all_threads = sorted(list(present_threads))
-        header = "| Backend | Frontend | " + " | ".join([f"{t} Threads" for t in all_threads]) + " |"
-        separator = "| :--- | :--- | " + " | ".join([":---:" for _ in all_threads]) + " |"
-        f.write(header + "\n" + separator + "\n")
-        for backend in sorted_backends:
-            sorted_frontends = sorted(grouped[backend].keys())
-            for frontend in sorted_frontends:
-                row = f"| {backend} | {frontend} |"
-                for t in all_threads:
-                    score = grouped[backend][frontend].get(t, 0)
-                    score_str = f"{score:,.2f}"
-                    if score > 0 and t in min_max_parallel.get(frontend, {}):
-                        min_val, max_val = min_max_parallel[frontend][t]
-                        if min_val is not None and max_val is not None and min_val != max_val:
-                            if score == max_val:
-                                score_str = f"**{score_str}**"
-                            elif score == min_val:
-                                score_str = f"*{score_str}*"
-                    row += f" {score_str} |"
-                f.write(row + "\n")
+        sorted_categories = sorted(grouped.keys())
+
+        for category in sorted_categories:
+            f.write(f"### Handler: {category}\n\n")
+            
+            header = "| Backend | Frontend | " + " | ".join([f"{t} Threads" for t in all_threads]) + " |"
+            separator = "| :--- | :--- | " + " | ".join([":---:" for _ in all_threads]) + " |"
+            f.write(header + "\n" + separator + "\n")
+            
+            sorted_backends = sorted(grouped[category].keys())
+            for backend in sorted_backends:
+                sorted_frontends = sorted(grouped[category][backend].keys())
+                for frontend in sorted_frontends:
+                    row = f"| {backend} | {frontend} |"
+                    for t in all_threads:
+                        score = grouped[category][backend][frontend].get(t, 0)
+                        score_str = f"{score:,.2f}"
+                        if score > 0 and t in min_max_parallel[category].get(frontend, {}):
+                            min_val, max_val = min_max_parallel[category][frontend][t]
+                            if min_val is not None and max_val is not None and min_val != max_val:
+                                if score == max_val:
+                                    score_str = f"**{score_str}**"
+                                elif score == min_val:
+                                    score_str = f"*{score_str}*"
+                        row += f" {score_str} |"
+                    f.write(row + "\n")
+                
+            f.write("\n")
                 
     print(f"Markdown report generated: {report_path}")
 
