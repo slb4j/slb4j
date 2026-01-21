@@ -70,7 +70,9 @@ jobs:
           fi
 
       - name: Publish to Maven Central
-        run: ./gradlew publishAllPublicationsToOSSRHRepository
+        run: |
+          ./gradlew publishToStagingDirectory
+          ./gradlew jreleaserDeploy
         env:
           SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
           SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
