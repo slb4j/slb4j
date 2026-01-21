@@ -24,6 +24,7 @@ plugins {
     alias(libs.plugins.cabe)
     alias(libs.plugins.spotbugs)
     alias(libs.plugins.versions)
+    alias(libs.plugins.jreleaser)
     jacoco
 }
 
@@ -129,21 +130,12 @@ allprojects {
                             password = System.getenv("SONATYPE_PASSWORD")
                         }
                     }
-                } else {
-                    maven {
-                        name = "OSSRH"
-                        url = uri("https://central.sonatype.com/service/local/staging/deploy/maven2/")
-                        credentials {
-                            username = System.getenv("SONATYPE_USERNAME")
-                            password = System.getenv("SONATYPE_PASSWORD")
-                        }
-                    }
                 }
 
                 // Always add root-level staging directory for JReleaser
                 maven {
                     name = "stagingDirectory"
-                    url = project.layout.buildDirectory.dir("staging-deploy").get().asFile.toURI()
+                    url = rootProject.layout.buildDirectory.dir("staging-deploy").get().asFile.toURI()
                 }
             }
 
@@ -194,6 +186,16 @@ allprojects {
                 }
             }
         }
+    }
+
+    // Task to publish to staging directory per subproject
+    val publishToStagingDirectory by tasks.registering {
+        group = "publishing"
+        description = "Publish artifacts to root staging directory for JReleaser"
+
+        dependsOn(tasks.withType<PublishToMavenRepository>().matching {
+            it.repository.name == "stagingDirectory"
+        })
     }
 
     // Signing configuration deferred until after evaluation
@@ -281,6 +283,56 @@ allprojects {
         // dependencyUpdates fails in parallel mode with Gradle 9+ (https://github.com/ben-manes/gradle-versions-plugin/issues/968)
         doFirst {
             gradle.startParameter.isParallelProjectExecutionEnabled = false
+        }
+    }
+}
+
+jreleaser {
+    project {
+        name.set(Meta.ORGANIZATION_NAME)
+        version.set(Meta.VERSION)
+        group = Meta.GROUP
+        authors.set(listOf(Meta.DEVELOPER_NAME))
+        license.set(Meta.LICENSE_NAME)
+        links {
+            homepage.set(Meta.ORGANIZATION_URL)
+        }
+        inceptionYear.set(Meta.INCEPTION_YEAR)
+        gitRootSearch.set(true)
+    }
+
+    signing {
+        active.set(org.jreleaser.model.Active.ALWAYS)
+        armored.set(true)
+    }
+
+    deploy {
+        maven {
+            if (!isSnapshot) {
+                mavenCentral {
+                    create("release-deploy") {
+                        active.set(org.jreleaser.model.Active.RELEASE)
+                        url.set("https://central.sonatype.com/api/v1/publisher")
+                        stagingRepositories.add("build/staging-deploy")
+                        username.set(System.getenv("SONATYPE_USERNAME"))
+                        password.set(System.getenv("SONATYPE_PASSWORD"))
+                    }
+                }
+            } else {
+                nexus2 {
+                    create("snapshot-deploy") {
+                        active.set(org.jreleaser.model.Active.SNAPSHOT)
+                        snapshotUrl.set("https://central.sonatype.com/repository/maven-snapshots/")
+                        applyMavenCentralRules.set(true)
+                        snapshotSupported.set(true)
+                        closeRepository.set(true)
+                        releaseRepository.set(true)
+                        stagingRepositories.add("build/staging-deploy")
+                        username.set(System.getenv("SONATYPE_USERNAME"))
+                        password.set(System.getenv("SONATYPE_PASSWORD"))
+                    }
+                }
+            }
         }
     }
 }
