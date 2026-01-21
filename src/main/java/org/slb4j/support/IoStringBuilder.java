@@ -153,18 +153,21 @@ public final class IoStringBuilder implements Appendable {
 
     @Override
     public IoStringBuilder append(@Nullable CharSequence csq, int start, int end) {
+        int len = end - start;
+        if (len == 0) {
+            return this;
+        }
+
         if (csq == null) {
             csq = "null";
         }
 
-        int len = end - start;
         ensureCapacity(len);
         switch (csq) {
             case String s -> buffer.put(s, start, end);
-            case StringBuilder sb -> {
+            case StringBuilder sb ->
                 // HeapCharBuffer implements a fast path for StringBuilder
                 buffer.append(sb, start, end);
-            }
             case CharBuffer cb -> {
                 // Optimized path for other NIO buffers
                 CharBuffer src = cb.duplicate();
