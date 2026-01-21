@@ -15,7 +15,14 @@
  */
 plugins {
     id("java-library")
+    id("maven-publish")
+    id("signing")
     alias(libs.plugins.cabe)
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
 }
 
 description = "slb4j extension library"

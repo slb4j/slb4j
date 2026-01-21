@@ -15,6 +15,13 @@
  */
 plugins {
     id("java-library")
+    id("maven-publish")
+    id("signing")
+}
+
+java {
+    withSourcesJar()
+    withJavadocJar()
 }
 
 description = "SLB4J extensions for Swing"

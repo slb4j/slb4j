@@ -154,11 +154,11 @@ allprojects {
                         from(components["java"])
 
                         groupId = Meta.GROUP
-                        artifactId = "slb4j"
+                        artifactId = project.name
                         version = project.version.toString()
 
                         pom {
-                            name.set("slb4j")
+                            name.set(project.name)
                             description.set(Meta.DESCRIPTION)
                             url.set(Meta.SCM)
 
