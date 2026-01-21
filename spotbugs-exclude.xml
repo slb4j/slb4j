@@ -48,9 +48,4 @@
         <Class name="org.slb4j.filter.FiltersTest"/>
     </Match>
 
-    <Match>
-        <Bug pattern="EI_EXPOSE_REP2"/>
-        <Class name="org.slb4j.support.CountingOutputStream"/>
-    </Match>
-
 </FindBugsFilter>
