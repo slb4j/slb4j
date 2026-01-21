@@ -20,10 +20,7 @@ import org.slb4j.support.Util;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
-import java.io.PrintStream;
-import java.time.Instant;
 import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -1010,6 +1007,23 @@ public final class LogPattern {
         return entries.toArray(LogPatternEntry[]::new);
     }
 
+    private record AbbreviationSettings(int abbreviationLength, boolean useDotAbbreviation) {
+        public static final AbbreviationSettings DEFAULT = new AbbreviationSettings(0, false);
+
+        public static final AbbreviationSettings forOptions(@Nullable String options) {
+            int abbreviationLength = 0;
+            boolean useDotAbbreviation = false;
+            if (options != null) {
+                Matcher m = LOGGER_PRECISION_PATTERN.matcher(options);
+                if (m.matches()) {
+                    abbreviationLength = Integer.parseInt(m.group(1));
+                    useDotAbbreviation = m.group(2) != null;
+                }
+            }
+            return new AbbreviationSettings(abbreviationLength, useDotAbbreviation);
+        }
+    }
+
     private static List<LogPatternEntry> parseLog4jPatternStringSimple(String pattern) {
         List<LogPatternEntry> entries = new ArrayList<>();
         Matcher matcher = PATTERN.matcher(pattern);
@@ -1033,28 +1047,12 @@ public final class LogPattern {
             switch (type != null ? type : match) {
                 case "p", "level" -> entries.add(new LevelEntry(minWidth, maxWidth, leftAlign));
                 case "c", "logger" -> {
-                    int abbreviationLength = 0;
-                    boolean useDotAbbreviation = false;
-                    if (options != null) {
-                        Matcher m = LOGGER_PRECISION_PATTERN.matcher(options);
-                        if (m.matches()) {
-                            abbreviationLength = Integer.parseInt(m.group(1));
-                            useDotAbbreviation = m.group(2) != null;
-                        }
-                    }
-                    entries.add(new LoggerEntry(minWidth, maxWidth, leftAlign, abbreviationLength, useDotAbbreviation));
+                    AbbreviationSettings abbr = AbbreviationSettings.forOptions(options);
+                    entries.add(new LoggerEntry(minWidth, maxWidth, leftAlign, abbr.abbreviationLength, abbr.useDotAbbreviation));
                 }
                 case "C", "class" -> {
-                    int abbreviationLength = 0;
-                    boolean useDotAbbreviation = false;
-                    if (options != null) {
-                        Matcher m = LOGGER_PRECISION_PATTERN.matcher(options);
-                        if (m.matches()) {
-                            abbreviationLength = Integer.parseInt(m.group(1));
-                            useDotAbbreviation = m.group(2) != null;
-                        }
-                    }
-                    entries.add(new ClassEntry(minWidth, maxWidth, leftAlign, abbreviationLength, useDotAbbreviation));
+                    AbbreviationSettings abbr = AbbreviationSettings.forOptions(options);
+                    entries.add(new ClassEntry(minWidth, maxWidth, leftAlign, abbr.abbreviationLength, abbr.useDotAbbreviation));
                 }
                 case "M", "method" -> entries.add(new MethodEntry(minWidth, maxWidth, leftAlign));
                 case "L", "line" -> entries.add(new LineEntry(minWidth, maxWidth, leftAlign));
