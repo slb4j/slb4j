@@ -16,7 +16,6 @@
 package org.slb4j;
 
 import org.slb4j.filter.LoggerNamePrefixFilter;
-import org.slb4j.handler.AbstractFileHandler;
 import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.handler.FileHandler;
 import org.slb4j.handler.RotatingFileHandler;
@@ -97,6 +96,10 @@ public final class LoggingConfiguration {
      * Configuration key for specifying the pattern used by the console logger.
      */
     public static final String LOGGER_LAYOUT_TYPE = "layout.type";
+
+    /**
+     * Represents the key used for configuring the logging layout pattern in the logging configuration.
+     */
     public static final String LOGGER_LAYOUT_PATTERN = "layout.pattern";
 
     /**
@@ -162,6 +165,10 @@ public final class LoggingConfiguration {
 
     private final LinkedHashMap<String, LogHandler> handlers = new LinkedHashMap<>();
     private final LinkedHashMap<String, LogFilter> filters = new LinkedHashMap<>();
+
+    private LoggingConfiguration() {
+        // nothing to do
+    }
 
     /**
      * Retrieves an unmodifiable {@link SequencedCollection} of all registered log handlers.
@@ -242,19 +249,6 @@ public final class LoggingConfiguration {
         } catch (Exception e) {
             throw new IllegalStateException("invalid value for property " + key + ": '" + s + "'", e);
         }
-    }
-
-    /**
-     * Parses a comma-separated string into a list of elements by applying a conversion
-     * function to each trimmed substring.
-     *
-     * @param <T>     the type of elements in the resulting list
-     * @param s       the comma-separated string to be parsed
-     * @param convert a function that converts each trimmed substring into an element of type T
-     * @return a list containing elements of type T parsed and converted from the input string
-     */
-    private static <T> List<T> parseList(String s, Function<String, T> convert) {
-        return Arrays.stream(s.split(",")).map(String::strip).map(convert).toList();
     }
 
     /**

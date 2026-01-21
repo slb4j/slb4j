@@ -19,7 +19,6 @@ package org.slb4j.frontend.jul;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
-import org.slb4j.SLB4J;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.support.StackWalkerLocationResolver;
 import org.slb4j.support.Util;

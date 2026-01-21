@@ -19,7 +19,6 @@ import org.apache.logging.log4j.message.ReusableMessage;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
-import org.slb4j.SLB4J;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Marker;
@@ -29,7 +28,6 @@ import org.apache.logging.log4j.spi.AbstractLogger;
 import org.apache.logging.log4j.spi.StandardLevel;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.support.StackWalkerLocationResolver;
-import org.slb4j.support.Util;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -45,7 +43,7 @@ public final class LoggerLog4j extends AbstractLogger {
 
     private static final MDC MDC_INSTANCE = new MDC() {
         @Override
-        public String get(String key) {
+        public @Nullable String get(String key) {
             return ThreadContext.get(key);
         }
 

@@ -53,7 +53,7 @@ public abstract class ParallelLoggingBenchmark {
     }
 
     @TearDown(Level.Trial)
-    public void tearDown() throws IOException {
+    public void tearDown() {
         System.setOut(originalOut);
         System.setErr(originalErr);
         tearDownLogging();

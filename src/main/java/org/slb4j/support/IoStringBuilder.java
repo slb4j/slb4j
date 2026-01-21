@@ -45,7 +45,7 @@ public final class IoStringBuilder implements Appendable {
 
     /**
      * Constructs a new {@code IoStringBuilder} with a default initial capacity.
-     *
+     * <p>
      * This constructor initializes the underlying {@code CharBuffer} to the default
      * minimum capacity defined by {@code MIN_CAPACITY}.
      */
@@ -248,6 +248,9 @@ public final class IoStringBuilder implements Appendable {
      * Clears this instance for reuse.
      * <p>
      * The internal buffer will be trimmed if the capacity exceeds the provided {@code maxCapacity}.
+     *
+     * @param maxCapacity the maximum capacity to retain; if the current buffer capacity exceeds this value,
+     *                    a new buffer with the specified maximum capacity will be allocated
      */
     public void reset(int maxCapacity) {
         maxCapacity = Math.max(maxCapacity, initialCapacity);

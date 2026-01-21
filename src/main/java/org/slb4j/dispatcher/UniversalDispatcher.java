@@ -83,7 +83,7 @@ public final class UniversalDispatcher implements LogDispatcher {
      * for each registered {@code LogHandler} instance. This method ensures that
      * all associated resources are released, cleanup tasks are performed, and any
      * finalization work related to logging is completed.
-     *
+     * <p>
      * This operation iterates over all the log handlers currently managed by the
      * dispatcher and invokes their respective {@code shutdown()} methods to finalize
      * their activities. After this method is called, the dispatcher and its handlers
@@ -127,7 +127,7 @@ public final class UniversalDispatcher implements LogDispatcher {
     }
 
     @Override
-    public synchronized void removeLogHandler(LogHandler handler) {
+    public void removeLogHandler(LogHandler handler) {
         handlers.remove(handler);
     }
 

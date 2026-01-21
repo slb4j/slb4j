@@ -77,18 +77,19 @@ public final class LogPattern {
 
     /**
      * A predefined {@link LogPattern} instance representing a detailed log format.
-     *
+     * <p>
      * The format includes the following components:
-     * - Timestamp in the format yyyy-MM-dd HH:mm:ss.SSS
-     * - Thread name enclosed in square brackets
-     * - Log level with a minimum width of 5 characters
-     * - Marker, if present
-     * - Logger name truncated to a maximum of 36 characters
-     * - Mapped Diagnostic Context (MDC) key-value pairs enclosed in square brackets
-     * - Fully qualified class name, method name, file name, and line number
-     * - Log message
-     * - Throwable stack trace (if any)
-     *
+     * <ul>
+     * <li>Timestamp in the format yyyy-MM-dd HH:mm:ss.SSS
+     * <li>Thread name enclosed in square brackets
+     * <li>Log level with a minimum width of 5 characters
+     * <li>Marker, if present
+     * <li>Logger name truncated to a maximum of 36 characters
+     * <li>Mapped Diagnostic Context (MDC) key-value pairs enclosed in square brackets
+     * <li>Fully qualified class name, method name, file name, and line number
+     * <li>Log message
+     * <li>Throwable stack trace (if any)
+     * </ul>
      * This format provides comprehensive information about log events, including contextual
      * details, useful for debugging and auditing purposes.
      */
@@ -326,7 +327,7 @@ public final class LogPattern {
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, (CharSequence) lvl.name(), false);
+            appendFormatted(app, lvl.name(), false);
         }
     }
 
@@ -440,7 +441,7 @@ public final class LogPattern {
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, (CharSequence) Thread.currentThread().getName(), false);
+            appendFormatted(app, Thread.currentThread().getName(), false);
         }
     }
 
@@ -480,11 +481,11 @@ public final class LogPattern {
                 return;
             }
             if (key != null) {
-                appendFormatted(app, (CharSequence) mdc.get(key), false);
+                appendFormatted(app, mdc.get(key), false);
             } else {
                 String mdcS = mdc.stream().map(item -> item.getKey() + "=" + item.getValue())
                         .collect(Collectors.joining(", ", "{", "}"));
-                appendFormatted(app, (CharSequence) mdcS, false);
+                appendFormatted(app, mdcS, false);
             }
         }
 
@@ -524,7 +525,7 @@ public final class LogPattern {
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, (CharSequence) mrk, false);
+            appendFormatted(app, mrk, false);
         }
     }
 
@@ -552,7 +553,7 @@ public final class LogPattern {
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, (CharSequence) msg.get(), false);
+            appendFormatted(app, msg.get(), false);
         }
     }
 
@@ -732,9 +733,9 @@ public final class LogPattern {
                     sb.append(':').append(lineNumber);
                 }
                 sb.append(')');
-                appendFormatted(app, (CharSequence) sb.toString(), false);
+                appendFormatted(app, sb.toString(), false);
             } else {
-                appendFormatted(app, (CharSequence) null, false);
+                appendFormatted(app, null, false);
             }
         }
     }
@@ -985,7 +986,7 @@ public final class LogPattern {
      * as well as specific options for alignment and truncation.
      *
      * @param pattern the pattern string in Log4J style, which may include placeholders and literals
-     * @return a list of {@code LogPatternEntry} instances representing the parsed pattern
+     * @return an array of {@code LogPatternEntry} instances representing the parsed pattern
      */
     private static LogPatternEntry[] parseLog4jPatternString(String pattern) {
         List<LogPatternEntry> entries = new ArrayList<>();
@@ -1068,8 +1069,7 @@ public final class LogPattern {
                 case "Cend" -> entries.add(new ColorEndEntry(minWidth, maxWidth, leftAlign));
                 case "d" -> entries.add(new DateEntry(options != null ? options : ""));
                 case "%%" -> entries.add(new LiteralEntry("%"));
-                case "%n" -> entries.add(new NewlineEntry());
-                case "n" -> entries.add(new NewlineEntry());
+                case "%n", "n" -> entries.add(new NewlineEntry());
                 default -> entries.add(new LiteralEntry(match));
             }
             lastEnd = matcher.end();

@@ -2,7 +2,6 @@ package org.slb4j.support;
 
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.zone.ZoneOffsetTransition;
 import java.util.ArrayList;
 import java.util.List;
@@ -53,7 +52,7 @@ public class TimeZoneOffsetProvider {
         return zoneId.getRules().getOffset(Instant.ofEpochMilli(timestamp)).getTotalSeconds();
     }
 
-    private OffsetInterval[] precomputeIntervals(ZoneId zoneId) {
+    private static OffsetInterval[] precomputeIntervals(ZoneId zoneId) {
         List<OffsetInterval> list = new ArrayList<>();
         long now = System.currentTimeMillis();
         // One year look-ahead

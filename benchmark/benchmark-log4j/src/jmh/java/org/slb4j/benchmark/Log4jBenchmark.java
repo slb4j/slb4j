@@ -76,7 +76,6 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
         appender.start();
         config.addAppender(appender);
         org.apache.logging.log4j.core.config.AppenderRef ref = org.apache.logging.log4j.core.config.AppenderRef.createAppenderRef(appender.getName(), null, null);
-        org.apache.logging.log4j.core.config.AppenderRef[] refs = new org.apache.logging.log4j.core.config.AppenderRef[]{ref};
 
         org.apache.logging.log4j.core.config.LoggerConfig loggerConfig = config.getRootLogger();
         loggerConfig.getAppenders().forEach((name, a) -> loggerConfig.removeAppender(name));

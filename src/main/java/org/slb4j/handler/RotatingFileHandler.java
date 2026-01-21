@@ -185,7 +185,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     private void checkRotation(long timestamp) throws IOException {
-        boolean rotate = (maxFileSize > 0 && channel.position() >= maxFileSize)
+        boolean rotate = (channel != null && maxFileSize > 0 && channel.position() >= maxFileSize)
                 || (nextRotationTime != -1 && timestamp >= nextRotationTime);
 
         if (rotate) {

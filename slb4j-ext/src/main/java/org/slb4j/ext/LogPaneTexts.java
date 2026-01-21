@@ -40,7 +40,7 @@ public interface LogPaneTexts {
 
     /**
      * Retrieves the text used to represent the action of clearing
-     * the log buffer shown in a log pane..
+     * the log buffer shown in a log pane.
      *
      * @return a string representing the "clear" action text.
      */

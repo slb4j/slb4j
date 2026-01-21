@@ -25,21 +25,29 @@ import org.jspecify.annotations.Nullable;
 public interface Location {
     /**
      * Fully qualified class name of the caller, e.g. "com.example.OrderService", or null if unknown
+     *
+     * @return the fully qualified class name, or null if unknown
      */
     @Nullable String getClassName();
 
     /**
      * Method name of the caller, e.g. "processOrder", or null if unknown
+     *
+     * @return the method name, or null if unknown
      */
     @Nullable String getMethodName();
 
     /**
      * Line number in the source file, or -1 if unknown
+     *
+     * @return the line number, or -1 if unknown
      */
     int getLineNumber();
 
     /**
      * File name of the caller, e.g. "OrderService.java", or null if unknown
+     *
+     * @return the file name, or null if unknown
      */
     @Nullable String getFileName();
 }
