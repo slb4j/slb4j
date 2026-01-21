@@ -48,10 +48,10 @@ public final class ConsoleHandler implements LogHandler, PatternConfigurable {
     public static final Map<LogLevel, ConsoleCode> COLOR_MAP_DEFAULT = Map.of(
             LogLevel.TRACE, ConsoleCode.ofAnsi(AnsiCode.esc(30)),  // Cyan
             LogLevel.DEBUG, ConsoleCode.ofAnsi(AnsiCode.esc(36)),  // Blue
-            LogLevel.INFO,  ConsoleCode.ofAnsi(AnsiCode.esc(32)),  // Green
-            LogLevel.WARN,  ConsoleCode.ofAnsi(AnsiCode.esc(33)),  // Yellow
+            LogLevel.INFO, ConsoleCode.ofAnsi(AnsiCode.esc(32)),  // Green
+            LogLevel.WARN, ConsoleCode.ofAnsi(AnsiCode.esc(33)),  // Yellow
             LogLevel.ERROR, ConsoleCode.ofAnsi(AnsiCode.esc(AnsiCode.BOLD_ON, 31)  // Red
-    ));
+            ));
 
     public static final Map<LogLevel, ConsoleCode> COLOR_MAP_MONOCHROME = Map.of(
             LogLevel.TRACE, ConsoleCode.empty(),

@@ -72,7 +72,7 @@ public final class IoStringBuilder implements Appendable {
      * and the existing content is transferred to the new buffer.
      *
      * @param needed the number of additional characters that the buffer must be
-     *                able to accommodate. Must be a non-negative value.
+     *               able to accommodate. Must be a non-negative value.
      * @throws IllegalArgumentException if {@code needed} is negative
      */
     private void ensureCapacity(int needed) {
@@ -167,7 +167,7 @@ public final class IoStringBuilder implements Appendable {
             case String s -> buffer.put(s, start, end);
             case StringBuilder sb ->
                 // HeapCharBuffer implements a fast path for StringBuilder
-                buffer.append(sb, start, end);
+                    buffer.append(sb, start, end);
             case CharBuffer cb -> {
                 // Optimized path for other NIO buffers
                 CharBuffer src = cb.duplicate();
@@ -271,7 +271,7 @@ public final class IoStringBuilder implements Appendable {
      * within the specified range.
      *
      * @param start the starting index of the subsequence (inclusive)
-     * @param end the ending index of the subsequence (exclusive)
+     * @param end   the ending index of the subsequence (exclusive)
      * @return the string representation of the characters in the specified range
      * @throws IndexOutOfBoundsException if {@code start} is negative,
      *                                   {@code end} is greater than the length of the buffer,

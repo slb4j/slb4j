@@ -41,7 +41,10 @@ jmh {
         params.split(";").forEach {
             val parts = it.split("=")
             if (parts.size == 2) {
-                benchmarkParameters.put(parts[0], project.objects.listProperty(String::class.java).value(parts[1].split(",")))
+                benchmarkParameters.put(
+                    parts[0],
+                    project.objects.listProperty(String::class.java).value(parts[1].split(","))
+                )
             }
         }
     }

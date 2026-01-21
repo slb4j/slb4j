@@ -26,11 +26,11 @@ import java.io.UncheckedIOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Properties;
 import java.util.SequencedCollection;
@@ -262,7 +262,7 @@ public final class LoggingConfiguration {
         String prefix = LOGGING_HANDLER + "." + name + ".";
 
         String sType = properties.getProperty(prefix + LOGGING_TYPE, "").strip();
-        LogHandler handler = switch (sType.toLowerCase()) {
+        LogHandler handler = switch (sType.toLowerCase(Locale.ROOT)) {
             case "console" -> {
                 PrintStream stream = switch (properties.getProperty(prefix + LOGGER_CONSOLE_TARGET, SYSTEM_OUT).strip()) {
                     case SYSTEM_OUT -> System.out;
@@ -319,7 +319,7 @@ public final class LoggingConfiguration {
     }
 
     private static long parseSize(String s) {
-        s = s.strip().toUpperCase();
+        s = s.strip().toUpperCase(Locale.ROOT);
         if (s.endsWith("MB")) {
             return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024 * 1024;
         } else if (s.endsWith("KB")) {

@@ -50,7 +50,8 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
 
         String pattern = switch (format) {
             case "COMPACT" -> "%d{HH:mm:ss.SSS} %-5level %-30.30logger{0} - %msg%n";
-            case "DETAILED" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %X{userId} (%class.%method\\(%file:%line\\)) - %msg%n";
+            case "DETAILED" ->
+                    "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %X{userId} (%class.%method\\(%file:%line\\)) - %msg%n";
             default -> "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%n";
         };
 

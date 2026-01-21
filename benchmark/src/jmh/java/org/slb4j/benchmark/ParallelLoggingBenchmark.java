@@ -20,6 +20,7 @@ import org.openjdk.jmh.annotations.*;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
@@ -46,8 +47,8 @@ public abstract class ParallelLoggingBenchmark {
         String frontend = benchmarkName.substring(benchmarkName.lastIndexOf('.') + 1);
         originalOut.println("Testing parallel " + backend() + "-" + frontend + " ...");
 
-        System.setOut(new PrintStream(OutputStream.nullOutputStream()));
-        System.setErr(new PrintStream(OutputStream.nullOutputStream()));
+        System.setOut(new PrintStream(OutputStream.nullOutputStream(), false, StandardCharsets.UTF_8));
+        System.setErr(new PrintStream(OutputStream.nullOutputStream(), false, StandardCharsets.UTF_8));
 
         setupLogging();
     }

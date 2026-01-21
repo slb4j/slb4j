@@ -77,6 +77,6 @@ public class TimeZoneOffsetProvider {
             intervalStart = transitionMs;
             currentInstant = transition.getInstant().plusMillis(1);
         }
-        return list.toArray(new OffsetInterval[0]);
+        return list.toArray(OffsetInterval[]::new);
     }
 }

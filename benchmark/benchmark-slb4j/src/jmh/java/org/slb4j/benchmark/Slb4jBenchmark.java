@@ -62,7 +62,7 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
         dispatcher.getLogHandlers().forEach(dispatcher::removeLogHandler);
 
         if ("CONSOLE".equals(category)) {
-            ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, "DETAILED".equals(format) ? false : true);
+            ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, !"DETAILED".equals(format));
             consoleHandler.setPattern(pattern);
             dispatcher.addLogHandler(consoleHandler);
         } else {

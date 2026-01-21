@@ -19,6 +19,7 @@ import org.apache.logging.log4j.Logger;
 import org.openjdk.jmh.annotations.*;
 import org.slf4j.Marker;
 
+import java.nio.charset.StandardCharsets;
 import java.util.function.Supplier;
 import java.util.concurrent.TimeUnit;
 import java.io.OutputStream;
@@ -67,12 +68,12 @@ public abstract class AbstractLoggingBenchmark {
 
         if ("true".equals(outputToFile)) {
             fileOut = new FileOutputStream("benchmark.out", true);
-            PrintStream ps = new PrintStream(fileOut);
+            PrintStream ps = new PrintStream(fileOut, false, StandardCharsets.UTF_8);
             System.setOut(ps);
             System.setErr(ps);
         } else {
-            System.setOut(new PrintStream(OutputStream.nullOutputStream()));
-            System.setErr(new PrintStream(OutputStream.nullOutputStream()));
+            System.setOut(new PrintStream(OutputStream.nullOutputStream(), false, StandardCharsets.UTF_8));
+            System.setErr(new PrintStream(OutputStream.nullOutputStream(), false, StandardCharsets.UTF_8));
         }
         setupLogging();
     }

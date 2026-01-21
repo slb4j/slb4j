@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.ZoneId;
 
-public class TimeStampFormatter {
+public final class TimeStampFormatter {
 
     private static final char[] DIGIT_TENS = {
             '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
@@ -87,7 +87,7 @@ public class TimeStampFormatter {
                 i++;
             }
         }
-        return new TimeStampFormatter(parts.toArray(new Part[0]), zoneId);
+        return new TimeStampFormatter(parts.toArray(Part[]::new), zoneId);
     }
 
     private static Part createLiteralPart(String literal) {

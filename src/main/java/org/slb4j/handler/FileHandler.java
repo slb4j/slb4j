@@ -37,7 +37,7 @@ import java.util.function.Supplier;
 public final class FileHandler extends AbstractFileHandler {
 
     private final FileChannel channel;
-    private final Writer out;
+    private final Writer writer;
 
     /**
      * Constructs a new FileHandler.
@@ -50,7 +50,7 @@ public final class FileHandler extends AbstractFileHandler {
     public FileHandler(String name, Path path, boolean append) throws IOException {
         super(name);
         this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
-        this.out = Channels.newWriter(channel, StandardCharsets.UTF_8);
+        this.writer = Channels.newWriter(channel, StandardCharsets.UTF_8);
     }
 
     @Override
@@ -61,11 +61,11 @@ public final class FileHandler extends AbstractFileHandler {
                 buffer = acquireBuffer();
                 logPattern.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
                 synchronized (lock()) {
-                    buffer.writeTo(out);
+                    buffer.writeTo(writer);
 
                     if (lvl.ordinal() >= flushLevel.ordinal()) {
                         try {
-                            out.flush();
+                            writer.flush();
                         } catch (IOException e) {
                             Util.err().println("Error flushing log file: " + e.getMessage());
                         }
@@ -86,7 +86,7 @@ public final class FileHandler extends AbstractFileHandler {
     public void close() {
         synchronized (lock()) {
             try {
-                out.close();
+                writer.close();
             } catch (IOException e) {
                 Util.err().println("Error closing log file: " + e.getMessage());
             }

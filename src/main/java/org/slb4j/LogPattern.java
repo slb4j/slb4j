@@ -1011,7 +1011,7 @@ public final class LogPattern {
     private record AbbreviationSettings(int abbreviationLength, boolean useDotAbbreviation) {
         public static final AbbreviationSettings DEFAULT = new AbbreviationSettings(0, false);
 
-        public static final AbbreviationSettings forOptions(@Nullable String options) {
+        public static AbbreviationSettings forOptions(@Nullable String options) {
             int abbreviationLength = 0;
             boolean useDotAbbreviation = false;
             if (options != null) {
@@ -1063,8 +1063,7 @@ public final class LogPattern {
                 case "l", "location" -> entries.add(new LocationEntry(minWidth, maxWidth, leftAlign));
                 case "t", "thread" -> entries.add(new ThreadEntry(minWidth, maxWidth, leftAlign));
                 case "X", "mdc" -> entries.add(new MdcEntry(minWidth, maxWidth, leftAlign, options));
-                case "ex", "exception", "throwable" ->
-                        entries.add(new ExceptionEntry(minWidth, maxWidth, leftAlign));
+                case "ex", "exception", "throwable" -> entries.add(new ExceptionEntry(minWidth, maxWidth, leftAlign));
                 case "Cstart" -> entries.add(new ColorStartEntry(minWidth, maxWidth, leftAlign));
                 case "Cend" -> entries.add(new ColorEndEntry(minWidth, maxWidth, leftAlign));
                 case "d" -> entries.add(new DateEntry(options != null ? options : ""));
