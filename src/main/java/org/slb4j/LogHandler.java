@@ -18,7 +18,6 @@ package org.slb4j;
 import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.jspecify.annotations.Nullable;
 
-import java.io.Closeable;
 import java.util.function.Supplier;
 
 /**

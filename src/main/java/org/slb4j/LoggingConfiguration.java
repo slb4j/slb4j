@@ -314,10 +314,8 @@ public final class LoggingConfiguration {
         handleProperty(properties, prefix + LOGGING_FILTER, filters::get, handler::setFilter, LogFilter::allPass);
         handleProperty(properties, prefix + LOGGER_LAYOUT_PATTERN,
                 LogPattern::parse, p -> {
-                    if (handler instanceof ConsoleHandler consoleHandler) {
-                        consoleHandler.setPattern(p);
-                    } else if (handler instanceof AbstractFileHandler fileHandler) {
-                        fileHandler.setPattern(p);
+                    if (handler instanceof PatternConfigurable patternConfigurable) {
+                        patternConfigurable.setPattern(p);
                     }
                 },
                 () -> LogPattern.DEFAULT_PATTERN
