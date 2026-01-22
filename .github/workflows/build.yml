@@ -92,6 +92,15 @@ jobs:
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           
+          # Check if the current tag matches the latest commit on main
+          TAG_COMMIT=$(git rev-parse HEAD)
+          MAIN_COMMIT=$(git rev-parse origin/main)
+          
+          if [ "$TAG_COMMIT" != "$MAIN_COMMIT" ]; then
+            echo "Current tag does not point to the latest commit on main. Skipping automatic version update."
+            exit 0
+          fi
+          
           CURRENT_VERSION=${{ env.VERSION }}
           
           if [[ $CURRENT_VERSION =~ ^([0-9]+)(\.[0-9]+)*$ ]]; then
@@ -122,6 +131,7 @@ jobs:
           echo "Incrementing version: $CURRENT_VERSION -> $NEW_VERSION"
           sed -i "s/const val VERSION = \"$CURRENT_VERSION\"/const val VERSION = \"$NEW_VERSION\"/" build.gradle.kts
           
+          git checkout main
           git add build.gradle.kts
           git commit -m "Prepare for next development cycle: $NEW_VERSION"
           git push origin main
