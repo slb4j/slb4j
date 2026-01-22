@@ -126,10 +126,10 @@ correctly.
 - UI components for live monitoring
 - Benchmarks
 - Setup CI
+- Publish to Maven Central
 
 ### Todo
 
-- Publish to Maven Central
 - Publish Javadoc
 - Add benchmark results
 
