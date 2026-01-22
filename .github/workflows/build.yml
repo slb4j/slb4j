@@ -95,16 +95,21 @@ jobs:
           # Logic to increment patch version
           # Assuming version is in Meta.VERSION in build.gradle.kts
           CURRENT_VERSION=${{ env.VERSION }}
-          # Handle both x.y and x.y.z formats
-          if [[ $CURRENT_VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)$ ]]; then
+          # Handle x.y, x.y.z, and versions with suffixes like -beta, -alpha
+          if [[ $CURRENT_VERSION =~ ^([0-9]+)\.([0-9]+)\.([0-9]+)(.*)$ ]]; then
             MAJOR="${BASH_REMATCH[1]}"
             MINOR="${BASH_REMATCH[2]}"
             PATCH="${BASH_REMATCH[3]}"
+            SUFFIX="${BASH_REMATCH[4]}"
             NEW_PATCH=$((PATCH + 1))
             NEW_VERSION="${MAJOR}.${MINOR}.${NEW_PATCH}-SNAPSHOT"
-          elif [[ $CURRENT_VERSION =~ ^([0-9]+)\.([0-9]+)$ ]]; then
+          elif [[ $CURRENT_VERSION =~ ^([0-9]+)\.([0-9]+)(.*)$ ]]; then
             MAJOR="${BASH_REMATCH[1]}"
             MINOR="${BASH_REMATCH[2]}"
+            SUFFIX="${BASH_REMATCH[3]}"
+            # If there's a suffix like -beta, we might want to move to .1-SNAPSHOT or just strip it
+            # Given 0.1-beta, the user likely wants 0.1.1-SNAPSHOT or 0.2.0-SNAPSHOT
+            # The previous logic for x.y was to produce x.y.1-SNAPSHOT
             NEW_VERSION="${MAJOR}.${MINOR}.1-SNAPSHOT"
           else
             echo "Unexpected version format: $CURRENT_VERSION"
