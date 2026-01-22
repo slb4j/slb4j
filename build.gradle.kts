@@ -52,6 +52,11 @@ object Meta {
     const val ORGANIZATION_URL = "https://www.slb4j.org"
 }
 
+allprojects {
+    group = Meta.GROUP
+    version = Meta.VERSION
+}
+
 group = Meta.GROUP
 version = Meta.VERSION
 
@@ -116,7 +121,7 @@ allprojects {
 
     // --- PUBLISHING ---
 
-    if (pluginManager.hasPlugin("maven-publish")) {
+    pluginManager.withPlugin("maven-publish") {
         configure<PublishingExtension> {
             // Repositories for publishing
             repositories {
@@ -186,16 +191,16 @@ allprojects {
                 }
             }
         }
-    }
 
-    // Task to publish to staging directory per subproject
-    val publishToStagingDirectory by tasks.registering {
-        group = "publishing"
-        description = "Publish artifacts to root staging directory for JReleaser"
+        // Task to publish to staging directory per subproject
+        val publishToStagingDirectory by tasks.registering {
+            group = "publishing"
+            description = "Publish artifacts to root staging directory for JReleaser"
 
-        dependsOn(tasks.withType<PublishToMavenRepository>().matching {
-            it.repository.name == "stagingDirectory"
-        })
+            dependsOn(tasks.withType<PublishToMavenRepository>().matching {
+                it.repository.name == "stagingDirectory"
+            })
+        }
     }
 
     // Signing configuration deferred until after evaluation
