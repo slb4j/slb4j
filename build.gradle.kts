@@ -202,13 +202,17 @@ allprojects {
     afterEvaluate {
         if (pluginManager.hasPlugin("signing")) {
             configure<SigningExtension> {
-                val shouldSign = !project.version.toString().lowercase().contains("snapshot")
-                setRequired(shouldSign && (gradle.taskGraph.hasTask("publish") || gradle.taskGraph.hasTask("publishToMavenLocal")))
+                val isSnapshot = project.version.toString().lowercase().contains("snapshot")
+                val isPublishing = gradle.taskGraph.hasTask("publish") || 
+                                 gradle.taskGraph.hasTask("publishToMavenLocal") ||
+                                 gradle.taskGraph.hasTask("publishToStagingDirectory")
+                val shouldSign = !isSnapshot && isPublishing
+                setRequired(shouldSign)
 
                 if (shouldSign) {
                     useInMemoryPgpKeys(
-                        System.getenv("GPG_SIGNING_KEY"),
-                        System.getenv("GPG_PASSPHRASE")
+                        System.getenv("JRELEASER_GPG_SECRET_KEY"),
+                        System.getenv("JRELEASER_GPG_PASSPHRASE")
                     )
                 }
 
@@ -304,6 +308,11 @@ jreleaser {
     signing {
         active.set(org.jreleaser.model.Active.ALWAYS)
         armored.set(true)
+        pgp {
+            publicKey.set(System.getenv("JRELEASER_GPG_PUBLIC_KEY"))
+            secretKey.set(System.getenv("JRELEASER_GPG_SECRET_KEY"))
+            passphrase.set(System.getenv("JRELEASER_GPG_PASSPHRASE"))
+        }
     }
 
     deploy {
@@ -314,8 +323,8 @@ jreleaser {
                         active.set(org.jreleaser.model.Active.RELEASE)
                         url.set("https://central.sonatype.com/api/v1/publisher")
                         stagingRepositories.add("build/staging-deploy")
-                        username.set(System.getenv("SONATYPE_USERNAME"))
-                        password.set(System.getenv("SONATYPE_PASSWORD"))
+                        username.set(System.getenv("JRELEASER_SONATYPE_USERNAME"))
+                        password.set(System.getenv("JRELEASER_SONATYPE_PASSWORD"))
                     }
                 }
             } else {
@@ -328,8 +337,8 @@ jreleaser {
                         closeRepository.set(true)
                         releaseRepository.set(true)
                         stagingRepositories.add("build/staging-deploy")
-                        username.set(System.getenv("SONATYPE_USERNAME"))
-                        password.set(System.getenv("SONATYPE_PASSWORD"))
+                        username.set(System.getenv("JRELEASER_SONATYPE_USERNAME"))
+                        password.set(System.getenv("JRELEASER_SONATYPE_PASSWORD"))
                     }
                 }
             }
