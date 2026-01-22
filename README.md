@@ -30,19 +30,27 @@ SLB4J supports the following logging APIs:
 **Maven**
 
 ```xml
-TODO
+<dependency>
+  <groupId>org.slb4j</groupId>
+  <artifactId>slb4j</artifactId>
+  <version>0.1-beta</version>
+</dependency>
 ```
 
 **Gradle (Kotlin DSL)**
 
 ```kotlin
-TODO
+dependencies {
+    implementation("org.slb4j:slb4j:0.1-beta")
+}
 ```
 
 **Gradle (Groovy DSL)**
 
 ```groovy
-TODO
+dependencies {
+    implementation 'org.slb4j:slb4j:0.1-beta'
+}
 ```
 
 ### Initialize the Library
