@@ -112,10 +112,10 @@ jobs:
               PREFIX="${BASH_REMATCH[1]}"
               NUMBER="${BASH_REMATCH[2]}"
               NEW_NUMBER=$((NUMBER + 1))
-              NEW_VERSION="${PREFIX}${NEW_NUMBER}"
+              NEW_VERSION="${PREFIX}${NEW_NUMBER}-SNAPSHOT"
             else
               # Does not end with a number
-              NEW_VERSION="${CURRENT_VERSION}1"
+              NEW_VERSION="${CURRENT_VERSION}2-SNAPSHOT"
             fi
           fi
           
