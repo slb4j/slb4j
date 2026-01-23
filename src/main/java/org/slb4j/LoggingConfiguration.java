@@ -15,6 +15,8 @@
  */
 package org.slb4j;
 
+import org.jspecify.annotations.Nullable;
+import org.slb4j.filter.LogLevelFilter;
 import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.handler.FileHandler;
@@ -415,7 +417,59 @@ public final class LoggingConfiguration {
         return p.toString();
     }
 
-    public LogFilter getRootFilter() {
+    /**
+     * Retrieves the root logging filter from the current configuration.
+     * If no root filter is explicitly defined, a default filter allowing all log entries will be returned.
+     *
+     * @return the root {@link LogFilter} instance, or {@code null} if no root filter is available
+     */
+    public @Nullable LogFilter getRootFilter() {
         return filters.getOrDefault("", LogFilter.allPass());
+    }
+
+    /**
+     * Sets the root log filter for the logging configuration.
+     *
+     * @param filter the {@link LogFilter} to be set as the root filter; can be null to remove the root filter
+     * @return the previously set root {@link LogFilter}, or null if no filter was previously set
+     */
+    public @Nullable LogFilter setRootFilter(LogFilter filter) {
+        return filters.put("", filter);
+    }
+
+    /**
+     * Retrieves a log handler by its name.
+     *
+     * @param name the name of the log handler to retrieve; must not be {@code null}
+     * @return the {@link LogHandler} associated with the provided name, or {@code null} if no handler is found
+     */
+    public @Nullable LogHandler getHandler(String name) {
+        return handlers.get(name);
+    }
+
+    /**
+     * Registers a new log handler or replaces an existing one in the current logging configuration.
+     *
+     * @param name the name of the log handler to add or replace; must be non-null and non-empty
+     * @param handler the {@link LogHandler} instance to be added or replaced; must not be null
+     * @return the previously registered {@link LogHandler} associated with the given name,
+     *         or {@code null} if no handler was previously registered with that name
+     */
+    public @Nullable LogHandler addHandler(String name, LogHandler handler) {
+        return handlers.put(name, handler);
+    }
+
+    /**
+     * Creates a default logging configuration with predefined settings.
+     * The default configuration includes a root log filter set to the INFO log level
+     * and a console log handler for outputting log messages to the system output.
+     *
+     * @return a {@code LoggingConfiguration} instance with default filters and handlers applied
+     */
+    public static LoggingConfiguration defaultConfiguration() {
+        LoggingConfiguration configuration = new LoggingConfiguration();
+        configuration.setRootFilter(new LogLevelFilter("root", LogLevel.INFO));
+        configuration.addHandler("console", new ConsoleHandler("console", System.out, true));
+        return configuration;
     }
 }

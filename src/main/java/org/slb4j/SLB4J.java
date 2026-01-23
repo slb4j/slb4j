@@ -75,13 +75,11 @@ public final class SLB4J {
         DISPATCHER = UniversalDispatcher.getInstance();
 
         // === configure logging
-        getLoggingProperties().ifPresent(properties ->
-                {
-                    LoggingConfiguration config = LoggingConfiguration.parse(properties);
-                    config.getHandlers().forEach(DISPATCHER::addLogHandler);
-                    DISPATCHER.setFilter(config.getRootFilter());
-                }
-        );
+        LoggingConfiguration config = getLoggingProperties()
+                .map(LoggingConfiguration::parse)
+                .orElseGet(LoggingConfiguration::defaultConfiguration);
+        config.getHandlers().forEach(DISPATCHER::addLogHandler);
+        DISPATCHER.setFilter(config.getRootFilter());
 
         // === wire the logging frontends
 
