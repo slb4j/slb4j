@@ -115,18 +115,37 @@ public class SwingLogPane extends JPanel implements LogPane {
             LogLevel.TRACE, new java.awt.Color(105, 105, 105) // dimgray
     );
 
+    /**
+     * Constructs a new SwingLogPane using the default buffer capacity.
+     */
     public SwingLogPane() {
         this(LogBuffer.DEFAULT_CAPACITY);
     }
 
+    /**
+     * Constructs a new SwingLogPane with the specified buffer capacity.
+     *
+     * @param bufferSize the capacity of the buffer to be created for storing log entries
+     */
     public SwingLogPane(int bufferSize) {
         this(createBuffer(bufferSize));
     }
 
+    /**
+     * Constructs a new SwingLogPane using the specified {@code LogBuffer}.
+     *
+     * @param logBuffer the LogBuffer instance to store and manage log entries. It cannot be null.
+     */
     public SwingLogPane(LogBuffer logBuffer) {
         this(logBuffer, DEFAULT_TEXTS);
     }
 
+    /**
+     * Constructs a new SwingLogPane with a specified {@code LogBuffer} and {@code LogPaneTexts}.
+     *
+     * @param logBuffer the {@code LogBuffer} instance to store and manage log entries. It cannot be null.
+     * @param texts an instance of {@code LogPaneTexts}, providing localized texts for UI components. It cannot be null.
+     */
     public SwingLogPane(LogBuffer logBuffer, LogPaneTexts texts) {
         super(new BorderLayout());
         this.logBuffer = Objects.requireNonNull(logBuffer);
@@ -395,6 +414,11 @@ public class SwingLogPane extends JPanel implements LogPane {
         return buffer;
     }
 
+    /**
+     * Retrieves the {@code LogBuffer} associated with this {@code SwingLogPane}.
+     *
+     * @return the {@code LogBuffer} instance used for storing and managing log entries.
+     */
     public LogBuffer getLogBuffer() {
         return logBuffer;
     }

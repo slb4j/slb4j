@@ -1,5 +1,8 @@
 package org.slb4j;
 
+/**
+ * Represents a configurable contract for setting and retrieving log pattern configurations.
+ */
 public interface PatternConfigurable {
     /**
      * Set the format pattern.

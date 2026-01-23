@@ -4,6 +4,16 @@ import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.ZoneId;
 
+/**
+ * A utility class for formatting timestamps based on custom patterns.
+ * <p>
+ * This highly optimized implementation works directly on timestamp
+ * values in milliseconds passed as {@code long} values. This avoids
+ * creating temporary objects (i.e. {@link java.time.Instant}) and
+ * recues GC load.
+ * <p>
+ * The class is thread-safe.
+ */
 public final class TimeStampFormatter {
 
     private static final char[] DIGIT_TENS = {
@@ -17,7 +27,7 @@ public final class TimeStampFormatter {
             '7', '7', '7', '7', '7', '7', '7', '7', '7', '7',
             '8', '8', '8', '8', '8', '8', '8', '8', '8', '8',
             '9', '9', '9', '9', '9', '9', '9', '9', '9', '9',
-    } ;
+    };
 
     private static final char[] DIGIT_ONES = {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
@@ -30,7 +40,7 @@ public final class TimeStampFormatter {
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
             '0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-    } ;
+    };
 
     private final Part[] compiledParts;
     private final ZoneId zoneId;
@@ -42,10 +52,35 @@ public final class TimeStampFormatter {
         this.offsetProvider = new TimeZoneOffsetProvider(zoneId);
     }
 
+    /**
+     * Parses the given pattern to create a {@code TimeStampFormatter} configured with the system default time zone.
+     * The pattern specifies how a timestamp should be formatted or parsed, using character sequences
+     * to represent specific date or time components.
+     *
+     * @param pattern the pattern describing the date and time format, where special characters
+     *                represent specific timestamp components or literal text.
+     * @return a {@code TimeStampFormatter} instance configured according to the provided pattern
+     *         and the system default time zone.
+     * @throws IllegalArgumentException if the pattern is invalid or contains unsupported components.
+     */
     public static TimeStampFormatter parse(String pattern) {
         return parse(pattern, ZoneId.systemDefault());
     }
 
+    /**
+     * Parses the given pattern and time zone to create a {@code TimeStampFormatter}.
+     * The pattern describes how a timestamp should be formatted or parsed using
+     * specific characters to represent date or time components, and literal sequences
+     * for fixed text.
+     *
+     * @param pattern the pattern describing the date and time format, where special
+     *                characters represent timestamp components and single quotes
+     *                can be used to define literal text.
+     * @param zoneId  the time zone to be used in conjunction with the parsed pattern.
+     * @return a {@code TimeStampFormatter} instance configured according to the
+     *         provided pattern and time zone.
+     * @throws IllegalArgumentException if the pattern is invalid or contains unsupported components.
+     */
     public static TimeStampFormatter parse(String pattern, ZoneId zoneId) {
         java.util.List<Part> parts = new java.util.ArrayList<>();
         int i = 0;
@@ -76,7 +111,6 @@ public final class TimeStampFormatter {
 
             if (inQuote) {
                 currentLiteral.append(c);
-                i++;
             } else {
                 int count = 1;
                 while (i + 1 < pattern.length() && pattern.charAt(i + 1) == c) {
@@ -84,8 +118,8 @@ public final class TimeStampFormatter {
                     count++;
                 }
                 parts.add(createPart(c, count));
-                i++;
             }
+            i++;
         }
         return new TimeStampFormatter(parts.toArray(Part[]::new), zoneId);
     }
@@ -94,6 +128,19 @@ public final class TimeStampFormatter {
         return (app, y, M, d, H, m, s, S) -> app.append(literal);
     }
 
+    /**
+     * Appends a formatted representation of the given timestamp to the specified {@code Appendable}.
+     * The method calculates the necessary date and time components based on the provided timestamp,
+     * taking into account time zone offsets and day-light saving time adjustments. The formatted
+     * result is constructed using the pre-configured {@code Part} elements of this formatter.
+     *
+     * @param timestamp the epoch timestamp in milliseconds, representing the moment to be formatted.
+     *                  This value is interpreted based on the time zone and offset settings.
+     * @param app       the {@code Appendable} to which the formatted output will be appended.
+     *                  Common implementations include {@code StringBuilder}, {@code StringBuffer},
+     *                  or {@code Writer}.
+     * @throws IOException if an I/O error occurs while appending to the provided {@code Appendable}.
+     */
     public void appendTo(long timestamp, Appendable app) throws IOException {
         // Step 1: Get the offset for this specific moment (Required for DST)
         int offset = offsetProvider.getOffset(timestamp);
@@ -164,8 +211,7 @@ public final class TimeStampFormatter {
     private static void appendInt(int val, int digits, Appendable app) throws IOException {
         switch (digits) {
             case 2 -> app
-                    .append(DIGIT_TENS[val])
-                    .append(DIGIT_ONES[val]);
+                    .append(DIGIT_TENS[val]).append(DIGIT_ONES[val]);
             case 3 -> {
                 int q = val / 100;
                 app.append(DIGIT_ONES[q]);
@@ -182,6 +228,23 @@ public final class TimeStampFormatter {
         }
     }
 
+    /**
+     * Converts the given timestamp to its corresponding string representation.
+     * The method formats the timestamp using a builder-like approach, relying on
+     * internally configured components such as pre-defined formatting rules and
+     * time zone or offset settings.
+     * <p>
+     * This method is intended for debugging purposes only (it is not garbage-free,
+     * i.e., when used for logging might create a bottleneck).
+     *
+     * @param timestamp the epoch timestamp in milliseconds that is to be formatted
+     *                  into a string representation. It is interpreted based on
+     *                  the configured time zone and offsets.
+     * @return the string representation of the provided timestamp, formatted
+     *         according to the internal configuration of this formatter.
+     * @throws UncheckedIOException if an I/O error occurs while constructing
+     *         the formatted string.
+     */
     public String toString(long timestamp) {
         try {
             StringBuilder sb = new StringBuilder(32);

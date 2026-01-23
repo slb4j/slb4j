@@ -94,7 +94,7 @@ public final class UniversalDispatcher implements LogDispatcher {
             try {
                 handler.shutdown();
             } catch (Exception e) {
-                Util.err().println("Error shutting down log handler: '" +handler.name() + "': " + e.getMessage());
+                Util.err().println("Error shutting down log handler: '" + handler.name() + "': " + e.getMessage());
             }
         }
     }

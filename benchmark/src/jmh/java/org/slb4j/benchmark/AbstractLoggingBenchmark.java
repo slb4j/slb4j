@@ -115,7 +115,8 @@ public abstract class AbstractLoggingBenchmark {
         } else {
             switch (messageType) {
                 case "CONSTANT" -> slf4jLogger.info(logMessage);
-                case "ARGUMENTS" -> slf4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "slf4j", category, format, messageType);
+                case "ARGUMENTS" ->
+                        slf4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "slf4j", category, format, messageType);
                 case "MESSAGE_SUPPLIER" ->
                         slf4jLogger.atInfo().log(() -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend(), "slf4j", category, format, messageType));
                 case "LAMBDA_PARAMETER" ->
@@ -129,16 +130,20 @@ public abstract class AbstractLoggingBenchmark {
         if ("MARKER".equals(format)) {
             switch (messageType) {
                 case "CONSTANT" -> log4jLogger.info(log4jMarker, logMessage);
-                case "ARGUMENTS" -> log4jLogger.info(log4jMarker, "Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "log4j", category, format, messageType);
+                case "ARGUMENTS" ->
+                        log4jLogger.info(log4jMarker, "Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "log4j", category, format, messageType);
                 case "MESSAGE_SUPPLIER" -> log4jLogger.info(log4jMarker, () -> logMessage);
-                case "LAMBDA_PARAMETER" -> log4jLogger.info(log4jMarker, "Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "log4j", category, format, (Supplier<String>) () -> messageType);
+                case "LAMBDA_PARAMETER" ->
+                        log4jLogger.info(log4jMarker, "Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "log4j", category, format, (Supplier<String>) () -> messageType);
             }
         } else {
             switch (messageType) {
                 case "CONSTANT" -> log4jLogger.info(logMessage);
-                case "ARGUMENTS" -> log4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "log4j", category, format, messageType);
+                case "ARGUMENTS" ->
+                        log4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "log4j", category, format, messageType);
                 case "MESSAGE_SUPPLIER" -> log4jLogger.info(() -> logMessage);
-                case "LAMBDA_PARAMETER" -> log4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "log4j", category, format, (Supplier<String>) () -> messageType);
+                case "LAMBDA_PARAMETER" ->
+                        log4jLogger.info("Benchmark backend={} frontend={} category={} format={} messageType={}", backend(), "log4j", category, format, (Supplier<String>) () -> messageType);
             }
         }
     }
@@ -147,9 +152,11 @@ public abstract class AbstractLoggingBenchmark {
     public void jul() {
         switch (messageType) {
             case "CONSTANT" -> julLogger.info(logMessage);
-            case "ARGUMENTS" -> julLogger.log(java.util.logging.Level.INFO, "Benchmark backend={0} frontend={1} category={2} format={3} messageType={4}", new Object[]{backend(), "jul", category, format, messageType});
-            case "MESSAGE_SUPPLIER" -> julLogger.info(() -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend(), "jul", category, format, messageType));
-            default -> { assert false : "unsupported message type for JUL: " + messageType; }
+            case "ARGUMENTS" ->
+                    julLogger.log(java.util.logging.Level.INFO, "Benchmark backend={0} frontend={1} category={2} format={3} messageType={4}", new Object[]{backend(), "jul", category, format, messageType});
+            case "MESSAGE_SUPPLIER" ->
+                    julLogger.info(() -> String.format("Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s", backend(), "jul", category, format, messageType));
+            default -> {assert false : "unsupported message type for JUL: " + messageType;}
         }
     }
 

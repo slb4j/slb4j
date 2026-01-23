@@ -6,15 +6,28 @@ import java.time.zone.ZoneOffsetTransition;
 import java.util.ArrayList;
 import java.util.List;
 
+/**
+ * Provides optimized time zone offset resolution for a given {@link ZoneId}.
+ * The class precomputes and caches offset intervals based on zone transitions
+ * to facilitate efficient lookup of the offset for a given timestamp. The precomputation
+ * spans a limited time range to minimize resource consumption while covering typical use cases.
+ */
 public class TimeZoneOffsetProvider {
     private final ZoneId zoneId;
     private final OffsetInterval[] intervals;
     private final int startupIdx;
 
     private record OffsetInterval(long start, long end, int offset) {
-        boolean contains(long ts) { return ts >= start && ts < end; }
+        boolean contains(long ts) {return ts >= start && ts < end;}
     }
 
+    /**
+     * Constructs a TimeZoneOffsetProvider instance for the specified ZoneId.
+     * This constructor precomputes time offset intervals for the given time zone
+     * and determines the applicable interval at the time of application startup.
+     *
+     * @param zoneId the time zone for which time offset intervals will be calculated
+     */
     public TimeZoneOffsetProvider(ZoneId zoneId) {
         this.zoneId = zoneId;
         this.intervals = precomputeIntervals(zoneId);
@@ -31,6 +44,17 @@ public class TimeZoneOffsetProvider {
         this.startupIdx = foundIdx;
     }
 
+    /**
+     * Calculates the total time offset, in seconds, for the specified timestamp.
+     *
+     * The method determines the appropriate offset by checking if the timestamp
+     * falls within precomputed intervals. If no matching interval is found, it
+     * calculates the offset using the time zone rules for the given timestamp.
+     *
+     * @param timestamp the timestamp, in milliseconds since the epoch, for which
+     *                  the time offset is to be determined.
+     * @return the total time offset, in seconds, for the given timestamp.
+     */
     public int getOffset(long timestamp) {
         OffsetInterval startup = intervals[startupIdx];
         if (timestamp >= startup.start && timestamp < startup.end) {

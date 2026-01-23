@@ -149,9 +149,10 @@ public final class LogPattern {
      */
     public abstract static class AbstractLogPatternEntry implements LogPatternEntry {
         protected final String prefix;
-        protected final int minWidth;
-        protected final int maxWidth;
-        protected final boolean leftAlign;
+
+        private final int minWidth;
+        private final int maxWidth;
+        private final boolean leftAlign;
         private final boolean locationNeeded;
 
         /**
@@ -221,6 +222,7 @@ public final class LogPattern {
          * @param app the {@code Appendable} to which the formatted value will be appended
          * @param value the string value to format and append; if {@code null}, it will be treated as an empty string
          * @param leftTruncate a flag indicating whether to truncate the string from the left when its length exceeds the maximum width
+         * @throws IOException if an I/O error occurs while appending to the {@link Appendable} instance
          */
         protected final void appendFormatted(Appendable app, @Nullable CharSequence value, boolean leftTruncate) throws IOException {
             if (value == null) {
@@ -557,6 +559,9 @@ public final class LogPattern {
         }
     }
 
+    /**
+     * Represents a log entry for the class name of the log event's location.
+     */
     public static final class ClassEntry extends AbstractLogPatternEntry {
         private final int abbreviationLength;
         private final boolean useDotAbbreviation;
@@ -883,6 +888,15 @@ public final class LogPattern {
      * Represents a log format entry that inserts a newline character into the log output.
      */
     public static final class NewlineEntry implements LogPatternEntry {
+
+        /**
+         * Constructs a new instance of the NewlineEntry class which represents a log format entry
+         * that inserts a newline character into the output of a log pattern.
+         */
+        public NewlineEntry() {
+            // nothing to  do
+        }
+
         @Override
         public String toString() {
             return getLog4jPattern();

@@ -40,6 +40,7 @@ public final class StackWalkerLocationResolver implements LocationResolver {
      * which package names to treat as part of the logging infrastructure when analyzing
      * the call stack.
      *
+     * @param loggerClassName the fully qualified class name of the logger
      * @param infraPackage a list of package name prefixes representing the
      *                      infrastructure components to be excluded when resolving
      *                      the relevant stack frame

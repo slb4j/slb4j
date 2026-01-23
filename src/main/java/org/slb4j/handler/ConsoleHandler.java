@@ -45,6 +45,12 @@ public final class ConsoleHandler implements LogHandler, PatternConfigurable {
 
     private static final int BUFFER_SIZE = 4096;
 
+    /**
+     * A default mapping of {@link LogLevel} constants to their associated {@link ConsoleCode}
+     * representations for displaying log messages with ANSI color codes.
+     * <p>
+     * The colors follow the default Log4j color scheme.
+     */
     public static final Map<LogLevel, ConsoleCode> COLOR_MAP_DEFAULT = Map.of(
             LogLevel.TRACE, ConsoleCode.ofAnsi(AnsiCode.esc(30)),  // Cyan
             LogLevel.DEBUG, ConsoleCode.ofAnsi(AnsiCode.esc(36)),  // Blue
@@ -53,6 +59,11 @@ public final class ConsoleHandler implements LogHandler, PatternConfigurable {
             LogLevel.ERROR, ConsoleCode.ofAnsi(AnsiCode.esc(AnsiCode.BOLD_ON, 31)  // Red
             ));
 
+    /**
+     * A mapping that does not define any colors for log messages.
+     * <p>
+     * Use it for monochrome output.
+     */
     public static final Map<LogLevel, ConsoleCode> COLOR_MAP_MONOCHROME = Map.of(
             LogLevel.TRACE, ConsoleCode.empty(),
             LogLevel.DEBUG, ConsoleCode.empty(),
