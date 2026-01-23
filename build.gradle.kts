@@ -89,6 +89,14 @@ dependencies {
     testRuntimeOnly(libs.junit.platform.launcher)
 }
 
+cabe {
+    if (isReleaseVersion) {
+        config.set(com.dua3.cabe.processor.Configuration.parse("publicApi=THROW_NPE:privateApi=ASSERT"))
+    } else {
+        config.set(com.dua3.cabe.processor.Configuration.DEVELOPMENT)
+    }
+}
+
 tasks.test {
     useJUnitPlatform()
     dependsOn(
