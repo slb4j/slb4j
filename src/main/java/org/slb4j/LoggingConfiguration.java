@@ -214,14 +214,6 @@ public final class LoggingConfiguration {
      * @param properties the {@link Properties} object containing configuration settings
      */
     private void configure(Properties properties) {
-        // Collect all appender names from keys like appender.<name>.type
-        List<String> appenderNames = properties.stringPropertyNames().stream()
-                .filter(key -> key.startsWith(LOGGING_HANDLER + ".") && key.endsWith("." + LOGGING_TYPE))
-                .map(key -> key.substring(LOGGING_HANDLER.length() + 1, key.length() - LOGGING_TYPE.length() - 1))
-                .toList();
-
-        appenderNames.forEach(name -> addHandler(properties, name));
-
         // Collect all filter names from keys like filter.<name>.level
         List<String> filterNames = properties.stringPropertyNames().stream()
                 .filter(key -> key.startsWith(LOGGING_FILTER + ".") && key.endsWith("." + LEVEL))
@@ -229,6 +221,14 @@ public final class LoggingConfiguration {
                 .toList();
 
         filterNames.forEach(name -> addFilter(properties, name));
+
+        // Collect all appender names from keys like appender.<name>.type
+        List<String> appenderNames = properties.stringPropertyNames().stream()
+                .filter(key -> key.startsWith(LOGGING_HANDLER + ".") && key.endsWith("." + LOGGING_TYPE))
+                .map(key -> key.substring(LOGGING_HANDLER.length() + 1, key.length() - LOGGING_TYPE.length() - 1))
+                .toList();
+
+        appenderNames.forEach(name -> addHandler(properties, name));
     }
 
     /**

@@ -16,6 +16,10 @@
 package org.slb4j.native_test;
 
 import org.slb4j.SLB4J;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Marker;
+import org.slf4j.MarkerFactory;
 
 public final class Main {
     static {
@@ -38,7 +42,37 @@ public final class Main {
         log4jLogger.info("Native test message from Log4j");
 
         // SLF4J
-        org.slf4j.Logger slf4jLogger = org.slf4j.LoggerFactory.getLogger("native.slf4j");
+        Logger slf4jLogger = LoggerFactory.getLogger("native.slf4j");
         slf4jLogger.info("Native test message from SLF4J");
+
+        // Advanced logging to test filters and patterns
+        Logger specialLogger = LoggerFactory.getLogger("org.slb4j.native_test.special");
+        specialLogger.trace("This is a TRACE message from a special logger (should be visible)");
+        specialLogger.debug("This is a DEBUG message from a special logger (should be visible)");
+
+        Logger restrictedLogger = LoggerFactory.getLogger("org.slb4j.native_test.restricted");
+        restrictedLogger.info("This is an INFO message from a restricted logger (should NOT be visible)");
+        restrictedLogger.warn("This is a WARN message from a restricted logger (should be visible)");
+
+        Logger normalLogger = LoggerFactory.getLogger("org.slb4j.native_test.Normal");
+        normalLogger.debug("This is a DEBUG message from a normal logger (should NOT be visible due to levelrule=INFO)");
+        normalLogger.info("This is an INFO message from a normal logger (should be visible)");
+
+        // Test Markers
+        Marker importantMarker = MarkerFactory.getMarker("IMPORTANT");
+        slf4jLogger.info(importantMarker, "Message with Marker");
+
+        // Test Exceptions
+        try {
+            throw new RuntimeException("Test exception");
+        } catch (RuntimeException e) {
+            slf4jLogger.error("Caught an exception", e);
+        }
+
+        // Generate some traffic for rotation
+        Logger trafficLogger = LoggerFactory.getLogger("traffic");
+        for (int i = 0; i < 20; i++) {
+            trafficLogger.info("Traffic message number " + i + " - padding with some text to reach 1KB sooner. Lorem ipsum dolor sit amet, consectetur adipiscing elit.");
+        }
     }
 }
