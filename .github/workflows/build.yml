@@ -92,9 +92,11 @@ jobs:
           git config --global user.name "GitHub Action"
           git config --global user.email "action@github.com"
           
+          git fetch origin main:main
+          
           # Check if the current tag matches the latest commit on main
           TAG_COMMIT=$(git rev-parse HEAD)
-          MAIN_COMMIT=$(git rev-parse origin/main)
+          MAIN_COMMIT=$(git rev-parse main)
           
           if [ "$TAG_COMMIT" != "$MAIN_COMMIT" ]; then
             echo "Current tag does not point to the latest commit on main. Skipping automatic version update."
