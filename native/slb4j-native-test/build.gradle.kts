@@ -35,6 +35,7 @@ graalvmNative {
             imageName.set("native-test")
             mainClass.set("org.slb4j.native_test.Main")
             buildArgs.addAll(
+                "-Os",
                 "--enable-native-access=ALL-UNNAMED"
             )
         }
