@@ -1,0 +1,9 @@
+{
+  "resources": {
+    "includes": [
+      {
+        "pattern": "org/slb4j/ext/fx/.*\\.css"
+      }
+    ]
+  }
+}

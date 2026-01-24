@@ -28,6 +28,7 @@ include("slb4j-ext:slb4j-ext-swing")
 include("slb4j-ext:slb4j-ext-swing:samples")
 
 include("native:slb4j-native-test")
+include("native:slb4j-fx-native-test")
 
 include("benchmark:benchmark-jul")
 include("benchmark:benchmark-logback")
