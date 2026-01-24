@@ -1,0 +1,30 @@
+[
+  {
+    "name": "org.slb4j.LogLevel",
+    "allDeclaredMethods": true,
+    "allPublicMethods": true,
+    "queryAllDeclaredMethods": true,
+    "queryAllPublicMethods": true,
+    "methods": [
+      {
+        "name": "values",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "org.slb4j.frontend.jcl.LoggerJcl",
+    "allPublicConstructors": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.slb4j.frontend.log4j.Log4jLoggerContextFactory",
+    "allPublicConstructors": true,
+    "allPublicMethods": true
+  },
+  {
+    "name": "org.slb4j.frontend.slf4j.LoggingServiceProviderSlf4j",
+    "allPublicConstructors": true,
+    "allPublicMethods": true
+  }
+]
