@@ -40,8 +40,6 @@ public final class LogPattern {
 
     private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?|%%|%n");
 
-    private static final Pattern HIGHLIGHT_PATTERN = Pattern.compile("%highlight\\{(.*)}");
-
     private static final Pattern LOGGER_PRECISION_PATTERN = Pattern.compile("^(\\d+)(\\.)?$");
 
     /**
@@ -1008,21 +1006,47 @@ public final class LogPattern {
     private static LogPatternEntry[] parseLog4jPatternString(String pattern) {
         List<LogPatternEntry> entries = new ArrayList<>();
         int lastEnd = 0;
-        Matcher highlightMatcher = HIGHLIGHT_PATTERN.matcher(pattern);
-        while (highlightMatcher.find()) {
-            if (highlightMatcher.start() > lastEnd) {
-                entries.addAll(parseLog4jPatternStringSimple(pattern.substring(lastEnd, highlightMatcher.start())));
+        int highlightStart;
+        while ((highlightStart = pattern.indexOf("%highlight{", lastEnd)) != -1) {
+            if (highlightStart > lastEnd) {
+                entries.addAll(parseLog4jPatternStringSimple(pattern.substring(lastEnd, highlightStart)));
             }
-            entries.add(new ColorStartEntry(0, 0, false));
-            entries.addAll(parseLog4jPatternStringSimple(highlightMatcher.group(1)));
-            entries.add(new ColorEndEntry(0, 0, false));
-            lastEnd = highlightMatcher.end();
+
+            int contentStart = highlightStart + "%highlight{".length();
+            int highlightEnd = findMatchingBrace(pattern, contentStart);
+
+            if (highlightEnd != -1) {
+                entries.add(new ColorStartEntry(0, 0, false));
+                entries.addAll(parseLog4jPatternStringSimple(pattern.substring(contentStart, highlightEnd)));
+                entries.add(new ColorEndEntry(0, 0, false));
+                lastEnd = highlightEnd + 1;
+            } else {
+                // Fallback if no matching brace is found
+                entries.addAll(parseLog4jPatternStringSimple(pattern.substring(highlightStart, highlightStart + "%highlight".length())));
+                lastEnd = highlightStart + "%highlight".length();
+            }
         }
         if (lastEnd < pattern.length()) {
             entries.addAll(parseLog4jPatternStringSimple(pattern.substring(lastEnd)));
         }
 
         return entries.toArray(LogPatternEntry[]::new);
+    }
+
+    private static int findMatchingBrace(String pattern, int start) {
+        int depth = 1;
+        for (int i = start; i < pattern.length(); i++) {
+            char c = pattern.charAt(i);
+            if (c == '{') {
+                depth++;
+            } else if (c == '}') {
+                depth--;
+                if (depth == 0) {
+                    return i;
+                }
+            }
+        }
+        return -1;
     }
 
     private record AbbreviationSettings(int abbreviationLength, boolean useDotAbbreviation) {

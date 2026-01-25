@@ -91,6 +91,7 @@ class LogPatternCompatibilityTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
+            "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %highlight{%-5level} %logger{36} - %msg%n",
             "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n",
             "%level %msg%n",
             "[%t] %logger %msg%n",
