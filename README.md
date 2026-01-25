@@ -53,7 +53,11 @@ dependencies {
 }
 ```
 
-### Initialize the Library
+### If the main application uses JUL Logging: nitialize the Library
+
+**Note:** This is only necessary if the main application is using JUL logging since JUL does not lookup the backend
+implementation using SPI (Service Provider Infrastructure). If your main application uses one of the other 
+logging frontends, JUL will be automatically initialized when SLB4J is loaded.
 
 Add this static initializer to the class containing your `main` method:
 
