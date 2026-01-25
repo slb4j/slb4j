@@ -18,7 +18,6 @@ package org.slb4j.frontend.jcl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogConfigurationException;
 import org.apache.commons.logging.LogFactory;
-import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.SLB4J;
 
@@ -28,7 +27,6 @@ import java.util.concurrent.ConcurrentMap;
 /**
  * JCL SPI implementation for SLB4J.
  */
-@NullMarked
 public final class LogFactoryJcl extends LogFactory {
 
     static {
