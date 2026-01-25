@@ -338,6 +338,9 @@ jreleaser {
                         stagingRepositories.add("build/staging-deploy")
                         username.set(System.getenv("JRELEASER_SONATYPE_USERNAME"))
                         password.set(System.getenv("JRELEASER_SONATYPE_PASSWORD"))
+                        connectTimeout.set(300)
+                        readTimeout.set(300)
+                        // skipExisting.set(true)
                     }
                 }
             } else {
@@ -352,6 +355,8 @@ jreleaser {
                         stagingRepositories.add("build/staging-deploy")
                         username.set(System.getenv("JRELEASER_SONATYPE_USERNAME"))
                         password.set(System.getenv("JRELEASER_SONATYPE_PASSWORD"))
+                        connectTimeout.set(300)
+                        readTimeout.set(300)
                     }
                 }
             }
