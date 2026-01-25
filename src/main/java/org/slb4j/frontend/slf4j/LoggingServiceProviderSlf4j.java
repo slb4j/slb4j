@@ -15,6 +15,7 @@
  */
 package org.slb4j.frontend.slf4j;
 
+import org.slb4j.SLB4J;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.IMarkerFactory;
 import org.slf4j.helpers.BasicMarkerFactory;
@@ -27,6 +28,10 @@ import org.slf4j.spi.SLF4JServiceProvider;
  * Implementation of SLF4JServiceProvider that provides logging functionality using SLF4J.
  */
 public final class LoggingServiceProviderSlf4j implements SLF4JServiceProvider {
+
+    static {
+        SLB4J.init();
+    }
 
     /**
      * Constructor, called by SPI

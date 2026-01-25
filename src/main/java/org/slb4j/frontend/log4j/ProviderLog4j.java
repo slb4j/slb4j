@@ -13,16 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.slb4j.samples.slf4j;
+package org.slb4j.frontend.log4j;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.logging.log4j.spi.Provider;
+import org.slb4j.SLB4J;
 
-public final class Main {
-    private Main() {}
+/**
+ * Log4j SPI implementation for SLB4J.
+ */
+public final class ProviderLog4j extends Provider {
 
-    public static void main(String[] args) {
-        Logger logger = LoggerFactory.getLogger(Main.class);
-        logger.info("Hello from SLF4J!");
+    static {
+        SLB4J.init();
+    }
+
+    /**
+     * Constructor.
+     */
+    public ProviderLog4j() {
+        super(
+                10,
+                "2.6.0",
+                Log4jLoggerContextFactory.class
+        );
     }
 }

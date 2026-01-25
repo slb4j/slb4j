@@ -40,30 +40,33 @@ public final class SLB4J {
         // === check classpath pollution
         record ClassInfo(String framework, String className, String type, String description) {}
 
+        String bridge = "bridge";
+        String backend = "backend";
+
         Stream.of(
                 // Backends
-                new ClassInfo("log4j", "org.apache.logging.log4j.core.LoggerContext", "backend", "Log4J backend"),
-                new ClassInfo("logback-classic", "ch.qos.logback.classic.Logger", "backend", "Logback classic backend"),
-                new ClassInfo("logback", "ch.qos.logback.core.Appender", "backend", "Logback backend"),
+                new ClassInfo("log4j", "org.apache.logging.log4j.core.LoggerContext", backend, "Log4J backend"),
+                new ClassInfo("logback-classic", "ch.qos.logback.classic.Logger", backend, "Logback classic backend"),
+                new ClassInfo("logback", "ch.qos.logback.core.Appender", backend, "Logback backend"),
 
                 // Bridges - log4j
-                new ClassInfo("log4j-slf4j-impl", "org.apache.logging.log4j.slf4j.Log4jLoggerFactory", "bridge", "Log4J to SLF4J bridge"),
-                new ClassInfo("log4j-to-slf4j", "org.apache.logging.slf4j.Log4jLoggerFactory", "bridge", "Log4J to SLF4J bridge"),
-                new ClassInfo("log4j-jcl", "org.apache.logging.log4j.jcl.LogFactoryImpl", "bridge", "Log4J to JCL bridge"),
-                new ClassInfo("log4j-jul", "org.apache.logging.log4j.jul.LogManager", "bridge", "Log4J to JUL bridge"),
+                new ClassInfo("log4j-slf4j-impl", "org.apache.logging.log4j.slf4j.Log4jLoggerFactory", bridge, "Log4J to SLF4J bridge"),
+                new ClassInfo("log4j-to-slf4j", "org.apache.logging.slf4j.Log4jLoggerFactory", bridge, "Log4J to SLF4J bridge"),
+                new ClassInfo("log4j-jcl", "org.apache.logging.log4j.jcl.LogFactoryImpl", bridge, "Log4J to JCL bridge"),
+                new ClassInfo("log4j-jul", "org.apache.logging.log4j.jul.LogManager", bridge, "Log4J to JUL bridge"),
 
                 // Bridges - slf4j
-                new ClassInfo("slf4j-log4j12", "org.slf4j.impl.Log4jLoggerFactory", "bridge", "SLF4J to Log4J 1.2 bridge"),
-                new ClassInfo("slf4j-jdk14", "org.slf4j.impl.JDK14LoggerFactory", "bridge", "SLF4J to JUL bridge"),
-                new ClassInfo("slf4j-jcl", "org.slf4j.impl.JCLLoggerFactory", "bridge", "SLF4J to JCL bridge"),
-                new ClassInfo("slf4j-simple", "org.slf4j.simple.SimpleLogger", "bridge", "SLF4J simple backend"),
+                new ClassInfo("slf4j-log4j12", "org.slf4j.impl.Log4jLoggerFactory", bridge, "SLF4J to Log4J 1.2 bridge"),
+                new ClassInfo("slf4j-jdk14", "org.slf4j.impl.JDK14LoggerFactory", bridge, "SLF4J to JUL bridge"),
+                new ClassInfo("slf4j-jcl", "org.slf4j.impl.JCLLoggerFactory", bridge, "SLF4J to JCL bridge"),
+                new ClassInfo("slf4j-simple", "org.slf4j.simple.SimpleLogger", bridge, "SLF4J simple backend"),
                 // ignore: new ClassInfo("slf4j-nop", "org.slf4j.helpers.NOPLogger", "bridge", "SLF4J NOP backend"),
 
                 // Bridges - jcl
-                new ClassInfo("jcl-over-slf4j", "org.apache.commons.logging.impl.SLF4JLogFactory", "bridge", "JCL to SLF4J bridge"),
+                new ClassInfo("jcl-over-slf4j", "org.apache.commons.logging.impl.SLF4JLogFactory", bridge, "JCL to SLF4J bridge"),
 
                 // Bridges - jul
-                new ClassInfo("jul-to-slf4j", "org.slf4j.bridge.SLF4JBridgeHandler", "bridge", "JUL to SLF4J bridge")
+                new ClassInfo("jul-to-slf4j", "org.slf4j.bridge.SLF4JBridgeHandler", bridge, "JUL to SLF4J bridge")
         ).forEach(ci -> {
             // Warn about conflicting logging implementations on classpath
             if (Util.isClassOnClasspath(ci.className()) && !Objects.equals("slb4j", ci.framework())) {
@@ -83,40 +86,19 @@ public final class SLB4J {
 
         // === wire the logging frontends
 
-        // LOG4J
-        wireLog4j();
-
-        // SLF4J
-        wireSlf4j();
-
-        // JUL
-        wireJul();
-
-        // JCL
-        wireJcl();
-
+        wireFrontends();
     }
 
-    private static void wireJul() {
+    private static void wireFrontends() {
+        // === JCL, LOG4J, and SLF4J are all handled by SPI (or the SPI 'imitation' used by JCL)
+
+        // === JUL
         java.util.logging.Logger root = java.util.logging.LogManager.getLogManager().getLogger("");
         // Remove existing handlers to avoid duplicates
         for (var h : root.getHandlers()) root.removeHandler(h);
         // Add your bridge
         root.addHandler(new JulHandler());
         root.setLevel(java.util.logging.Level.ALL);
-    }
-
-    private static void wireJcl() {
-        System.setProperty("org.apache.commons.logging.LogFactory", "org.apache.commons.logging.impl.LogFactoryImpl");
-        System.setProperty("org.apache.commons.logging.Log", "org.slb4j.frontend.jcl.LoggerJcl");
-    }
-
-    private static void wireLog4j() {
-        System.setProperty("log4j2.loggerContextFactory", "org.slb4j.frontend.log4j.Log4jLoggerContextFactory");
-    }
-
-    private static void wireSlf4j() {
-        System.setProperty("slf4j.provider", "org.slb4j.frontend.slf4j.LoggingServiceProviderSlf4j");
     }
 
     /**

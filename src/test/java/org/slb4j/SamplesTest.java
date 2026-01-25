@@ -18,11 +18,8 @@ package org.slb4j;
 import org.junit.jupiter.api.Test;
 
 import java.io.BufferedReader;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -66,57 +63,17 @@ class SamplesTest {
     }
 
     private void runSample(String sampleName, List<String> expectedOutputs) throws IOException, InterruptedException {
-        String javaHome = System.getProperty("java.home");
-        String javaBin = javaHome + File.separator + "bin" + File.separator + "java";
-
         Path projectRoot = Objects.requireNonNull(Paths.get(System.getProperty("user.dir")));
-        if (projectRoot.endsWith("slb4j")) {
-            projectRoot = Objects.requireNonNull(projectRoot.getParent());
-        }
 
-        Path slb4jClasses = projectRoot.resolve("slb4j/build/classes/java/main");
-        Path sampleClasses = projectRoot.resolve("slb4j/samples/" + sampleName + "/build/classes/java/main");
-        Path sampleResources = projectRoot.resolve("slb4j/samples/" + sampleName + "/build/resources/main");
-
-        String classpath = System.getProperty("java.class.path");
-        String combinedClasspath = String.join(File.pathSeparator,
-                sampleClasses.toString(),
-                sampleResources.toString(),
-                slb4jClasses.toString(),
-                classpath
-        );
-
-        String mainClass = "org.slb4j.samples." + sampleName + ".Main";
+        String gradlew = projectRoot.resolve(System.getProperty("os.name").toLowerCase().contains("win") ? "gradlew.bat" : "gradlew").toString();
 
         List<String> command = new ArrayList<>();
-        command.add(javaBin);
-
-        // Pass JaCoCo agent if present
-        RuntimeMXBean runtimeMxBean = ManagementFactory.getRuntimeMXBean();
-        List<String> arguments = runtimeMxBean.getInputArguments();
-        for (String arg : arguments) {
-            if (arg.startsWith("-javaagent:") && arg.contains("jacoco")) {
-                String jacocoArg = arg;
-                if (jacocoArg.contains("destfile=")) {
-                    Path execFile = projectRoot.resolve("slb4j/build/jacoco/samples-" + sampleName + ".exec");
-                    jacocoArg = jacocoArg.replaceAll("destfile=[^,]+", "destfile=" + execFile);
-                }
-                // Exclude Log4j from instrumentation to avoid initialization issues
-                jacocoArg += ",excludes=org.apache.logging.log4j.*";
-                command.add(jacocoArg);
-            }
-        }
-
-        command.addAll(List.of(
-                "-Dlog4j2.loggerContextFactory=slb4j.frontend.log4j.Log4jLoggerContextFactory",
-                "-Dslf4j.provider=slb4j.frontend.slf4j.LoggingServiceProviderSlf4j",
-                "-Dorg.apache.commons.logging.LogFactory=org.apache.commons.logging.impl.LogFactoryImpl",
-                "-Dorg.apache.commons.logging.Log=slb4j.frontend.jcl.LoggerJcl",
-                "-cp", combinedClasspath,
-                mainClass
-        ));
+        command.add(gradlew);
+        command.add("--quiet");
+        command.add(":samples:" + sampleName + ":run");
 
         ProcessBuilder pb = new ProcessBuilder(command);
+        pb.directory(projectRoot.toFile());
         pb.redirectErrorStream(true);
         Process process = pb.start();
 

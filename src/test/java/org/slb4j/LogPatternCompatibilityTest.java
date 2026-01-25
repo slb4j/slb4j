@@ -141,7 +141,7 @@ class LogPatternCompatibilityTest {
         private final LogPattern slb4jPattern;
         private final List<String> discrepancies = new ArrayList<>();
 
-        protected CompatibilityAppender(String name, Filter filter, Layout<? extends Serializable> layout, LogPattern slb4jPattern) {
+        protected CompatibilityAppender(String name, @Nullable Filter filter, Layout<? extends Serializable> layout, LogPattern slb4jPattern) {
             super(name, filter, layout, true, null);
             this.slb4jPattern = slb4jPattern;
         }

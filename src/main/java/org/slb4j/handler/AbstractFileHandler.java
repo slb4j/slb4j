@@ -47,8 +47,21 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     private final String name;
     private final Object lock = new Object();
 
+    /**
+     * The log pattern used by the handler to format log messages.      *
+     * @see #setPattern(LogPattern) for modifying the log pattern.
+     * @see #getPattern() for retrieving the current log pattern.
+     */
     protected volatile LogPattern logPattern = LogPattern.DEFAULT_PATTERN;
+    /**
+     * Represents the log filtering mechanism for the file handler.
+     */
     protected volatile LogFilter filter = LogFilter.allPass();
+    /**
+     * The minimum log level at which a flush operation is triggered.
+     * <p>
+     * Defaults to {@link LogLevel#TRACE}, i.e., flushing is triggered after every log entry.
+     */
     protected LogLevel flushLevel = LogLevel.TRACE;
 
     /**

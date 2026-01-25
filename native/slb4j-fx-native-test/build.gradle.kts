@@ -53,4 +53,9 @@ dependencies {
 
 application {
     mainClass.set("org.slb4j.native_test.fx.Main")
+    applicationDefaultJvmArgs = listOf("-Dlog4j2.debug=true")
+}
+
+tasks.withType<JavaExec> {
+    jvmArgs("-Dlog4j2.debug=true")
 }

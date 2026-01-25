@@ -15,6 +15,7 @@
  */
 package org.slb4j.filter;
 
+import org.jspecify.annotations.Nullable;
 import org.slb4j.LogLevel;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -72,7 +73,7 @@ class FiltersTest {
             " , , true",
             " , SOME, false"
     })
-    void testMarkerFilter(String filterMarker, String logMarker, boolean expected) {
+    void testMarkerFilter(@Nullable String filterMarker, @Nullable String logMarker, boolean expected) {
         MarkerFilter filter = new MarkerFilter("test", (filterMarker == null ? "" : filterMarker)::equals);
 
         assertEquals(expected, filter.isMarkerEnabled(logMarker));

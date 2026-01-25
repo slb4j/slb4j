@@ -148,6 +148,9 @@ public final class LogPattern {
      * Subclasses must define the specific formatting behavior for different log components.
      */
     public abstract static class AbstractLogPatternEntry implements LogPatternEntry {
+        /**
+         * The prefix string that identifies a specific log component.
+         */
         protected final String prefix;
 
         private final int minWidth;
