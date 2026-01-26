@@ -1,5 +1,5 @@
 [plugins]
-cabe = { id = "com.dua3.cabe", version = "4.0.1" }
+cabe = { id = "com.dua3.cabe", version = "4.0.2" }
 graalvm = { id = "org.graalvm.buildtools.native", version = "0.11.4" }
 jdkprovider = { id = "com.dua3.gradle.jdkprovider", version = "0.4.0" }
 jmh = { id = "me.champeau.jmh", version = "0.7.3" }
