@@ -320,8 +320,8 @@ jreleaser {
 
     signing {
         active.set(org.jreleaser.model.Active.ALWAYS)
-        armored.set(true)
         pgp {
+            armored.set(true)
             publicKey.set(System.getenv("JRELEASER_GPG_PUBLIC_KEY"))
             secretKey.set(System.getenv("JRELEASER_GPG_SECRET_KEY"))
             passphrase.set(System.getenv("JRELEASER_GPG_PASSPHRASE"))
