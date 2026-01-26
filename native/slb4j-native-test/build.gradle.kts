@@ -20,7 +20,7 @@ plugins {
 }
 
 jdk {
-    version = "25.0.1"
+    version = "25.0.1+"
     javaFxBundled = true
     nativeImageCapable = true
 }

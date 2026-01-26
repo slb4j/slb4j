@@ -117,7 +117,7 @@ allprojects {
         apply(plugin = "com.dua3.gradle.jdkprovider")
 
         jdk {
-            version = 21
+            version = "21.0.10+"
             javaFxBundled = true
         }
     }
