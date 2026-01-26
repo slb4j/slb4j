@@ -30,7 +30,6 @@ import java.util.stream.Stream;
 /**
  * Utility class for logging operations.
  */
-@SuppressWarnings("AccessOfSystemProperties")
 public final class SLB4J {
     private SLB4J() { /* utility class */ }
 
@@ -90,13 +89,15 @@ public final class SLB4J {
     }
 
     private static void wireFrontends() {
-        // === JCL, LOG4J, and SLF4J are all handled by SPI (or the SPI 'imitation' used by JCL)
+        // === JCL, LOG4J, and SLF4J
+
+        // handled by SPI / in JCL: SPI-like mechanism
 
         // === JUL
         java.util.logging.Logger root = java.util.logging.LogManager.getLogManager().getLogger("");
         // Remove existing handlers to avoid duplicates
         for (var h : root.getHandlers()) root.removeHandler(h);
-        // Add your bridge
+        // Add handler
         root.addHandler(new JulHandler());
         root.setLevel(java.util.logging.Level.ALL);
     }

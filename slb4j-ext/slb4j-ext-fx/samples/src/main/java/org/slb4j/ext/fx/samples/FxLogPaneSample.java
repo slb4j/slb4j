@@ -15,8 +15,8 @@
  */
 package org.slb4j.ext.fx.samples;
 
-import org.slb4j.ext.fx.FxLogPane;
 import org.slb4j.SLB4J;
+import org.slb4j.ext.fx.FxLogPane;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
@@ -33,11 +33,6 @@ import java.util.stream.IntStream;
  */
 @SuppressWarnings("ClassWithMultipleLoggers")
 public class FxLogPaneSample extends Application {
-
-    static {
-        // this has to be done before the first logger is initialized!
-        SLB4J.init();
-    }
 
     private static final int AVERAGE_SLEEP_MILLIS = 50;
     private static final int LOG_BUFFER_SIZE = 10_000;

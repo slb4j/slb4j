@@ -34,10 +34,6 @@ import java.util.stream.IntStream;
 @SuppressWarnings("ClassWithMultipleLoggers")
 public class SwingLogPaneSample {
 
-    static {
-        SLB4J.init();
-    }
-
     private static final int AVERAGE_SLEEP_MILLIS = 50;
     private static final int LOG_BUFFER_SIZE = 10_000;
     private static final org.slf4j.Logger SLF4J_LOGGER = LoggerFactory.getLogger("SLF4J." + SwingLogPaneSample.class.getName());
