@@ -68,4 +68,37 @@ class LoggingConfigurationTest {
         assertEquals("5", outProps.getProperty("appender.file.strategy.max"));
         assertEquals("%m%n", outProps.getProperty("appender.file.layout.pattern"));
     }
+
+    @Test
+    void testParseJul() {
+        Properties props = new Properties();
+        props.setProperty("handlers", "java.util.logging.ConsoleHandler, java.util.logging.FileHandler");
+        props.setProperty(".level", "INFO");
+        props.setProperty("org.slb4j.level", "FINE"); // FINE should map to DEBUG
+        props.setProperty("java.util.logging.FileHandler.pattern", "test.log");
+        props.setProperty("java.util.logging.FileHandler.limit", "1024");
+        props.setProperty("java.util.logging.FileHandler.count", "3");
+        props.setProperty("java.util.logging.FileHandler.append", "true");
+
+        LoggingConfiguration config = LoggingConfiguration.parseJul(props);
+
+        // Check handlers
+        assertTrue(config.getHandlers().stream().anyMatch(h -> "console".equals(h.name())));
+        LogHandler fileHandler = config.getHandlers().stream()
+                .filter(h -> "file".equals(h.name()))
+                .findFirst()
+                .orElseThrow();
+        assertInstanceOf(RotatingFileHandler.class, fileHandler);
+        RotatingFileHandler rotatingFileHandler = (RotatingFileHandler) fileHandler;
+        assertEquals("test.log", rotatingFileHandler.getPath().toString());
+        assertEquals(1024L, rotatingFileHandler.getMaxFileSize());
+        assertEquals(2, rotatingFileHandler.getMaxBackupIndex()); // count 3 means 2 backups
+        assertTrue(rotatingFileHandler.isAppend());
+
+        // Check levels
+        LogFilter filter = config.getFilters().iterator().next();
+        assertTrue(filter.isEnabled("any.logger", LogLevel.INFO, null), "INFO should be enabled for any.logger");
+        assertFalse(filter.isEnabled("any.logger", LogLevel.DEBUG, null), "DEBUG should NOT be enabled for any.logger");
+        assertTrue(filter.isEnabled("org.slb4j.Test", LogLevel.DEBUG, null), "DEBUG should be enabled for org.slb4j.Test (mapped from FINE)");
+    }
 }

@@ -19,11 +19,7 @@ import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.frontend.jul.JulHandler;
 import org.slb4j.support.Util;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
 import java.util.ServiceConfigurationError;
 import java.util.stream.Stream;
 
@@ -77,9 +73,7 @@ public final class SLB4J {
         DISPATCHER = UniversalDispatcher.getInstance();
 
         // === configure logging
-        LoggingConfiguration config = getLoggingProperties()
-                .map(LoggingConfiguration::parse)
-                .orElseGet(LoggingConfiguration::defaultConfiguration);
+        LoggingConfiguration config = LoggingConfiguration.load();
         config.getHandlers().forEach(DISPATCHER::addLogHandler);
         DISPATCHER.setFilter(config.getRootFilter());
 
@@ -122,30 +116,4 @@ public final class SLB4J {
     public static LogDispatcher getDispatcher() {
         return DISPATCHER;
     }
-
-
-    /**
-     * Loads logging configuration properties from the "logging.properties" file located in the classpath.
-     * If the file is not found or an error occurs during loading, an empty {@code Optional} is returned.
-     *
-     * @return an {@code Optional} containing the loaded {@code Properties} if the file is found and successfully loaded,
-     *         or an empty {@code Optional} if the file is not found or an error occurs.
-     */
-    @SuppressWarnings("OptionalContainsCollection")
-    private static Optional<Properties> getLoggingProperties() {
-        Properties properties = new Properties();
-        try (InputStream in = ClassLoader.getSystemResourceAsStream("logging.properties")) {
-            if (in == null) {
-                return Optional.empty();
-            } else {
-                properties.load(in);
-                return Optional.of(properties);
-            }
-        } catch (IOException e) {
-            // write stacktrace to stderr because logging has not been initialized yet
-            e.printStackTrace(Util.err());
-            return Optional.empty();
-        }
-    }
-
 }

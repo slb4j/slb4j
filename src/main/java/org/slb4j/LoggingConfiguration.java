@@ -21,8 +21,10 @@ import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.handler.FileHandler;
 import org.slb4j.handler.RotatingFileHandler;
+import org.slb4j.support.Util;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.io.UncheckedIOException;
 import java.nio.file.Path;
@@ -39,6 +41,7 @@ import java.util.SequencedCollection;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 
 /**
  * A configuration class for setting up and managing logging behaviors and settings.
@@ -209,6 +212,121 @@ public final class LoggingConfiguration {
     }
 
     /**
+     * Parses the given JUL {@link Properties} object and creates a {@code LoggingConfiguration} instance.
+     *
+     * @param properties the {@link Properties} object containing JUL configuration settings
+     * @return a new {@code LoggingConfiguration} instance with settings applied from the provided properties
+     */
+    public static LoggingConfiguration parseJul(Properties properties) {
+        LoggingConfiguration cfg = new LoggingConfiguration();
+        cfg.configureJul(properties);
+        return cfg;
+    }
+
+    private void configureJul(Properties properties) {
+        // JUL uses "handlers" property to define handlers
+        String handlersProp = properties.getProperty("handlers", "").strip();
+        if (!handlersProp.isEmpty()) {
+            String[] handlerClasses = handlersProp.split("[,\\s]+");
+            for (String handlerClass : handlerClasses) {
+                if (handlerClass.contains("ConsoleHandler")) {
+                    addHandler("console", new ConsoleHandler("console", System.out, true));
+                } else if (handlerClass.contains("FileHandler")) {
+                    String prefix = "java.util.logging.FileHandler.";
+                    String pattern = properties.getProperty(prefix + "pattern", "java%u.log").strip();
+                    int limit = Integer.parseInt(properties.getProperty(prefix + "limit", "0").strip());
+                    int count = Integer.parseInt(properties.getProperty(prefix + "count", "1").strip());
+                    boolean append = Boolean.parseBoolean(properties.getProperty(prefix + "append", "false").strip());
+
+                    try {
+                        RotatingFileHandler fileHandler = new RotatingFileHandler("file", Paths.get(pattern), append);
+                        if (limit > 0) {
+                            fileHandler.setMaxFileSize(limit);
+                        }
+                        if (count > 1) {
+                            fileHandler.setMaxBackupIndex(count - 1);
+                        }
+                        handlers.put("file", fileHandler);
+                    } catch (IOException e) {
+                        throw new UncheckedIOException(e);
+                    }
+                }
+            }
+        }
+
+        // Level configuration
+        LoggerNamePrefixFilter filter = new LoggerNamePrefixFilter("jul");
+        filter.setLevel(LogLevel.TRACE); // Ensure global level allows everything, rely on LevelMap
+        for (String key : properties.stringPropertyNames()) {
+            if (key.endsWith(".level")) {
+                String loggerName = key.substring(0, key.length() - ".level".length());
+                String levelName = properties.getProperty(key).strip();
+                try {
+                    Level julLevel = Level.parse(levelName);
+                    LogLevel slb4jLevel = org.slb4j.frontend.jul.JulHandler.translateJulLevel(julLevel);
+                    if (loggerName.isEmpty()) {
+                        filter.setLevel("", slb4jLevel);
+                    } else if (loggerName.endsWith(".")) {
+                        filter.setLevel(loggerName.substring(0, loggerName.length() - 1), slb4jLevel);
+                    } else {
+                        filter.setLevel(loggerName, slb4jLevel);
+                    }
+                } catch (IllegalArgumentException e) {
+                    // ignore invalid levels
+                }
+            } else if (key.equals(".level")) {
+                String levelName = properties.getProperty(key).strip();
+                try {
+                    Level julLevel = Level.parse(levelName);
+                    LogLevel slb4jLevel = org.slb4j.frontend.jul.JulHandler.translateJulLevel(julLevel);
+                    filter.setLevel("", slb4jLevel);
+                } catch (IllegalArgumentException e) {
+                    // ignore
+                }
+            }
+        }
+        if (!filter.getRules().containsKey("")) {
+            filter.setLevel("", LogLevel.INFO);
+        }
+        filters.put("jul", filter);
+    }
+
+    /**
+     * Automatically loads the logging configuration from the classpath.
+     * It checks for {@code log4j2.properties} (Log4J2 format) and then for
+     * {@code logging.properties} (JUL format).
+     *
+     * @return the loaded {@code LoggingConfiguration} or {@link #defaultConfiguration()} if no file is found.
+     */
+    public static LoggingConfiguration load() {
+        for (String propertiesFileName: List.of("log4j2-test.properties", "log4j2.properties")) {
+            try (InputStream in = ClassLoader.getSystemResourceAsStream(propertiesFileName)) {
+                if (in != null) {
+                    Properties properties = new Properties();
+                    properties.load(in);
+                    return parse(properties);
+                }
+            } catch (IOException e) {
+                Util.err().println("Failed to load " + propertiesFileName + ": " + e.getMessage());
+                e.printStackTrace(Util.err());
+            }
+        }
+
+        try (InputStream in = ClassLoader.getSystemResourceAsStream("logging.properties")) {
+            if (in != null) {
+                Properties properties = new Properties();
+                properties.load(in);
+                return parseJul(properties);
+            }
+        } catch (IOException e) {
+            Util.err().println("Failed to load logging.properties: " + e.getMessage());
+            e.printStackTrace(Util.err());
+        }
+
+        return defaultConfiguration();
+    }
+
+    /**
      * Parses the given {@link Properties} object into this {@code LoggingConfiguration}.
      *
      * @param properties the {@link Properties} object containing configuration settings
@@ -293,12 +411,12 @@ public final class LoggingConfiguration {
                     handleProperty(properties, prefix + LOGGER_FILE_PATTERN, s -> s, fileHandler::setFilePattern, () -> null);
                     handleProperty(properties, prefix + LOGGER_FILE_MAX_SIZE, LoggingConfiguration::parseSize, fileHandler::setMaxFileSize, () -> -1L);
                     handleProperty(properties, prefix + LOGGER_FILE_MAX_BACKUPS, Integer::parseInt, fileHandler::setMaxBackupIndex, () -> 1);
-                    handleProperty(properties, prefix + LOGGER_FILE_TIME_INTERVAL, s -> {
-                        // For now, we only support basic time rotation if an interval is set,
-                        // we'll default to ChronoUnit.HOURS if any interval is provided but no specific unit.
-                        // Ideally we'd parse the unit from some other property or the filePattern.
-                        return ChronoUnit.HOURS;
-                    }, fileHandler::setRotationTimeUnit, () -> null);
+                    handleProperty(properties, prefix + LOGGER_FILE_TIME_INTERVAL, s ->
+                                    // For now, we only support basic time rotation if an interval is set,
+                                    // we'll default to ChronoUnit.HOURS if any interval is provided but no specific unit.
+                                    // Ideally we'd parse the unit from some other property or the filePattern.
+                                    ChronoUnit.HOURS
+                            , fileHandler::setRotationTimeUnit, () -> null);
                     yield fileHandler;
                 } catch (IOException e) {
                     throw new UncheckedIOException(e);

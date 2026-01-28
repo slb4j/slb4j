@@ -1,6 +1,8 @@
 Version 0.1-rc*
 ---------------
 
+- changed configuration resolution: try to load log4j2-test.properties before log4j2.properties using Log4J2 properties
+  format, then logging.properties using java.util.logging format
 - auto-lod if main module uses JCL, Log4J, or SLF4J.
 - minor enhancements and bugfixes
 
