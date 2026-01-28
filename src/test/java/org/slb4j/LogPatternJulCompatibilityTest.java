@@ -78,7 +78,7 @@ class LogPatternJulCompatibilityTest {
         logRecord.setSourceClassName("org.slb4j.TestClass");
         logRecord.setSourceMethodName("testMethod");
         logRecord.setInstant(Instant.now());
-        
+
         // 1. Get JUL output
         String julOutput = julFormatter.format(logRecord);
 
@@ -94,16 +94,19 @@ class LogPatternJulCompatibilityTest {
         assertEquals(julOutput, slb4jOutput, "Discrepancy for pattern: " + julPattern);
     }
 
-    private String formatWithSlb4j(LogPattern slb4jPattern, LogRecord logRecord) throws IOException {
+    private static String formatWithSlb4j(LogPattern slb4jPattern, LogRecord logRecord) throws IOException {
         StringBuilder sb = new StringBuilder();
         long timestamp = logRecord.getMillis();
         String loggerName = logRecord.getLoggerName();
         LogLevel level = JulHandler.translateJulLevel(logRecord.getLevel());
-        
+
         LocationResolver locResolver = () -> new Location() {
             @Override public String getClassName() { return logRecord.getSourceClassName(); }
+
             @Override public String getMethodName() { return logRecord.getSourceMethodName(); }
+
             @Override public int getLineNumber() { return -1; }
+
             @Override public @Nullable String getFileName() { return null; }
         };
 

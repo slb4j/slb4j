@@ -48,7 +48,7 @@ class LoggingConfigurationTest {
 
         assertInstanceOf(RotatingFileHandler.class, handler);
         RotatingFileHandler fileHandler = (RotatingFileHandler) handler;
-        
+
         assertEquals(logFile.toAbsolutePath(), fileHandler.getPath().toAbsolutePath());
         assertFalse(fileHandler.isAppend());
         assertEquals("test-%i.log", fileHandler.getFilePattern());

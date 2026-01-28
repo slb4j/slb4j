@@ -565,7 +565,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
 
     private boolean isSelectionEmpty() {
         checkApplicationThread();
-        return selectedItem == null;
+        return selectedItem.get() == null;
     }
 
     private void clearSelection() {

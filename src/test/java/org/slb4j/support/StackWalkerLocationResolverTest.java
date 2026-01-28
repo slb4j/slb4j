@@ -79,13 +79,13 @@ class StackWalkerLocationResolverTest {
         assertThrows(IllegalStateException.class, resolver::resolve);
     }
 
-    static class NotInfra {
+    static final class NotInfra {
         static Location callInfra(StackWalkerLocationResolver resolver) {
             return Infra.call(resolver);
         }
     }
 
-    static class Infra {
+    static final class Infra {
         static Location call(StackWalkerLocationResolver resolver) {
             return resolver.resolve();
         }
@@ -95,7 +95,7 @@ class StackWalkerLocationResolverTest {
         }
     }
 
-    static class OtherInfra {
+    static final class OtherInfra {
         static Location call(StackWalkerLocationResolver resolver) {
             return resolver.resolve();
         }

@@ -339,7 +339,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
     }
 
     private void searchAction(String text, boolean up) {
-        if (text == null || text.isEmpty()) return;
+        if (text.isEmpty()) return;
         String lowercaseText = text.toLowerCase(Locale.ROOT);
         int rowCount = table.getRowCount();
         if (rowCount == 0) return;

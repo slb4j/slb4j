@@ -38,13 +38,13 @@ public class TimeStampFormatterTest {
     public void testPatterns(String pattern) {
         long timestamp = 1705574640000L; // 2024-01-18T10:44:00Z
         ZoneId zoneId = ZoneId.systemDefault();
-        
+
         TimeStampFormatter formatter = TimeStampFormatter.parse(pattern, zoneId);
         DateTimeFormatter stdFormatter = DateTimeFormatter.ofPattern(pattern).withZone(zoneId);
-        
+
         String expected = stdFormatter.format(Instant.ofEpochMilli(timestamp));
         String actual = formatter.toString(timestamp);
-        
+
         assertEquals(expected, actual, "Pattern '" + pattern + "' failed");
     }
 

@@ -98,9 +98,7 @@ public final class CombinedFilter implements LogFilter {
 
         LogFilter[] newFilters = new LogFilter[filters.length + 1];
         newFilters[0] = filter;
-        for (int i = 0; i < filters.length; i++) {
-            newFilters[i + 1] = filters[i];
-        }
+        System.arraycopy(filters, 0, newFilters, 1, filters.length);
         return new CombinedFilter(newFilters);
     }
 
@@ -110,9 +108,7 @@ public final class CombinedFilter implements LogFilter {
         if (Objects.equals(other, LogFilter.nonePass())) return other;
 
         LogFilter[] newFilters = new LogFilter[filters.length + 1];
-        for (int i = 0; i < filters.length; i++) {
-            newFilters[i] = filters[i];
-        }
+        System.arraycopy(filters, 0, newFilters, 0, filters.length);
         newFilters[newFilters.length - 1] = other;
         return new CombinedFilter(newFilters);
     }
