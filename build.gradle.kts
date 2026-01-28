@@ -220,7 +220,7 @@ allprojects {
                                  gradle.taskGraph.hasTask("publishToMavenLocal") ||
                                  gradle.taskGraph.hasTask("publishToStagingDirectory")
                 val shouldSign = !isSnapshot && isPublishing
-                setRequired(shouldSign)
+                isRequired = shouldSign
 
                 if (shouldSign) {
                     useInMemoryPgpKeys(
