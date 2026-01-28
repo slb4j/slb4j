@@ -38,7 +38,7 @@ public final class LogPattern {
     private static final String NEWLINE = System.lineSeparator();
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
-    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?|%%|%n");
+    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?|%%");
 
     private static final Pattern LOGGER_PRECISION_PATTERN = Pattern.compile("^(\\d+)(\\.)?$");
 
