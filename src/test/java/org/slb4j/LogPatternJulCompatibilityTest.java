@@ -64,29 +64,7 @@ class LogPatternJulCompatibilityTest {
         String slb4jOutput = formatWithSlb4j(slb4jPattern, logRecord);
 
         // 3. Compare
-        // We normalize the level names because SLB4J uses SLF4J names (INFO, etc.)
-        // while JUL uses its own names (INFORMATION, etc.)
-        // Also normalize date/time parts that might differ slightly or are not fully supported
-        String normalizedJulOutput = normalizeOutput(julOutput);
-        String normalizedSlb4jOutput = normalizeOutput(slb4jOutput);
-        
-        assertEquals(normalizedJulOutput, normalizedSlb4jOutput, "Discrepancy for pattern: " + julPattern);
-    }
-
-    private String normalizeOutput(String output) {
-        return output
-                .replace("INFORMATION", "INFO")
-                .replace("SEVERE", "ERROR")
-                .replace("WARNING", "WARN")
-                .replace("FINER", "TRACE")
-                .replace("FINE", "DEBUG")
-                // Normalize months, AM/PM, and other platform/locale dependent parts
-                // that we might not fully match in SLB4J's translateJulToLog4j
-                .replaceAll("Jan\\.|Feb\\.|Mar\\.|Apr\\.|May|Jun\\.|Jul\\.|Aug\\.|Sep\\.|Oct\\.|Nov\\.|Dec\\.", "MONTH")
-                .replaceAll("AM|PM", "AMPM")
-                // Hour in %1$tl might be 1 or 01, normalize to single format if needed
-                // For now, let's see if this is enough
-                ;
+        assertEquals(julOutput, slb4jOutput, "Discrepancy for pattern: " + julPattern);
     }
 
     private String formatWithSlb4j(LogPattern slb4jPattern, LogRecord logRecord) throws IOException {

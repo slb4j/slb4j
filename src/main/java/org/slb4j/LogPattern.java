@@ -38,7 +38,7 @@ public final class LogPattern {
     private static final String NEWLINE = System.lineSeparator();
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
-    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?|%%");
+    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?|%%|%(?![a-zA-Z])");
 
     private static final Pattern LOGGER_PRECISION_PATTERN = Pattern.compile("^(\\d+)(\\.)?$");
 
@@ -313,6 +313,8 @@ public final class LogPattern {
      * parent class's configuration.
      */
     public static final class LevelEntry extends AbstractLogPatternEntry {
+        private final boolean useJulNames;
+
         /**
          * Constructs a LevelEntry instance with the specified formatting configuration.
          *
@@ -323,14 +325,27 @@ public final class LogPattern {
          * @param leftAlign A flag indicating whether the log level string should be left-aligned.
          *                  If true, padding will be added to the right of the string; otherwise,
          *                  padding will be added to the left.
+         * @param useJulNames A flag indicating whether to use JUL level names (e.g., INFORMATION).
          */
-        public LevelEntry(int minWidth, int maxWidth, boolean leftAlign) {
+        public LevelEntry(int minWidth, int maxWidth, boolean leftAlign, boolean useJulNames) {
             super("p", minWidth, maxWidth, leftAlign, false);
+            this.useJulNames = useJulNames;
         }
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, lvl.name(), false);
+            String name = useJulNames ? translateToJulLevelName(lvl) : lvl.name();
+            appendFormatted(app, name, false);
+        }
+
+        private static String translateToJulLevelName(LogLevel lvl) {
+            return switch (lvl) {
+                case TRACE -> "FINER";
+                case DEBUG -> "FINE";
+                case INFO -> "INFORMATION";
+                case WARN -> "WARNING";
+                case ERROR -> "SEVERE";
+            };
         }
     }
 
@@ -921,77 +936,104 @@ public final class LogPattern {
      * @return a {@code LogPattern} instance representing the parsed pattern
      */
     public static LogPattern parseJulPattern(String pattern) {
-        String log4jPattern = translateJulToLog4j(pattern);
-        return new LogPattern(log4jPattern);
+        return new LogPattern(parseJulPatternString(pattern));
     }
 
-    private static String translateJulToLog4j(String pattern) {
-        StringBuilder sb = new StringBuilder();
+    private static LogPatternEntry[] parseJulPatternString(String pattern) {
+        List<LogPatternEntry> entries = new ArrayList<>();
         int len = pattern.length();
-        for (int i = 0; i < len; i++) {
+        int i = 0;
+        while (i < len) {
             char c = pattern.charAt(i);
-            if (c == '%' && i + 1 < len) {
+            if (c == '%') {
+                if (i + 1 < len && pattern.charAt(i + 1) == 'n') {
+                    entries.add(new NewlineEntry());
+                    i += 2;
+                    continue;
+                }
+                if (i + 1 < len && pattern.charAt(i + 1) == '%') {
+                    entries.add(new LiteralEntry("%"));
+                    i += 2;
+                    continue;
+                }
+
                 int j = i + 1;
                 while (j < len && (Character.isDigit(pattern.charAt(j)) || pattern.charAt(j) == '$')) {
                     j++;
                 }
-                if (j < len && pattern.charAt(j) == 'n') {
-                    sb.append("%n");
-                    i = j;
-                    continue;
-                }
-                // Try to match the whole %n$s or %n$tX pattern
-                String placeholder = pattern.substring(i, Math.min(j + 2, len));
-                if (placeholder.startsWith("%1$t")) {
-                    if (placeholder.length() >= 5) {
-                        char sub = placeholder.charAt(4);
-                        switch (sub) {
-                            case 'Y' -> sb.append("%d{yyyy}");
-                            case 'm' -> sb.append("%d{MM}");
-                            case 'd' -> sb.append("%d{dd}");
-                            case 'H' -> sb.append("%d{HH}");
-                            case 'M' -> sb.append("%d{mm}");
-                            case 'S' -> sb.append("%d{ss}");
-                            case 'L' -> sb.append("%d{SSS}");
-                            case 'b' -> sb.append("%d{MMM}");
-                            case 'l' -> sb.append("%d{h}");
-                            case 'p', 'P' -> sb.append("%d{a}");
-                            default ->
-                                // For unsupported date/time parts, we use the original placeholder
-                                // but we need to escape the % because LogPattern will try to parse it
-                                sb.append("%%").append(placeholder.substring(1));
+
+                if (j < len) {
+                    String fullPlaceholder = pattern.substring(i, Math.min(j + 2, len));
+                    if (fullPlaceholder.startsWith("%1$t")) {
+                        if (j + 1 < len) {
+                            char sub = pattern.charAt(j + 1);
+                            entries.add(switch (sub) {
+                                case 'Y' -> new DateEntry("yyyy");
+                                case 'm' -> new DateEntry("MM");
+                                case 'd' -> new DateEntry("dd");
+                                case 'H' -> new DateEntry("HH");
+                                case 'M' -> new DateEntry("mm");
+                                case 'S' -> new DateEntry("ss");
+                                case 'L' -> new DateEntry("SSS");
+                                case 'b' -> new DateEntry("MMM");
+                                case 'l' -> new DateEntry("h");
+                                case 'p', 'P', 'T' -> new DateEntry("a");
+                                case 'B' -> new DateEntry("MMMM");
+                                case 'A' -> new DateEntry("EEEE");
+                                case 'a' -> new DateEntry("EEE");
+                                default -> new LiteralEntry(pattern.substring(i, j + 2));
+                            });
+                            i = j + 2;
+                            continue;
                         }
+                    } else if (fullPlaceholder.startsWith("%1$T")) {
+                        if (j + 1 < len) {
+                            char sub = pattern.charAt(j + 1);
+                            entries.add(switch (sub) {
+                                case 'p', 'P' -> new DateEntry("a");
+                                default -> new LiteralEntry(pattern.substring(i, j + 2));
+                            });
+                            i = j + 2;
+                            continue;
+                        }
+                    } else if (fullPlaceholder.startsWith("%2$s")) {
+                        entries.add(new ClassEntry(0, 0, false, 0, false));
+                        entries.add(new LiteralEntry(" "));
+                        entries.add(new MethodEntry(0, 0, false));
                         i = j + 1;
-                    } else {
-                        sb.append("%%");
+                        continue;
+                    } else if (fullPlaceholder.startsWith("%3$s")) {
+                        entries.add(new LoggerEntry(0, 0, false, 0, false));
+                        i = j + 1;
+                        continue;
+                    } else if (fullPlaceholder.startsWith("%4$s")) {
+                        entries.add(new LevelEntry(0, 0, false, true));
+                        i = j + 1;
+                        continue;
+                    } else if (fullPlaceholder.startsWith("%5$s")) {
+                        entries.add(new MessageEntry(0, 0, false));
+                        i = j + 1;
+                        continue;
+                    } else if (fullPlaceholder.startsWith("%6$s")) {
+                        entries.add(new ExceptionEntry(0, 0, false));
+                        i = j + 1;
+                        continue;
                     }
-                } else if (placeholder.startsWith("%2$s")) {
-                    sb.append("%M");
-                    i = j;
-                } else if (placeholder.startsWith("%3$s")) {
-                    sb.append("%c");
-                    i = j;
-                } else if (placeholder.startsWith("%4$s")) {
-                    sb.append("%p");
-                    i = j;
-                } else if (placeholder.startsWith("%5$s")) {
-                    sb.append("%m");
-                    i = j;
-                } else if (placeholder.startsWith("%6$s")) {
-                    sb.append("%ex");
-                    i = j;
-                } else if (placeholder.startsWith("%%")) {
-                    sb.append("%%");
-                    i = i + 1;
-                } else {
-                    // For other unknown % patterns, escape the %
-                    sb.append("%%");
                 }
+                entries.add(new LiteralEntry("%"));
+                i++;
             } else {
-                sb.append(c);
+                int nextPercent = pattern.indexOf('%', i);
+                if (nextPercent == -1) {
+                    entries.add(new LiteralEntry(pattern.substring(i)));
+                    break;
+                } else {
+                    entries.add(new LiteralEntry(pattern.substring(i, nextPercent)));
+                    i = nextPercent;
+                }
             }
         }
-        return sb.toString();
+        return entries.toArray(LogPatternEntry[]::new);
     }
 
     public String toString() {
@@ -1005,19 +1047,19 @@ public final class LogPattern {
      * @return a {@code LogPattern} instance representing the parsed pattern
      */
     public static LogPattern parseLog4jPattern(String pattern) {
-        return new LogPattern(pattern);
+        return new LogPattern(parseLog4jPatternString(pattern));
     }
 
     private final LogPatternEntry[] entries;
     private final boolean locationNeeded;
 
     /**
-     * Constructs a LogPattern using the supplied pattern.
+     * Constructs a LogPattern using the supplied entries.
      *
-     * @param pattern the format pattern in Log4J style, which may include placeholders and literals
+     * @param entries the format pattern entries
      */
-    private LogPattern(String pattern) {
-        this.entries = parseLog4jPatternString(pattern);
+    private LogPattern(LogPatternEntry[] entries) {
+        this.entries = entries;
 
         boolean locationNeeded = false;
         for (LogPatternEntry entry : entries) {
@@ -1166,7 +1208,7 @@ public final class LogPattern {
             int maxWidth = (maxWidthStr != null && maxWidthStr.length() > 1) ? Integer.parseInt(maxWidthStr.substring(1)) : 0;
 
             switch (type != null ? type : match) {
-                case "p", "level" -> entries.add(new LevelEntry(minWidth, maxWidth, leftAlign));
+                case "p", "level" -> entries.add(new LevelEntry(minWidth, maxWidth, leftAlign, false));
                 case "c", "logger" -> {
                     AbbreviationSettings abbr = AbbreviationSettings.forOptions(options);
                     entries.add(new LoggerEntry(minWidth, maxWidth, leftAlign, abbr.abbreviationLength, abbr.useDotAbbreviation));
@@ -1187,7 +1229,7 @@ public final class LogPattern {
                 case "Cstart" -> entries.add(new ColorStartEntry(minWidth, maxWidth, leftAlign));
                 case "Cend" -> entries.add(new ColorEndEntry(minWidth, maxWidth, leftAlign));
                 case "d" -> entries.add(new DateEntry(options != null ? options : ""));
-                case "%%" -> entries.add(new LiteralEntry("%"));
+                case "%%", "%" -> entries.add(new LiteralEntry("%"));
                 case "%n", "n" -> entries.add(new NewlineEntry());
                 default -> entries.add(new LiteralEntry(match));
             }

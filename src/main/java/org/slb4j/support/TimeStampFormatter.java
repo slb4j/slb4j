@@ -183,6 +183,38 @@ public final class TimeStampFormatter {
         void append(Appendable app, int y, int M, int d, int H, int m, int s, int S) throws IOException;
     }
 
+    private static final String[] MONTH_NAMES = {
+            "Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.",
+            "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
+    };
+
+    private static final String[] MONTH_NAMES_LONG = {
+            "January", "February", "March", "April", "May", "June",
+            "July", "August", "September", "October", "November", "December"
+    };
+
+    private static final String[] DAY_NAMES = {
+            "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
+    };
+
+    private static final String[] DAY_NAMES_LONG = {
+            "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
+    };
+
+    private static int getDayOfWeek(int y, int m, int d) {
+        if (m < 3) {
+            m += 12;
+            y--;
+        }
+        int k = y % 100;
+        int j = y / 100;
+        // Zeller's congruence
+        int h = (d + 13 * (m + 1) / 5 + k + k / 4 + j / 4 + 5 * j) % 7;
+        // ISO day of week (1=Mon, ..., 7=Sun) -> Zeller returns 0=Sat, 1=Sun, ..., 6=Fri
+        // We want 0=Sun, ..., 6=Sat for our DAY_NAMES array
+        return (h + 6) % 7;
+    }
+
     private static Part createPart(char c, int count) {
         return switch (c) {
             case 'y' -> (app, y, M, d, H, m, s, S) -> {
@@ -192,12 +224,34 @@ public final class TimeStampFormatter {
                     appendInt(y, count, app);
                 }
             };
-            case 'M' -> (app, y, M, d, H, m, s, S) -> appendInt(M, count, app);
+            case 'M' -> (app, y, M, d, H, m, s, S) -> {
+                if (count == 3) {
+                    app.append(MONTH_NAMES[M - 1]);
+                } else if (count >= 4) {
+                    app.append(MONTH_NAMES_LONG[M - 1]);
+                } else {
+                    appendInt(M, count, app);
+                }
+            };
             case 'd' -> (app, y, M, d, H, m, s, S) -> appendInt(d, count, app);
+            case 'E' -> (app, y, M, d, H, m, s, S) -> {
+                int dow = getDayOfWeek(y, M, d);
+                if (count >= 4) {
+                    app.append(DAY_NAMES_LONG[dow]);
+                } else {
+                    app.append(DAY_NAMES[dow]);
+                }
+            };
+            case 'h' -> (app, y, M, d, H, m, s, S) -> {
+                int hour12 = H % 12;
+                if (hour12 == 0) hour12 = 12;
+                appendInt(hour12, count, app);
+            };
             case 'H' -> (app, y, M, d, H, m, s, S) -> appendInt(H, count, app);
             case 'm' -> (app, y, M, d, H, m, s, S) -> appendInt(m, count, app);
             case 's' -> (app, y, M, d, H, m, s, S) -> appendInt(s, count, app);
             case 'S' -> (app, y, M, d, H, m, s, S) -> appendInt(S, count, app);
+            case 'a' -> (app, y, M, d, H, m, s, S) -> app.append(H < 12 ? "AM" : "PM");
             default -> switch (count) {
                 case 0 -> (app, y, M, d, H, m, s, S) -> {};
                 case 1 -> (app, y, M, d, H, m, s, S) -> app.append(c);
