@@ -111,7 +111,7 @@ class LogPatternCompatibilityTest {
 
     /**
      * Updates the configuration of loggers by adding a given appender and setting the logging level.
-     *
+     * <p>
      * The given appender is added to the root logger of the provided configuration, and the log level
      * is set to `Level.ALL` to capture all log messages irrespective of their severity.
      *
@@ -178,20 +178,19 @@ class LogPatternCompatibilityTest {
 
     /**
      * Represents an appender that compares log output between Log4j and an SLF4J-like logging framework.
-     *
+     * <p>
      * This appender is designed for testing compatibility between the Log4j formatter and the SLB4J formatter.
      * It performs the following tasks:
      * - Captures log events and formats them using both Log4j and SLB4J.
      * - Compares the outputs from both frameworks.
      * - Records discrepancies where the formatted outputs differ.
-     *
+     * <p>
      * The appender uses a provided LOG4J-like log pattern to format log events. Discrepancies can be retrieved
      * for further analysis.
-     *
+     * <p>
      * Extends:
      * AbstractAppender - Provides the base functionality for custom Log4j appenders.
-     *
-     * Thread Safety:
+     * <p>
      * This class is not thread-safe as it uses a non-thread-safe collection (e.g., ArrayList) for storing discrepancies.
      */
     private static class CompatibilityAppender extends AbstractAppender {
