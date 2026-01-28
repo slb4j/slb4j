@@ -274,15 +274,6 @@ public final class LoggingConfiguration {
                 } catch (IllegalArgumentException e) {
                     // ignore invalid levels
                 }
-            } else if (key.equals(".level")) {
-                String levelName = properties.getProperty(key).strip();
-                try {
-                    Level julLevel = Level.parse(levelName);
-                    LogLevel slb4jLevel = org.slb4j.frontend.jul.JulHandler.translateJulLevel(julLevel);
-                    filter.setLevel("", slb4jLevel);
-                } catch (IllegalArgumentException e) {
-                    // ignore
-                }
             }
         }
         if (!filter.getRules().containsKey("")) {

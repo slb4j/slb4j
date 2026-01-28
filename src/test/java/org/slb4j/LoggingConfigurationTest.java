@@ -101,4 +101,19 @@ class LoggingConfigurationTest {
         assertFalse(filter.isEnabled("any.logger", LogLevel.DEBUG, null), "DEBUG should NOT be enabled for any.logger");
         assertTrue(filter.isEnabled("org.slb4j.Test", LogLevel.DEBUG, null), "DEBUG should be enabled for org.slb4j.Test (mapped from FINE)");
     }
+
+    @Test
+    void testParseJulRootLevel() {
+        Properties props = new Properties();
+        // Use ONLY .level to set root level
+        props.setProperty(".level", "SEVERE"); // SEVERE should map to ERROR
+
+        LoggingConfiguration config = LoggingConfiguration.parseJul(props);
+
+        LogFilter filter = config.getFilters().getFirst();
+        // ERROR should be enabled
+        assertTrue(filter.isEnabled("any.logger", LogLevel.ERROR, null), "ERROR should be enabled for any.logger");
+        // WARN should NOT be enabled if SEVERE is correctly parsed
+        assertFalse(filter.isEnabled("any.logger", LogLevel.WARN, null), "WARN should NOT be enabled for any.logger");
+    }
 }
