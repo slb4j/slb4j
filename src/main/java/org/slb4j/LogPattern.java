@@ -953,11 +953,17 @@ public final class LogPattern {
                             case 'M' -> sb.append("%d{mm}");
                             case 'S' -> sb.append("%d{ss}");
                             case 'L' -> sb.append("%d{SSS}");
-                            default -> sb.append(placeholder);
+                            case 'b' -> sb.append("%d{MMM}");
+                            case 'l' -> sb.append("%d{h}");
+                            case 'p', 'P' -> sb.append("%d{a}");
+                            default ->
+                                // For unsupported date/time parts, we use the original placeholder
+                                // but we need to escape the % because LogPattern will try to parse it
+                                sb.append("%%").append(placeholder.substring(1));
                         }
                         i = j + 1;
                     } else {
-                        sb.append(c);
+                        sb.append("%%");
                     }
                 } else if (placeholder.startsWith("%2$s")) {
                     sb.append("%M");
@@ -978,7 +984,8 @@ public final class LogPattern {
                     sb.append("%%");
                     i = i + 1;
                 } else {
-                    sb.append(c);
+                    // For other unknown % patterns, escape the %
+                    sb.append("%%");
                 }
             } else {
                 sb.append(c);
