@@ -15,7 +15,6 @@
  */
 package org.slb4j.ext.fx.samples;
 
-import org.slb4j.SLB4J;
 import org.slb4j.ext.fx.FxLogPane;
 import javafx.application.Application;
 import javafx.scene.Scene;

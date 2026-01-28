@@ -21,7 +21,7 @@ import org.slb4j.LogPattern;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
-import org.slb4j.PatternConfigurable;
+import org.slb4j.LogPatternConfigurable;
 import org.slb4j.support.AnsiCode;
 import org.slb4j.LocationResolver;
 import org.jspecify.annotations.Nullable;
@@ -41,7 +41,7 @@ import java.util.function.Supplier;
  * The ConsoleHandler class is an implementation of the LogEntryHandler interface.
  * It handles log entries by writing them to the console.
  */
-public final class ConsoleHandler implements LogHandler, PatternConfigurable {
+public final class ConsoleHandler implements LogHandler, LogPatternConfigurable {
 
     private static final int BUFFER_SIZE = 4096;
 
@@ -95,7 +95,7 @@ public final class ConsoleHandler implements LogHandler, PatternConfigurable {
      * @param logPattern the format pattern
      */
     @Override
-    public void setPattern(LogPattern logPattern) {
+    public void setLogPattern(LogPattern logPattern) {
         this.logPattern = logPattern;
     }
 
@@ -104,7 +104,7 @@ public final class ConsoleHandler implements LogHandler, PatternConfigurable {
      * @return the format pattern
      */
     @Override
-    public LogPattern getPattern() {
+    public LogPattern getLogPattern() {
         return logPattern;
     }
 

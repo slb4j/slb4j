@@ -404,6 +404,11 @@ public class SwingLogPane extends JPanel implements LogPane {
         table.repaint();
     }
 
+    @Override
+    public boolean isDarkMode() {
+        return darkMode;
+    }
+
     private static LogBuffer createBuffer(int bufferSize) {
         LogBuffer buffer = new LogBuffer("Log Buffer", bufferSize);
         LoggerNamePrefixFilter filter = new LoggerNamePrefixFilter("filter");

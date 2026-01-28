@@ -428,8 +428,8 @@ public final class LoggingConfiguration {
         handleProperty(properties, prefix + LOGGING_FILTER, filters::get, handler::setFilter, LogFilter::allPass);
         handleProperty(properties, prefix + LOGGER_LAYOUT_PATTERN,
                 LogPattern::parse, p -> {
-                    if (handler instanceof PatternConfigurable patternConfigurable) {
-                        patternConfigurable.setPattern(p);
+                    if (handler instanceof LogPatternConfigurable patternConfigurable) {
+                        patternConfigurable.setLogPattern(p);
                     }
                 },
                 () -> LogPattern.DEFAULT_PATTERN
@@ -500,12 +500,12 @@ public final class LoggingConfiguration {
                     properties.setProperty(prefix + LOGGER_CONSOLE_TARGET, sStream);
                     properties.setProperty(prefix + LOGGER_CONSOLE_COLORED, String.valueOf(consoleHandler.isColored()));
                     properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
-                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, consoleHandler.getPattern().getPattern());
+                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, consoleHandler.getLogPattern().getPattern());
                 }
                 case FileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, "File");
                     properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
-                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getPattern().getPattern());
+                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getLogPattern().getPattern());
                 }
                 case RotatingFileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, fileHandler.getMaxFileSize() > 0 ? "RollingFile" : "File");
@@ -519,7 +519,7 @@ public final class LoggingConfiguration {
                         properties.setProperty(prefix + LOGGER_FILE_MAX_BACKUPS, String.valueOf(fileHandler.getMaxBackupIndex()));
                     }
                     properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
-                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getPattern().getPattern());
+                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getLogPattern().getPattern());
                 }
                 default -> {
                     // do nothing

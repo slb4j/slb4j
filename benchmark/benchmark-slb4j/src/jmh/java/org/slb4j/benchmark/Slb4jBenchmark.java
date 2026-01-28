@@ -63,11 +63,11 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
 
         if ("CONSOLE".equals(category)) {
             ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, !"DETAILED".equals(format));
-            consoleHandler.setPattern(pattern);
+            consoleHandler.setLogPattern(pattern);
             dispatcher.addLogHandler(consoleHandler);
         } else {
             fileHandler = new FileHandler("file", tempFile, false);
-            fileHandler.setPattern(pattern);
+            fileHandler.setLogPattern(pattern);
             dispatcher.addLogHandler(fileHandler);
         }
 

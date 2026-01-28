@@ -20,7 +20,7 @@ import org.slb4j.LogFilter;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.LogPattern;
-import org.slb4j.PatternConfigurable;
+import org.slb4j.LogPatternConfigurable;
 import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
 
@@ -34,7 +34,7 @@ import java.util.concurrent.BlockingQueue;
  * A log handler that writes log entries to a file.
  * It supports log rotation triggered by file size, number of entries, or time.
  */
-public abstract sealed class AbstractFileHandler implements LogHandler, AutoCloseable, PatternConfigurable
+public abstract sealed class AbstractFileHandler implements LogHandler, AutoCloseable, LogPatternConfigurable
         permits FileHandler, RotatingFileHandler {
 
     private static final int BUFFER_COUNT = 8;
@@ -49,8 +49,8 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
 
     /**
      * The log pattern used by the handler to format log messages.      *
-     * @see #setPattern(LogPattern) for modifying the log pattern.
-     * @see #getPattern() for retrieving the current log pattern.
+     * @see #setLogPattern(LogPattern) for modifying the log pattern.
+     * @see #getLogPattern() for retrieving the current log pattern.
      */
     protected volatile LogPattern logPattern = LogPattern.DEFAULT_PATTERN;
     /**
@@ -148,7 +148,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @param logPattern the log pattern string
      */
     @Override
-    public void setPattern(LogPattern logPattern) {
+    public void setLogPattern(LogPattern logPattern) {
         synchronized (lock) {
             this.logPattern = logPattern;
         }
@@ -159,7 +159,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @return the log pattern string
      */
     @Override
-    public LogPattern getPattern() {
+    public LogPattern getLogPattern() {
         synchronized (lock) {
             return logPattern;
         }

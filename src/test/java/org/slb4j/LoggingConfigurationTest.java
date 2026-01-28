@@ -55,7 +55,7 @@ class LoggingConfigurationTest {
         assertEquals(1024L, fileHandler.getMaxFileSize());
         assertNotNull(fileHandler.getRotationTimeUnit());
         assertEquals(5, fileHandler.getMaxBackupIndex());
-        assertEquals("%m%n", fileHandler.getPattern().getPattern());
+        assertEquals("%m%n", fileHandler.getLogPattern().getPattern());
 
         // Test addToProperties
         Properties outProps = new Properties();
@@ -96,7 +96,7 @@ class LoggingConfigurationTest {
         assertTrue(rotatingFileHandler.isAppend());
 
         // Check levels
-        LogFilter filter = config.getFilters().iterator().next();
+        LogFilter filter = config.getFilters().getFirst();
         assertTrue(filter.isEnabled("any.logger", LogLevel.INFO, null), "INFO should be enabled for any.logger");
         assertFalse(filter.isEnabled("any.logger", LogLevel.DEBUG, null), "DEBUG should NOT be enabled for any.logger");
         assertTrue(filter.isEnabled("org.slb4j.Test", LogLevel.DEBUG, null), "DEBUG should be enabled for org.slb4j.Test (mapped from FINE)");

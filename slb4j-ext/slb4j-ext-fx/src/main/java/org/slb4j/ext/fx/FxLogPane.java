@@ -446,6 +446,11 @@ public class FxLogPane extends BorderPane implements LogPane {
         this.dark = dark;
     }
 
+    @Override
+    public boolean isDarkMode() {
+        return dark;
+    }
+
     private static String cssClassForLogEntry(LogLevel level) {
         return CSS_CLASS_BY_LOG_LEVEL.get(level);
     }

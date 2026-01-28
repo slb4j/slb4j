@@ -46,7 +46,7 @@ public class TimeZoneOffsetProvider {
 
     /**
      * Calculates the total time offset, in seconds, for the specified timestamp.
-     *
+     * <p>
      * The method determines the appropriate offset by checking if the timestamp
      * falls within precomputed intervals. If no matching interval is found, it
      * calculates the offset using the time zone rules for the given timestamp.

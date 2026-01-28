@@ -58,11 +58,11 @@ public class Slb4jParallelBenchmark extends ParallelLoggingBenchmark {
 
         if ("CONSOLE".equals(category)) {
             ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, true);
-            consoleHandler.setPattern(pattern);
+            consoleHandler.setLogPattern(pattern);
             dispatcher.addLogHandler(consoleHandler);
         } else {
             fileHandler = new FileHandler("file", tempFile, false);
-            fileHandler.setPattern(pattern);
+            fileHandler.setLogPattern(pattern);
             dispatcher.addLogHandler(fileHandler);
         }
 

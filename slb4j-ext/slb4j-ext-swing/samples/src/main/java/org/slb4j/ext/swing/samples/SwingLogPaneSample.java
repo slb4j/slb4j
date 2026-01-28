@@ -15,7 +15,6 @@
  */
 package org.slb4j.ext.swing.samples;
 
-import org.slb4j.SLB4J;
 import org.slb4j.ext.swing.SwingLogPane;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;

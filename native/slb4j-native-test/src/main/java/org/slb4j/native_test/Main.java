@@ -15,17 +15,12 @@
  */
 package org.slb4j.native_test;
 
-import org.slb4j.SLB4J;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Marker;
 import org.slf4j.MarkerFactory;
 
 public final class Main {
-    static {
-        SLB4J.init();
-    }
-
     private Main() {}
 
     public static void main(String[] args) {

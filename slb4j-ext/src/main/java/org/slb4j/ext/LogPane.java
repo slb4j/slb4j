@@ -33,4 +33,11 @@ public interface LogPane {
      *             If true, dark mode is enabled; if false, dark mode is disabled.
      */
     void setDarkMode(boolean dark);
+
+    /**
+     * Checks whether dark mode is enabled for the log pane.
+     *
+     * @return true if dark mode is enabled, otherwise false.
+     */
+    boolean isDarkMode();
 }

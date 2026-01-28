@@ -24,7 +24,6 @@ import org.junit.jupiter.api.io.TempDir;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.time.temporal.ChronoUnit;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -40,7 +39,7 @@ class FileHandlerTest {
     void testBasicLogging() throws IOException {
         Path logFile = tempDir.resolve("test.log");
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
-            handler.setPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parse("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Hello, World!", null);
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Second line", null);
         }
@@ -58,7 +57,7 @@ class FileHandlerTest {
         Files.writeString(logFile, "Initial content\n");
 
         try (FileHandler handler = new FileHandler("test", logFile, true)) {
-            handler.setPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parse("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Second line", null);
         }
 
@@ -74,7 +73,7 @@ class FileHandlerTest {
         Files.writeString(logFile, "Initial content\n");
 
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
-            handler.setPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parse("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "New content", null);
         }
 
@@ -89,7 +88,7 @@ class FileHandlerTest {
 
         // 1. Test flush on high level
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
-            handler.setPattern(LogPattern.parse("%msg"));
+            handler.setLogPattern(LogPattern.parse("%msg"));
             handler.setFlushLevel(LogLevel.ERROR);
 
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "info", null);
