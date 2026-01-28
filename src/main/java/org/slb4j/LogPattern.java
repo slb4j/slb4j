@@ -227,11 +227,7 @@ public final class LogPattern {
          * @throws IOException if an I/O error occurs while appending to the {@link Appendable} instance
          */
         protected final void appendFormatted(Appendable app, @Nullable CharSequence value, boolean leftTruncate) throws IOException {
-            if (value == null) {
-                value = "";
-            }
-
-            if (value.isEmpty()) {
+            if (value == null || value.isEmpty()) {
                 appendSpaces(app, minWidth);
                 return;
             }
@@ -245,16 +241,12 @@ public final class LogPattern {
                 return;
             }
 
-            if (value.length() < minWidth) {
-                int padding = minWidth - value.length();
-                if (leftAlign) {
-                    app.append(value);
-                    appendSpaces(app, padding);
-                } else {
-                    appendSpaces(app, padding);
-                    app.append(value);
-                }
+            int padding = Math.max(0, minWidth - value.length());
+            if (leftAlign) {
+                app.append(value);
+                appendSpaces(app, padding);
             } else {
+                appendSpaces(app, padding);
                 app.append(value);
             }
         }
@@ -838,7 +830,7 @@ public final class LogPattern {
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, consoleCodes.start(), false);
+            app.append(consoleCodes.start());
         }
     }
 
@@ -868,7 +860,7 @@ public final class LogPattern {
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, consoleCodes.end(), false);
+            app.append(consoleCodes.end());
         }
     }
 

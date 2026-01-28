@@ -32,6 +32,8 @@ import java.util.Locale;
  */
 public final class TimeStampFormatter {
 
+    private static final int[] ZELLER_TO_CALENDAR = {7, 1, 2, 3, 4, 5, 6};
+
     private static final char[] DIGIT_TENS = {
             '0', '0', '0', '0', '0', '0', '0', '0', '0', '0',
             '1', '1', '1', '1', '1', '1', '1', '1', '1', '1',
@@ -226,8 +228,7 @@ public final class TimeStampFormatter {
         int h = (d + 13 * (m + 1) / 5 + k + k / 4 + j / 4 + 5 * j) % 7;
         // Zeller returns 0=Sat, 1=Sun, ..., 6=Fri
         // Calendar.SUNDAY = 1, MONDAY = 2, ..., SATURDAY = 7
-        int[] zellerToCalendar = {7, 1, 2, 3, 4, 5, 6};
-        return zellerToCalendar[h];
+        return ZELLER_TO_CALENDAR[h];
     }
 
     private static String[] getMonthNames(Locale locale, boolean full) {
@@ -255,33 +256,25 @@ public final class TimeStampFormatter {
 
     private static Part createPart(char c, int count, Locale locale) {
         return switch (c) {
-            case 'y' -> (app, y, M, d, H, m, s, S) -> {
+            case 'y' ->  {
                 if (count == 2) {
-                    appendInt(y % 100, 2, app);
+                    yield (app, y, M, d, H, m, s, S) -> appendInt(y % 100, 2, app);
                 } else {
-                    appendInt(y, count, app);
+                    yield (app, y, M, d, H, m, s, S) -> appendInt(y, count, app);
                 }
-            };
+            }
             case 'M' -> {
-                if (count == 3) {
-                    String[] names = getMonthNames(locale, false);
-                    yield (app, y, M, d, H, m, s, S) -> app.append(names[M - 1]);
-                } else if (count >= 4) {
-                    String[] names = getMonthNames(locale, true);
-                    yield (app, y, M, d, H, m, s, S) -> app.append(names[M - 1]);
-                } else {
+                if (count <= 2) {
                     yield (app, y, M, d, H, m, s, S) -> appendInt(M, count, app);
+                } else {
+                    String[] names = getMonthNames(locale, count >= 4);
+                    yield (app, y, M, d, H, m, s, S) -> app.append(names[M - 1]);
                 }
             }
             case 'd' -> (app, y, M, d, H, m, s, S) -> appendInt(d, count, app);
             case 'E' -> {
-                if (count >= 4) {
-                    String[] names = getDayNames(locale, true);
-                    yield (app, y, M, d, H, m, s, S) -> app.append(names[getDayOfWeek(y, M, d)]);
-                } else {
-                    String[] names = getDayNames(locale, false);
-                    yield (app, y, M, d, H, m, s, S) -> app.append(names[getDayOfWeek(y, M, d)]);
-                }
+                String[] names = getDayNames(locale, count >= 4);
+                yield (app, y, M, d, H, m, s, S) -> app.append(names[getDayOfWeek(y, M, d)]);
             }
             case 'h' -> (app, y, M, d, H, m, s, S) -> {
                 int hour12 = H % 12;
