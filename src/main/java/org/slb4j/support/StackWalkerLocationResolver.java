@@ -57,11 +57,11 @@ public final class StackWalkerLocationResolver implements LocationResolver {
      * @return the first non-infrastructure-related stack frame, or {@code null} if no such
      *         frame exists in the stack trace.
      */
-    public @Nullable Location resolve() {
+    public Location resolve() {
         return StackWalker.getInstance().walk(this::findStackFrame);
     }
 
-    private @Nullable StackFrameLocation findStackFrame(Stream<StackFrame> stream) {
+    private StackFrameLocation findStackFrame(Stream<StackFrame> stream) {
         try {
             java.util.Iterator<StackFrame> iterator = stream.iterator();
 

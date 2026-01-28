@@ -31,6 +31,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
+import java.util.Objects;
 import java.util.function.Supplier;
 
 /**
@@ -215,7 +216,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     private void rotateWithPattern() throws IOException {
-        String targetName = filePattern;
+        String targetName = Objects.requireNonNullElse(filePattern, path.getFileName()).toString();
         if (targetName.contains("%i")) {
             // Find the first available index
             int index = 1;

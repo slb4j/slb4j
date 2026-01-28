@@ -172,6 +172,7 @@ class LogPatternCompatibilityTest {
             org.apache.logging.log4j.ThreadContext.clearMap();
         }
 
+        assert appender != null;
         assertTrue(appender.getDiscrepancies().isEmpty(), 
             "Discrepancies found:\n" + String.join("\n", appender.getDiscrepancies()));
     }
@@ -242,8 +243,8 @@ class LogPatternCompatibilityTest {
                 StackTraceElement ste = event.getSource();
                 if (ste == null) return null;
                 return new Location() {
-                    @Override public @Nullable String getClassName() { return ste.getClassName(); }
-                    @Override public @Nullable String getMethodName() { return ste.getMethodName(); }
+                    @Override public String getClassName() { return ste.getClassName(); }
+                    @Override public String getMethodName() { return ste.getMethodName(); }
                     @Override public int getLineNumber() { return ste.getLineNumber(); }
                     @Override public @Nullable String getFileName() { return ste.getFileName(); }
                 };

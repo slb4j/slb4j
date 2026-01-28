@@ -43,7 +43,7 @@ class LogPatternTest {
         }
 
         @Override
-        public @Nullable String getMethodName() {
+        public String getMethodName() {
             return "processOrder";
         }
 
@@ -53,7 +53,7 @@ class LogPatternTest {
         }
 
         @Override
-        public @Nullable String getFileName() {
+        public String getFileName() {
             return "OrderService.java";
         }
     };
