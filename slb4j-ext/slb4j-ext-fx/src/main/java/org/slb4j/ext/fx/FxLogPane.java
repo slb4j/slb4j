@@ -78,7 +78,7 @@ import java.util.stream.Stream;
  * The log entries can be filtered by log level, logger name, and message content.
  * Additionally, it supports text search within the log messages.
  */
-public class FxLogPane extends BorderPane implements LogPane {
+public final class FxLogPane extends BorderPane implements LogPane {
 
     private static final double COLUMN_WIDTH_MAX = Double.MAX_VALUE;
     private static final double COLUMN_WIDTH_LARGE = 2000.0;
@@ -153,7 +153,7 @@ public class FxLogPane extends BorderPane implements LogPane {
     private final StringBuilder buffer = new StringBuilder(MAX_BUFFER_SIZE);
 
     private final LogBuffer logBuffer;
-    private boolean dark = false;
+    private boolean darkMode = false;
     private final LogPattern pattern = LogPattern.DEFAULT_PATTERN;
     private final TextArea details;
     private final TableView<@Nullable LogEntry> tableView;
@@ -394,7 +394,7 @@ public class FxLogPane extends BorderPane implements LogPane {
     public void setStyleSheets(String lightCss, String darkCss) {
         this.lightCss = lightCss;
         this.darkCss = darkCss;
-        setDarkMode(dark); // force update of stylesheets
+        setDarkMode(darkMode); // force update of stylesheets
     }
 
     private String formatLogEntry(LogEntry entry) {
@@ -443,12 +443,12 @@ public class FxLogPane extends BorderPane implements LogPane {
     @Override
     public void setDarkMode(boolean dark) {
         getStylesheets().setAll(dark ? darkCss : lightCss);
-        this.dark = dark;
+        this.darkMode = dark;
     }
 
     @Override
     public boolean isDarkMode() {
-        return dark;
+        return darkMode;
     }
 
     private static String cssClassForLogEntry(LogLevel level) {

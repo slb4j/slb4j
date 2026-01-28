@@ -28,6 +28,9 @@ public final class Util {
 
     private static final String LINE_SEPARATOR = System.lineSeparator();
 
+    /** An immutable, pre-initialized, empty array of {@code String}. */
+    public static final String[] EMPTY_STRING_ARRAY = new String[0];
+
     private Util() {
         // utility class, no instances
     }

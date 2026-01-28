@@ -62,7 +62,7 @@ class SamplesTest {
         runSample("slf4j", List.of("Hello from SLF4J!"));
     }
 
-    private void runSample(String sampleName, List<String> expectedOutputs) throws IOException, InterruptedException {
+    private static void runSample(String sampleName, List<String> expectedOutputs) throws IOException, InterruptedException {
         Path projectRoot = Objects.requireNonNull(Paths.get(System.getProperty("user.dir")));
 
         String gradlew = projectRoot.resolve(System.getProperty("os.name").toLowerCase().contains("win") ? "gradlew.bat" : "gradlew").toString();

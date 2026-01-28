@@ -83,7 +83,7 @@ class LogPatternCompatibilityTest {
         context.updateLoggers();
     }
 
-    private void updateLoggers(Configuration config, Appender appender) {
+    private static void updateLoggers(Configuration config, Appender appender) {
         LoggerConfig rootConfig = config.getRootLogger();
         rootConfig.addAppender(appender, Level.ALL, null);
         rootConfig.setLevel(Level.ALL);

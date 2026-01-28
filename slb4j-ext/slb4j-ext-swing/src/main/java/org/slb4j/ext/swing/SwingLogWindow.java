@@ -30,6 +30,7 @@ import java.util.Objects;
  */
 public class SwingLogWindow extends JFrame implements LogWindow {
 
+    /** The LogBuffer instance used to store and manage log entries for the SwingLogWindow. */
     private final LogBuffer logBuffer;
 
     /**

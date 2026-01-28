@@ -20,6 +20,7 @@ import org.apache.commons.logging.LogConfigurationException;
 import org.apache.commons.logging.LogFactory;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.SLB4J;
+import org.slb4j.support.Util;
 
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -49,7 +50,7 @@ public final class LogFactoryJcl extends LogFactory {
 
     @Override
     public String[] getAttributeNames() {
-        return attributes.keySet().toArray(new String[0]);
+        return attributes.keySet().toArray(Util.EMPTY_STRING_ARRAY);
     }
 
     @Override

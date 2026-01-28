@@ -1,5 +1,7 @@
 package org.slb4j.dispatcher;
 
+import org.jspecify.annotations.NullMarked;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
@@ -12,6 +14,7 @@ import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
 
+@NullMarked
 class UniversalDispatcherTest {
 
     @Test
@@ -39,7 +42,7 @@ class UniversalDispatcherTest {
         }
 
         @Override
-        public void handle(long timestamp, String loggerName, LogLevel lvl, String mrk, MDC mdc, LocationResolver locationResolver, Supplier<String> msg, Throwable t) {
+        public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
             // No-op
         }
 

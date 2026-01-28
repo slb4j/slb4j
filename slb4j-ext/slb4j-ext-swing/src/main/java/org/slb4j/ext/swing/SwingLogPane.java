@@ -63,7 +63,7 @@ import java.util.Objects;
  * and search capabilities. It consists of a JTable for displaying log entries and a
  * JTextArea for showing details of the selected log entry.
  */
-public class SwingLogPane extends JPanel implements LogPane {
+public final class SwingLogPane extends JPanel implements LogPane {
 
     /**
      * A default instance of {@link LogPaneTexts} that provides predefined text values
@@ -83,22 +83,36 @@ public class SwingLogPane extends JPanel implements LogPane {
             "Message"
     );
 
+    /** The buffer storing the log entries. */
     private final LogBuffer logBuffer;
+    /** The table displaying the log entries. */
     private final JTable table;
+    /** The table model for the log entries. */
     private final LogTableModel tableModel;
+    /** The sorter for the log table. */
     private final TableRowSorter<LogTableModel> sorter;
+    /** The text area for displaying log entry details. */
     private final JTextArea details;
+    /** The pattern used for formatting log entries. */
     private final LogPattern pattern = LogPattern.DEFAULT_PATTERN;
+    /** Buffer for formatting log entries. */
     @SuppressWarnings("StringBufferField")
     private final StringBuilder buffer = new StringBuilder(4096);
+    /** Whether to automatically scroll to the bottom when new entries are added. */
     private boolean autoScroll = true;
+    /** Whether dark mode is enabled. */
     private boolean darkMode = false;
 
+    /** Background color for light mode. */
     private static final java.awt.Color LIGHT_BG = java.awt.Color.WHITE;
+    /** Foreground color for light mode. */
     private static final java.awt.Color LIGHT_FG = java.awt.Color.BLACK;
+    /** Background color for dark mode. */
     private static final java.awt.Color DARK_BG = new java.awt.Color(43, 43, 43);
+    /** Foreground color for dark mode. */
     private static final java.awt.Color DARK_FG = new java.awt.Color(187, 187, 187);
 
+    /** Colors for different log levels in light mode. */
     private static final java.util.Map<LogLevel, java.awt.Color> LIGHT_COLORS = java.util.Map.of(
             LogLevel.ERROR, new java.awt.Color(139, 0, 0), // darkred
             LogLevel.WARN, java.awt.Color.RED,
@@ -107,6 +121,7 @@ public class SwingLogPane extends JPanel implements LogPane {
             LogLevel.TRACE, java.awt.Color.DARK_GRAY
     );
 
+    /** Colors for different log levels in dark mode. */
     private static final java.util.Map<LogLevel, java.awt.Color> DARK_COLORS = java.util.Map.of(
             LogLevel.ERROR, java.awt.Color.RED,
             LogLevel.WARN, new java.awt.Color(255, 69, 0), // orangered

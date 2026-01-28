@@ -94,7 +94,7 @@ class FxLogPaneTest extends FxTestBase {
      * @param container the FxLogPane to search in
      * @return the ToolBar or null if not found
      */
-    private ToolBar findToolBar(Node container) {
+    private static ToolBar findToolBar(Node container) {
         AtomicReference<ToolBar> result = new AtomicReference<>(null);
         container.lookupAll(".tool-bar").forEach(node -> {
             if (node instanceof ToolBar) {

@@ -141,6 +141,7 @@ public final class TimeStampFormatter {
      *                  or {@code Writer}.
      * @throws IOException if an I/O error occurs while appending to the provided {@code Appendable}.
      */
+    @SuppressWarnings("NumericCastThatLosesPrecision")
     public void appendTo(long timestamp, Appendable app) throws IOException {
         // Step 1: Get the offset for this specific moment (Required for DST)
         int offset = offsetProvider.getOffset(timestamp);
