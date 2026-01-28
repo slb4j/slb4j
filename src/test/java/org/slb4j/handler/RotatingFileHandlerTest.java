@@ -40,7 +40,7 @@ class RotatingFileHandlerTest {
     void testBasicLogging() throws IOException {
         Path logFile = tempDir.resolve("test.log");
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Hello, World!", null);
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Second line", null);
         }
@@ -58,7 +58,7 @@ class RotatingFileHandlerTest {
         Files.writeString(logFile, "Initial content\n");
 
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, true)) {
-            handler.setLogPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Second line", null);
         }
 
@@ -74,7 +74,7 @@ class RotatingFileHandlerTest {
         Files.writeString(logFile, "Initial content\n");
 
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "New content", null);
         }
 
@@ -87,7 +87,7 @@ class RotatingFileHandlerTest {
     void testSizeRotation() throws IOException {
         Path logFile = tempDir.resolve("test-size.log");
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
             handler.setMaxFileSize(10); // Very small size to trigger rotation quickly
             handler.setMaxBackupIndex(2);
 
@@ -118,7 +118,7 @@ class RotatingFileHandlerTest {
     void testTimeRotation() throws Exception {
         Path logFile = tempDir.resolve("test-time.log");
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
             // Use a very small time unit if possible, but ChronoUnit.SECONDS is the smallest truncatedTo supports usually
             handler.setRotationTimeUnit(ChronoUnit.SECONDS);
 
@@ -138,7 +138,7 @@ class RotatingFileHandlerTest {
     void testSizeRotationWithBuffering() throws IOException {
         Path logFile = tempDir.resolve("test-size-buffered.log");
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parse("%msg")); // No newline to keep size predictable
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg")); // No newline to keep size predictable
             handler.setMaxFileSize(10);
             handler.setMaxBackupIndex(2);
 
@@ -166,7 +166,7 @@ class RotatingFileHandlerTest {
     void testFilePatternRotation() throws IOException {
         Path logFile = tempDir.resolve("test-pattern.log");
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
             handler.setFilePattern("test-archived-%i.log");
             handler.setMaxFileSize(1); // force rotation after write
 
@@ -184,7 +184,7 @@ class RotatingFileHandlerTest {
         // Test multiple rotations with pattern
         // We need to re-open the handler, and it should still find test-archived-1.log and use test-archived-2.log
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, true)) {
-            handler.setLogPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
             handler.setFilePattern("test-archived-%i.log");
             handler.setMaxFileSize(1); // force rotation after write
 
@@ -204,7 +204,7 @@ class RotatingFileHandlerTest {
 
         // 1. Test flush on high level
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parse("%msg"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg"));
             handler.setFlushLevel(LogLevel.ERROR);
 
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "info", null);

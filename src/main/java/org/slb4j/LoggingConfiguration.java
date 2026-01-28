@@ -418,7 +418,7 @@ public final class LoggingConfiguration {
 
         handleProperty(properties, prefix + LOGGING_FILTER, filters::get, handler::setFilter, LogFilter::allPass);
         handleProperty(properties, prefix + LOGGER_LAYOUT_PATTERN,
-                LogPattern::parse, p -> {
+                LogPattern::parseLog4jPattern, p -> {
                     if (handler instanceof LogPatternConfigurable patternConfigurable) {
                         patternConfigurable.setLogPattern(p);
                     }

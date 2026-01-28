@@ -53,7 +53,7 @@ public final class LogPattern {
      * 2026-01-11 15:19:09.573 INFO  com.example.Application - Message from SLF4J
      * </pre>
      */
-    public static final LogPattern DEFAULT_PATTERN = parse("%highlight{%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg}%n%ex");
+    public static final LogPattern DEFAULT_PATTERN = parseLog4jPattern("%highlight{%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg}%n%ex");
 
     /**
      * A compact log pattern used to format log entries in a concise and structured manner.
@@ -71,7 +71,7 @@ public final class LogPattern {
      * </ul>
      * Use when a compact and human-readable log format is preferred, such as console-based logging.
      */
-    public static final LogPattern COMPACT_PATTERN = parse("%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%n%ex");
+    public static final LogPattern COMPACT_PATTERN = parseLog4jPattern("%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%n%ex");
 
     /**
      * A predefined {@link LogPattern} instance representing a detailed log format.
@@ -91,7 +91,7 @@ public final class LogPattern {
      * This format provides comprehensive information about log events, including contextual
      * details, useful for debugging and auditing purposes.
      */
-    public static final LogPattern DETAILED_PATTERN = parse("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable");
+    public static final LogPattern DETAILED_PATTERN = parseLog4jPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable");
 
     /**
      * Defines an interface for formatting log entries in a customizable and extensible manner.
@@ -914,7 +914,79 @@ public final class LogPattern {
         }
     }
 
-    @Override
+    /**
+     * Parses a JUL-style pattern string and creates a new {@code LogPattern} instance.
+     *
+     * @param pattern the format pattern in JUL style
+     * @return a {@code LogPattern} instance representing the parsed pattern
+     */
+    public static LogPattern parseJulPattern(String pattern) {
+        String log4jPattern = translateJulToLog4j(pattern);
+        return new LogPattern(log4jPattern);
+    }
+
+    private static String translateJulToLog4j(String pattern) {
+        StringBuilder sb = new StringBuilder();
+        int len = pattern.length();
+        for (int i = 0; i < len; i++) {
+            char c = pattern.charAt(i);
+            if (c == '%' && i + 1 < len) {
+                int j = i + 1;
+                while (j < len && (Character.isDigit(pattern.charAt(j)) || pattern.charAt(j) == '$')) {
+                    j++;
+                }
+                if (j < len && pattern.charAt(j) == 'n') {
+                    sb.append("%n");
+                    i = j;
+                    continue;
+                }
+                // Try to match the whole %n$s or %n$tX pattern
+                String placeholder = pattern.substring(i, Math.min(j + 2, len));
+                if (placeholder.startsWith("%1$t")) {
+                    if (placeholder.length() >= 5) {
+                        char sub = placeholder.charAt(4);
+                        switch (sub) {
+                            case 'Y' -> sb.append("%d{yyyy}");
+                            case 'm' -> sb.append("%d{MM}");
+                            case 'd' -> sb.append("%d{dd}");
+                            case 'H' -> sb.append("%d{HH}");
+                            case 'M' -> sb.append("%d{mm}");
+                            case 'S' -> sb.append("%d{ss}");
+                            case 'L' -> sb.append("%d{SSS}");
+                            default -> sb.append(placeholder);
+                        }
+                        i = j + 1;
+                    } else {
+                        sb.append(c);
+                    }
+                } else if (placeholder.startsWith("%2$s")) {
+                    sb.append("%M");
+                    i = j;
+                } else if (placeholder.startsWith("%3$s")) {
+                    sb.append("%c");
+                    i = j;
+                } else if (placeholder.startsWith("%4$s")) {
+                    sb.append("%p");
+                    i = j;
+                } else if (placeholder.startsWith("%5$s")) {
+                    sb.append("%m");
+                    i = j;
+                } else if (placeholder.startsWith("%6$s")) {
+                    sb.append("%ex");
+                    i = j;
+                } else if (placeholder.startsWith("%%")) {
+                    sb.append("%%");
+                    i = i + 1;
+                } else {
+                    sb.append(c);
+                }
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
     public String toString() {
         return getPattern();
     }
@@ -925,7 +997,7 @@ public final class LogPattern {
      * @param pattern the format pattern in Log4J style, which may include placeholders and literals
      * @return a {@code LogPattern} instance representing the parsed pattern
      */
-    public static LogPattern parse(String pattern) {
+    public static LogPattern parseLog4jPattern(String pattern) {
         return new LogPattern(pattern);
     }
 

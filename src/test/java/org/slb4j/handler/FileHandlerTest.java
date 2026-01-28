@@ -39,7 +39,7 @@ class FileHandlerTest {
     void testBasicLogging() throws IOException {
         Path logFile = tempDir.resolve("test.log");
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Hello, World!", null);
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Second line", null);
         }
@@ -57,7 +57,7 @@ class FileHandlerTest {
         Files.writeString(logFile, "Initial content\n");
 
         try (FileHandler handler = new FileHandler("test", logFile, true)) {
-            handler.setLogPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Second line", null);
         }
 
@@ -73,7 +73,7 @@ class FileHandlerTest {
         Files.writeString(logFile, "Initial content\n");
 
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parse("%msg%n"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "New content", null);
         }
 
@@ -88,7 +88,7 @@ class FileHandlerTest {
 
         // 1. Test flush on high level
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parse("%msg"));
+            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg"));
             handler.setFlushLevel(LogLevel.ERROR);
 
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "info", null);

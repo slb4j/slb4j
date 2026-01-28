@@ -99,7 +99,7 @@ class LogPatternLog4jCompatibilityTest {
                 .withConfiguration(config)
                 .build();
 
-        LogPattern slb4jPattern = LogPattern.parse(pattern);
+        LogPattern slb4jPattern = LogPattern.parseLog4jPattern(pattern);
 
         appender = new CompatibilityAppender(APPENDER_NAME, null, log4jLayout, slb4jPattern);
         appender.start();

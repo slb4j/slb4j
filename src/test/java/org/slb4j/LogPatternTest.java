@@ -110,7 +110,7 @@ class LogPatternTest {
     void testPattern(String pattern, String expected) throws IOException {
         String threadName = Thread.currentThread().getName();
         String updatedExpected = expected.replace("main", threadName).replaceAll("\n", System.lineSeparator());
-        LogPattern fmt = LogPattern.parse(pattern);
+        LogPattern fmt = LogPattern.parseLog4jPattern(pattern);
 
         long timestamp = LocalDateTime.of(2026, 1, 10, 14, 23, 41, 123_000_000)
                 .atZone(ZoneId.systemDefault())
@@ -149,7 +149,7 @@ class LogPatternTest {
     @Test
     void testPatternWithHighlight() throws IOException {
         String pattern = "%highlight{%level %msg}%n";
-        LogPattern fmt = LogPattern.parse(pattern);
+        LogPattern fmt = LogPattern.parseLog4jPattern(pattern);
 
         long timestamp = System.currentTimeMillis();
         String loggerName = "test.Logger";
@@ -170,7 +170,7 @@ class LogPatternTest {
     @Test
     void testPatternWithThrowable() throws IOException {
         String pattern = "%msg%n%ex";
-        LogPattern fmt = LogPattern.parse(pattern);
+        LogPattern fmt = LogPattern.parseLog4jPattern(pattern);
 
         long timestamp = System.currentTimeMillis();
         String loggerName = "test.Logger";
