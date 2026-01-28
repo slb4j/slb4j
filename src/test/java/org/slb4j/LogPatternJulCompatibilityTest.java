@@ -17,6 +17,9 @@ package org.slb4j;
 
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
+import org.junit.jupiter.api.AfterAll;
+import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slb4j.frontend.jul.JulHandler;
@@ -24,6 +27,7 @@ import org.slb4j.handler.ConsoleHandler;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -32,8 +36,20 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@Isolated // test changes the default locale!
 @NullMarked
 class LogPatternJulCompatibilityTest {
+    static final Locale systemLoacle = Locale.getDefault();
+
+    @BeforeAll
+    static void setup() {
+        Locale.setDefault(Locale.ROOT);
+    }
+
+    @AfterAll
+    static void teardown() {
+        Locale.setDefault(systemLoacle);
+    }
 
     @ParameterizedTest
     @ValueSource(strings = {
@@ -63,6 +79,11 @@ class LogPatternJulCompatibilityTest {
         // 2. Get SLB4J output
         String slb4jOutput = formatWithSlb4j(slb4jPattern, logRecord);
 
+        System.out.println("Pattern: " + julPattern);
+        System.out.print("JUL:     " + julOutput);
+        System.out.print("SLB4J:   " + slb4jOutput);
+        System.out.println("---");
+
         // 3. Compare
         assertEquals(julOutput, slb4jOutput, "Discrepancy for pattern: " + julPattern);
     }
@@ -86,8 +107,8 @@ class LogPatternJulCompatibilityTest {
         };
 
         Throwable t = logRecord.getThrown();
-        
-        slb4jPattern.formatLogEntry(sb, timestamp, loggerName, level, null, mdc, locResolver, 
+
+        slb4jPattern.formatLogEntry(sb, timestamp, loggerName, level, null, mdc, locResolver,
                 () -> JulHandler.formatJulMessage(logRecord.getMessage(), logRecord.getParameters()).get(),
                 t, ConsoleHandler.COLOR_MAP_DEFAULT.getOrDefault(level, ConsoleCode.empty()));
 

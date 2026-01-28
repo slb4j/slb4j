@@ -333,6 +333,21 @@ public final class LogPattern {
             this.useJulNames = useJulNames;
         }
 
+        /**
+         * Constructs a LevelEntry instance with the specified formatting configuration.
+         *
+         * @param minWidth The minimum width of the formatted log level string. If the formatted
+         *                 output is shorter than this width, padding will be added.
+         * @param maxWidth The maximum width of the formatted log level string. If the formatted
+         *                 output is longer than this width, it will be truncated.
+         * @param leftAlign A flag indicating whether the log level string should be left-aligned.
+         *                  If true, padding will be added to the right of the string; otherwise,
+         *                  padding will be added to the left.
+         */
+        public LevelEntry(int minWidth, int maxWidth, boolean leftAlign) {
+            this(minWidth, maxWidth, leftAlign, false);
+        }
+
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             String name = useJulNames ? translateToJulLevelName(lvl) : lvl.name();
@@ -343,7 +358,7 @@ public final class LogPattern {
             return switch (lvl) {
                 case TRACE -> "FINER";
                 case DEBUG -> "FINE";
-                case INFO -> "INFORMATION";
+                case INFO -> "INFO";
                 case WARN -> "WARNING";
                 case ERROR -> "SEVERE";
             };
