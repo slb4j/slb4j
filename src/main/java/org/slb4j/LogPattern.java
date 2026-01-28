@@ -595,7 +595,7 @@ public final class LogPattern {
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, Supplier<@Nullable String> msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            String className = location != null
+            String className = location != null && location.getClassName() != null
                     ? classNames.computeIfAbsent(location.getClassName(), clsn -> abbreviate(clsn, abbreviationLength, useDotAbbreviation).toString())
                     : null;
             appendFormatted(app, className, true);

@@ -361,7 +361,7 @@ public final class LoggingConfiguration {
      * @param defaultValue a {@link Supplier} to provide a default value if the property is not found or is null
      * @throws IllegalStateException if the property value is invalid or the conversion fails
      */
-    private static <T> void handleProperty(Properties properties, String key, Function<String, T> convert, Consumer<T> action, Supplier<T> defaultValue) {
+    private static <T> void handleProperty(Properties properties, String key, Function<String, T> convert, Consumer<@Nullable T> action, Supplier<@Nullable T> defaultValue) {
         String s = properties.getProperty(key);
         try {
             T value = s != null ? convert.apply(s.strip()) : defaultValue.get();
@@ -541,7 +541,7 @@ public final class LoggingConfiguration {
      *
      * @return the root {@link LogFilter} instance, or {@code null} if no root filter is available
      */
-    public @Nullable LogFilter getRootFilter() {
+    public LogFilter getRootFilter() {
         return filters.getOrDefault("", LogFilter.allPass());
     }
 
