@@ -15,6 +15,7 @@
  */
 package org.slb4j;
 
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
+@NullMarked
 class LogPatternTest {
 
     private static final LocationResolver LOC = () -> new Location() {

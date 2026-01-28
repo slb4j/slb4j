@@ -48,16 +48,16 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * A test class to verify the compatibility of log patterns between Log4j and SLB4J.
- *
+ * <p>
  * This class sets up a testing environment for comparing log outputs generated
  * by Log4j and SLB4J using various logging patterns. It ensures that the formatting
  * behavior is consistent across both frameworks.
- *
+ * <p>
  * Responsibilities:
  * - Configuring Log4j with custom patterns.
  * - Capturing log events and comparing outputs between Log4j and SLB4J.
  * - Verifying compatibility by asserting that there are no discrepancies in the log outputs.
- *
+ * <p>
  * An internal `CompatibilityAppender` class is used to facilitate the collection and comparison
  * of logged outputs. Discrepancies, if any, are captured for debugging purposes.
  */
@@ -65,8 +65,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class LogPatternCompatibilityTest {
 
     private static final String APPENDER_NAME = "TestAppender";
-    private CompatibilityAppender appender;
-    private LoggerContext context;
+    private @Nullable CompatibilityAppender appender;
+    private @Nullable LoggerContext context;
 
     @BeforeEach
     void setUp() {
