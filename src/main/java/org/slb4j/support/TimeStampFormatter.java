@@ -3,6 +3,7 @@ package org.slb4j.support;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.ZoneId;
+import java.util.Locale;
 
 /**
  * A utility class for formatting timestamps based on custom patterns.
@@ -44,11 +45,13 @@ public final class TimeStampFormatter {
 
     private final Part[] compiledParts;
     private final ZoneId zoneId;
+    private final Locale locale;
     private final TimeZoneOffsetProvider offsetProvider;
 
-    private TimeStampFormatter(Part[] parts, ZoneId zoneId) {
+    private TimeStampFormatter(Part[] parts, ZoneId zoneId, Locale locale) {
         this.compiledParts = parts;
         this.zoneId = zoneId;
+        this.locale = locale;
         this.offsetProvider = new TimeZoneOffsetProvider(zoneId);
     }
 
@@ -64,7 +67,7 @@ public final class TimeStampFormatter {
      * @throws IllegalArgumentException if the pattern is invalid or contains unsupported components.
      */
     public static TimeStampFormatter parse(String pattern) {
-        return parse(pattern, ZoneId.systemDefault());
+        return parse(pattern, ZoneId.systemDefault(), Locale.getDefault());
     }
 
     /**
@@ -82,6 +85,25 @@ public final class TimeStampFormatter {
      * @throws IllegalArgumentException if the pattern is invalid or contains unsupported components.
      */
     public static TimeStampFormatter parse(String pattern, ZoneId zoneId) {
+        return parse(pattern, zoneId, Locale.getDefault());
+    }
+
+    /**
+     * Parses the given pattern, time zone and locale to create a {@code TimeStampFormatter}.
+     * The pattern describes how a timestamp should be formatted or parsed using
+     * specific characters to represent date or time components, and literal sequences
+     * for fixed text.
+     *
+     * @param pattern the pattern describing the date and time format, where special
+     *                characters represent timestamp components and single quotes
+     *                can be used to define literal text.
+     * @param zoneId  the time zone to be used in conjunction with the parsed pattern.
+     * @param locale  the locale to be used for formatting month and day names.
+     * @return a {@code TimeStampFormatter} instance configured according to the
+     *         provided pattern, time zone and locale.
+     * @throws IllegalArgumentException if the pattern is invalid or contains unsupported components.
+     */
+    public static TimeStampFormatter parse(String pattern, ZoneId zoneId, Locale locale) {
         java.util.List<Part> parts = new java.util.ArrayList<>();
         int i = 0;
         boolean inQuote = false;
@@ -117,11 +139,11 @@ public final class TimeStampFormatter {
                     i++;
                     count++;
                 }
-                parts.add(createPart(c, count));
+                parts.add(createPart(c, count, locale));
             }
             i++;
         }
-        return new TimeStampFormatter(parts.toArray(Part[]::new), zoneId);
+        return new TimeStampFormatter(parts.toArray(Part[]::new), zoneId, locale);
     }
 
     private static Part createLiteralPart(String literal) {
@@ -178,29 +200,6 @@ public final class TimeStampFormatter {
         }
     }
 
-    @FunctionalInterface
-    private interface Part {
-        void append(Appendable app, int y, int M, int d, int H, int m, int s, int S) throws IOException;
-    }
-
-    private static final String[] MONTH_NAMES = {
-            "Jan.", "Feb.", "Mar.", "Apr.", "May", "Jun.",
-            "Jul.", "Aug.", "Sep.", "Oct.", "Nov.", "Dec."
-    };
-
-    private static final String[] MONTH_NAMES_LONG = {
-            "January", "February", "March", "April", "May", "June",
-            "July", "August", "September", "October", "November", "December"
-    };
-
-    private static final String[] DAY_NAMES = {
-            "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
-    };
-
-    private static final String[] DAY_NAMES_LONG = {
-            "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
-    };
-
     private static int getDayOfWeek(int y, int m, int d) {
         if (m < 3) {
             m += 12;
@@ -210,12 +209,36 @@ public final class TimeStampFormatter {
         int j = y / 100;
         // Zeller's congruence
         int h = (d + 13 * (m + 1) / 5 + k + k / 4 + j / 4 + 5 * j) % 7;
-        // ISO day of week (1=Mon, ..., 7=Sun) -> Zeller returns 0=Sat, 1=Sun, ..., 6=Fri
-        // We want 0=Sun, ..., 6=Sat for our DAY_NAMES array
-        return (h + 6) % 7;
+        // Zeller returns 0=Sat, 1=Sun, ..., 6=Fri
+        // Calendar.SUNDAY = 1, MONDAY = 2, ..., SATURDAY = 7
+        int[] zellerToCalendar = {7, 1, 2, 3, 4, 5, 6};
+        return zellerToCalendar[h];
     }
 
-    private static Part createPart(char c, int count) {
+    private static String[] getMonthNames(Locale locale, boolean full) {
+        java.text.DateFormatSymbols symbols = java.text.DateFormatSymbols.getInstance(locale);
+        String[] months = full ? symbols.getMonths() : symbols.getShortMonths();
+        // DateFormatSymbols.getMonths() returns an array of 13 strings, the last one is empty.
+        // We only need the first 12.
+        if (months.length > 12) {
+            String[] result = new String[12];
+            System.arraycopy(months, 0, result, 0, 12);
+            return result;
+        }
+        return months;
+    }
+
+    private static String[] getDayNames(Locale locale, boolean full) {
+        java.text.DateFormatSymbols symbols = java.text.DateFormatSymbols.getInstance(locale);
+        return full ? symbols.getWeekdays() : symbols.getShortWeekdays();
+    }
+
+    private static String[] getAmPmStrings(Locale locale) {
+        java.text.DateFormatSymbols symbols = java.text.DateFormatSymbols.getInstance(locale);
+        return symbols.getAmPmStrings();
+    }
+
+    private static Part createPart(char c, int count, Locale locale) {
         return switch (c) {
             case 'y' -> (app, y, M, d, H, m, s, S) -> {
                 if (count == 2) {
@@ -224,24 +247,27 @@ public final class TimeStampFormatter {
                     appendInt(y, count, app);
                 }
             };
-            case 'M' -> (app, y, M, d, H, m, s, S) -> {
+            case 'M' -> {
                 if (count == 3) {
-                    app.append(MONTH_NAMES[M - 1]);
+                    String[] names = getMonthNames(locale, false);
+                    yield (app, y, M, d, H, m, s, S) -> app.append(names[M - 1]);
                 } else if (count >= 4) {
-                    app.append(MONTH_NAMES_LONG[M - 1]);
+                    String[] names = getMonthNames(locale, true);
+                    yield (app, y, M, d, H, m, s, S) -> app.append(names[M - 1]);
                 } else {
-                    appendInt(M, count, app);
+                    yield (app, y, M, d, H, m, s, S) -> appendInt(M, count, app);
                 }
-            };
+            }
             case 'd' -> (app, y, M, d, H, m, s, S) -> appendInt(d, count, app);
-            case 'E' -> (app, y, M, d, H, m, s, S) -> {
-                int dow = getDayOfWeek(y, M, d);
+            case 'E' -> {
                 if (count >= 4) {
-                    app.append(DAY_NAMES_LONG[dow]);
+                    String[] names = getDayNames(locale, true);
+                    yield (app, y, M, d, H, m, s, S) -> app.append(names[getDayOfWeek(y, M, d)]);
                 } else {
-                    app.append(DAY_NAMES[dow]);
+                    String[] names = getDayNames(locale, false);
+                    yield (app, y, M, d, H, m, s, S) -> app.append(names[getDayOfWeek(y, M, d)]);
                 }
-            };
+            }
             case 'h' -> (app, y, M, d, H, m, s, S) -> {
                 int hour12 = H % 12;
                 if (hour12 == 0) hour12 = 12;
@@ -251,7 +277,10 @@ public final class TimeStampFormatter {
             case 'm' -> (app, y, M, d, H, m, s, S) -> appendInt(m, count, app);
             case 's' -> (app, y, M, d, H, m, s, S) -> appendInt(s, count, app);
             case 'S' -> (app, y, M, d, H, m, s, S) -> appendInt(S, count, app);
-            case 'a' -> (app, y, M, d, H, m, s, S) -> app.append(H < 12 ? "AM" : "PM");
+            case 'a' -> {
+                String[] ampm = getAmPmStrings(locale);
+                yield (app, y, M, d, H, m, s, S) -> app.append(H < 12 ? ampm[0] : ampm[1]);
+            }
             default -> switch (count) {
                 case 0 -> (app, y, M, d, H, m, s, S) -> {};
                 case 1 -> (app, y, M, d, H, m, s, S) -> app.append(c);
@@ -261,6 +290,11 @@ public final class TimeStampFormatter {
                 }
             };
         };
+    }
+
+    @FunctionalInterface
+    private interface Part {
+        void append(Appendable app, int y, int M, int d, int H, int m, int s, int S) throws IOException;
     }
 
     private static void appendInt(int val, int digits, Appendable app) throws IOException {

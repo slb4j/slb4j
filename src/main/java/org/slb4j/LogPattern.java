@@ -23,6 +23,7 @@ import java.io.IOException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
@@ -38,7 +39,7 @@ public final class LogPattern {
     private static final String NEWLINE = System.lineSeparator();
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
-    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?|%%|%(?![a-zA-Z])");
+    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?(\\{([^}]+)?})?|%%|%(?![a-zA-Z])");
 
     private static final Pattern LOGGER_PRECISION_PATTERN = Pattern.compile("^(\\d+)(\\.)?$");
 
@@ -863,6 +864,7 @@ public final class LogPattern {
      */
     public static final class DateEntry implements LogPatternEntry {
         private final String datePattern;
+        private final Locale locale;
         private final TimeStampFormatter formatter;
 
         /**
@@ -874,13 +876,24 @@ public final class LogPattern {
          *                If the pattern is empty, "HH:mm:ss" will be used as the default.
          */
         public DateEntry(String pattern) {
+            this(pattern, Locale.getDefault());
+        }
+
+        /**
+         * Constructs a {@code DateEntry} instance with the specified date-time pattern and locale.
+         *
+         * @param pattern the pattern to be used for formatting date-time values.
+         * @param locale  the locale to be used for formatting.
+         */
+        public DateEntry(String pattern, Locale locale) {
             this.datePattern = pattern;
+            this.locale = locale;
             this.formatter = (switch (pattern) {
-                case "ISO8601" -> TimeStampFormatter.parse("yyyy-MM-dd'T'HH:mm:ss,SSS", ZONE_ID);
-                case "HH:mm:ss,SSS" -> TimeStampFormatter.parse("HH:mm:ss,SSS", ZONE_ID);
-                case "yyyy-MM-dd HH:mm:ss,SSS" -> TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID);
-                case "yyyy-MM-dd HH:mm:ss" -> TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss", ZONE_ID);
-                default -> TimeStampFormatter.parse(pattern.isEmpty() ? "HH:mm:ss" : pattern, ZONE_ID);
+                case "ISO8601" -> TimeStampFormatter.parse("yyyy-MM-dd'T'HH:mm:ss,SSS", ZONE_ID, locale);
+                case "HH:mm:ss,SSS" -> TimeStampFormatter.parse("HH:mm:ss,SSS", ZONE_ID, locale);
+                case "yyyy-MM-dd HH:mm:ss,SSS" -> TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, locale);
+                case "yyyy-MM-dd HH:mm:ss" -> TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss", ZONE_ID, locale);
+                default -> TimeStampFormatter.parse(pattern.isEmpty() ? "HH:mm:ss" : pattern, ZONE_ID, locale);
             });
         }
 
@@ -896,7 +909,15 @@ public final class LogPattern {
 
         @Override
         public String getLog4jPattern() {
-            return datePattern.isEmpty() ? "%d" : "%d{" + datePattern + "}";
+            StringBuilder sb = new StringBuilder();
+            sb.append("%d");
+            if (!datePattern.isEmpty()) {
+                sb.append("{").append(datePattern).append("}");
+            }
+            if (!locale.equals(Locale.getDefault())) {
+                sb.append("{").append(locale.toLanguageTag()).append("}");
+            }
+            return sb.toString();
         }
     }
 
@@ -1202,6 +1223,7 @@ public final class LogPattern {
             String maxWidthStr = matcher.group(2);
             String type = matcher.group(3);
             String options = matcher.group(5);
+            String localeStr = matcher.group(7);
 
             boolean leftAlign = minWidthStr != null && minWidthStr.startsWith("-");
             int minWidth = (minWidthStr != null && !minWidthStr.isEmpty()) ? Math.abs(Integer.parseInt(minWidthStr)) : 0;
@@ -1228,7 +1250,13 @@ public final class LogPattern {
                 case "ex", "exception", "throwable" -> entries.add(new ExceptionEntry(minWidth, maxWidth, leftAlign));
                 case "Cstart" -> entries.add(new ColorStartEntry(minWidth, maxWidth, leftAlign));
                 case "Cend" -> entries.add(new ColorEndEntry(minWidth, maxWidth, leftAlign));
-                case "d" -> entries.add(new DateEntry(options != null ? options : ""));
+                case "d" -> {
+                    Locale locale = Locale.getDefault();
+                    if (localeStr != null) {
+                        locale = Locale.forLanguageTag(localeStr.replace('_', '-'));
+                    }
+                    entries.add(new DateEntry(options != null ? options : "", locale));
+                }
                 case "%%", "%" -> entries.add(new LiteralEntry("%"));
                 case "%n", "n" -> entries.add(new NewlineEntry());
                 default -> entries.add(new LiteralEntry(match));

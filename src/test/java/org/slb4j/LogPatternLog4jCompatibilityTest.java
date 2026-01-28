@@ -155,7 +155,13 @@ class LogPatternLog4jCompatibilityTest {
             // predefined patterns: DEFAULT
             "%highlight{%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg}%n%ex",
             // predefined patterns: DETAILED
-            "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable"
+            "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable",
+            // month names and 12 hour time
+            "[%d{EEEE, MMMM dd, yyyy - hh:mm a}] %-5p: %m%n",
+            "%d{dd-MMM hh:mm:ss a} %-5p %c{1} - %m%n",
+            // patterns with locale
+            "%d{dd-MMMM-yyyy}{de-DE} %p %m%n",
+            "%d{EEEE, dd. MMMM yyyy}{de-DE} %p %m%n"
     })
     void testPatternCompatibility(String pattern) {
         configureLog4j(pattern);
@@ -173,7 +179,7 @@ class LogPatternLog4jCompatibilityTest {
         }
 
         assert appender != null;
-        assertTrue(appender.getDiscrepancies().isEmpty(), 
+        assertTrue(appender.getDiscrepancies().isEmpty(),
             "Discrepancies found:\n" + String.join("\n", appender.getDiscrepancies()));
     }
 
