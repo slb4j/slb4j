@@ -4,15 +4,16 @@
 
 SLB4J is a **Simple Logging Backend for Java** that comes as a single JAR without any dependencies.
 
-- Log4J pattern syntax
-- Logging to console or log files
-- log rotation
-- filtering
-- configuration using a properties file or in code
+- configuration using properties file or in code
+- Log4J pattern syntax (applied when log4j2.properties or test-log4j2.properties is used)
+- Java Util Logging pattern syntax (applied when logging.properties is used)
+- Console and log file logging
+- log file rotation
+- filtering based on level, logger name and package name
 
 There is also an extension package that provides UI elements for live monitoring an application's log messages.
 
-Java 21+ is required.
+**Java 21+ is required.**
 
 ## Supported Logging APIs
 
@@ -53,7 +54,7 @@ dependencies {
 }
 ```
 
-### If the main application uses JUL Logging: nitialize the Library
+### (Only) if the main application uses JUL Logging: initialize the Library
 
 **Note:** This is only necessary if the main application is using JUL logging since JUL does not lookup the backend
 implementation using SPI (Service Provider Infrastructure). If your main application uses one of the other 
@@ -80,7 +81,7 @@ SLB4J provides a unified logging interface, so you can remove other logging back
 | java.util.logging (JUL) | (part of JDK)   | Built-in Java logging API since Java 1.4. Often bridged to SLF4J for consistent logging.                                        |
 | Commons Logging (JCL)   | commons-logging | Lightweight logging facade, mostly used in older libraries; usually bridged to SLF4J today.                                     |
 
-**Remove backends, bridges, and bindings** if you have them in your project:
+**Remove logging backends, bridges, and bindings** if you have them in your project:
 
 | Title                   | Artifact Name    | Description                            |
 |-------------------------|------------------|----------------------------------------|
@@ -120,13 +121,17 @@ correctly.
   - Log4J2
   - SLF4J
   - JCL (Jakarta Commons Logging / Apache Commons Logging)
-- **Log4J2 compatible message pattern**
-  - Standard patterns
-  - MDC support
-  - Marker support
-  - Location support
-- `logging.properties` file
-- Filters
+- **Log4J2 compatibility**
+  - automaticially load and apply log4j2.properties / test-log4j2.properties
+  - Log4J2 compatible message pattern 
+    - Standard patterns
+    - MDC support
+    - Marker support
+    - Location support
+    - Locale support
+  - ** Java Util Logging compatibility**
+    - automaticially load and apply logging.properties
+- Logging filters
 - UI components for live monitoring
 - Benchmarks
 - Setup CI
@@ -146,10 +151,12 @@ correctly.
 
 #### Async logging
 
-The file handlers already use **pre-allocated buffers** to reduce lock contention in multi-threaded 
-environments. Even async loggers will hit a throughput limit determined by the I/O system and must either block or
-drop messages.
+The file handlers already are quite performant (generally on par with Log4J and Logback or slightly faster). I have
+experimented with two different async implementations but am undecided if it's worth implementing as quite some
+overhead is added and will only benefit when really large amounts of messages are logged (on my system: > 500,000
+messages per second).
 
-You can configure SLB4J to flush only messages with level INFO or higher. Messages below that level are buffered
-and written once the buffer is full or a high-priority message triggers a flush.
-
+If it is acceptable to loose some trace and debug level messages in case of a sudden system outage, you can
+configure SLB4J to only flush messages with level INFO or higher. Messages below that level will then be buffered
+and written out once the buffer is full or a higher-priority message triggers a flush. This can drastically
+improve performance without using async logging.
