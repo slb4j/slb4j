@@ -28,6 +28,7 @@ import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
 import org.apache.logging.log4j.core.layout.PatternLayout;
+import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -45,6 +46,22 @@ import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/**
+ * A test class to verify the compatibility of log patterns between Log4j and SLB4J.
+ *
+ * This class sets up a testing environment for comparing log outputs generated
+ * by Log4j and SLB4J using various logging patterns. It ensures that the formatting
+ * behavior is consistent across both frameworks.
+ *
+ * Responsibilities:
+ * - Configuring Log4j with custom patterns.
+ * - Capturing log events and comparing outputs between Log4j and SLB4J.
+ * - Verifying compatibility by asserting that there are no discrepancies in the log outputs.
+ *
+ * An internal `CompatibilityAppender` class is used to facilitate the collection and comparison
+ * of logged outputs. Discrepancies, if any, are captured for debugging purposes.
+ */
+@NullMarked
 class LogPatternCompatibilityTest {
 
     private static final String APPENDER_NAME = "TestAppender";
@@ -64,6 +81,15 @@ class LogPatternCompatibilityTest {
         System.clearProperty("log4j2.loggerContextFactory");
     }
 
+    /**
+     * Configures Log4j with a specified logging pattern.
+     * <p>
+     * This method initializes a Log4j appender with a custom pattern that determines
+     * the log message formatting. It updates the configuration of the logging context
+     * and applies the new appender to all loggers.
+     *
+     * @param pattern the logging pattern to be used for formatting log messages
+     */
     private void configureLog4j(String pattern) {
         context = (LoggerContext) LogManager.getContext(false);
         Configuration config = context.getConfiguration();
@@ -83,12 +109,24 @@ class LogPatternCompatibilityTest {
         context.updateLoggers();
     }
 
+    /**
+     * Updates the configuration of loggers by adding a given appender and setting the logging level.
+     *
+     * The given appender is added to the root logger of the provided configuration, and the log level
+     * is set to `Level.ALL` to capture all log messages irrespective of their severity.
+     *
+     * @param config the logging configuration to update
+     * @param appender the appender to attach to the root logger
+     */
     private static void updateLoggers(Configuration config, Appender appender) {
         LoggerConfig rootConfig = config.getRootLogger();
         rootConfig.addAppender(appender, Level.ALL, null);
         rootConfig.setLevel(Level.ALL);
     }
 
+    /**
+     * Tests Log4j pattern compatibility with SLF4J bridge
+     */
     @ParameterizedTest
     @ValueSource(strings = {
             "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %highlight{%-5level} %logger{36} - %msg%n",
@@ -138,6 +176,24 @@ class LogPatternCompatibilityTest {
             "Discrepancies found:\n" + String.join("\n", appender.getDiscrepancies()));
     }
 
+    /**
+     * Represents an appender that compares log output between Log4j and an SLF4J-like logging framework.
+     *
+     * This appender is designed for testing compatibility between the Log4j formatter and the SLB4J formatter.
+     * It performs the following tasks:
+     * - Captures log events and formats them using both Log4j and SLB4J.
+     * - Compares the outputs from both frameworks.
+     * - Records discrepancies where the formatted outputs differ.
+     *
+     * The appender uses a provided LOG4J-like log pattern to format log events. Discrepancies can be retrieved
+     * for further analysis.
+     *
+     * Extends:
+     * AbstractAppender - Provides the base functionality for custom Log4j appenders.
+     *
+     * Thread Safety:
+     * This class is not thread-safe as it uses a non-thread-safe collection (e.g., ArrayList) for storing discrepancies.
+     */
     private static class CompatibilityAppender extends AbstractAppender {
         private final LogPattern slb4jPattern;
         private final List<String> discrepancies = new ArrayList<>();
