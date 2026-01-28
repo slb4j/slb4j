@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * of logged outputs. Discrepancies, if any, are captured for debugging purposes.
  */
 @NullMarked
-class LogPatternCompatibilityTest {
+class LogPatternLog4jCompatibilityTest {
 
     private static final String APPENDER_NAME = "TestAppender";
     private @Nullable CompatibilityAppender appender;
@@ -125,7 +125,7 @@ class LogPatternCompatibilityTest {
     }
 
     /**
-     * Tests Log4j pattern compatibility with SLF4J bridge
+     * Tests SLB4J formatter compatibility with Log4j formatter
      */
     @ParameterizedTest
     @ValueSource(strings = {
@@ -178,7 +178,7 @@ class LogPatternCompatibilityTest {
     }
 
     /**
-     * Represents an appender that compares log output between Log4j and an SLF4J-like logging framework.
+     * Represents an appender that compares log output between Log4j and an SLB4J.
      * <p>
      * This appender is designed for testing compatibility between the Log4j formatter and the SLB4J formatter.
      * It performs the following tasks:
