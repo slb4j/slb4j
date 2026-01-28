@@ -136,6 +136,16 @@ final class LevelMap {
         }
     }
 
+    /**
+     * Adds or updates the log level for the specified logger name in the hierarchical structure.
+     * This method ensures that the logger name is correctly mapped to the given log level, creating
+     * intermediate nodes as necessary within the logger hierarchy.
+     *
+     * @param loggerName the hierarchical name of the logger for which the log level is being set;
+     *                   must not end with a '.' character
+     * @param level      the {@code LogLevel} to associate with the specified logger name
+     * @throws IllegalArgumentException if the {@code loggerName} ends with a '.' character
+     */
     public void put(String loggerName, LogLevel level) {
         if (loggerName.isEmpty()) {
             root.level = level;
@@ -159,9 +169,21 @@ final class LevelMap {
         current.children.computeIfAbsent(name.subSequence(start, name.length()), k -> new Node()).level = level;
     }
 
+    /**
+     * Retrieves the {@link LogLevel} associated with the specified class name by traversing
+     * the hierarchical structure. If no specific log level is found for the given class name,
+     * the closest ancestor's log level is returned. The method starts at the root node
+     * and iteratively progresses through each segment of the class name.
+     *
+     * @param className the fully qualified name of the class whose log level is being queried
+     * @return the {@link LogLevel} associated with the class name or its nearest ancestor;
+     *         defaults to the root level if no specific level is found
+     */
     public LogLevel level(String className) {
         Node current = root;
         LogLevel level = root.level;
+
+        assert level != null : "internal error! Root level should never be null.";
 
         int start = 0;
         int dot;
@@ -172,7 +194,10 @@ final class LevelMap {
             SharedString segment = name.subSequence(start, dot);
 
             current = current.children.get(segment);
-            if (current == null) return level;
+            if (current == null) {
+                assert level != null : "internal error! Root level should never be null.";
+                return level;
+            }
 
             if (current.level != null) {
                 level = current.level;
@@ -187,6 +212,7 @@ final class LevelMap {
             level = current.level;
         }
 
+        assert level != null : "internal error! Root level should never be null.";
         return level;
     }
 
