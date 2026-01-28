@@ -33,6 +33,8 @@ import java.util.concurrent.ConcurrentHashMap;
  * This allows for retrieval of the most specific log level associated with a given logger name.
  */
 final class LevelMap {
+    public static final String ROOT_LEVEL_SHOULD_NEVER_BE_NULL = "internal error! Root level should never be null.";
+
     // The root level handles the "empty" or "root" logger
     private final Node root;
 
@@ -69,9 +71,11 @@ final class LevelMap {
      */
     public Map<String, LogLevel> rules() {
         Map<String, LogLevel> rules = new java.util.LinkedHashMap<>();
-        if (root.level != null) {
-            rules.put("", root.level);
-        }
+
+        LogLevel rootLevel = root.level;
+        assert rootLevel != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
+        rules.put("", rootLevel);
+
         // traverse the complete tree and add all rules to the map
         traverseAndCollectRules(rules, "", root);
         return rules;
@@ -89,8 +93,9 @@ final class LevelMap {
             String loggerName = prefix.isEmpty() ? entry.getKey().toString() : prefix + "." + entry.getKey();
             Node childNode = entry.getValue();
 
-            if (childNode.level != null) {
-                rules.put(loggerName, childNode.level);
+            LogLevel lvl = childNode.level; // store volatile variable locally
+            if (lvl != null) {
+                rules.put(loggerName, lvl);
             }
 
             traverseAndCollectRules(rules, loggerName, childNode);
@@ -124,7 +129,8 @@ final class LevelMap {
          * @return the same {@code StringBuilder} instance, appended with the string representation of the node
          */
         public StringBuilder appendTo(StringBuilder sb) {
-            sb.append(level == null ? "null" : level.name());
+            LogLevel lvl = level; // store volatile field locally
+            sb.append(lvl == null ? "null" : lvl.name());
             if (!children.isEmpty()) {
                 for (Map.Entry<SharedString, Node> e : children.entrySet()) {
                     sb.append(" , {").append(e.getKey()).append(" -> ");
@@ -183,7 +189,7 @@ final class LevelMap {
         Node current = root;
         LogLevel level = root.level;
 
-        assert level != null : "internal error! Root level should never be null.";
+        assert level != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
 
         int start = 0;
         int dot;
@@ -195,7 +201,7 @@ final class LevelMap {
 
             current = current.children.get(segment);
             if (current == null) {
-                assert level != null : "internal error! Root level should never be null.";
+                assert level != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
                 return level;
             }
 
@@ -212,7 +218,7 @@ final class LevelMap {
             level = current.level;
         }
 
-        assert level != null : "internal error! Root level should never be null.";
+        assert level != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
         return level;
     }
 
