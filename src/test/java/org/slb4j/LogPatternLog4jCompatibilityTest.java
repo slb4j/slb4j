@@ -129,6 +129,48 @@ class LogPatternLog4jCompatibilityTest {
      */
     @ParameterizedTest
     @ValueSource(strings = {
+            // Core patterns
+            "%msg%n",
+            "%level %msg%n",
+            "%-5level %msg%n",
+
+            // Timestamp patterns
+            "%d{yyyy-MM-dd HH:mm:ss.SSS} %msg%n",
+            "%d{HH:mm:ss.SSS} %msg%n",
+
+            // Logger name patterning
+            "%logger %msg%n",
+            "%logger{1} %msg%n",
+            "%logger{2} %msg%n",
+            "%logger{1.} %msg%n",
+            "%logger{2.} %msg%n",
+
+            // Location patterns
+            "%C|'com.example.service.OrderService'",
+            "%C{1}|'OrderService'",
+            "%M|'processOrder'",
+            "%L|'42'",
+            "%F|'OrderService.java'",
+
+            // Thread & context
+            "%t %msg%n",
+            "%X{userId} %msg%n",
+            "%X{missing} %msg%n",
+
+            // Marker
+            "%marker %msg%n",
+            "[%marker] %msg%n",
+
+            // Escaping & literals
+            "%% %msg%n",
+            "\"%msg\"%n",
+
+            // Highlight
+            "%highlight{%level %msg}%n",
+
+            // Composite
+            "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{2} [%marker] %X{userId} - %msg%n",
+
             "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %highlight{%-5level} %logger{36} - %msg%n",
             "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n",
             "%level %msg%n",

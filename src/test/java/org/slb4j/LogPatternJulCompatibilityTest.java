@@ -57,7 +57,13 @@ class LogPatternJulCompatibilityTest {
             "%1$tb %1$td, %1$tY %1$tl:%1$tM:%1$tS %1$Tp %2$s%n%4$s: %5$s%6$s%n",
             "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS %4$s %3$s %5$s%6$s%n",
             "%5$s%n",
-            "%1$tL %5$s%n"
+            "%1$tL %5$s%n",
+            "%5$s%n",
+            "%4$s %5$s%n",
+            "%1$tY-%1$tm-%1$td %1$tH:%1$tM:%1$tS.%1$tL %5$s%n",
+            "%3$s %5$s%n",
+            "%2$s %5$s%n",
+            "%6$s"
     })
     void testPatternCompatibility(String julPattern) throws IOException {
         // Set JUL pattern
