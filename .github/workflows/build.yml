@@ -36,6 +36,13 @@ jobs:
         env:
           DISPLAY: ":99"
 
+      - name: Upload reports
+        if: always()
+        uses: actions/upload-artifact@v6
+        with:
+          name: reports-${{ matrix.os }}
+          path: "**/build/reports"
+
   publish:
     name: Publish to Maven Central
     needs: build
