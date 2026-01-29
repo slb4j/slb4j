@@ -209,7 +209,13 @@ class LogPatternLog4jCompatibilityTest {
     })
     void testPatternCompatibility(String pattern) {
         // in CI, locale "de-DE" is not available in all runners, so ignore the pattern if the locale is not available
-        assumeTrue(!pattern.contains("{de-DE}")  || Locale.forLanguageTag("de-DE").toLanguageTag().equals("de-DE"));
+        assumeTrue(
+                !pattern.contains("{de-DE}")
+                || java.time.Month.JANUARY.getDisplayName(
+                        java.time.format.TextStyle.FULL,
+                        java.util.Locale.forLanguageTag("de-DE")
+                ).equals("Januar")
+        );
 
         configureLog4j(pattern);
         Logger logger = LogManager.getLogger("org.slb4j.TestLogger");
