@@ -41,10 +41,12 @@ import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
 /**
  * A test class to verify the compatibility of log patterns between Log4j and SLB4J.
@@ -206,6 +208,9 @@ class LogPatternLog4jCompatibilityTest {
             "%d{EEEE, dd. MMMM yyyy}{de-DE} %p %m%n"
     })
     void testPatternCompatibility(String pattern) {
+        // in CI, locale "de-DE" is not available in all runners, so ignore the pattern if the locale is not available
+        assumeTrue(!pattern.contains("{de-DE}")  || Locale.forLanguageTag("de-DE").toLanguageTag().equals("de-DE"));
+
         configureLog4j(pattern);
         Logger logger = LogManager.getLogger("org.slb4j.TestLogger");
 
