@@ -183,8 +183,8 @@ public final class LogPattern {
             this.locationNeeded = locationNeeded;
         }
 
-        private static final int N_SPACES = 20;
-        private static final String SPACES = " ".repeat(N_SPACES);
+        private static final CharSequence SPACES = "                                      ";
+        private static final int N_SPACES = SPACES.length();
 
         @Override
         public String toString() {
@@ -203,10 +203,16 @@ public final class LogPattern {
          * @param n the number of spaces to append
          */
         private static void appendSpaces(Appendable app, int n) throws IOException {
-            while (n > 0) {
-                int count = Math.min(n, SPACES.length());
-                app.append(SPACES, 0, count);
-                n -= count;
+            switch (n) {
+                case 0 -> { /* nothing to do */}
+                case 1 -> app.append(' ');
+                default -> {
+                    while (n > 0) {
+                        int count = Math.min(n, N_SPACES);
+                        app.append(SPACES, 0, count);
+                        n -= count;
+                    }
+                }
             }
         }
 
