@@ -438,7 +438,11 @@ public final class LogPattern {
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            String logger = loggerNames.computeIfAbsent(loggerName, logn -> abbreviate(logn, abbreviationLength, useDotAbbreviation).toString());
+            String logger = loggerNames.get(loggerName); // lambda in computeIfAbsent causes memory allocation!
+            if (logger == null) {
+                logger = abbreviate(loggerName, abbreviationLength, useDotAbbreviation).toString();
+                loggerNames.put(loggerName, logger);
+            }
             appendFormatted(app, logger, true);
         }
 
