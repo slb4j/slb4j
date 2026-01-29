@@ -136,11 +136,11 @@ correctly.
 - Benchmarks
 - Setup CI
 - Publish to Maven Central
+- added benchmark results under benchmark/results/${version}
 
 ### Todo
 
 - Publish Javadoc
-- Add benchmark results
 
 ### Later
 

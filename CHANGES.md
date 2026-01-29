@@ -7,6 +7,7 @@ Version 0.1-rc*
   format, then logging.properties using java.util.logging format
 - auto-lod if main module uses JCL, Log4J, or SLF4J.
 - minor enhancements and bugfixes
+- performance: reduced object allocations
 
 Version 0.1-beta2
 -----------------
