@@ -39,6 +39,7 @@ import org.slb4j.handler.ConsoleHandler;
 
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -205,15 +206,16 @@ class LogPatternLog4jCompatibilityTest {
             "%d{dd-MMM hh:mm:ss a} %-5p %c{1} - %m%n",
             // patterns with locale
             "%d{dd-MMMM-yyyy}{de-DE} %p %m%n",
-            "%d{EEEE, dd. MMMM yyyy}{de-DE} %p %m%n"
+            "%d{EEEE, dd. MMMM yyyy}{de-DE} %p %m%n",
+            "%d{dd-MMMM-yyyy}{GMT}{de-DE} %p %m%n"
     })
     void testPatternCompatibility(String pattern) {
         // in CI, locale "de-DE" is not available in all runners, so ignore the pattern if the locale is not available
         assumeTrue(
                 !pattern.contains("{de-DE}")
                 || java.time.Month.JANUARY.getDisplayName(
-                        java.time.format.TextStyle.FULL,
-                        java.util.Locale.forLanguageTag("de-DE")
+                        TextStyle.FULL,
+                        Locale.forLanguageTag("de-DE")
                 ).equals("Januar")
         );
 

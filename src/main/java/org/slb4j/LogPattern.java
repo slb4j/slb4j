@@ -39,7 +39,7 @@ public final class LogPattern {
     private static final String NEWLINE = System.lineSeparator();
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
-    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?(\\{([^}]+)?})?|%%|%(?![a-zA-Z])");
+    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?(\\{([^}]+)?})?(\\{([^}]+)?})?|%%|%(?![a-zA-Z])");
 
     private static final Pattern LOGGER_PRECISION_PATTERN = Pattern.compile("^(\\d+)(\\.)?$");
 
@@ -1232,7 +1232,8 @@ public final class LogPattern {
             String maxWidthStr = matcher.group(2);
             String type = matcher.group(3);
             String options = matcher.group(5);
-            String localeStr = matcher.group(7);
+            String secondBlock = matcher.group(7);
+            String thirdBlock = matcher.group(9);
 
             boolean leftAlign = minWidthStr != null && minWidthStr.startsWith("-");
             int minWidth = (minWidthStr != null && !minWidthStr.isEmpty()) ? Math.abs(Integer.parseInt(minWidthStr)) : 0;
@@ -1261,6 +1262,10 @@ public final class LogPattern {
                 case "Cend" -> entries.add(new ColorEndEntry(minWidth, maxWidth, leftAlign));
                 case "d" -> {
                     Locale locale = Locale.getDefault();
+                    String localeStr = thirdBlock;
+                    if (localeStr == null && secondBlock != null && !isTimeZone(secondBlock)) {
+                        localeStr = secondBlock;
+                    }
                     if (localeStr != null) {
                         locale = Locale.forLanguageTag(localeStr.replace('_', '-'));
                     }
@@ -1277,6 +1282,13 @@ public final class LogPattern {
             entries.add(new LiteralEntry(literal));
         }
         return entries;
+    }
+
+    private static boolean isTimeZone(String s) {
+        if (s.isEmpty()) return false;
+        if (s.equals("Z") || s.startsWith("UTC") || s.startsWith("GMT") || s.startsWith("UT")) return true;
+        if (s.contains("/") || s.contains("+") || s.contains("-")) return true;
+        return ZoneId.getAvailableZoneIds().contains(s);
     }
 
     private static List<LogPatternEntry> parseLiterals(String literal) {
