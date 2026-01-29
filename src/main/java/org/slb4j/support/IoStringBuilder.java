@@ -153,34 +153,38 @@ public final class IoStringBuilder implements Appendable {
 
     @Override
     public IoStringBuilder append(@Nullable CharSequence csq, int start, int end) {
-        int len = end - start;
-        if (len == 0) {
-            return this;
-        }
-
         if (csq == null) {
             csq = "null";
         }
 
-        ensureCapacity(len);
+        int len = end - start;
+        switch (len) {
+            case 0 -> { return this; }
+            case 1 -> { append(csq.charAt(start)); return this; }
+        }
+
         switch (csq) {
-            case String s -> buffer.put(s, start, end);
-            case StringBuilder sb ->
-                // HeapCharBuffer implements a fast path for StringBuilder
-                buffer.append(sb, start, end);
             case CharBuffer cb -> {
                 // Optimized path for other NIO buffers
-                CharBuffer src = cb.duplicate();
-                src.position(start).limit(end);
-                buffer.put(src);
+                int pos = buffer.position();
+                int length = end - start;
+                buffer.put(pos, cb, start, length);
+                buffer.position(pos + length);
             }
+
+            case String s -> buffer.append(s, start, end);
+            case StringBuilder s -> buffer.append(s, start, end);
+            case StringBuffer s -> buffer.append(s, start, end);
+
             default -> {
                 // Guaranteed zero-allocation fallback
                 // reason for manual copy: some implementations of append call String.valueOf(csq) internally
+                ensureCapacity(len);
                 for (int i = start; i < end; i++) {
                     buffer.put(csq.charAt(i));
                 }
             }
+
         }
         return this;
     }
@@ -196,12 +200,7 @@ public final class IoStringBuilder implements Appendable {
      */
     public void writeTo(Writer writer) throws IOException {
         buffer.flip();
-        if (buffer.hasArray()) {
-            // Direct array access: The fastest possible way to move data to a Writer
-            writer.write(buffer.array(), buffer.arrayOffset(), buffer.remaining());
-        } else {
-            writer.append(buffer);
-        }
+        writer.append(buffer);
         buffer.clear();
     }
 
