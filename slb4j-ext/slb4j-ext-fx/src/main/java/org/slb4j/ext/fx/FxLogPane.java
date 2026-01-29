@@ -200,7 +200,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
                                 item.marker(),
                                 item.mdc(),
                                 item.location(),
-                                item::message,
+                                item.message(),
                                 item.throwable(),
                                 ConsoleCode.empty()
                         );
@@ -408,7 +408,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
                     entry.marker(),
                     entry.mdc(),
                     entry::location,
-                    entry::message,
+                    entry.message(),
                     entry.throwable(),
                     ConsoleCode.empty()
             );

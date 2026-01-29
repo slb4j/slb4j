@@ -313,7 +313,7 @@ class LogPatternLog4jCompatibilityTest {
 
             try {
                 slb4jPattern.formatLogEntry(sb, timestamp, loggerName, level, marker, mdc, locResolver, 
-                    () -> event.getMessage().getFormattedMessage(), event.getThrown(), ConsoleHandler.COLOR_MAP_DEFAULT.getOrDefault(level, ConsoleCode.empty()));
+                    event.getMessage().getFormattedMessage(), event.getThrown(), ConsoleHandler.COLOR_MAP_DEFAULT.getOrDefault(level, ConsoleCode.empty()));
             } catch (java.io.IOException e) {
                 throw new RuntimeException(e);
             }

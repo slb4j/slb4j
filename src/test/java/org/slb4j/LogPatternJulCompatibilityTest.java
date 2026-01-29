@@ -118,7 +118,7 @@ class LogPatternJulCompatibilityTest {
         Throwable t = logRecord.getThrown();
 
         slb4jPattern.formatLogEntry(sb, timestamp, loggerName, level, null, mdc, locResolver,
-                () -> JulHandler.formatJulMessage(logRecord.getMessage(), logRecord.getParameters()).get(),
+                JulHandler.formatJulMessage(logRecord.getMessage(), logRecord.getParameters()).get(),
                 t, ConsoleHandler.COLOR_MAP_DEFAULT.getOrDefault(level, ConsoleCode.empty()));
 
         return sb.toString();

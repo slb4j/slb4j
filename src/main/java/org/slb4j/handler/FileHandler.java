@@ -57,9 +57,10 @@ public final class FileHandler extends AbstractFileHandler {
     public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             IoStringBuilder buffer = null;
+            String message = msg.get();
             try {
                 buffer = acquireBuffer();
-                logPattern.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
+                logPattern.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, org.slb4j.ConsoleCode.empty());
                 synchronized (lock()) {
                     buffer.writeTo(writer);
 

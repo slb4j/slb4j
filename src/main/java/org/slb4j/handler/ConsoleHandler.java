@@ -139,9 +139,10 @@ public final class ConsoleHandler implements LogHandler, LogPatternConfigurable 
     public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
+            String message = msg.get();
             try {
                 synchronized (lock) {
-                    logPattern.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
+                    logPattern.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, consoleCodes);
                     buffer.writeTo(writer);
                     buffer.reset(0);
                     writer.flush();

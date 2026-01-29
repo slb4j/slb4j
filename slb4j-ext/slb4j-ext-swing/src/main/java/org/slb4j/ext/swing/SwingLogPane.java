@@ -365,7 +365,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
 
         StringBuilder sb = new StringBuilder();
         try {
-            pattern.formatLogEntry(sb, entry.time(), entry.logger(), entry.level(), entry.marker(), entry.mdc(), entry::location, entry::message, entry.throwable(), ConsoleCode.empty());
+            pattern.formatLogEntry(sb, entry.time(), entry.logger(), entry.level(), entry.marker(), entry.mdc(), entry::location, entry.message(), entry.throwable(), ConsoleCode.empty());
         } catch (IOException e) {
             sb.append("Error formatting log entry: ").append(e.getMessage());
         }
@@ -385,7 +385,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
             if (value instanceof LogEntry entry) {
                 buffer.setLength(0);
                 try {
-                    patternEntry.format(buffer, entry.time(), entry.logger(), entry.level(), entry.marker(), entry.mdc(), entry.location(), entry::message, entry.throwable(), ConsoleCode.empty());
+                    patternEntry.format(buffer, entry.time(), entry.logger(), entry.level(), entry.marker(), entry.mdc(), entry.location(), entry.message(), entry.throwable(), ConsoleCode.empty());
                     setText(buffer.toString());
                 } catch (IOException e) {
                     setText("ERROR");
