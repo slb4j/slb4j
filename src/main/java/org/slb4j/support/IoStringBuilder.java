@@ -167,7 +167,7 @@ public final class IoStringBuilder implements Appendable {
             case String s -> buffer.put(s, start, end);
             case StringBuilder sb ->
                 // HeapCharBuffer implements a fast path for StringBuilder
-                    buffer.append(sb, start, end);
+                buffer.append(sb, start, end);
             case CharBuffer cb -> {
                 // Optimized path for other NIO buffers
                 CharBuffer src = cb.duplicate();

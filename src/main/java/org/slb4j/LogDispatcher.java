@@ -16,6 +16,7 @@
 package org.slb4j;
 
 import java.util.Collection;
+import java.util.SequencedCollection;
 
 /**
  * This interface defines the contract for classes that dispatch log entries to registered handlers.
@@ -58,5 +59,5 @@ public interface LogDispatcher {
      * to the handlers, so unused handlers may already have been removed from the list.
      * @return collection containing the registered log entry handlers
      */
-    Collection<LogHandler> getLogHandlers();
+    SequencedCollection<LogHandler> getLogHandlers();
 }

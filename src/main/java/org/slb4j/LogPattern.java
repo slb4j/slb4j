@@ -232,16 +232,18 @@ public final class LogPattern {
                 return;
             }
 
-            if (maxWidth > 0 && value.length() > maxWidth) {
+            // Truncates string if it exceeds maximum width
+            int length = value.length();
+            if (maxWidth > 0 && length > maxWidth) {
                 if (leftTruncate) {
-                    app.append(value, value.length() - maxWidth, value.length());
+                    app.append(value, length - maxWidth, length);
                 } else {
                     app.append(value, 0, maxWidth);
                 }
                 return;
             }
 
-            int padding = Math.max(0, minWidth - value.length());
+            int padding = Math.max(0, minWidth - length);
             if (leftAlign) {
                 app.append(value);
                 appendSpaces(app, padding);

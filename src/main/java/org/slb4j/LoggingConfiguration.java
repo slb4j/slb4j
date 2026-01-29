@@ -181,10 +181,7 @@ public final class LoggingConfiguration {
      * @return a sequenced collection containing all {@link LogHandler} instances currently registered
      */
     public SequencedCollection<LogHandler> getHandlers() {
-        Collection<LogHandler> col = handlers.values(); // should always return a SequencedCollection
-        return col instanceof SequencedCollection<LogHandler> sc
-                ? Collections.unmodifiableSequencedCollection(sc)
-                : List.copyOf(col);
+        return Collections.unmodifiableSequencedCollection(handlers.sequencedValues());
     }
 
     /**
@@ -193,10 +190,7 @@ public final class LoggingConfiguration {
      * @return a sequenced collection containing all {@link LogFilter} instances currently registered
      */
     public SequencedCollection<LogFilter> getFilters() {
-        Collection<LogFilter> col = filters.values(); // should always return a SequencedCollection
-        return col instanceof SequencedCollection<LogFilter> sc
-                ? Collections.unmodifiableSequencedCollection(sc)
-                : List.copyOf(col);
+        return Collections.unmodifiableSequencedCollection(filters.sequencedValues());
     }
 
     /**

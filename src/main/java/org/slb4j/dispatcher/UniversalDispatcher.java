@@ -26,6 +26,7 @@ import org.slb4j.support.Util;
 
 import java.util.Collection;
 import java.util.List;
+import java.util.SequencedCollection;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
@@ -142,7 +143,7 @@ public final class UniversalDispatcher implements LogDispatcher {
     }
 
     @Override
-    public Collection<LogHandler> getLogHandlers() {
+    public SequencedCollection<LogHandler> getLogHandlers() {
         return List.copyOf(handlers);
     }
 

@@ -75,7 +75,7 @@ public final class StackWalkerLocationResolver implements LocationResolver {
 
             // 3. Skip EVERYTHING that is still logging infrastructure
             StackFrame frame;
-            while ((frame = iterator.next()).getClassName().startsWith(infraPackage)) {
+            while (isInfra(frame = iterator.next())) {
                 // nothing to do
             }
 
@@ -84,6 +84,11 @@ public final class StackWalkerLocationResolver implements LocationResolver {
         } catch (NoSuchElementException e) {
             throw new IllegalStateException("Internal error - no stack frame found", e);
         }
+    }
+
+    private boolean isInfra(StackFrame frame) {
+        String className = frame.getClassName();
+        return className.equals(loggerClassName) || className.startsWith(infraPackage);
     }
 
     private static class StackFrameLocation implements Location {

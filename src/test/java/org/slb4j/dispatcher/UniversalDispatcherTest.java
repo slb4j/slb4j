@@ -25,6 +25,7 @@ import org.slb4j.LocationResolver;
 import org.slb4j.LogFilter;
 
 import java.util.Collection;
+import java.util.SequencedCollection;
 import java.util.function.Supplier;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -38,7 +39,7 @@ class UniversalDispatcherTest {
         LogHandler handler = new TestLogHandler();
 
         dispatcher.addLogHandler(handler);
-        Collection<LogHandler> handlers = dispatcher.getLogHandlers();
+        SequencedCollection<LogHandler> handlers = dispatcher.getLogHandlers();
         assertTrue(handlers.contains(handler), "Handler should be present after adding");
         assertEquals(1, handlers.size());
 
