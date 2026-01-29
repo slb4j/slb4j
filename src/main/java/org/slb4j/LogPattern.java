@@ -521,9 +521,16 @@ public final class LogPattern {
             if (key != null) {
                 appendFormatted(app, mdc.get(key), false);
             } else {
-                String mdcS = mdc.stream().map(item -> item.getKey() + "=" + item.getValue())
-                        .collect(Collectors.joining(", ", "{", "}"));
-                appendFormatted(app, mdcS, false);
+                if (key == null) {
+                    app.append('{');
+                    boolean first = true;
+                    for (var e : mdc.get().entrySet()) {
+                        if (!first) app.append(", ");
+                        first = false;
+                        app.append(e.getKey()).append('=').append(e.getValue());
+                    }
+                    app.append('}');
+                }
             }
         }
 

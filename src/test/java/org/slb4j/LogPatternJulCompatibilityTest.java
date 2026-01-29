@@ -27,6 +27,7 @@ import org.slb4j.handler.ConsoleHandler;
 
 import java.io.IOException;
 import java.time.Instant;
+import java.util.Collections;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
@@ -112,7 +113,7 @@ class LogPatternJulCompatibilityTest {
 
         MDC mdc = new MDC() {
             @Override public @Nullable String get(String key) { return null; }
-            @Override public Stream<Map.Entry<String, String>> stream() { return Stream.empty(); }
+            @Override public Map<String, String> get() { return Collections.emptyMap(); }
         };
 
         Throwable t = logRecord.getThrown();

@@ -31,6 +31,7 @@ import org.slf4j.spi.LocationAwareLogger;
 import java.io.NotSerializableException;
 import java.io.Serial;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Supplier;
@@ -57,9 +58,9 @@ public final class LoggerSlf4j extends AbstractLogger {
         }
 
         @Override
-        public Stream<Map.Entry<String, String>> stream() {
-            Map<String, String> map = org.slf4j.MDC.getCopyOfContextMap();
-            return map == null ? Stream.empty() : map.entrySet().stream();
+        public Map<String, String> get() {
+            Map<String, String> contextMap = org.slf4j.MDC.getCopyOfContextMap();
+            return contextMap == null ? Collections.emptyMap() : contextMap;
         }
     };
 

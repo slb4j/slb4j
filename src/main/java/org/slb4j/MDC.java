@@ -18,7 +18,6 @@ package org.slb4j;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
-import java.util.stream.Stream;
 
 /**
  * Interface representing a Mapping Diagnostic Context (MDC).
@@ -40,13 +39,10 @@ public interface MDC {
     @Nullable String get(String key);
 
     /**
-     * Returns a stream of all key-value pairs currently stored in the Mapping Diagnostic Context (MDC).
-     * Each entry in the stream represents an individual key-value pair from the MDC, where the key
-     * is a contextual identifier and the value is its associated information.
+     * Returns the Mapping Diagnostic Context (MDC).
      *
-     * @return a sequential {@code Stream} of {@code Map.Entry<String, String>} containing
-     *         all key-value pairs in the MDC. The stream reflects the state of the MDC
+     * @return the MDC. The stream reflects the state of the MDC
      *         at the time of its creation.
      */
-    Stream<Map.Entry<String, String>> stream();
+    Map<String, String> get();
 }

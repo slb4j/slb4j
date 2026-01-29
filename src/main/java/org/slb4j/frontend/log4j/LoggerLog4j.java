@@ -48,9 +48,8 @@ public final class LoggerLog4j extends AbstractLogger {
         }
 
         @Override
-        public Stream<Map.Entry<String, String>> stream() {
-            return ThreadContext.getImmutableContext()
-                    .entrySet().stream();
+        public Map<String, String> get() {
+            return ThreadContext.getImmutableContext();
         }
     };
 

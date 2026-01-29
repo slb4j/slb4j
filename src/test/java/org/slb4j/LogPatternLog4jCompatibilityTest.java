@@ -295,8 +295,8 @@ class LogPatternLog4jCompatibilityTest {
                 }
 
                 @Override
-                public Stream<Map.Entry<String, String>> stream() {
-                    return event.getContextData().toMap().entrySet().stream();
+                public Map<String, String> get() {
+                    return event.getContextData().toMap();
                 }
             };
 
