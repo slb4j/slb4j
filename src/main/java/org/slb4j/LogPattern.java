@@ -637,9 +637,18 @@ public final class LogPattern {
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            String className = location != null && location.getClassName() != null
-                    ? classNames.computeIfAbsent(location.getClassName(), clsn -> abbreviate(clsn, abbreviationLength, useDotAbbreviation).toString())
-                    : null;
+            String locationClassName = location == null ? null : location.getClassName();
+
+            if (locationClassName == null) {
+                return;
+            }
+
+            String className = classNames.get(locationClassName);
+            if (className == null) {
+                className = abbreviate(locationClassName, abbreviationLength, useDotAbbreviation).toString();
+                classNames.put(locationClassName, className);
+            }
+
             appendFormatted(app, className, true);
         }
 
@@ -702,7 +711,7 @@ public final class LogPattern {
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            appendFormatted(app, location != null ? String.valueOf(location.getLineNumber()) : null, false);
+            appendFormatted(app, location != null ? Integer.toString(location.getLineNumber()) : null, false);
         }
     }
 
