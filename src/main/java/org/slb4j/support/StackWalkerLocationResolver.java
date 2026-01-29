@@ -73,9 +73,9 @@ public final class StackWalkerLocationResolver implements LocationResolver {
                 // nothing to do
             }
 
-            // 3. Skip EVERYTHING that is still logging infrastructure
+            // 3. Skip all frames that still belong to the logging infrastructure
             StackFrame frame;
-            while (isInfra(frame = iterator.next())) {
+            while ((frame = iterator.next()).getClassName().startsWith(infraPackage)) {
                 // nothing to do
             }
 
@@ -86,17 +86,7 @@ public final class StackWalkerLocationResolver implements LocationResolver {
         }
     }
 
-    private boolean isInfra(StackFrame frame) {
-        String className = frame.getClassName();
-        return className.equals(loggerClassName) || className.startsWith(infraPackage);
-    }
-
-    private static class StackFrameLocation implements Location {
-
-        private final StackFrame frame;
-
-        StackFrameLocation(StackFrame frame) {this.frame = frame;}
-
+    private static record StackFrameLocation(StackFrame frame) implements Location {
         @Override
         public @Nullable String getClassName() {
             return frame.getClassName();
