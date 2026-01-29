@@ -15,6 +15,8 @@
  */
 package org.slb4j.support;
 
+import org.jspecify.annotations.NonNull;
+
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.ZoneId;
@@ -121,6 +123,21 @@ public final class TimeStampFormatter {
      * @throws IllegalArgumentException if the pattern is invalid or contains unsupported components.
      */
     public static TimeStampFormatter parse(String pattern, ZoneId zoneId, Locale locale) {
+        // highly optimized timestamp formatters for default format
+        if (pattern.equals("yyyy-MM-dd HH:mm:ss.SSS")) {
+            return getISO8601StyleTimeStampFormatter(' ', '.', zoneId, locale);
+        }
+        if (pattern.equals("yyyy-MM-ddTHH:mm:ss.SSS")) {
+            return getISO8601StyleTimeStampFormatter('T', '.', zoneId, locale);
+        }
+        if (pattern.equals("yyyy-MM-dd HH:mm:ss,SSS")) {
+            return getISO8601StyleTimeStampFormatter(' ', ',', zoneId, locale);
+        }
+        if (pattern.equals("yyyy-MM-dd'T'HH:mm:ss,SSS")) {
+            return getISO8601StyleTimeStampFormatter('T', ',', zoneId, locale);
+        }
+
+        // custom formats
         java.util.List<Part> parts = new java.util.ArrayList<>();
         int i = 0;
         boolean inQuote = false;
@@ -161,6 +178,30 @@ public final class TimeStampFormatter {
             i++;
         }
         return new TimeStampFormatter(parts.toArray(Part[]::new), zoneId, locale);
+    }
+
+    private static @NonNull TimeStampFormatter getISO8601StyleTimeStampFormatter(char dateTimeSeparator, char millisSeparator, ZoneId zoneId, Locale locale) {
+        return new TimeStampFormatter(new Part[]{(app, y, M, d, H, m, s, S) -> {
+            int q = y / 100;
+            app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
+            q = y % 100;
+            app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
+            app.append('-');
+            app.append(DIGIT_TENS[M]).append(DIGIT_ONES[M]);
+            app.append('-');
+            app.append(DIGIT_TENS[d]).append(DIGIT_ONES[d]);
+            app.append(dateTimeSeparator);
+            app.append(DIGIT_TENS[H]).append(DIGIT_ONES[H]);
+            app.append(':');
+            app.append(DIGIT_TENS[m]).append(DIGIT_ONES[m]);
+            app.append(':');
+            app.append(DIGIT_TENS[s]).append(DIGIT_ONES[s]);
+            app.append(millisSeparator);
+            int q1 = S / 100;
+            app.append(DIGIT_ONES[q1]);
+            q1 = S % 100;
+            app.append(DIGIT_TENS[q1]).append(DIGIT_ONES[q1]);
+        }}, zoneId, locale);
     }
 
     private static Part createLiteralPart(String literal) {
@@ -256,35 +297,55 @@ public final class TimeStampFormatter {
 
     private static Part createPart(char c, int count, Locale locale) {
         return switch (c) {
-            case 'y' ->  {
-                if (count == 2) {
-                    yield (app, y, M, d, H, m, s, S) -> appendInt(y % 100, 2, app);
-                } else {
-                    yield (app, y, M, d, H, m, s, S) -> appendInt(y, count, app);
-                }
-            }
-            case 'M' -> {
-                if (count <= 2) {
-                    yield (app, y, M, d, H, m, s, S) -> appendInt(M, count, app);
-                } else {
-                    String[] names = getMonthNames(locale, count >= 4);
-                    yield (app, y, M, d, H, m, s, S) -> app.append(names[M - 1]);
-                }
-            }
-            case 'd' -> (app, y, M, d, H, m, s, S) -> appendInt(d, count, app);
+            case 'y' ->
+                switch (count) {
+                     case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, y % 100);
+                     case 4 -> (app, y, M, d, H, m, s, S) -> appendInt4(app, y);
+                     default -> (app, y, M, d, H, m, s, S) -> app.append(Integer.toString(y));
+                };
+            case 'M' ->
+                switch (count) {
+                    case 0, 1 -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, M);
+                    case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, M);
+                    default -> {
+                        String[] names = getMonthNames(locale, count >= 4);
+                        yield (app, y, M, d, H, m, s, S) -> app.append(names[M - 1]);
+                    }
+                };
+            case 'd' -> switch (count) {
+                case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, d);
+                default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, d);
+            };
             case 'E' -> {
                 String[] names = getDayNames(locale, count >= 4);
                 yield (app, y, M, d, H, m, s, S) -> app.append(names[getDayOfWeek(y, M, d)]);
             }
-            case 'h' -> (app, y, M, d, H, m, s, S) -> {
-                int hour12 = H % 12;
-                if (hour12 == 0) hour12 = 12;
-                appendInt(hour12, count, app);
-            };
-            case 'H' -> (app, y, M, d, H, m, s, S) -> appendInt(H, count, app);
-            case 'm' -> (app, y, M, d, H, m, s, S) -> appendInt(m, count, app);
-            case 's' -> (app, y, M, d, H, m, s, S) -> appendInt(s, count, app);
-            case 'S' -> (app, y, M, d, H, m, s, S) -> appendInt(S, count, app);
+            case 'h' ->
+                switch (count) {
+                    case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, getHour12(H));
+                    default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, getHour12(H));
+                };
+            case 'H' ->
+                    switch (count) {
+                        case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, H);
+                        default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, H);
+                    };
+            case 'm' ->
+                    switch (count) {
+                        case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, m);
+                        default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, m);
+                    };
+            case 's' ->
+                    switch (count) {
+                        case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, s);
+                        default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, s);
+                    };
+            case 'S' ->
+                    switch (count) {
+                        case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, S);
+                        case 3 -> (app, y, M, d, H, m, s, S) -> appendInt3(app, S);
+                        default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, S);
+                    };
             case 'a' -> {
                 String[] ampm = getAmPmStrings(locale);
                 yield (app, y, M, d, H, m, s, S) -> app.append(H < 12 ? ampm[0] : ampm[1]);
@@ -300,29 +361,41 @@ public final class TimeStampFormatter {
         };
     }
 
+    private static int getHour12(int H) {
+        int hour12 = H % 12;
+        return hour12 == 0 ? 12 : hour12;
+    }
+
     @FunctionalInterface
     private interface Part {
         void append(Appendable app, int y, int M, int d, int H, int m, int s, int S) throws IOException;
     }
 
-    private static void appendInt(int val, int digits, Appendable app) throws IOException {
+    private static void appendInt(Appendable app, int digits, int val) throws IOException {
         switch (digits) {
-            case 2 -> app
-                    .append(DIGIT_TENS[val]).append(DIGIT_ONES[val]);
-            case 3 -> {
-                int q = val / 100;
-                app.append(DIGIT_ONES[q]);
-                q = val % 100;
-                app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
-            }
-            case 4 -> {
-                int q = val / 100;
-                app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
-                q = val % 100;
-                app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
-            }
+            case 2 -> appendInt2(app, val);
+            case 3 -> appendInt3(app, val);
+            case 4 -> appendInt4(app, val);
             default -> app.append(Integer.toString(val));
         }
+    }
+
+    private static void appendInt4(Appendable app, int val) throws IOException {
+        int q = val / 100;
+        app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
+        q = val % 100;
+        app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
+    }
+
+    private static void appendInt3(Appendable app, int val) throws IOException {
+        int q = val / 100;
+        app.append(DIGIT_ONES[q]);
+        q = val % 100;
+        app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
+    }
+
+    private static Appendable appendInt2(Appendable app, int val) throws IOException {
+        return app.append(DIGIT_TENS[val]).append(DIGIT_ONES[val]);
     }
 
     /**
