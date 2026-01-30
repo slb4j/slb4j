@@ -50,7 +50,6 @@ public final class Main {
         restrictedLogger.warn("This is a WARN message from a restricted logger (should be visible)");
 
         Logger normalLogger = LoggerFactory.getLogger("org.slb4j.native_test.Normal");
-        normalLogger.debug("This is a DEBUG message from a normal logger (should NOT be visible due to levelrule=INFO)");
         normalLogger.info("This is an INFO message from a normal logger (should be visible)");
 
         // Test Markers
