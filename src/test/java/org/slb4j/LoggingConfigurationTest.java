@@ -127,4 +127,59 @@ class LoggingConfigurationTest {
         // WARN should NOT be enabled if SEVERE is correctly parsed
         assertFalse(filter.isEnabled("any.logger", LogLevel.WARN, null), "WARN should NOT be enabled for any.logger");
     }
+
+    @Test
+    void testCsvLayoutConfiguration() throws IOException {
+        String propertyText = """
+                appender.console.type=Console
+                appender.console.layout.type=CsvLayout
+                """;
+        Properties props = new Properties();
+        props.load(new StringReader(propertyText));
+
+        LoggingConfiguration config = LoggingConfiguration.parseLog4j(props);
+
+        LogHandler handler = config.getHandler("console");
+        assertNotNull(handler);
+        assertInstanceOf(org.slb4j.handler.ConsoleHandler.class, handler);
+        org.slb4j.handler.ConsoleHandler consoleHandler = (org.slb4j.handler.ConsoleHandler) handler;
+        assertEquals(LogPattern.LOG4J_CSV_LAYOUT, consoleHandler.getLogPattern().getType());
+
+        // Test addToProperties
+        Properties outProps = new Properties();
+        config.addToProperties(outProps);
+        assertEquals("CsvLayout", outProps.getProperty("appender.console.layout.type"));
+    }
+
+    @Test
+    void testCsvOutputFormat() throws IOException {
+        LogPattern csvPattern = LogPattern.LOG4J_CSV_PATTERN;
+        StringBuilder sb = new StringBuilder();
+        long timestamp = 1738259700000L; // 2025-01-30 17:55:00 UTC (roughly)
+        // Note: TimeStampFormatter uses system default timezone by default in CsvEntry
+        // Actually CsvEntry uses LogPattern.ZONE_ID which is ZoneId.systemDefault()
+        
+        LocationResolver loc = () -> null;
+        csvPattern.formatLogEntry(sb, timestamp, "test.Logger", LogLevel.INFO, null, null, loc, "Hello \"World\"", null, ConsoleCode.empty());
+        
+        String output = sb.toString();
+        // Format: "timestamp","LEVEL","logger","message"
+        // We can't easily predict the exact timestamp string without knowing the system timezone, 
+        // but we can check the rest of the structure.
+        assertTrue(output.startsWith("\""), "Output should start with a quote");
+        assertTrue(output.endsWith("\"\n"), "Output should end with a quote and newline");
+        assertTrue(output.contains("\",\"INFO\",\"test.Logger\",\"Hello \"\"World\"\"\"\n"), "Output should contain correctly formatted fields. Got: " + output);
+    }
+
+    @Test
+    void testCsvOutputFormatWithNullMessage() throws IOException {
+        LogPattern csvPattern = LogPattern.LOG4J_CSV_PATTERN;
+        StringBuilder sb = new StringBuilder();
+        long timestamp = 1738259700000L;
+        LocationResolver loc = () -> null;
+        csvPattern.formatLogEntry(sb, timestamp, "test.Logger", LogLevel.ERROR, null, null, loc, null, null, ConsoleCode.empty());
+
+        String output = sb.toString();
+        assertTrue(output.contains("\",\"ERROR\",\"test.Logger\",\"null\"\n"), "Output should contain 'null' for null message. Got: " + output);
+    }
 }

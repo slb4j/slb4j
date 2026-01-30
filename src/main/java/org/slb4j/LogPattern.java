@@ -38,6 +38,11 @@ public final class LogPattern {
     /**
      * Represents the identifier for a simple layout pattern used in Log4J logging.
      */
+    public static final String LOG4J_CSV_LAYOUT = "CsvLayout";
+
+    /**
+     * Represents the identifier for a simple layout pattern used in Log4J logging.
+     */
     public static final String LOG4J_SIMPLE_LAYOUT = "SimpleLayout";
 
     /**
@@ -107,9 +112,14 @@ public final class LogPattern {
     /**
      * A predefined {@link LogPattern} instance representing a simple log format.
      * <p>
-     * Pattern: {@code %p - %m%n}
+     * Equivalent pattern: {@code %p - %m%n}
      */
-    public static final LogPattern SIMPLE_PATTERN = simpleLayoutLog4jPattern();
+    public static final LogPattern LOG4J_SIMPLE_PATTERN = simpleLayoutLog4jPattern();
+
+    /**
+     * A predefined {@link LogPattern} instance representing a log event in a CSV file.
+     */
+    public static final LogPattern LOG4J_CSV_PATTERN = csvLayoutLog4jPattern();
 
     /**
      * Defines an interface for formatting log entries in a customizable and extensible manner.
@@ -974,6 +984,55 @@ public final class LogPattern {
     }
 
     /**
+     * Represents a log format entry in CSV output.
+     */
+    public static final class CsvEntry implements LogPatternEntry {
+        TimeStampFormatter formatter = TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, Locale.getDefault());
+
+        /**
+         * Constructs a new instance of the NewlineEntry class which represents a log format entry
+         * that inserts a newline character into the output of a log pattern.
+         */
+        public CsvEntry() {
+            // nothing to  do
+        }
+
+        @Override
+        public String toString() {
+            return "CSV";
+        }
+
+        @Override
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+            app.append('"');
+            formatter.appendTo(timestamp, app);
+            app.append("\",\"");
+            app.append(lvl.name());
+            app.append("\",\"");
+            app.append(loggerName);
+            app.append("\",\"");
+            appendCsvEscaped(app, msg);
+            app.append("\"\n");
+        }
+
+        private void appendCsvEscaped(Appendable app, @Nullable String msg) throws IOException {
+            if (msg == null) {
+                app.append("null");
+                return;
+            }
+
+            int start = 0;
+            int end;
+            while ((end = msg.indexOf('"', start)) != -1) {
+                app.append(msg, start, end);
+                app.append("\"\"");
+                start = end + 1;
+            }
+            app.append(msg, start, msg.length());
+        }
+    }
+
+    /**
      * Parses a JUL-style pattern string and creates a new {@code LogPattern} instance.
      *
      * @param pattern the format pattern in JUL style
@@ -1112,6 +1171,22 @@ public final class LogPattern {
                 new LiteralEntry(" - "),
                 new MessageEntry(0, Integer.MAX_VALUE, true),
                 new NewlineEntry()
+        );
+    }
+
+    /**
+     * Creates a {@code LogPattern} instance for a Log4J-style CSV layout.
+     *
+     * The resulting pattern produces log entries in a comma-separated values (CSV)
+     * format, where each log entry contains the following fields:
+     * timestamp, log level, logger name, and the log message.
+     * The fields are quoted and escaped appropriately to conform to CSV conventions.
+     *
+     * @return a {@code LogPattern} instance configured for a Log4J-style CSV layout
+     */
+    public static LogPattern csvLayoutLog4jPattern() {
+        return new LogPattern(LOG4J_CSV_LAYOUT, "",
+                new CsvEntry()
         );
     }
 
