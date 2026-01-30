@@ -18,6 +18,7 @@ package org.slb4j;
 import org.slb4j.handler.RotatingFileHandler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import java.nio.file.Files;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -181,5 +182,75 @@ class LoggingConfigurationTest {
 
         String output = sb.toString();
         assertTrue(output.contains("\",\"ERROR\",\"test.Logger\",\"null\"\n"), "Output should contain 'null' for null message. Got: " + output);
+    }
+
+    @Test
+    void testXmlLayoutConfiguration() throws IOException {
+        String propertyText = """
+                appender.console.type=Console
+                appender.console.layout.type=XmlLayout
+                """;
+        Properties props = new Properties();
+        props.load(new StringReader(propertyText));
+
+        LoggingConfiguration config = LoggingConfiguration.parseLog4j(props);
+
+        LogHandler handler = config.getHandler("console");
+        assertNotNull(handler);
+        assertInstanceOf(org.slb4j.handler.ConsoleHandler.class, handler);
+        org.slb4j.handler.ConsoleHandler consoleHandler = (org.slb4j.handler.ConsoleHandler) handler;
+        assertEquals(LogPattern.LOG4J_XML_LAYOUT, consoleHandler.getLogPattern().getType());
+
+        // Test addToProperties
+        Properties outProps = new Properties();
+        config.addToProperties(outProps);
+        assertEquals("XmlLayout", outProps.getProperty("appender.console.layout.type"));
+    }
+
+    @Test
+    void testXmlOutputFormat() throws IOException {
+        LogPattern xmlPattern = LogPattern.LOG4J_XML_PATTERN;
+        StringBuilder sb = new StringBuilder();
+        long timestamp = 1738259700000L;
+
+        LocationResolver loc = () -> null;
+        xmlPattern.formatLogEntry(sb, timestamp, "test.Logger", LogLevel.INFO, null, null, loc, "Hello <World> & \"Friends\"", null, ConsoleCode.empty());
+
+        String output = sb.toString();
+        assertTrue(output.contains("<logEvent>"), "Output should contain <logEvent>");
+        assertTrue(output.contains("<level>INFO</level>"), "Output should contain <level>INFO</level>");
+        assertTrue(output.contains("<logger>test.Logger</logger>"), "Output should contain <logger>test.Logger</logger>");
+        assertTrue(output.contains("<message>Hello &lt;World&gt; &amp; &quot;Friends&quot;</message>"), "Output should contain escaped message. Got: " + output);
+        assertTrue(output.contains("</logEvent>"), "Output should contain </logEvent>");
+    }
+
+    @Test
+    void testXmlHeaderFooter() {
+        LogPattern xmlPattern = LogPattern.LOG4J_XML_PATTERN;
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<logEvents>\n", xmlPattern.getHeader());
+        assertEquals("</logEvents>\n", xmlPattern.getFooter());
+    }
+
+    @Test
+    void testFileHandlerHeaderFooter(@TempDir Path tempDir) throws IOException {
+        Path logFile = tempDir.resolve("test-xml.log");
+        String propertyText = """
+                appender.file.type=File
+                appender.file.fileName=%s
+                appender.file.layout.type=XmlLayout
+                """.formatted(logFile.toString());
+        Properties props = new Properties();
+        props.load(new StringReader(propertyText));
+
+        LoggingConfiguration config = LoggingConfiguration.parseLog4j(props);
+        LogHandler handler = config.getHandler("file");
+        assertNotNull(handler);
+
+        // Closing the handler should write the footer
+        handler.shutdown();
+
+        String content = Files.readString(logFile);
+        assertTrue(content.startsWith("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<logEvents>\n"), "File should start with header");
+        assertTrue(content.endsWith("</logEvents>\n"), "File should end with footer");
     }
 }

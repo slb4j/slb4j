@@ -120,6 +120,11 @@ public final class ConsoleHandler implements LogHandler, LogPatternConfigurable 
         this.out = out;
         this.writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
         setColored(colored);
+        String header = logPattern.getHeader();
+        if (!header.isEmpty()) {
+            out.print(header);
+            out.flush();
+        }
     }
 
     @Override
@@ -199,6 +204,11 @@ public final class ConsoleHandler implements LogHandler, LogPatternConfigurable 
     @Override
     public void shutdown() {
         synchronized (lock) {
+            String footer = logPattern.getFooter();
+            if (!footer.isEmpty()) {
+                out.print(footer);
+                out.flush();
+            }
             buffer.reset(0);
         }
     }

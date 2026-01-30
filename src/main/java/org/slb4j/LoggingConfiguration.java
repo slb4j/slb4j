@@ -426,8 +426,6 @@ public final class LoggingConfiguration {
                 () -> LogPattern.DEFAULT_PATTERN
         );
 
-        handlers.put(name, handler);
-
         String sLayoutType = properties.getProperty(prefix + LOGGER_LAYOUT_TYPE);
         if (sLayoutType != null) {
             sLayoutType = sLayoutType.strip();
@@ -439,10 +437,16 @@ public final class LoggingConfiguration {
                 if (handler instanceof LogPatternConfigurable patternConfigurable) {
                     patternConfigurable.setLogPattern(LogPattern.LOG4J_CSV_PATTERN);
                 }
+            } else if (LogPattern.LOG4J_XML_LAYOUT.equalsIgnoreCase(sLayoutType)) {
+                if (handler instanceof LogPatternConfigurable patternConfigurable) {
+                    patternConfigurable.setLogPattern(LogPattern.LOG4J_XML_PATTERN);
+                }
             } else if (!LogPattern.LOG4J_PATTERN_LAYOUT.equalsIgnoreCase(sLayoutType)) {
                 Util.err().println("slb4j: handler '" + name + "' - layout type '" + sLayoutType + "' is not supported, using PatternLayout");
             }
         }
+
+        handlers.put(name, handler);
     }
 
     private static long parseSize(String s) {
@@ -557,6 +561,8 @@ public final class LoggingConfiguration {
                     properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_SIMPLE_LAYOUT);
             case LogPattern.LOG4J_CSV_LAYOUT ->
                     properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_CSV_LAYOUT);
+            case LogPattern.LOG4J_XML_LAYOUT ->
+                    properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_XML_LAYOUT);
             case LogPattern.LOG4J_PATTERN_LAYOUT -> {
                 properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_PATTERN_LAYOUT);
                 properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, logPattern.getText());

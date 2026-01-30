@@ -41,6 +41,11 @@ public final class LogPattern {
     public static final String LOG4J_CSV_LAYOUT = "CsvLayout";
 
     /**
+     * Represents the identifier for an XML layout pattern used in Log4J logging.
+     */
+    public static final String LOG4J_XML_LAYOUT = "XmlLayout";
+
+    /**
      * Represents the identifier for a simple layout pattern used in Log4J logging.
      */
     public static final String LOG4J_SIMPLE_LAYOUT = "SimpleLayout";
@@ -122,6 +127,11 @@ public final class LogPattern {
     public static final LogPattern LOG4J_CSV_PATTERN = csvLayoutLog4jPattern();
 
     /**
+     * A pre-configured LogPattern instance for XML layout formatting.
+     */
+    public static final LogPattern LOG4J_XML_PATTERN = xmlLayoutLog4jPattern();
+
+    /**
      * Defines an interface for formatting log entries in a customizable and extensible manner.
      * Implementations of this interface allow specific components of a log entry to be
      * processed and appended to a {@link Appendable} in a format defined by the implementing class.
@@ -154,6 +164,24 @@ public final class LogPattern {
          */
         default boolean isLocationNeeded() {
             return false;
+        }
+
+        /**
+         * Returns a header for the output format.
+         *
+         * @return the header, or an empty string if no header is required
+         */
+        default String getHeader() {
+            return "";
+        }
+
+        /**
+         * Returns a footer for the output format.
+         *
+         * @return the footer, or an empty string if no footer is required
+         */
+        default String getFooter() {
+            return "";
         }
     }
 
@@ -1033,6 +1061,78 @@ public final class LogPattern {
     }
 
     /**
+     * Represents a log format entry in XML output.
+     */
+    public static final class XmlEntry implements LogPatternEntry {
+        private final TimeStampFormatter formatter = TimeStampFormatter.parse("yyyy-MM-dd'T'HH:mm:ss,SSS", ZONE_ID, Locale.getDefault());
+
+        /**
+         * Constructs a new instance of the XmlEntry class.
+         */
+        public XmlEntry() {
+            // nothing to  do
+        }
+
+        @Override
+        public String getHeader() {
+            return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<logEvents>\n";
+        }
+
+        @Override
+        public String getFooter() {
+            return "</logEvents>\n";
+        }
+
+        @Override
+        public String toString() {
+            return "XML";
+        }
+
+        @Override
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+            app.append("<logEvent>\n");
+            app.append("  <timestamp>");
+            formatter.appendTo(timestamp, app);
+            app.append("</timestamp>\n");
+            app.append("  <level>");
+            app.append(lvl.name());
+            app.append("</level>\n");
+            app.append("  <logger>");
+            appendXmlEscaped(app, loggerName);
+            app.append("</logger>\n");
+            app.append("  <message>");
+            appendXmlEscaped(app, msg);
+            app.append("</message>\n");
+            app.append("</logEvent>\n");
+        }
+
+        private void appendXmlEscaped(Appendable app, @Nullable String msg) throws IOException {
+            if (msg == null) {
+                app.append("null");
+                return;
+            }
+
+            for (int i = 0; i < msg.length(); i++) {
+                char c = msg.charAt(i);
+                switch (c) {
+                    case '<' -> app.append("&lt;");
+                    case '>' -> app.append("&gt;");
+                    case '&' -> app.append("&amp;");
+                    case '"' -> app.append("&quot;");
+                    case '\'' -> app.append("&apos;");
+                    default -> {
+                        if (c < 32 && c != '\t' && c != '\n' && c != '\r') {
+                            app.append("&#").append(Integer.toString(c)).append(";");
+                        } else {
+                            app.append(c);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
      * Parses a JUL-style pattern string and creates a new {@code LogPattern} instance.
      *
      * @param pattern the format pattern in JUL style
@@ -1190,6 +1290,19 @@ public final class LogPattern {
         );
     }
 
+    /**
+     * Creates a {@code LogPattern} instance for a Log4J-style XML layout.
+     *
+     * The resulting pattern produces log entries in an XML format.
+     *
+     * @return a {@code LogPattern} instance configured for a Log4J-style XML layout
+     */
+    public static LogPattern xmlLayoutLog4jPattern() {
+        return new LogPattern(LOG4J_XML_LAYOUT, "",
+                new XmlEntry()
+        );
+    }
+
     private final String type;
     private final String text;
     private final LogPatternEntry[] entries;
@@ -1240,6 +1353,32 @@ public final class LogPattern {
      */
     public boolean isLocationNeeded() {
         return locationNeeded;
+    }
+
+    /**
+     * Get the header for this pattern.
+     *
+     * @return the header
+     */
+    public String getHeader() {
+        StringBuilder sb = new StringBuilder();
+        for (LogPatternEntry entry : entries) {
+            sb.append(entry.getHeader());
+        }
+        return sb.toString();
+    }
+
+    /**
+     * Get the footer for this pattern.
+     *
+     * @return the footer
+     */
+    public String getFooter() {
+        StringBuilder sb = new StringBuilder();
+        for (LogPatternEntry entry : entries) {
+            sb.append(entry.getFooter());
+        }
+        return sb.toString();
     }
 
     /**

@@ -18,6 +18,7 @@ package org.slb4j.handler;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
+import org.slb4j.LogPattern;
 import org.slb4j.MDC;
 import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
@@ -82,6 +83,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
             synchronized (lock()) {
                 this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
                 this.out = Channels.newWriter(channel, StandardCharsets.UTF_8);
+                String header = logPattern.getHeader();
+                if (!header.isEmpty()) {
+                    out.write(header);
+                    out.flush();
+                }
             }
 
             updateNextRotationTime();
@@ -263,6 +269,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         synchronized (lock()) {
             if (out != null) {
                 try {
+                    String footer = logPattern.getFooter();
+                    if (!footer.isEmpty()) {
+                        out.write(footer);
+                        out.flush();
+                    }
                     out.close();
                 } catch (IOException e) {
                     Util.err().println("Error closing log file: " + e.getMessage());
@@ -315,6 +326,30 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     public int getMaxBackupIndex() {
         synchronized (lock()) {
             return maxBackupIndex;
+        }
+    }
+
+    @Override
+    public void setLogPattern(LogPattern logPattern) {
+        synchronized (lock()) {
+            if (this.logPattern != logPattern) {
+                if (out != null) {
+                    try {
+                        String footer = this.logPattern.getFooter();
+                        if (!footer.isEmpty()) {
+                            out.write(footer);
+                        }
+                        String header = logPattern.getHeader();
+                        if (!header.isEmpty()) {
+                            out.write(header);
+                        }
+                        out.flush();
+                    } catch (IOException e) {
+                        Util.err().println("Error writing header/footer during pattern change: " + e.getMessage());
+                    }
+                }
+                this.logPattern = logPattern;
+            }
         }
     }
 }
