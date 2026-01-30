@@ -1315,7 +1315,7 @@ public final class LogPattern {
      * @param text    the pattern text
      * @param entries the format pattern entries
      */
-    private LogPattern(String type, String text, LogPatternEntry... entries) {
+    LogPattern(String type, String text, LogPatternEntry... entries) {
         this.type = type;
         this.text = text;
         this.entries = entries;
@@ -1375,8 +1375,8 @@ public final class LogPattern {
      */
     public String getFooter() {
         StringBuilder sb = new StringBuilder();
-        for (LogPatternEntry entry : entries) {
-            sb.append(entry.getFooter());
+        for (int i = entries.length - 1; i >= 0; i--) {
+            sb.append(entries[i].getFooter());
         }
         return sb.toString();
     }

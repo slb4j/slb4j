@@ -232,6 +232,26 @@ class LoggingConfigurationTest {
     }
 
     @Test
+    void testFooterOrder() {
+        LogPattern.LogPatternEntry entry1 = new LogPattern.LogPatternEntry() {
+            @Override
+            public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @org.jspecify.annotations.Nullable String mrk, @org.jspecify.annotations.Nullable MDC mdc, @org.jspecify.annotations.Nullable Location location, @org.jspecify.annotations.Nullable String msg, @org.jspecify.annotations.Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {}
+            @Override public String getHeader() { return "[H1]"; }
+            @Override public String getFooter() { return "[F1]"; }
+        };
+        LogPattern.LogPatternEntry entry2 = new LogPattern.LogPatternEntry() {
+            @Override
+            public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @org.jspecify.annotations.Nullable String mrk, @org.jspecify.annotations.Nullable MDC mdc, @org.jspecify.annotations.Nullable Location location, @org.jspecify.annotations.Nullable String msg, @org.jspecify.annotations.Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {}
+            @Override public String getHeader() { return "[H2]"; }
+            @Override public String getFooter() { return "[F2]"; }
+        };
+
+        LogPattern pattern = new LogPattern("custom", "", entry1, entry2);
+        assertEquals("[H1][H2]", pattern.getHeader());
+        assertEquals("[F2][F1]", pattern.getFooter());
+    }
+
+    @Test
     void testFileHandlerHeaderFooter(@TempDir Path tempDir) throws IOException {
         Path logFile = tempDir.resolve("test-xml.log");
         String propertyText = """
