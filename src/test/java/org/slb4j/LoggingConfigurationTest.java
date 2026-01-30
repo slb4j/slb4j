@@ -32,14 +32,15 @@ class LoggingConfigurationTest {
     void testFileHandlerConfiguration(@TempDir Path tempDir) throws IOException {
         Path logFile = tempDir.resolve("test.log");
         String propertyText = """
-                appender.file.type = File
-                appender.file.fileName = %s
-                appender.file.append = false
-                appender.file.filePattern = test-%%i.log
-                appender.file.policies.size.size = 1024
-                appender.file.policies.time.interval = 1
-                appender.file.strategy.max = 5
-                appender.file.layout.pattern = %%m%%n
+                appender.file.type=File
+                appender.file.fileName=%s
+                appender.file.append=false
+                appender.file.filePattern=test-%%i.log
+                appender.file.policies.size.size=1024
+                appender.file.policies.time.interval=1
+                appender.file.strategy.max=5
+                appender.file.layout.type=PatternLayout
+                appender.file.layout.pattern=%%m%%n
                 """.formatted(logFile.toString());
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
@@ -77,13 +78,13 @@ class LoggingConfigurationTest {
     @Test
     void testParseJul() throws IOException {
         String propertyText = """
-                handlers = java.util.logging.ConsoleHandler, java.util.logging.FileHandler
-                .level = INFO
-                org.slb4j.level = FINE
-                java.util.logging.FileHandler.pattern = test.log
-                java.util.logging.FileHandler.limit = 1024
-                java.util.logging.FileHandler.count = 3
-                java.util.logging.FileHandler.append = true
+                handlers=java.util.logging.ConsoleHandler, java.util.logging.FileHandler
+                .level=INFO
+                org.slb4j.level=FINE
+                java.util.logging.FileHandler.pattern=test.log
+                java.util.logging.FileHandler.limit=1024
+                java.util.logging.FileHandler.count=3
+                java.util.logging.FileHandler.append=true
                 """;
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
@@ -113,7 +114,7 @@ class LoggingConfigurationTest {
     @Test
     void testParseJulRootLevel() throws IOException {
         String propertyText = """
-                .level = SEVERE
+                .level=SEVERE
                 """;
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
