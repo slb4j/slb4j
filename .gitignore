@@ -1,0 +1,10 @@
+**/.*
+**/build
+/out
+/target
+/benchmark_results/*
+/slb4j-autoloader/src/main/java/org/slb4j/autoloader/Slb4jLog4jProvider.java
+/slb4j-autoloader/src/main/java/org/slb4j/autoloader/Slb4jServiceProvider.java
+/slb4j-autoloader/src/main/java/module-info.java
+/slb4j-autoloader/build.gradle.kts
+/native/slb4j-native-test/*.log
