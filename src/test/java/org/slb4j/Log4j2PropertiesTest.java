@@ -189,7 +189,7 @@ class Log4j2PropertiesTest {
                     if ("Console".equalsIgnoreCase(type) || "File".equalsIgnoreCase(type) || "RollingFile".equalsIgnoreCase(type)) {
                         String layoutType = expectedProps.getProperty(prefix + ".layout.type");
                         if (layoutType == null) {
-                            expectedProps.put(prefix + ".layout.type", "PatternLayout");
+                            expectedProps.put(prefix + ".layout.type", LogPattern.LOG4J_PATTERN_LAYOUT);
                         }
                     }
                 });
@@ -205,8 +205,8 @@ class Log4j2PropertiesTest {
             }
 
             if (key.endsWith(".layout.pattern")) {
-                Assertions.assertEquals(LogPattern.parseLog4jPattern(expected).getPattern(),
-                                     LogPattern.parseLog4jPattern(actual).getPattern(),
+                Assertions.assertEquals(LogPattern.parseLog4jPattern(expected).getText(),
+                                     LogPattern.parseLog4jPattern(actual).getText(),
                                      "Normalized pattern mismatch for key: " + key);
             } else if (key.endsWith(".policies.size.size") || key.endsWith(".limit")) {
                 Assertions.assertEquals(normalizeSize(expected), normalizeSize(actual),

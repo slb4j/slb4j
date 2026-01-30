@@ -53,4 +53,9 @@
         <Class name="org.slb4j.filter.FiltersTest"/>
     </Match>
 
+    <Match>
+        <Bug pattern="BC_VACUOUS_INSTANCEOF"/>
+        <Class name="org.slb4j.LoggingConfiguration"/>
+    </Match>
+
 </FindBugsFilter>

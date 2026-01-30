@@ -61,7 +61,7 @@ class LoggingConfigurationTest {
         assertEquals(1024L, fileHandler.getMaxFileSize());
         assertNotNull(fileHandler.getRotationTimeUnit());
         assertEquals(5, fileHandler.getMaxBackupIndex());
-        assertEquals("%m%n", fileHandler.getLogPattern().getPattern());
+        assertEquals("%m%n", fileHandler.getLogPattern().getText());
 
         // Test addToProperties
         Properties outProps = new Properties();

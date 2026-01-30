@@ -35,7 +35,18 @@ import java.util.regex.Pattern;
  */
 public final class LogPattern {
 
+    /**
+     * Represents the identifier for a simple layout pattern used in Log4J logging.
+     */
+    public static final String LOG4J_SIMPLE_LAYOUT = "SimpleLayout";
+
+    /**
+     * Represents the constant string identifier for the Log4J pattern layout type.
+     */
+    public static final String LOG4J_PATTERN_LAYOUT = "PatternLayout";
+
     private static final String NEWLINE = System.lineSeparator();
+
     private static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?(\\{([^}]+)?})?(\\{([^}]+)?})?|%%|%(?![a-zA-Z])");
@@ -98,7 +109,7 @@ public final class LogPattern {
      * <p>
      * Pattern: {@code %p - %m%n}
      */
-    public static final LogPattern SIMPLE_PATTERN = parseLog4jPattern("%p - %m%n");
+    public static final LogPattern SIMPLE_PATTERN = simpleLayoutLog4jPattern();
 
     /**
      * Defines an interface for formatting log entries in a customizable and extensible manner.
@@ -998,7 +1009,7 @@ public final class LogPattern {
      * @return a {@code LogPattern} instance representing the parsed pattern
      */
     public static LogPattern parseJulPattern(String pattern) {
-        return new LogPattern(parseJulPatternString(pattern));
+        return new LogPattern(LOG4J_PATTERN_LAYOUT, pattern, parseJulPatternString(pattern));
     }
 
     private static LogPatternEntry[] parseJulPatternString(String pattern) {
@@ -1098,8 +1109,9 @@ public final class LogPattern {
         return entries.toArray(LogPatternEntry[]::new);
     }
 
+    @Override
     public String toString() {
-        return getPattern();
+        return getType() + "[" + getText() + "]";
     }
 
     /**
@@ -1109,18 +1121,44 @@ public final class LogPattern {
      * @return a {@code LogPattern} instance representing the parsed pattern
      */
     public static LogPattern parseLog4jPattern(String pattern) {
-        return new LogPattern(parseLog4jPatternString(pattern));
+        return new LogPattern(LOG4J_PATTERN_LAYOUT, pattern, parseLog4jPatternString(pattern));
     }
 
+    /**
+     * Creates a simple log4j pattern layout for log formatting.
+     *
+     * The pattern includes:
+     * - The log level, formatted with unlimited width.
+     * - A literal separator " - ".
+     * - The log message, formatted with unlimited width.
+     * - A newline character at the end.
+     *
+     * @return a {@code LogPattern} instance configured with a simple layout suitable for log4j-style formatting.
+     */
+    public static LogPattern simpleLayoutLog4jPattern() {
+        return new LogPattern(LOG4J_SIMPLE_LAYOUT, "",
+                new LevelEntry(0, Integer.MAX_VALUE, true),
+                new LiteralEntry(" - "),
+                new MessageEntry(0, Integer.MAX_VALUE, true),
+                new NewlineEntry()
+        );
+    }
+
+    private final String type;
+    private final String text;
     private final LogPatternEntry[] entries;
     private final boolean locationNeeded;
 
     /**
      * Constructs a LogPattern using the supplied entries.
      *
+     * @param type    the type of the pattern
+     * @param text    the pattern text
      * @param entries the format pattern entries
      */
-    private LogPattern(LogPatternEntry[] entries) {
+    private LogPattern(String type, String text, LogPatternEntry... entries) {
+        this.type = type;
+        this.text = text;
         this.entries = entries;
 
         boolean locationNeeded = false;
@@ -1134,15 +1172,19 @@ public final class LogPattern {
     }
 
     /**
-     * Get the format pattern.
-     * @return the format pattern in Log4J style
+     * Get the type of the pattern.
+     * @return the type
      */
-    public String getPattern() {
-        StringBuilder app = new StringBuilder();
-        for (LogPatternEntry entry : entries) {
-            app.append(entry.getLog4jPattern());
-        }
-        return app.toString();
+    public String getType() {
+        return type;
+    }
+
+    /**
+     * Get the pattern text.
+     * @return the pattern text
+     */
+    public String getText() {
+        return text;
     }
 
     /**

@@ -431,11 +431,11 @@ public final class LoggingConfiguration {
         String sLayoutType = properties.getProperty(prefix + LOGGER_LAYOUT_TYPE);
         if (sLayoutType != null) {
             sLayoutType = sLayoutType.strip();
-            if ("SimpleLayout".equalsIgnoreCase(sLayoutType)) {
+            if (LogPattern.LOG4J_SIMPLE_LAYOUT.equalsIgnoreCase(sLayoutType)) {
                 if (handler instanceof LogPatternConfigurable patternConfigurable) {
                     patternConfigurable.setLogPattern(LogPattern.SIMPLE_PATTERN);
                 }
-            } else if (!"PatternLayout".equalsIgnoreCase(sLayoutType)) {
+            } else if (!LogPattern.LOG4J_PATTERN_LAYOUT.equalsIgnoreCase(sLayoutType)) {
                 Util.err().println("slb4j: handler '" + name + "' - layout type '" + sLayoutType + "' is not supported, using PatternLayout");
             }
         }
@@ -503,6 +503,7 @@ public final class LoggingConfiguration {
             LogHandler handler = entry.getValue();
             String prefix = LOGGING_HANDLER + "." + name + ".";
 
+            // Configures properties based on handler type and attributes
             switch (handler) {
                 case ConsoleHandler consoleHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, "Console");
@@ -510,21 +511,11 @@ public final class LoggingConfiguration {
                     String sStream = stream == System.err ? SYSTEM_ERR : SYSTEM_OUT;
                     properties.setProperty(prefix + LOGGER_CONSOLE_TARGET, sStream);
                     properties.setProperty(prefix + LOGGER_CONSOLE_COLORED, String.valueOf(consoleHandler.isColored()));
-                    if (LogPattern.SIMPLE_PATTERN.getPattern().equals(consoleHandler.getLogPattern().getPattern())) {
-                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "SimpleLayout");
-                    } else {
-                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
-                        properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, consoleHandler.getLogPattern().getPattern());
-                    }
+                    addPatternConfiguration(properties, consoleHandler.getLogPattern(), prefix);
                 }
                 case FileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, "File");
-                    if (LogPattern.SIMPLE_PATTERN.getPattern().equals(fileHandler.getLogPattern().getPattern())) {
-                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "SimpleLayout");
-                    } else {
-                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
-                        properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getLogPattern().getPattern());
-                    }
+                    addPatternConfiguration(properties, fileHandler.getLogPattern(), prefix);
                 }
                 case RotatingFileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, fileHandler.getMaxFileSize() > 0 ? "RollingFile" : "File");
@@ -537,12 +528,7 @@ public final class LoggingConfiguration {
                         properties.setProperty(prefix + "strategy.type", "DefaultRolloverStrategy");
                         properties.setProperty(prefix + LOGGER_FILE_MAX_BACKUPS, String.valueOf(fileHandler.getMaxBackupIndex()));
                     }
-                    if (LogPattern.SIMPLE_PATTERN.getPattern().equals(fileHandler.getLogPattern().getPattern())) {
-                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "SimpleLayout");
-                    } else {
-                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
-                        properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getLogPattern().getPattern());
-                    }
+                    addPatternConfiguration(properties, fileHandler.getLogPattern(), prefix);
                 }
                 default -> {
                     // do nothing
@@ -557,6 +543,22 @@ public final class LoggingConfiguration {
                 properties.setProperty(prefix + LOGGING_FILTER, filter.name());
             } else if (filter != LogFilter.allPass()) {
                 properties.setProperty(prefix + LOGGING_FILTER, filter.name());
+            }
+        }
+    }
+
+    private static void addPatternConfiguration(Properties properties, LogPattern logPattern, String prefix) {
+        switch (logPattern.getType()) {
+            case LogPattern.LOG4J_SIMPLE_LAYOUT ->
+                    properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_SIMPLE_LAYOUT);
+            case LogPattern.LOG4J_PATTERN_LAYOUT -> {
+                properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_PATTERN_LAYOUT);
+                properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, logPattern.getText());
+            }
+            default -> {
+                Util.err().format("slb4j: unknown log pattern type '%s' for handler '%s', using PatternLayout%n", logPattern.getType(), prefix);
+                properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_PATTERN_LAYOUT);
+                properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, LogPattern.COMPACT_PATTERN.getText());
             }
         }
     }

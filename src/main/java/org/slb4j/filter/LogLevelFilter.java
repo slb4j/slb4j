@@ -45,6 +45,11 @@ public final class LogLevelFilter implements LogFilter {
         this.level = level;
     }
 
+    /**
+     * Retrieves the minimum log level that this filter allows.
+     *
+     * @return the minimal log level required to pass through the filter
+     */
     public LogLevel level() {
         return level;
     }
