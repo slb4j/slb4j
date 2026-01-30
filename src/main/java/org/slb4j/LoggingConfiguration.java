@@ -328,6 +328,7 @@ public final class LoggingConfiguration {
         List<String> appenderNames = properties.stringPropertyNames().stream()
                 .filter(key -> key.startsWith(LOGGING_HANDLER + ".") && key.endsWith("." + LOGGING_TYPE))
                 .map(key -> key.substring(LOGGING_HANDLER.length() + 1, key.length() - LOGGING_TYPE.length() - 1))
+                .filter(name -> !name.endsWith(".layout"))
                 .toList();
 
         appenderNames.forEach(name -> addHandler(properties, name));
@@ -420,6 +421,11 @@ public final class LoggingConfiguration {
         );
 
         handlers.put(name, handler);
+
+        String sLayoutType = properties.getProperty(prefix + LOGGER_LAYOUT_TYPE);
+        if (sLayoutType != null && !"PatternLayout".equalsIgnoreCase(sLayoutType.strip())) {
+            Util.err().println("slb4j: handler '" + name + "' - layout type '" + sLayoutType + "' is not supported, using PatternLayout");
+        }
     }
 
     private static long parseSize(String s) {
