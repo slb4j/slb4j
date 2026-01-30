@@ -426,23 +426,20 @@ public final class LoggingConfiguration {
                 () -> LogPattern.DEFAULT_PATTERN
         );
 
-        String sLayoutType = properties.getProperty(prefix + LOGGER_LAYOUT_TYPE);
-        if (sLayoutType != null) {
-            sLayoutType = sLayoutType.strip();
-            if (LogPattern.LOG4J_SIMPLE_LAYOUT.equalsIgnoreCase(sLayoutType)) {
-                if (handler instanceof LogPatternConfigurable patternConfigurable) {
+        if (handler instanceof LogPatternConfigurable patternConfigurable) {
+            String sLayoutType = properties.getProperty(prefix + LOGGER_LAYOUT_TYPE);
+            if (sLayoutType != null) {
+                sLayoutType = sLayoutType.strip();
+                // Configures handler pattern based on layout type property
+                if (LogPattern.LOG4J_SIMPLE_LAYOUT.equalsIgnoreCase(sLayoutType)) {
                     patternConfigurable.setLogPattern(LogPattern.LOG4J_SIMPLE_PATTERN);
-                }
-            } else if (LogPattern.LOG4J_CSV_LAYOUT.equalsIgnoreCase(sLayoutType)) {
-                if (handler instanceof LogPatternConfigurable patternConfigurable) {
+                } else if (LogPattern.LOG4J_CSV_LAYOUT.equalsIgnoreCase(sLayoutType)) {
                     patternConfigurable.setLogPattern(LogPattern.LOG4J_CSV_PATTERN);
-                }
-            } else if (LogPattern.LOG4J_XML_LAYOUT.equalsIgnoreCase(sLayoutType)) {
-                if (handler instanceof LogPatternConfigurable patternConfigurable) {
+                } else if (LogPattern.LOG4J_XML_LAYOUT.equalsIgnoreCase(sLayoutType)) {
                     patternConfigurable.setLogPattern(LogPattern.LOG4J_XML_PATTERN);
+                } else if (!LogPattern.LOG4J_PATTERN_LAYOUT.equalsIgnoreCase(sLayoutType)) {
+                    Util.err().println("slb4j: handler '" + name + "' - layout type '" + sLayoutType + "' is not supported, using PatternLayout");
                 }
-            } else if (!LogPattern.LOG4J_PATTERN_LAYOUT.equalsIgnoreCase(sLayoutType)) {
-                Util.err().println("slb4j: handler '" + name + "' - layout type '" + sLayoutType + "' is not supported, using PatternLayout");
             }
         }
 
@@ -469,9 +466,8 @@ public final class LoggingConfiguration {
 
         String sType = properties.getProperty(prefix + LOGGING_TYPE, "LoggerNamePrefixFilter").strip();
         if ("ThresholdFilter".equalsIgnoreCase(sType)) {
-            handleProperty(properties, prefix + LEVEL, s -> LogLevel.valueOf(s.toUpperCase(Locale.ROOT)), lvl -> {
-                filters.put(name, new LogLevelFilter(name, lvl));
-            }, () -> LogLevel.INFO);
+            handleProperty(properties, prefix + LEVEL, s -> LogLevel.valueOf(s.toUpperCase(Locale.ROOT)),
+                    lvl -> filters.put(name, new LogLevelFilter(name, lvl)), () -> LogLevel.INFO);
             return;
         }
 
