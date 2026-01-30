@@ -155,9 +155,72 @@ class Log4j2PropertiesTest {
     @ParameterizedTest
     @MethodSource("propertieSets")
     void testSupportedProperties(PropertySet propertySet) throws IOException {
-        Properties props = new Properties();
         assumeTrue(propertySet.supported, "Currently unsupported: " + propertySet.name);
+
+        Properties props = new Properties();
         props.load(new StringReader(propertySet.properties));
-        Assertions.assertDoesNotThrow(() -> LoggingConfiguration.parseLog4j(props));
+
+        LoggingConfiguration config = LoggingConfiguration.parseLog4j(props);
+
+        // Test addToProperties and verify it matches the input
+        Properties outProps = new Properties();
+        config.addToProperties(outProps);
+
+        // Prepare expected properties from input: inject layout.type=PatternLayout if missing
+        Properties expectedProps = new Properties();
+        props.forEach((k, v) -> {
+            String key = (String) k;
+            expectedProps.setProperty(key, ((String) v).strip());
+        });
+
+        // For each appender defined in input, ensure layout.type is set to PatternLayout if it's a supported property
+        expectedProps.stringPropertyNames().stream()
+                .filter(key -> key.startsWith("appender.") && key.endsWith(".type"))
+                .map(key -> key.substring(0, key.length() - 5))
+                .forEach(prefix -> {
+                    String type = expectedProps.getProperty(prefix + ".type");
+                    if ("Console".equalsIgnoreCase(type) || "File".equalsIgnoreCase(type) || "RollingFile".equalsIgnoreCase(type)) {
+                        expectedProps.putIfAbsent(prefix + ".layout.type", "PatternLayout");
+                    }
+                });
+
+        // We only check properties that are actually handled by SLB4J
+        outProps.stringPropertyNames().forEach(key -> {
+            String actual = outProps.getProperty(key);
+            String expected = expectedProps.getProperty(key);
+
+            // If expected is null, it means it was using a default value
+            if (expected == null) {
+                return;
+            }
+
+            if (key.endsWith(".layout.pattern")) {
+                Assertions.assertEquals(LogPattern.parseLog4jPattern(expected).getPattern(),
+                                     LogPattern.parseLog4jPattern(actual).getPattern(),
+                                     "Normalized pattern mismatch for key: " + key);
+            } else if (key.endsWith(".policies.size.size") || key.endsWith(".limit")) {
+                Assertions.assertEquals(normalizeSize(expected), normalizeSize(actual),
+                                     "Normalized size mismatch for key: " + key);
+            } else if (key.endsWith(".append")) {
+                Assertions.assertEquals(Boolean.parseBoolean(expected), Boolean.parseBoolean(actual),
+                        "Boolean mismatch for key: " + key);
+            } else {
+                Assertions.assertEquals(expected, actual, "Property mismatch for key: " + key);
+            }
+        });
+    }
+
+    private static long normalizeSize(String s) {
+        s = s.strip().toUpperCase(java.util.Locale.ROOT);
+        if (s.endsWith("MB")) {
+            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024L * 1024L;
+        } else if (s.endsWith("KB")) {
+            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024L;
+        } else if (s.endsWith("GB")) {
+            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024L * 1024L * 1024L;
+        } else if (s.endsWith("B")) {
+            return Long.parseLong(s.substring(0, s.length() - 1).strip());
+        }
+        return Long.parseLong(s);
     }
 }

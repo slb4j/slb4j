@@ -431,11 +431,11 @@ public final class LoggingConfiguration {
     private static long parseSize(String s) {
         s = s.strip().toUpperCase(Locale.ROOT);
         if (s.endsWith("MB")) {
-            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024 * 1024;
+            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024L * 1024L;
         } else if (s.endsWith("KB")) {
-            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024;
+            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024L;
         } else if (s.endsWith("GB")) {
-            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024 * 1024 * 1024;
+            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024L * 1024L * 1024L;
         } else if (s.endsWith("B")) {
             return Long.parseLong(s.substring(0, s.length() - 1).strip());
         }
