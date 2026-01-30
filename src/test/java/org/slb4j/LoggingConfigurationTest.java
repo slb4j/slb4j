@@ -19,6 +19,8 @@ import org.slb4j.handler.RotatingFileHandler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
+import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Path;
 import java.util.Properties;
 
@@ -27,19 +29,22 @@ import static org.junit.jupiter.api.Assertions.*;
 class LoggingConfigurationTest {
 
     @Test
-    void testFileHandlerConfiguration(@TempDir Path tempDir) {
+    void testFileHandlerConfiguration(@TempDir Path tempDir) throws IOException {
         Path logFile = tempDir.resolve("test.log");
+        String propertyText = """
+                appender.file.type = File
+                appender.file.fileName = %s
+                appender.file.append = false
+                appender.file.filePattern = test-%%i.log
+                appender.file.policies.size.size = 1024
+                appender.file.policies.time.interval = 1
+                appender.file.strategy.max = 5
+                appender.file.layout.pattern = %%m%%n
+                """.formatted(logFile.toString());
         Properties props = new Properties();
-        props.setProperty("appender.file.type", "File");
-        props.setProperty("appender.file.fileName", logFile.toString());
-        props.setProperty("appender.file.append", "false");
-        props.setProperty("appender.file.filePattern", "test-%i.log");
-        props.setProperty("appender.file.policies.size.size", "1024");
-        props.setProperty("appender.file.policies.time.interval", "1");
-        props.setProperty("appender.file.strategy.max", "5");
-        props.setProperty("appender.file.layout.pattern", "%m%n");
+        props.load(new StringReader(propertyText));
 
-        LoggingConfiguration config = LoggingConfiguration.parse(props);
+        LoggingConfiguration config = LoggingConfiguration.parseLog4j(props);
 
         LogHandler handler = config.getHandlers().stream()
                 .filter(h -> "file".equals(h.name()))
@@ -70,15 +75,18 @@ class LoggingConfigurationTest {
     }
 
     @Test
-    void testParseJul() {
+    void testParseJul() throws IOException {
+        String propertyText = """
+                handlers = java.util.logging.ConsoleHandler, java.util.logging.FileHandler
+                .level = INFO
+                org.slb4j.level = FINE
+                java.util.logging.FileHandler.pattern = test.log
+                java.util.logging.FileHandler.limit = 1024
+                java.util.logging.FileHandler.count = 3
+                java.util.logging.FileHandler.append = true
+                """;
         Properties props = new Properties();
-        props.setProperty("handlers", "java.util.logging.ConsoleHandler, java.util.logging.FileHandler");
-        props.setProperty(".level", "INFO");
-        props.setProperty("org.slb4j.level", "FINE"); // FINE should map to DEBUG
-        props.setProperty("java.util.logging.FileHandler.pattern", "test.log");
-        props.setProperty("java.util.logging.FileHandler.limit", "1024");
-        props.setProperty("java.util.logging.FileHandler.count", "3");
-        props.setProperty("java.util.logging.FileHandler.append", "true");
+        props.load(new StringReader(propertyText));
 
         LoggingConfiguration config = LoggingConfiguration.parseJul(props);
 
@@ -103,10 +111,12 @@ class LoggingConfigurationTest {
     }
 
     @Test
-    void testParseJulRootLevel() {
+    void testParseJulRootLevel() throws IOException {
+        String propertyText = """
+                .level = SEVERE
+                """;
         Properties props = new Properties();
-        // Use ONLY .level to set root level
-        props.setProperty(".level", "SEVERE"); // SEVERE should map to ERROR
+        props.load(new StringReader(propertyText));
 
         LoggingConfiguration config = LoggingConfiguration.parseJul(props);
 

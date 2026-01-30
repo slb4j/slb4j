@@ -198,7 +198,7 @@ public final class LoggingConfiguration {
      * @param properties the {@link Properties} object containing the configuration settings for logging
      * @return a new {@code LoggingConfiguration} instance with settings applied from the provided properties
      */
-    public static LoggingConfiguration parse(Properties properties) {
+    public static LoggingConfiguration parseLog4j(Properties properties) {
         LoggingConfiguration cfg = new LoggingConfiguration();
         cfg.configure(properties);
         return cfg;
@@ -288,7 +288,7 @@ public final class LoggingConfiguration {
                 if (in != null) {
                     Properties properties = new Properties();
                     properties.load(in);
-                    return parse(properties);
+                    return parseLog4j(properties);
                 }
             } catch (IOException e) {
                 Util.err().println("Failed to load " + propertiesFileName + ": " + e.getMessage());
