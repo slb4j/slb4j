@@ -108,7 +108,7 @@ class Log4j2PropertiesTest {
                         appender.file.layout.pattern = [%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %C{1} - %msg%n
                         appender.file.filter.threshold.type = ThresholdFilter
                         appender.file.filter.threshold.level = info
-                        """, false),
+                        """, true),
                 new PropertySet("JSON Layout", """
                         appender.console.type = Console
                         appender.console.name = STDOUT
@@ -132,7 +132,7 @@ class Log4j2PropertiesTest {
                         appender.console.filter.threshold.level = debug
                         rootLogger.level = debug
                         rootLogger.appenderRef.stdout.ref = STDOUT
-                        """, false),
+                        """, true),
                 new PropertySet("Complex Policies", """
                         appender.rolling.type = RollingFile
                         appender.rolling.name = RollingFile

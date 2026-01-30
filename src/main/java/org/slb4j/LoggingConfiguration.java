@@ -317,9 +317,15 @@ public final class LoggingConfiguration {
      */
     private void configure(Properties properties) {
         // Collect all filter names from keys like filter.<name>.level
+        // and also handle ThresholdFilter which uses filter.<name>.type = ThresholdFilter
         List<String> filterNames = properties.stringPropertyNames().stream()
-                .filter(key -> key.startsWith(LOGGING_FILTER + ".") && key.endsWith("." + LEVEL))
-                .map(key -> key.substring(LOGGING_FILTER.length() + 1, key.length() - LEVEL.length() - 1))
+                .filter(key -> key.startsWith(LOGGING_FILTER + ".") && (key.endsWith("." + LEVEL) || key.endsWith("." + LOGGING_TYPE)))
+                .map(key -> {
+                    String sub = key.substring(LOGGING_FILTER.length() + 1);
+                    int dot = sub.indexOf('.');
+                    return dot > 0 ? sub.substring(0, dot) : sub;
+                })
+                .distinct()
                 .toList();
 
         filterNames.forEach(name -> addFilter(properties, name));
@@ -328,7 +334,7 @@ public final class LoggingConfiguration {
         List<String> appenderNames = properties.stringPropertyNames().stream()
                 .filter(key -> key.startsWith(LOGGING_HANDLER + ".") && key.endsWith("." + LOGGING_TYPE))
                 .map(key -> key.substring(LOGGING_HANDLER.length() + 1, key.length() - LOGGING_TYPE.length() - 1))
-                .filter(name -> !name.endsWith(".layout"))
+                .filter(name -> !name.endsWith(".layout") && !name.contains(".filter."))
                 .toList();
 
         appenderNames.forEach(name -> addHandler(properties, name));
@@ -446,6 +452,14 @@ public final class LoggingConfiguration {
     private void addFilter(Properties properties, String name) {
         String prefix = LOGGING_FILTER + "." + name + ".";
 
+        String sType = properties.getProperty(prefix + LOGGING_TYPE, "LoggerNamePrefixFilter").strip();
+        if ("ThresholdFilter".equalsIgnoreCase(sType)) {
+            handleProperty(properties, prefix + LEVEL, s -> LogLevel.valueOf(s.toUpperCase(Locale.ROOT)), lvl -> {
+                filters.put(name, new LogLevelFilter(name, lvl));
+            }, () -> LogLevel.INFO);
+            return;
+        }
+
         LoggerNamePrefixFilter filter = new LoggerNamePrefixFilter(name);
 
         // set the global filter level
@@ -514,6 +528,16 @@ public final class LoggingConfiguration {
                 default -> {
                     // do nothing
                 }
+            }
+
+            LogFilter filter = handler.getFilter();
+            if (filter instanceof LogLevelFilter logLevelFilter) {
+                properties.setProperty(prefix + LOGGING_FILTER + ".threshold." + LOGGING_TYPE, "ThresholdFilter");
+                properties.setProperty(prefix + LOGGING_FILTER + ".threshold." + LEVEL, logLevelFilter.level().name().toLowerCase(Locale.ROOT));
+            } else if (filter instanceof LoggerNamePrefixFilter) {
+                properties.setProperty(prefix + LOGGING_FILTER, filter.name());
+            } else if (filter != LogFilter.allPass()) {
+                properties.setProperty(prefix + LOGGING_FILTER, filter.name());
             }
         }
     }

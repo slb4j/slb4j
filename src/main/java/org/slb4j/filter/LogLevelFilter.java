@@ -45,6 +45,10 @@ public final class LogLevelFilter implements LogFilter {
         this.level = level;
     }
 
+    public LogLevel level() {
+        return level;
+    }
+
     @Override
     public String name() {
         return name;

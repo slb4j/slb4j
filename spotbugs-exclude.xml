@@ -40,6 +40,11 @@
     </Match>
 
     <Match>
+        <Bug pattern="VA_FORMAT_STRING_USES_NEWLINE"/>
+        <Class name="org.slb4j.LoggingConfigurationTest"/>
+    </Match>
+
+    <Match>
         <Bug pattern="CT_CONSTRUCTOR_THROW"/>
     </Match>
 
