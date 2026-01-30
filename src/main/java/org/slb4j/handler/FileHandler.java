@@ -37,6 +37,8 @@ import java.util.function.Supplier;
  */
 public final class FileHandler extends AbstractFileHandler {
 
+    private final Path path;
+    private final boolean append;
     private final FileChannel channel;
     private final Writer writer;
 
@@ -50,6 +52,8 @@ public final class FileHandler extends AbstractFileHandler {
      */
     public FileHandler(String name, Path path, boolean append) throws IOException {
         super(name);
+        this.path = path;
+        this.append = append;
         this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
         this.writer = Channels.newWriter(channel, StandardCharsets.UTF_8);
         String header = logPattern.getHeader();
@@ -125,5 +129,21 @@ public final class FileHandler extends AbstractFileHandler {
                 this.logPattern = logPattern;
             }
         }
+    }
+
+    /**
+     * Gets the path to the log file.
+     * @return the path to the log file
+     */
+    public Path getPath() {
+        return path;
+    }
+
+    /**
+     * Gets whether to append to the log file.
+     * @return true if appending, false otherwise
+     */
+    public boolean isAppend() {
+        return append;
     }
 }

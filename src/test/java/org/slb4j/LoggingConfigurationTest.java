@@ -77,6 +77,44 @@ class LoggingConfigurationTest {
     }
 
     @Test
+    void testSimpleFileHandlerConfiguration(@TempDir Path tempDir) throws IOException {
+        Path logFile = tempDir.resolve("simple.log");
+        String propertyText = """
+                appender.file.type=File
+                appender.file.fileName=%s
+                appender.file.append=false
+                """.formatted(logFile.toString());
+        Properties props = new Properties();
+        props.load(new StringReader(propertyText));
+
+        LoggingConfiguration config = LoggingConfiguration.parseLog4j(props);
+
+        // RotatingFileHandler is used for "File" type in parseLog4j if it's successfully configured
+        // but let's check what addToProperties does.
+        
+        Properties outProps = new Properties();
+        config.addToProperties(outProps);
+
+        assertEquals("File", outProps.getProperty("appender.file.type"));
+        assertEquals(logFile.toString(), outProps.getProperty("appender.file.fileName"));
+        assertEquals("false", outProps.getProperty("appender.file.append"));
+    }
+
+    @Test
+    void testFileHandlerExplicit(@TempDir Path tempDir) throws IOException {
+        Path logFile = tempDir.resolve("explicit.log");
+        LoggingConfiguration config = LoggingConfiguration.defaultConfiguration();
+        config.addHandler("file", new org.slb4j.handler.FileHandler("file", logFile, true));
+
+        Properties props = new Properties();
+        config.addToProperties(props);
+
+        assertEquals("File", props.getProperty("appender.file.type"));
+        assertEquals(logFile.toString(), props.getProperty("appender.file.fileName"));
+        assertEquals("true", props.getProperty("appender.file.append"));
+    }
+
+    @Test
     void testParseJul() throws IOException {
         String propertyText = """
                 handlers=java.util.logging.ConsoleHandler, java.util.logging.FileHandler

@@ -519,6 +519,8 @@ public final class LoggingConfiguration {
                 }
                 case FileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, "File");
+                    properties.setProperty(prefix + LOGGER_FILE_NAME, fileHandler.getPath().toString());
+                    properties.setProperty(prefix + LOGGER_FILE_APPEND, String.valueOf(fileHandler.isAppend()));
                     addPatternConfiguration(properties, fileHandler.getLogPattern(), prefix);
                 }
                 case RotatingFileHandler fileHandler -> {
@@ -551,6 +553,16 @@ public final class LoggingConfiguration {
         }
     }
 
+    /**
+     * Configures a logging pattern layout in the given {@link Properties} object based on the provided
+     * {@link LogPattern} and prefix. It sets the appropriate properties based on the type of log pattern.
+     * If an unrecognized pattern type is encountered, a default pattern is used and a warning is logged.
+     *
+     * @param properties the {@link Properties} object to which the logging pattern configuration
+     *                   will be added
+     * @param logPattern the {@link LogPattern} defining the type of layout and optional text pattern
+     * @param prefix     a {@link String} prefix used to construct the property keys for the pattern configuration
+     */
     private static void addPatternConfiguration(Properties properties, LogPattern logPattern, String prefix) {
         switch (logPattern.getType()) {
             case LogPattern.LOG4J_SIMPLE_LAYOUT ->
