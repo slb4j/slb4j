@@ -133,6 +133,13 @@ class Log4j2PropertiesTest {
                         rootLogger.level = debug
                         rootLogger.appenderRef.stdout.ref = STDOUT
                         """, true),
+                new PropertySet("Simple Layout", """
+                        appender.console.type = Console
+                        appender.console.name = STDOUT
+                        appender.console.layout.type = SimpleLayout
+                        rootLogger.level = debug
+                        rootLogger.appenderRef.stdout.ref = STDOUT
+                        """, true),
                 new PropertySet("Complex Policies", """
                         appender.rolling.type = RollingFile
                         appender.rolling.name = RollingFile
@@ -180,7 +187,10 @@ class Log4j2PropertiesTest {
                 .forEach(prefix -> {
                     String type = expectedProps.getProperty(prefix + ".type");
                     if ("Console".equalsIgnoreCase(type) || "File".equalsIgnoreCase(type) || "RollingFile".equalsIgnoreCase(type)) {
-                        expectedProps.putIfAbsent(prefix + ".layout.type", "PatternLayout");
+                        String layoutType = expectedProps.getProperty(prefix + ".layout.type");
+                        if (layoutType == null) {
+                            expectedProps.put(prefix + ".layout.type", "PatternLayout");
+                        }
                     }
                 });
 

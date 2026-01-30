@@ -429,8 +429,15 @@ public final class LoggingConfiguration {
         handlers.put(name, handler);
 
         String sLayoutType = properties.getProperty(prefix + LOGGER_LAYOUT_TYPE);
-        if (sLayoutType != null && !"PatternLayout".equalsIgnoreCase(sLayoutType.strip())) {
-            Util.err().println("slb4j: handler '" + name + "' - layout type '" + sLayoutType + "' is not supported, using PatternLayout");
+        if (sLayoutType != null) {
+            sLayoutType = sLayoutType.strip();
+            if ("SimpleLayout".equalsIgnoreCase(sLayoutType)) {
+                if (handler instanceof LogPatternConfigurable patternConfigurable) {
+                    patternConfigurable.setLogPattern(LogPattern.SIMPLE_PATTERN);
+                }
+            } else if (!"PatternLayout".equalsIgnoreCase(sLayoutType)) {
+                Util.err().println("slb4j: handler '" + name + "' - layout type '" + sLayoutType + "' is not supported, using PatternLayout");
+            }
         }
     }
 
@@ -503,13 +510,21 @@ public final class LoggingConfiguration {
                     String sStream = stream == System.err ? SYSTEM_ERR : SYSTEM_OUT;
                     properties.setProperty(prefix + LOGGER_CONSOLE_TARGET, sStream);
                     properties.setProperty(prefix + LOGGER_CONSOLE_COLORED, String.valueOf(consoleHandler.isColored()));
-                    properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
-                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, consoleHandler.getLogPattern().getPattern());
+                    if (LogPattern.SIMPLE_PATTERN.getPattern().equals(consoleHandler.getLogPattern().getPattern())) {
+                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "SimpleLayout");
+                    } else {
+                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
+                        properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, consoleHandler.getLogPattern().getPattern());
+                    }
                 }
                 case FileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, "File");
-                    properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
-                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getLogPattern().getPattern());
+                    if (LogPattern.SIMPLE_PATTERN.getPattern().equals(fileHandler.getLogPattern().getPattern())) {
+                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "SimpleLayout");
+                    } else {
+                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
+                        properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getLogPattern().getPattern());
+                    }
                 }
                 case RotatingFileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, fileHandler.getMaxFileSize() > 0 ? "RollingFile" : "File");
@@ -522,8 +537,12 @@ public final class LoggingConfiguration {
                         properties.setProperty(prefix + "strategy.type", "DefaultRolloverStrategy");
                         properties.setProperty(prefix + LOGGER_FILE_MAX_BACKUPS, String.valueOf(fileHandler.getMaxBackupIndex()));
                     }
-                    properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
-                    properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getLogPattern().getPattern());
+                    if (LogPattern.SIMPLE_PATTERN.getPattern().equals(fileHandler.getLogPattern().getPattern())) {
+                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "SimpleLayout");
+                    } else {
+                        properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, "PatternLayout");
+                        properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, fileHandler.getLogPattern().getPattern());
+                    }
                 }
                 default -> {
                     // do nothing

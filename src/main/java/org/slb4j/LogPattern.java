@@ -94,6 +94,13 @@ public final class LogPattern {
     public static final LogPattern DETAILED_PATTERN = parseLog4jPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable");
 
     /**
+     * A predefined {@link LogPattern} instance representing a simple log format.
+     * <p>
+     * Pattern: {@code %p - %m%n}
+     */
+    public static final LogPattern SIMPLE_PATTERN = parseLog4jPattern("%p - %m%n");
+
+    /**
      * Defines an interface for formatting log entries in a customizable and extensible manner.
      * Implementations of this interface allow specific components of a log entry to be
      * processed and appended to a {@link Appendable} in a format defined by the implementing class.
