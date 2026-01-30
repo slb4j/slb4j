@@ -137,15 +137,6 @@ public final class LogPattern {
         void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException;
 
         /**
-         * Retrieves the Log4j-compatible pattern string used for formatting log entries.
-         * The pattern defines how various components of a log entry, such as the timestamp,
-         * log level, logger name, and message, are represented in the output.
-         *
-         * @return a string representing the Log4j-compatible pattern for formatting log entries.
-         */
-        String getLog4jPattern();
-
-        /**
          * Determines whether the location information (e.g., source file, line number)
          * is required for logging.
          *
@@ -205,7 +196,16 @@ public final class LogPattern {
 
         @Override
         public String toString() {
-            return getLog4jPattern();
+            if (minWidth == 0 && maxWidth == 0) {
+                return "%" + prefix;
+            }
+            StringBuilder sb = new StringBuilder();
+            sb.append("%");
+            if (leftAlign) sb.append("-");
+            if (minWidth > 0) sb.append(minWidth);
+            if (maxWidth > 0) sb.append(".").append(maxWidth);
+            sb.append(prefix);
+            return sb.toString();
         }
 
         @Override
@@ -275,20 +275,6 @@ public final class LogPattern {
                 app.append(value);
             }
         }
-
-        @Override
-        public String getLog4jPattern() {
-            if (minWidth == 0 && maxWidth == 0) {
-                return "%" + prefix;
-            }
-            StringBuilder sb = new StringBuilder();
-            sb.append("%");
-            if (leftAlign) sb.append("-");
-            if (minWidth > 0) sb.append(minWidth);
-            if (maxWidth > 0) sb.append(".").append(maxWidth);
-            sb.append(prefix);
-            return sb.toString();
-        }
     }
 
     /**
@@ -309,17 +295,12 @@ public final class LogPattern {
 
         @Override
         public String toString() {
-            return getLog4jPattern();
+            return literal.replace("%", "%%");
         }
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             app.append(literal);
-        }
-
-        @Override
-        public String getLog4jPattern() {
-            return literal.replace("%", "%%");
         }
     }
 
@@ -464,8 +445,8 @@ public final class LogPattern {
         }
 
         @Override
-        public String getLog4jPattern() {
-            String format = super.getLog4jPattern();
+        public String toString() {
+            String format = super.toString();
             if (abbreviationLength > 0 || useDotAbbreviation) {
                 format = format.replace(prefix, prefix + "{" + abbreviationLength + (useDotAbbreviation ? "." : "") + "}");
             }
@@ -552,8 +533,8 @@ public final class LogPattern {
         }
 
         @Override
-        public String getLog4jPattern() {
-            String format = super.getLog4jPattern();
+        public String toString() {
+            String format = super.toString();
             if (key != null) {
                 format = format.replace(prefix, prefix + "{" + key + "}");
             }
@@ -670,8 +651,8 @@ public final class LogPattern {
         }
 
         @Override
-        public String getLog4jPattern() {
-            String format = super.getLog4jPattern();
+        public String toString() {
+            String format = super.toString();
             if (abbreviationLength > 0 || useDotAbbreviation) {
                 format = format.replace(prefix, prefix + "{" + abbreviationLength + (useDotAbbreviation ? "." : "") + "}");
             }
@@ -951,16 +932,6 @@ public final class LogPattern {
 
         @Override
         public String toString() {
-            return getLog4jPattern();
-        }
-
-        @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            formatter.appendTo(timestamp, app);
-        }
-
-        @Override
-        public String getLog4jPattern() {
             StringBuilder sb = new StringBuilder();
             sb.append("%d");
             if (!datePattern.isEmpty()) {
@@ -970,6 +941,11 @@ public final class LogPattern {
                 sb.append("{").append(locale.toLanguageTag()).append("}");
             }
             return sb.toString();
+        }
+
+        @Override
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+            formatter.appendTo(timestamp, app);
         }
     }
 
@@ -988,17 +964,12 @@ public final class LogPattern {
 
         @Override
         public String toString() {
-            return getLog4jPattern();
+            return "%n";
         }
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             app.append(NEWLINE);
-        }
-
-        @Override
-        public String getLog4jPattern() {
-            return "%n";
         }
     }
 
