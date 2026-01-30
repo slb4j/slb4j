@@ -103,7 +103,7 @@ class Log4j2PropertiesTest {
                         # Direct to a file
                         appender.file.type = File
                         appender.file.name = LOGFILE
-                        appender.file.fileName = baeldung/logs/log4j2.log
+                        appender.file.fileName = build/tmp/baeldung/logs/log4j2.log
                         appender.file.layout.type = PatternLayout
                         appender.file.layout.pattern = [%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %C{1} - %msg%n
                         appender.file.filter.threshold.type = ThresholdFilter
