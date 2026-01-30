@@ -15,7 +15,6 @@
  */
 package org.slb4j;
 
-import java.util.Collection;
 import java.util.SequencedCollection;
 
 /**

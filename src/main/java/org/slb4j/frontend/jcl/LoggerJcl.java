@@ -27,7 +27,7 @@ import org.slb4j.support.Util;
 import java.util.function.Supplier;
 
 /**
- * LoggerJcl is an implementation of the Apache commons Log interfac that forwards all logging
+ * LoggerJcl is an implementation of the Apache commons Log interface that forwards all logging
  * calls to the global universal dispatcher instance.
  */
 public final class LoggerJcl implements Log {

@@ -33,14 +33,13 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.logging.SimpleFormatter;
-import java.util.stream.Stream;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Isolated // test changes the default locale!
 @NullMarked
 class LogPatternJulCompatibilityTest {
-    static final Locale systemLoacle = Locale.getDefault();
+    static final Locale systemLocale = Locale.getDefault();
 
     @BeforeAll
     static void setup() {
@@ -49,7 +48,7 @@ class LogPatternJulCompatibilityTest {
 
     @AfterAll
     static void teardown() {
-        Locale.setDefault(systemLoacle);
+        Locale.setDefault(systemLocale);
     }
 
     @ParameterizedTest

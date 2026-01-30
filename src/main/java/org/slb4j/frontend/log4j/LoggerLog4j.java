@@ -31,7 +31,6 @@ import org.slb4j.support.StackWalkerLocationResolver;
 
 import java.util.Map;
 import java.util.function.Supplier;
-import java.util.stream.Stream;
 
 /**
  * LoggerLog4j is an implementation of the Log4J AbstractLogger class that forwards all logging

@@ -24,7 +24,6 @@ import org.slb4j.MDC;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogFilter;
 
-import java.util.Collection;
 import java.util.SequencedCollection;
 import java.util.function.Supplier;
 

@@ -99,7 +99,7 @@ public final class SLB4J {
     /**
      * Initializes the logging framework.
      * <p>
-     * This method does nothing by itelf. But by calling it, execution of the
+     * This method does nothing by itself. But by calling it, execution of the
      * static initializer is triggered.
      */
     public static void init() {

@@ -97,7 +97,7 @@ class FileHandlerTest {
             // But wait, our check for flush is logical. 
 
             handler.handle(System.currentTimeMillis(), "test", LogLevel.ERROR, null, null, LOC, () -> "error", null);
-            // This should trigger flush.
+            // This should trigger a flush.
         }
         assertEquals("infoerror", Files.readString(logFile));
     }

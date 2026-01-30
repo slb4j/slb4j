@@ -56,7 +56,7 @@ dependencies {
 
 ### (Only) if the main application uses JUL Logging: initialize the Library
 
-**Note:** This is only necessary if the main application is using JUL logging since JUL does not lookup the backend
+**Note:** This is only necessary if the main application is using JUL logging since JUL does not look up the backend
 implementation using SPI (Service Provider Infrastructure). If your main application uses one of the other 
 logging frontends, JUL will be automatically initialized when SLB4J is loaded.
 
@@ -156,7 +156,7 @@ experimented with two different async implementations but am undecided if it's w
 overhead is added and will only benefit when really large amounts of messages are logged (on my system: > 500,000
 messages per second).
 
-If it is acceptable to loose some trace and debug level messages in case of a sudden system outage, you can
+If it is acceptable to lose some trace and debug level messages in case of a sudden system outage, you can
 configure SLB4J to only flush messages with level INFO or higher. Messages below that level will then be buffered
 and written out once the buffer is full or a higher-priority message triggers a flush. This can drastically
 improve performance without using async logging.

@@ -80,12 +80,16 @@ class StackWalkerLocationResolverTest {
     }
 
     static final class NotInfra {
+        private NotInfra() {}
+
         static Location callInfra(StackWalkerLocationResolver resolver) {
             return Infra.call(resolver);
         }
     }
 
     static final class Infra {
+        private Infra() {}
+
         static Location call(StackWalkerLocationResolver resolver) {
             return resolver.resolve();
         }
@@ -96,6 +100,8 @@ class StackWalkerLocationResolverTest {
     }
 
     static final class OtherInfra {
+        private OtherInfra() {}
+
         static Location call(StackWalkerLocationResolver resolver) {
             return resolver.resolve();
         }

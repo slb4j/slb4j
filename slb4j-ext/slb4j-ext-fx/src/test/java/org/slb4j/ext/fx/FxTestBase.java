@@ -117,7 +117,7 @@ public abstract class FxTestBase {
             try {
                 runnable.run();
             } catch (Throwable t) {
-                // we need to catch Throwable so that AssertionErrors thrown by JUnit asseertions don't get swallowed by JavaFX
+                // we need to catch Throwable so that AssertionErrors thrown by JUnit assertions don't get swallowed by JavaFX
                 exception.set(t);
             } finally {
                 latch.countDown();

@@ -24,7 +24,6 @@ import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.support.Util;
 
-import java.util.Collection;
 import java.util.List;
 import java.util.SequencedCollection;
 import java.util.concurrent.CopyOnWriteArrayList;

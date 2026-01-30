@@ -28,7 +28,7 @@ import java.util.Objects;
 /**
  * The SwingLogWindow class represents a Swing JFrame that displays log entries in a table view.
  */
-public class SwingLogWindow extends JFrame implements LogWindow {
+public final class SwingLogWindow extends JFrame implements LogWindow {
 
     /** The LogBuffer instance used to store and manage log entries for the SwingLogWindow. */
     private final LogBuffer logBuffer;

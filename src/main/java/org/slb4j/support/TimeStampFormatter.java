@@ -124,17 +124,15 @@ public final class TimeStampFormatter {
      */
     public static TimeStampFormatter parse(String pattern, ZoneId zoneId, Locale locale) {
         // highly optimized timestamp formatters for default format
-        if (pattern.equals("yyyy-MM-dd HH:mm:ss.SSS")) {
-            return getISO8601StyleTimeStampFormatter(' ', '.', zoneId, locale);
-        }
-        if (pattern.equals("yyyy-MM-ddTHH:mm:ss.SSS")) {
-            return getISO8601StyleTimeStampFormatter('T', '.', zoneId, locale);
-        }
-        if (pattern.equals("yyyy-MM-dd HH:mm:ss,SSS")) {
-            return getISO8601StyleTimeStampFormatter(' ', ',', zoneId, locale);
-        }
-        if (pattern.equals("yyyy-MM-dd'T'HH:mm:ss,SSS")) {
-            return getISO8601StyleTimeStampFormatter('T', ',', zoneId, locale);
+        switch (pattern) {
+        case "yyyy-MM-dd HH:mm:ss.SSS"
+                -> {return getISO8601StyleTimeStampFormatter(' ', '.', zoneId, locale);}
+        case "yyyy-MM-ddTHH:mm:ss.SSS"
+                -> {return getISO8601StyleTimeStampFormatter('T', '.', zoneId, locale);}
+        case "yyyy-MM-dd HH:mm:ss,SSS"
+                -> {return getISO8601StyleTimeStampFormatter(' ', ',', zoneId, locale);}
+        case "yyyy-MM-dd'T'HH:mm:ss,SSS"
+                -> {return getISO8601StyleTimeStampFormatter('T', ',', zoneId, locale);}
         }
 
         // custom formats
@@ -180,7 +178,7 @@ public final class TimeStampFormatter {
         return new TimeStampFormatter(parts.toArray(Part[]::new), zoneId, locale);
     }
 
-    private static @NonNull TimeStampFormatter getISO8601StyleTimeStampFormatter(char dateTimeSeparator, char millisSeparator, ZoneId zoneId, Locale locale) {
+    private static TimeStampFormatter getISO8601StyleTimeStampFormatter(char dateTimeSeparator, char millisSeparator, ZoneId zoneId, Locale locale) {
         return new TimeStampFormatter(new Part[]{(app, y, M, d, H, m, s, S) -> {
             int q = y / 100;
             app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);

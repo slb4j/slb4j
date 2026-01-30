@@ -25,7 +25,7 @@ import java.util.stream.Stream;
 
 /**
  * A utility class responsible for determining the originating stack frame outside of
- * specified infrastructure packages.
+ * the specified infrastructure packages.
  * <p>
  * This class is immutable and thread-safe.
  */
@@ -86,7 +86,7 @@ public final class StackWalkerLocationResolver implements LocationResolver {
         }
     }
 
-    private static record StackFrameLocation(StackFrame frame) implements Location {
+    private record StackFrameLocation(StackFrame frame) implements Location {
         @Override
         public @Nullable String getClassName() {
             return frame.getClassName();

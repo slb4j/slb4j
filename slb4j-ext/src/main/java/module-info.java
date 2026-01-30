@@ -17,7 +17,7 @@
 import org.jspecify.annotations.NullMarked;
 
 /**
- * Module-info for the slb4j extension library.
+ * Module-info for the SLB4J extension library.
  */
 @NullMarked
 module org.slb4j.ext {
