@@ -66,12 +66,11 @@ public final class FileHandler extends AbstractFileHandler {
     @Override
     public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
-            IoStringBuilder buffer = null;
             String message = msg.get();
             try {
-                buffer = acquireBuffer();
-                layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, org.slb4j.ConsoleCode.empty());
-                synchronized (lock()) {
+                synchronized (buffer) {
+                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, org.slb4j.ConsoleCode.empty());
+
                     buffer.writeTo(writer);
 
                     if (lvl.ordinal() >= flushLevel.ordinal()) {
@@ -84,9 +83,6 @@ public final class FileHandler extends AbstractFileHandler {
                 }
             } catch (IOException e) {
                 Util.err().println("Error writing log entry: " + e.getMessage());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                Util.err().println("Logging thread interrupted: " + e.getMessage());
             } finally {
                 releaseBuffer(buffer);
             }
@@ -95,23 +91,26 @@ public final class FileHandler extends AbstractFileHandler {
 
     @Override
     public void close() {
-        synchronized (lock()) {
-            try {
+        try {
+            synchronized (buffer) {
                 String footer = layout.getFooter();
-                if (!footer.isEmpty()) {
-                    writer.write(footer);
-                    writer.flush();
+                try {
+                    if (!footer.isEmpty()) {
+                        writer.write(footer);
+                        writer.flush();
+                    }
+                } finally {
+                    writer.close();
                 }
-                writer.close();
-            } catch (IOException e) {
-                Util.err().println("Error closing log file: " + e.getMessage());
             }
+        } catch (IOException e) {
+            Util.err().println("Error closing log file: " + e.getMessage());
         }
     }
 
     @Override
     public void setLayout(LogLayout layout) {
-        synchronized (lock()) {
+        synchronized (buffer) {
             if (this.layout != layout) {
                 try {
                     String footer = this.layout.getFooter();

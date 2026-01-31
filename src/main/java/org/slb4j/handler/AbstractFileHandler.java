@@ -28,8 +28,6 @@ import org.slb4j.support.Util;
 import java.io.IOException;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
 
 /**
  * A log handler that writes log entries to a file.
@@ -38,15 +36,15 @@ import java.util.concurrent.BlockingQueue;
 public abstract sealed class AbstractFileHandler implements LogHandler, AutoCloseable, LayoutConfigurable
         permits FileHandler, RotatingFileHandler {
 
-    private static final int BUFFER_COUNT = 8;
-    private static final int BUFFER_SIZE = 4096;
+    private static final int BUFFER_SIZE = 8192;
 
     static final StandardOpenOption[] OPTIONS_APPEND = {StandardOpenOption.CREATE, StandardOpenOption.APPEND};
     static final StandardOpenOption[] OPTIONS_CREATE = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
 
-    private final BlockingQueue<IoStringBuilder> bufferList;
     private final String name;
-    private final Object lock = new Object();
+
+    /** The internal buffer. */
+    protected final IoStringBuilder buffer;
 
     /**
      * The log pattern used by the handler to format log messages.      *
@@ -73,35 +71,12 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      */
     protected AbstractFileHandler(String name) throws IOException {
         this.name = name;
-        this.bufferList = new ArrayBlockingQueue<>(BUFFER_COUNT);
-        for (int i = 0; i < BUFFER_COUNT; i++) {
-            bufferList.add(new IoStringBuilder(BUFFER_SIZE));
-        }
+        this.buffer = new IoStringBuilder(BUFFER_SIZE);
     }
 
     @Override
     public final String name() {
         return name;
-    }
-
-    /**
-     * Provides access to the lock object used for synchronization in this handler.
-     *
-     * @return the lock object used for synchronizing access to critical sections of the handler
-     */
-    protected final Object lock() {
-        return lock;
-    }
-
-    /**
-     * Retrieves a reusable {@code IoStringBuilder} instance from the internal buffer pool.
-     * This method blocks if no buffers are currently available, waiting until one becomes free.
-     *
-     * @return an {@code IoStringBuilder} instance from the buffer pool
-     * @throws InterruptedException if the current thread is interrupted while waiting for a buffer
-     */
-    protected IoStringBuilder acquireBuffer() throws InterruptedException {
-        return bufferList.take();
     }
 
     /**
@@ -114,8 +89,6 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     protected void releaseBuffer(@Nullable IoStringBuilder buffer) {
         if (buffer != null) {
             buffer.reset(0);
-            boolean added = bufferList.offer(buffer);
-            assert added : "internal error: buffer not added back to queue, this should never happen";
         }
     }
 
@@ -125,21 +98,21 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @param flushLevel the minimum log level to trigger a flush
      */
     public void setFlushLevel(LogLevel flushLevel) {
-        synchronized (lock) {
+        synchronized (buffer) {
             this.flushLevel = Objects.requireNonNull(flushLevel);
         }
     }
 
     @Override
     public void setFilter(LogFilter filter) {
-        synchronized (lock) {
+        synchronized (buffer) {
             this.filter = Objects.requireNonNull(filter);
         }
     }
 
     @Override
     public LogFilter getFilter() {
-        synchronized (lock) {
+        synchronized (buffer) {
             return filter;
         }
     }
@@ -150,7 +123,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      */
     @Override
     public void setLayout(LogLayout layout) {
-        synchronized (lock) {
+        synchronized (buffer) {
             this.layout = layout;
         }
     }
@@ -161,7 +134,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      */
     @Override
     public LogLayout getLayout() {
-        synchronized (lock) {
+        synchronized (buffer) {
             return layout;
         }
     }
@@ -171,17 +144,17 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @return the minimum log level to trigger a flush
      */
     public LogLevel getFlushLevel() {
-        synchronized (lock) {
+        synchronized (buffer) {
             return flushLevel;
         }
     }
 
     @Override
     public void shutdown() {
-        synchronized (lock()) {
+        synchronized (buffer) {
             try {
                 close();
-                bufferList.clear();
+                buffer.reset();
             } catch (Exception e) {
                 Util.err().format("Error closing handler '%s': %s", name(), e.getMessage());
                 e.printStackTrace(Util.err());

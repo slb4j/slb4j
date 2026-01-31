@@ -70,7 +70,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     private void openFile() throws IOException {
-        synchronized (lock()) {
+        synchronized (buffer) {
             if (out != null) {
                 out.close();
             }
@@ -80,14 +80,12 @@ public final class RotatingFileHandler extends AbstractFileHandler {
                 Files.createDirectories(parent);
             }
 
-            synchronized (lock()) {
-                this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
-                this.out = Channels.newWriter(channel, StandardCharsets.UTF_8);
-                String header = layout.getHeader();
-                if (!header.isEmpty()) {
-                    out.write(header);
-                    out.flush();
-                }
+            this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
+            this.out = Channels.newWriter(channel, StandardCharsets.UTF_8);
+            String header = layout.getHeader();
+            if (!header.isEmpty()) {
+                out.write(header);
+                out.flush();
             }
 
             updateNextRotationTime();
@@ -109,7 +107,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @param filePattern the file pattern
      */
     public void setFilePattern(@Nullable String filePattern) {
-        synchronized (lock()) {
+        synchronized (buffer) {
             this.filePattern = filePattern;
         }
     }
@@ -120,7 +118,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @return the file pattern
      */
     public @Nullable String getFilePattern() {
-        synchronized (lock()) {
+        synchronized (buffer) {
             return filePattern;
         }
     }
@@ -131,7 +129,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @param maxFileSize the maximum file size in bytes, or -1 for no limit
      */
     public void setMaxFileSize(long maxFileSize) {
-        synchronized (lock()) {
+        synchronized (buffer) {
             this.maxFileSize = maxFileSize;
         }
     }
@@ -142,7 +140,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @param rotationTimeUnit the time unit for rotation, or null for no time-based rotation
      */
     public void setRotationTimeUnit(@Nullable ChronoUnit rotationTimeUnit) {
-        synchronized (lock()) {
+        synchronized (buffer) {
             this.rotationTimeUnit = rotationTimeUnit;
             updateNextRotationTime();
         }
@@ -154,7 +152,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @param maxBackupIndex the maximum number of backup files
      */
     public void setMaxBackupIndex(int maxBackupIndex) {
-        synchronized (lock()) {
+        synchronized (buffer) {
             this.maxBackupIndex = maxBackupIndex;
         }
     }
@@ -162,12 +160,10 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     @Override
     public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
         if (getFilter().test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
-            IoStringBuilder buffer = null;
             String message = msg.get();
             try {
-                buffer = acquireBuffer();
-                layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, org.slb4j.ConsoleCode.empty());
-                synchronized (lock()) {
+                synchronized (buffer) {
+                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, org.slb4j.ConsoleCode.empty());
                     checkRotation(timestamp);
                     if (out != null) {
                         buffer.writeTo(out);
@@ -183,9 +179,6 @@ public final class RotatingFileHandler extends AbstractFileHandler {
                 }
             } catch (IOException e) {
                 Util.err().println("Error writing log entry: " + e.getMessage());
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                Util.err().println("Logging thread interrupted: " + e.getMessage());
             } finally {
                 releaseBuffer(buffer);
             }
@@ -206,7 +199,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     private void rotate() throws IOException {
-        synchronized (lock()) {
+        synchronized (buffer) {
             if (out != null) {
                 out.close();
                 out = null;
@@ -266,7 +259,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
 
     @Override
     public void close() {
-        synchronized (lock()) {
+        synchronized (buffer) {
             if (out != null) {
                 try {
                     String footer = layout.getFooter();
@@ -304,7 +297,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @return the maximum file size in bytes, or -1 for no limit
      */
     public long getMaxFileSize() {
-        synchronized (lock()) {
+        synchronized (buffer) {
             return maxFileSize;
         }
     }
@@ -314,7 +307,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @return the rotation time unit, or null for no time-based rotation
      */
     public @Nullable ChronoUnit getRotationTimeUnit() {
-        synchronized (lock()) {
+        synchronized (buffer) {
             return rotationTimeUnit;
         }
     }
@@ -324,14 +317,14 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @return the maximum number of backup files
      */
     public int getMaxBackupIndex() {
-        synchronized (lock()) {
+        synchronized (buffer) {
             return maxBackupIndex;
         }
     }
 
     @Override
     public void setLayout(LogLayout layout) {
-        synchronized (lock()) {
+        synchronized (buffer) {
             if (this.layout != layout) {
                 if (out != null) {
                     try {
