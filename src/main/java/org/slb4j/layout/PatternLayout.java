@@ -322,6 +322,11 @@ public final class PatternLayout implements LogLayout {
         private LevelEntry levelEntry = new LevelEntry(5, 5, true);
         private LoggerEntry loggerEntry = new LoggerEntry(0, 0, false, 36, false);
 
+        /**
+         * Default constructor.
+         */
+        public DefaultPatternEntry() { /* nothing to do */}
+
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             timeStampFormatter.appendTo(timestamp, app);
