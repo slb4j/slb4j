@@ -437,6 +437,7 @@ public final class LoggingConfiguration {
                     case LOG4J_SIMPLE_LAYOUT -> patternConfigurable.setLayout(PatternLayout.LOG4J_SIMPLE_PATTERN);
                     case CSV -> patternConfigurable.setLayout(PatternLayout.LOG4J_CSV_PATTERN);
                     case XML -> patternConfigurable.setLayout(PatternLayout.LOG4J_XML_PATTERN);
+                    case JSON -> patternConfigurable.setLayout(PatternLayout.LOG4J_JSON_PATTERN);
                     case PATTERN_LAYOUT -> {}
                     default -> {
                         Util.err().println("slb4j: handler '" + name + "' - layout type '" + sLayoutType + "' is not supported, using PatternLayout");

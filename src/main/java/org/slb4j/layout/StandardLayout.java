@@ -14,6 +14,9 @@ public enum StandardLayout {
     /** XML layout. */
     XML("XmlLayout"),
 
+    /** JSON layout. */
+    JSON("JsonLayout"),
+
     /** Log4J SimpleLayout. */
     LOG4J_SIMPLE_LAYOUT("SimpleLayout"),
 

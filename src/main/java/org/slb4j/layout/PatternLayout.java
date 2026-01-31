@@ -50,6 +50,11 @@ public final class PatternLayout implements LogLayout {
     private static final Pattern LOGGER_PRECISION_PATTERN = Pattern.compile("^(\\d+)(\\.)?$");
 
     /**
+     * The default pattern string for log formatting.
+     */
+    public static final String DEFAULT_PATTERN_STRING = "%d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5level %logger{36} - %msg%n";
+
+    /**
      * The default pattern used for log formatting.
      * <p>
      * Example output:
@@ -60,7 +65,7 @@ public final class PatternLayout implements LogLayout {
      * 2026-01-11 15:19:09.573 INFO  com.example.Application - Message from SLF4J
      * </pre>
      */
-    public static final LogLayout DEFAULT_PATTERN = parseLog4jPattern("%highlight{%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg}%n%ex");
+    public static final LogLayout DEFAULT_PATTERN = parseLog4jPattern("%highlight{" + DEFAULT_PATTERN_STRING +"%ex}");
 
     /**
      * A compact log pattern used to format log entries in a concise and structured manner.
@@ -116,6 +121,11 @@ public final class PatternLayout implements LogLayout {
      * A pre-configured LogPattern instance for XML layout formatting.
      */
     public static final LogLayout LOG4J_XML_PATTERN = new XmlLayout(ZONE_ID);
+
+    /**
+     * A pre-configured LogPattern instance for JSON layout formatting.
+     */
+    public static final LogLayout LOG4J_JSON_PATTERN = new JsonLayout(ZONE_ID);
 
     /**
      * Defines an interface for formatting log entries in a customizable and extensible manner.
@@ -298,6 +308,32 @@ public final class PatternLayout implements LogLayout {
                 appendSpaces(app, padding);
                 app.append(value);
             }
+        }
+    }
+
+    /**
+     * An optimized pattern entry for default log format:
+     * <pre>
+     * %d{yyyy-MM-dd HH:mm:ss,SSS} [%t] %-5level %logger{36} - %msg%n
+     * </pre>
+     */
+    public static final class DefaultPatternEntry implements LogPatternEntry {
+        private TimeStampFormatter timeStampFormatter = TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, Locale.getDefault());
+        private LevelEntry levelEntry = new LevelEntry(5, 5, true);
+        private LoggerEntry loggerEntry = new LoggerEntry(0, 0, false, 36, false);
+
+        @Override
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+            timeStampFormatter.appendTo(timestamp, app);
+            app.append(" [");
+            app.append(Thread.currentThread().getName());
+            app.append("] ");
+            levelEntry.format(app, timestamp, loggerName, lvl, mrk, mdc, location, msg, t, consoleCodes);
+            app.append(' ');
+            loggerEntry.format(app, timestamp, loggerName, lvl, mrk, mdc, location, msg, t, consoleCodes);
+            app.append(" - ");
+            app.append(msg);
+            app.append(NEWLINE);
         }
     }
 
@@ -1047,78 +1083,6 @@ public final class PatternLayout implements LogLayout {
     }
 
     /**
-     * Represents a log format entry in XML output.
-     */
-    public static final class XmlEntry implements LogPatternEntry {
-        private final TimeStampFormatter formatter = TimeStampFormatter.parse("yyyy-MM-dd'T'HH:mm:ss,SSS", ZONE_ID, Locale.getDefault());
-
-        /**
-         * Constructs a new instance of the XmlEntry class.
-         */
-        public XmlEntry() {
-            // nothing to  do
-        }
-
-        @Override
-        public String getHeader() {
-            return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<logEvents>\n";
-        }
-
-        @Override
-        public String getFooter() {
-            return "</logEvents>\n";
-        }
-
-        @Override
-        public String toString() {
-            return "XML";
-        }
-
-        @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-            app.append("<logEvent>\n");
-            app.append("  <timestamp>");
-            formatter.appendTo(timestamp, app);
-            app.append("</timestamp>\n");
-            app.append("  <level>");
-            app.append(lvl.name());
-            app.append("</level>\n");
-            app.append("  <logger>");
-            appendXmlEscaped(app, loggerName);
-            app.append("</logger>\n");
-            app.append("  <message>");
-            appendXmlEscaped(app, msg);
-            app.append("</message>\n");
-            app.append("</logEvent>\n");
-        }
-
-        private void appendXmlEscaped(Appendable app, @Nullable String msg) throws IOException {
-            if (msg == null) {
-                app.append("null");
-                return;
-            }
-
-            for (int i = 0; i < msg.length(); i++) {
-                char c = msg.charAt(i);
-                switch (c) {
-                    case '<' -> app.append("&lt;");
-                    case '>' -> app.append("&gt;");
-                    case '&' -> app.append("&amp;");
-                    case '"' -> app.append("&quot;");
-                    case '\'' -> app.append("&apos;");
-                    default -> {
-                        if (c < 32 && c != '\t' && c != '\n' && c != '\r') {
-                            app.append("&#").append(Integer.toString(c)).append(";");
-                        } else {
-                            app.append(c);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    /**
      * Parses a JUL-style pattern string and creates a new {@code LogPattern} instance.
      *
      * @param pattern the format pattern in JUL style
@@ -1412,6 +1376,12 @@ public final class PatternLayout implements LogLayout {
 
     private static List<LogPatternEntry> parseLog4jPatternStringSimple(String pattern) {
         List<LogPatternEntry> entries = new ArrayList<>();
+
+        if (pattern.startsWith(DEFAULT_PATTERN_STRING)) {
+            entries.add(new DefaultPatternEntry());
+            pattern = pattern.substring(DEFAULT_PATTERN_STRING.length());
+        }
+
         Matcher matcher = PATTERN.matcher(pattern);
         int lastEnd = 0;
         while (matcher.find()) {

@@ -117,7 +117,7 @@ class Log4j2PropertiesTest {
                         appender.console.layout.type = JsonLayout
                         rootLogger.level = debug
                         rootLogger.appenderRef.stdout.ref = STDOUT
-                        """, false),
+                        """, true),
                 new PropertySet("Syslog Appender", """
                         appender.syslog.type = Syslog
                         appender.syslog.name = Syslog

@@ -273,23 +273,26 @@ class LoggingConfigurationTest {
     }
 
     @Test
-    void testFooterOrder() {
-        PatternLayout.LogPatternEntry entry1 = new PatternLayout.LogPatternEntry() {
-            @Override
-            public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @org.jspecify.annotations.Nullable String mrk, @org.jspecify.annotations.Nullable MDC mdc, @org.jspecify.annotations.Nullable Location location, @org.jspecify.annotations.Nullable String msg, @org.jspecify.annotations.Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {}
-            @Override public String getHeader() { return "[H1]"; }
-            @Override public String getFooter() { return "[F1]"; }
-        };
-        PatternLayout.LogPatternEntry entry2 = new PatternLayout.LogPatternEntry() {
-            @Override
-            public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @org.jspecify.annotations.Nullable String mrk, @org.jspecify.annotations.Nullable MDC mdc, @org.jspecify.annotations.Nullable Location location, @org.jspecify.annotations.Nullable String msg, @org.jspecify.annotations.Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {}
-            @Override public String getHeader() { return "[H2]"; }
-            @Override public String getFooter() { return "[F2]"; }
-        };
+    void testJsonLayoutConfiguration() throws IOException {
+        String propertyText = """
+                appender.console.type=Console
+                appender.console.layout.type=JsonLayout
+                """;
+        Properties props = new Properties();
+        props.load(new StringReader(propertyText));
 
-        LogLayout pattern = new PatternLayout("", entry1, entry2);
-        assertEquals("[H1][H2]", pattern.getHeader());
-        assertEquals("[F2][F1]", pattern.getFooter());
+        LoggingConfiguration config = LoggingConfiguration.parseLog4j(props);
+
+        LogHandler handler = config.getHandler("console");
+        assertNotNull(handler);
+        assertInstanceOf(org.slb4j.handler.ConsoleHandler.class, handler);
+        org.slb4j.handler.ConsoleHandler consoleHandler = (org.slb4j.handler.ConsoleHandler) handler;
+        assertEquals(StandardLayout.JSON.type(), consoleHandler.getLayout().getType());
+
+        // Test addToProperties
+        Properties outProps = new Properties();
+        config.addToProperties(outProps);
+        assertEquals("JsonLayout", outProps.getProperty("appender.console.layout.type"));
     }
 
     @Test
