@@ -19,7 +19,7 @@ import org.jspecify.annotations.Nullable;
 import org.slb4j.ConsoleCode;
 import org.slb4j.LogFilter;
 import org.slb4j.LogLevel;
-import org.slb4j.LogPattern;
+import org.slb4j.LogLayout;
 import org.slb4j.ext.LogBuffer;
 import org.slb4j.ext.LogEntry;
 import org.slb4j.ext.LogEntryFilter;
@@ -31,6 +31,7 @@ import org.slb4j.filter.MessageTextFilter;
 
 import org.slb4j.SLB4J;
 import org.slb4j.filter.LoggerNamePrefixFilter;
+import org.slb4j.layout.PatternLayout;
 
 import javax.swing.JButton;
 import javax.swing.JComboBox;
@@ -94,7 +95,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
     /** The text area for displaying log entry details. */
     private final JTextArea details;
     /** The pattern used for formatting log entries. */
-    private final LogPattern pattern = LogPattern.DEFAULT_PATTERN;
+    private final LogLayout pattern = PatternLayout.DEFAULT_PATTERN;
     /** Buffer for formatting log entries. */
     @SuppressWarnings("StringBufferField")
     private final StringBuilder buffer = new StringBuilder(4096);
@@ -302,7 +303,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
     private void setupColumns(LogPaneTexts texts) {
         TableColumn colTime = table.getColumnModel().getColumn(0);
         colTime.setHeaderValue(texts.headerTimeColumn());
-        colTime.setCellRenderer(new LogEntryRenderer(new LogPattern.DateEntry("HH:mm:ss,SSS")));
+        colTime.setCellRenderer(new LogEntryRenderer(new PatternLayout.DateEntry("HH:mm:ss,SSS")));
         int timeWidth = getColumnWidth("88:88:88,888") + 10;
         colTime.setPreferredWidth(timeWidth);
         colTime.setMinWidth(timeWidth);
@@ -310,7 +311,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
 
         TableColumn colLevel = table.getColumnModel().getColumn(1);
         colLevel.setHeaderValue(texts.headerLevelColumn());
-        colLevel.setCellRenderer(new LogEntryRenderer(new LogPattern.LevelEntry(0, 0, false)));
+        colLevel.setCellRenderer(new LogEntryRenderer(new PatternLayout.LevelEntry(0, 0, false)));
         int levelWidth = getColumnWidth("SEVERE") + 10;
         colLevel.setPreferredWidth(levelWidth);
         colLevel.setMinWidth(levelWidth);
@@ -318,12 +319,12 @@ public final class SwingLogPane extends JPanel implements LogPane {
 
         TableColumn colLogger = table.getColumnModel().getColumn(2);
         colLogger.setHeaderValue(texts.headerLoggerColumn());
-        colLogger.setCellRenderer(new LogEntryRenderer(new LogPattern.LoggerEntry(0, 0, true, 0, false)));
+        colLogger.setCellRenderer(new LogEntryRenderer(new PatternLayout.LoggerEntry(0, 0, true, 0, false)));
         colLogger.setPreferredWidth(150);
 
         TableColumn colMessage = table.getColumnModel().getColumn(3);
         colMessage.setHeaderValue(texts.headerMessageColumn());
-        colMessage.setCellRenderer(new LogEntryRenderer(new LogPattern.MessageEntry(0, 0, false)));
+        colMessage.setCellRenderer(new LogEntryRenderer(new PatternLayout.MessageEntry(0, 0, false)));
         colMessage.setPreferredWidth(500);
     }
 
@@ -373,9 +374,9 @@ public final class SwingLogPane extends JPanel implements LogPane {
     }
 
     private class LogEntryRenderer extends DefaultTableCellRenderer {
-        private final LogPattern.LogPatternEntry patternEntry;
+        private final PatternLayout.LogPatternEntry patternEntry;
 
-        LogEntryRenderer(LogPattern.LogPatternEntry patternEntry) {
+        LogEntryRenderer(PatternLayout.LogPatternEntry patternEntry) {
             this.patternEntry = patternEntry;
         }
 

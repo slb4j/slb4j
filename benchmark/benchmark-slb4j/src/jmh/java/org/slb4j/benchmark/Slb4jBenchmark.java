@@ -18,11 +18,12 @@ package org.slb4j.benchmark;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
-import org.slb4j.LogPattern;
+import org.slb4j.LogLayout;
 import org.slb4j.SLB4J;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.handler.FileHandler;
+import org.slb4j.layout.PatternLayout;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -52,10 +53,10 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
 
         tempFile = Files.createTempFile("slb4j-bench", ".log");
 
-        LogPattern pattern = switch (format) {
-            case "COMPACT" -> LogPattern.COMPACT_PATTERN;
-            case "DETAILED" -> LogPattern.DETAILED_PATTERN;
-            default -> LogPattern.DEFAULT_PATTERN;
+        LogLayout pattern = switch (format) {
+            case "COMPACT" -> PatternLayout.COMPACT_PATTERN;
+            case "DETAILED" -> PatternLayout.DETAILED_PATTERN;
+            default -> PatternLayout.DEFAULT_PATTERN;
         };
 
         UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
@@ -63,11 +64,11 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
 
         if ("CONSOLE".equals(category)) {
             ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, !"DETAILED".equals(format));
-            consoleHandler.setLogPattern(pattern);
+            consoleHandler.setLayout(pattern);
             dispatcher.addLogHandler(consoleHandler);
         } else {
             fileHandler = new FileHandler("file", tempFile, false);
-            fileHandler.setLogPattern(pattern);
+            fileHandler.setLayout(pattern);
             dispatcher.addLogHandler(fileHandler);
         }
 

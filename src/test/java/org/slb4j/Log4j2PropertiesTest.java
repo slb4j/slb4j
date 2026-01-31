@@ -3,6 +3,8 @@ package org.slb4j;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.Assertions;
+import org.slb4j.layout.PatternLayout;
+import org.slb4j.layout.StandardLayout;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -189,7 +191,7 @@ class Log4j2PropertiesTest {
                     if ("Console".equalsIgnoreCase(type) || "File".equalsIgnoreCase(type) || "RollingFile".equalsIgnoreCase(type)) {
                         String layoutType = expectedProps.getProperty(prefix + ".layout.type");
                         if (layoutType == null) {
-                            expectedProps.put(prefix + ".layout.type", LogPattern.LOG4J_PATTERN_LAYOUT);
+                            expectedProps.put(prefix + ".layout.type", StandardLayout.PATTERN_LAYOUT.type());
                         }
                     }
                 });
@@ -205,8 +207,8 @@ class Log4j2PropertiesTest {
             }
 
             if (key.endsWith(".layout.pattern")) {
-                Assertions.assertEquals(LogPattern.parseLog4jPattern(expected).getText(),
-                                     LogPattern.parseLog4jPattern(actual).getText(),
+                Assertions.assertEquals(PatternLayout.parseLog4jPattern(expected).getText(),
+                        PatternLayout.parseLog4jPattern(actual).getText(),
                                      "Normalized pattern mismatch for key: " + key);
             } else if (key.endsWith(".policies.size.size") || key.endsWith(".limit")) {
                 Assertions.assertEquals(normalizeSize(expected), normalizeSize(actual),

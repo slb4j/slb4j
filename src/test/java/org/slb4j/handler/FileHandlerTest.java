@@ -17,7 +17,7 @@ package org.slb4j.handler;
 
 import org.slb4j.LogLevel;
 import org.slb4j.LocationResolver;
-import org.slb4j.LogPattern;
+import org.slb4j.layout.PatternLayout;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -39,7 +39,7 @@ class FileHandlerTest {
     void testBasicLogging() throws IOException {
         Path logFile = tempDir.resolve("test.log");
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
+            handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Hello, World!", null);
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Second line", null);
         }
@@ -57,10 +57,10 @@ class FileHandlerTest {
         Files.writeString(logFile, "Initial content\n");
 
         try (FileHandler handler = new FileHandler("test", logFile, true)) {
-            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
+            handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Second line", null);
         }
-
+        
         List<String> lines = Files.readAllLines(logFile);
         assertEquals(2, lines.size());
         assertEquals("Initial content", lines.get(0));
@@ -73,7 +73,7 @@ class FileHandlerTest {
         Files.writeString(logFile, "Initial content\n");
 
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg%n"));
+            handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "New content", null);
         }
 
@@ -88,7 +88,7 @@ class FileHandlerTest {
 
         // 1. Test flush on high level
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
-            handler.setLogPattern(LogPattern.parseLog4jPattern("%msg"));
+            handler.setLayout(PatternLayout.parseLog4jPattern("%msg"));
             handler.setFlushLevel(LogLevel.ERROR);
 
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "info", null);

@@ -19,8 +19,9 @@ import org.jspecify.annotations.Nullable;
 import org.slb4j.LogFilter;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
-import org.slb4j.LogPattern;
-import org.slb4j.LogPatternConfigurable;
+import org.slb4j.LogLayout;
+import org.slb4j.LayoutConfigurable;
+import org.slb4j.layout.PatternLayout;
 import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
 
@@ -34,7 +35,7 @@ import java.util.concurrent.BlockingQueue;
  * A log handler that writes log entries to a file.
  * It supports log rotation triggered by file size, number of entries, or time.
  */
-public abstract sealed class AbstractFileHandler implements LogHandler, AutoCloseable, LogPatternConfigurable
+public abstract sealed class AbstractFileHandler implements LogHandler, AutoCloseable, LayoutConfigurable
         permits FileHandler, RotatingFileHandler {
 
     private static final int BUFFER_COUNT = 8;
@@ -49,10 +50,10 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
 
     /**
      * The log pattern used by the handler to format log messages.      *
-     * @see #setLogPattern(LogPattern) for modifying the log pattern.
-     * @see #getLogPattern() for retrieving the current log pattern.
+     * @see #setLayout(LogLayout) for modifying the log pattern.
+     * @see #getLayout() for retrieving the current log pattern.
      */
-    protected volatile LogPattern logPattern = LogPattern.DEFAULT_PATTERN;
+    protected volatile LogLayout layout = PatternLayout.DEFAULT_PATTERN;
     /**
      * Represents the log filtering mechanism for the file handler.
      */
@@ -145,12 +146,12 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
 
     /**
      * Sets the log pattern.
-     * @param logPattern the log pattern string
+     * @param layout the log pattern string
      */
     @Override
-    public void setLogPattern(LogPattern logPattern) {
+    public void setLayout(LogLayout layout) {
         synchronized (lock) {
-            this.logPattern = logPattern;
+            this.layout = layout;
         }
     }
 
@@ -159,9 +160,9 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @return the log pattern string
      */
     @Override
-    public LogPattern getLogPattern() {
+    public LogLayout getLayout() {
         synchronized (lock) {
-            return logPattern;
+            return layout;
         }
     }
 

@@ -16,11 +16,12 @@
 package org.slb4j.benchmark;
 
 import org.openjdk.jmh.annotations.Param;
-import org.slb4j.LogPattern;
+import org.slb4j.LogLayout;
 import org.slb4j.SLB4J;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.handler.FileHandler;
+import org.slb4j.layout.PatternLayout;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
@@ -51,18 +52,18 @@ public class Slb4jParallelBenchmark extends ParallelLoggingBenchmark {
 
         tempFile = Files.createTempFile("slb4j-parallel-bench", ".log");
 
-        LogPattern pattern = LogPattern.DEFAULT_PATTERN;
+        LogLayout pattern = PatternLayout.DEFAULT_PATTERN;
 
         UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
         dispatcher.getLogHandlers().forEach(dispatcher::removeLogHandler);
 
         if ("CONSOLE".equals(category)) {
             ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, true);
-            consoleHandler.setLogPattern(pattern);
+            consoleHandler.setLayout(pattern);
             dispatcher.addLogHandler(consoleHandler);
         } else {
             fileHandler = new FileHandler("file", tempFile, false);
-            fileHandler.setLogPattern(pattern);
+            fileHandler.setLayout(pattern);
             dispatcher.addLogHandler(fileHandler);
         }
 

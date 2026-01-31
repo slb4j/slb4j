@@ -15,7 +15,7 @@
  */
 package org.slb4j.handler;
 
-import org.slb4j.LogPattern;
+import org.slb4j.LogLayout;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.slb4j.LocationResolver;
@@ -56,7 +56,7 @@ public final class FileHandler extends AbstractFileHandler {
         this.append = append;
         this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
         this.writer = Channels.newWriter(channel, StandardCharsets.UTF_8);
-        String header = logPattern.getHeader();
+        String header = layout.getHeader();
         if (!header.isEmpty()) {
             writer.write(header);
             writer.flush();
@@ -70,7 +70,7 @@ public final class FileHandler extends AbstractFileHandler {
             String message = msg.get();
             try {
                 buffer = acquireBuffer();
-                logPattern.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, org.slb4j.ConsoleCode.empty());
+                layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, org.slb4j.ConsoleCode.empty());
                 synchronized (lock()) {
                     buffer.writeTo(writer);
 
@@ -97,7 +97,7 @@ public final class FileHandler extends AbstractFileHandler {
     public void close() {
         synchronized (lock()) {
             try {
-                String footer = logPattern.getFooter();
+                String footer = layout.getFooter();
                 if (!footer.isEmpty()) {
                     writer.write(footer);
                     writer.flush();
@@ -110,15 +110,15 @@ public final class FileHandler extends AbstractFileHandler {
     }
 
     @Override
-    public void setLogPattern(LogPattern logPattern) {
+    public void setLayout(LogLayout layout) {
         synchronized (lock()) {
-            if (this.logPattern != logPattern) {
+            if (this.layout != layout) {
                 try {
-                    String footer = this.logPattern.getFooter();
+                    String footer = this.layout.getFooter();
                     if (!footer.isEmpty()) {
                         writer.write(footer);
                     }
-                    String header = logPattern.getHeader();
+                    String header = layout.getHeader();
                     if (!header.isEmpty()) {
                         writer.write(header);
                     }
@@ -126,7 +126,7 @@ public final class FileHandler extends AbstractFileHandler {
                 } catch (IOException e) {
                     Util.err().println("Error writing header/footer during pattern change: " + e.getMessage());
                 }
-                this.logPattern = logPattern;
+                this.layout = layout;
             }
         }
     }

@@ -21,6 +21,8 @@ import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.handler.FileHandler;
 import org.slb4j.handler.RotatingFileHandler;
+import org.slb4j.layout.PatternLayout;
+import org.slb4j.layout.StandardLayout;
 import org.slb4j.support.Util;
 
 import java.io.IOException;
@@ -418,27 +420,27 @@ public final class LoggingConfiguration {
 
         handleProperty(properties, prefix + LOGGING_FILTER, filters::get, handler::setFilter, LogFilter::allPass);
         handleProperty(properties, prefix + LOGGER_LAYOUT_PATTERN,
-                LogPattern::parseLog4jPattern, p -> {
-                    if (handler instanceof LogPatternConfigurable patternConfigurable) {
-                        patternConfigurable.setLogPattern(p);
+                PatternLayout::parseLog4jPattern, p -> {
+                    if (handler instanceof LayoutConfigurable patternConfigurable) {
+                        patternConfigurable.setLayout(p);
                     }
                 },
-                () -> LogPattern.DEFAULT_PATTERN
+                () -> PatternLayout.DEFAULT_PATTERN
         );
 
-        if (handler instanceof LogPatternConfigurable patternConfigurable) {
+        // Configures handler pattern based on layout type property
+        if (handler instanceof LayoutConfigurable patternConfigurable) {
             String sLayoutType = properties.getProperty(prefix + LOGGER_LAYOUT_TYPE);
             if (sLayoutType != null) {
-                sLayoutType = sLayoutType.strip();
-                // Configures handler pattern based on layout type property
-                if (LogPattern.LOG4J_SIMPLE_LAYOUT.equalsIgnoreCase(sLayoutType)) {
-                    patternConfigurable.setLogPattern(LogPattern.LOG4J_SIMPLE_PATTERN);
-                } else if (LogPattern.LOG4J_CSV_LAYOUT.equalsIgnoreCase(sLayoutType)) {
-                    patternConfigurable.setLogPattern(LogPattern.LOG4J_CSV_PATTERN);
-                } else if (LogPattern.LOG4J_XML_LAYOUT.equalsIgnoreCase(sLayoutType)) {
-                    patternConfigurable.setLogPattern(LogPattern.LOG4J_XML_PATTERN);
-                } else if (!LogPattern.LOG4J_PATTERN_LAYOUT.equalsIgnoreCase(sLayoutType)) {
-                    Util.err().println("slb4j: handler '" + name + "' - layout type '" + sLayoutType + "' is not supported, using PatternLayout");
+                StandardLayout sl = StandardLayout.forType(sLayoutType.strip()).orElse(null);
+                switch (sl) {
+                    case LOG4J_SIMPLE_LAYOUT -> patternConfigurable.setLayout(PatternLayout.LOG4J_SIMPLE_PATTERN);
+                    case CSV -> patternConfigurable.setLayout(PatternLayout.LOG4J_CSV_PATTERN);
+                    case XML -> patternConfigurable.setLayout(PatternLayout.LOG4J_XML_PATTERN);
+                    case PATTERN_LAYOUT -> {}
+                    default -> {
+                        Util.err().println("slb4j: handler '" + name + "' - layout type '" + sLayoutType + "' is not supported, using PatternLayout");
+                    }
                 }
             }
         }
@@ -515,13 +517,13 @@ public final class LoggingConfiguration {
                     String sStream = stream == System.err ? SYSTEM_ERR : SYSTEM_OUT;
                     properties.setProperty(prefix + LOGGER_CONSOLE_TARGET, sStream);
                     properties.setProperty(prefix + LOGGER_CONSOLE_COLORED, String.valueOf(consoleHandler.isColored()));
-                    addPatternConfiguration(properties, consoleHandler.getLogPattern(), prefix);
+                    addPatternConfiguration(properties, consoleHandler.getLayout(), prefix);
                 }
                 case FileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, "File");
                     properties.setProperty(prefix + LOGGER_FILE_NAME, fileHandler.getPath().toString());
                     properties.setProperty(prefix + LOGGER_FILE_APPEND, String.valueOf(fileHandler.isAppend()));
-                    addPatternConfiguration(properties, fileHandler.getLogPattern(), prefix);
+                    addPatternConfiguration(properties, fileHandler.getLayout(), prefix);
                 }
                 case RotatingFileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, fileHandler.getMaxFileSize() > 0 ? "RollingFile" : "File");
@@ -534,7 +536,7 @@ public final class LoggingConfiguration {
                         properties.setProperty(prefix + "strategy.type", "DefaultRolloverStrategy");
                         properties.setProperty(prefix + LOGGER_FILE_MAX_BACKUPS, String.valueOf(fileHandler.getMaxBackupIndex()));
                     }
-                    addPatternConfiguration(properties, fileHandler.getLogPattern(), prefix);
+                    addPatternConfiguration(properties, fileHandler.getLayout(), prefix);
                 }
                 default -> {
                     // do nothing
@@ -555,31 +557,27 @@ public final class LoggingConfiguration {
 
     /**
      * Configures a logging pattern layout in the given {@link Properties} object based on the provided
-     * {@link LogPattern} and prefix. It sets the appropriate properties based on the type of log pattern.
+     * {@link LogLayout} and prefix. It sets the appropriate properties based on the type of log pattern.
      * If an unrecognized pattern type is encountered, a default pattern is used and a warning is logged.
      *
      * @param properties the {@link Properties} object to which the logging pattern configuration
      *                   will be added
-     * @param logPattern the {@link LogPattern} defining the type of layout and optional text pattern
+     * @param layout the {@link LogLayout} defining the type of layout and optional text pattern
      * @param prefix     a {@link String} prefix used to construct the property keys for the pattern configuration
      */
-    private static void addPatternConfiguration(Properties properties, LogPattern logPattern, String prefix) {
-        switch (logPattern.getType()) {
-            case LogPattern.LOG4J_SIMPLE_LAYOUT ->
-                    properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_SIMPLE_LAYOUT);
-            case LogPattern.LOG4J_CSV_LAYOUT ->
-                    properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_CSV_LAYOUT);
-            case LogPattern.LOG4J_XML_LAYOUT ->
-                    properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_XML_LAYOUT);
-            case LogPattern.LOG4J_PATTERN_LAYOUT -> {
-                properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_PATTERN_LAYOUT);
-                properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, logPattern.getText());
+    private static void addPatternConfiguration(Properties properties, LogLayout layout, String prefix) {
+        StandardLayout sl = StandardLayout.forType(layout.getType()).orElse(null);
+        switch (sl) {
+            case PATTERN_LAYOUT -> {
+                properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, sl.type());
+                properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, layout.getText());
             }
-            default -> {
-                Util.err().format("slb4j: unknown log pattern type '%s' for handler '%s', using PatternLayout%n", logPattern.getType(), prefix);
-                properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, LogPattern.LOG4J_PATTERN_LAYOUT);
-                properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, LogPattern.COMPACT_PATTERN.getText());
+            case null -> {
+                Util.err().format("slb4j: unknown log pattern type '%s' for handler '%s', using default layout%n", layout.getType(), prefix);
+                properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, StandardLayout.PATTERN_LAYOUT.type());
+                properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, PatternLayout.COMPACT_PATTERN.getText());
             }
+            default -> properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, sl.type());
         }
     }
 

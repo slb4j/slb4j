@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.slb4j;
+package org.slb4j.layout;
 
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
@@ -27,13 +27,18 @@ import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
-import org.apache.logging.log4j.core.layout.PatternLayout;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.slb4j.ConsoleCode;
+import org.slb4j.Location;
+import org.slb4j.LocationResolver;
+import org.slb4j.LogLevel;
+import org.slb4j.LogLayout;
+import org.slb4j.MDC;
 import org.slb4j.frontend.log4j.LoggerLog4j;
 import org.slb4j.handler.ConsoleHandler;
 
@@ -96,12 +101,12 @@ class LogPatternLog4jCompatibilityTest {
         context = (LoggerContext) LogManager.getContext(false);
         Configuration config = context.getConfiguration();
 
-        PatternLayout log4jLayout = PatternLayout.newBuilder()
+        org.apache.logging.log4j.core.layout.PatternLayout log4jLayout = org.apache.logging.log4j.core.layout.PatternLayout.newBuilder()
                 .withPattern(pattern)
                 .withConfiguration(config)
                 .build();
 
-        LogPattern slb4jPattern = LogPattern.parseLog4jPattern(pattern);
+        LogLayout slb4jPattern = PatternLayout.parseLog4jPattern(pattern);
 
         appender = new CompatibilityAppender(APPENDER_NAME, null, log4jLayout, slb4jPattern);
         appender.start();
@@ -255,10 +260,10 @@ class LogPatternLog4jCompatibilityTest {
      * This class is not thread-safe as it uses a non-thread-safe collection (e.g., ArrayList) for storing discrepancies.
      */
     private static class CompatibilityAppender extends AbstractAppender {
-        private final LogPattern slb4jPattern;
+        private final LogLayout slb4jPattern;
         private final List<String> discrepancies = new ArrayList<>();
 
-        protected CompatibilityAppender(String name, @Nullable Filter filter, Layout<? extends Serializable> layout, LogPattern slb4jPattern) {
+        protected CompatibilityAppender(String name, @Nullable Filter filter, Layout<? extends Serializable> layout, LogLayout slb4jPattern) {
             super(name, filter, layout, true, null);
             this.slb4jPattern = slb4jPattern;
         }
@@ -275,7 +280,7 @@ class LogPatternLog4jCompatibilityTest {
             // 3. Compare
             if (!log4jOutput.equals(slb4jOutput)) {
                 discrepancies.add(String.format("Pattern: %s%nLog4j: [%s]%nSLB4J: [%s]",
-                    ((PatternLayout)getLayout()).getConversionPattern(), log4jOutput, slb4jOutput));
+                    ((org.apache.logging.log4j.core.layout.PatternLayout)getLayout()).getConversionPattern(), log4jOutput, slb4jOutput));
             }
         }
 

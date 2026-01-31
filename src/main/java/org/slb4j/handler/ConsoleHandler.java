@@ -17,11 +17,12 @@ package org.slb4j.handler;
 
 import org.slb4j.ConsoleCode;
 import org.slb4j.LogFilter;
-import org.slb4j.LogPattern;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
+import org.slb4j.LogLayout;
+import org.slb4j.LayoutConfigurable;
 import org.slb4j.MDC;
-import org.slb4j.LogPatternConfigurable;
+import org.slb4j.layout.PatternLayout;
 import org.slb4j.support.AnsiCode;
 import org.slb4j.LocationResolver;
 import org.jspecify.annotations.Nullable;
@@ -41,7 +42,7 @@ import java.util.function.Supplier;
  * The ConsoleHandler class is an implementation of the LogEntryHandler interface.
  * It handles log entries by writing them to the console.
  */
-public final class ConsoleHandler implements LogHandler, LogPatternConfigurable {
+public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
 
     private static final int BUFFER_SIZE = 4096;
 
@@ -87,16 +88,16 @@ public final class ConsoleHandler implements LogHandler, LogPatternConfigurable 
     private final Writer writer;
     private volatile boolean colored = true;
     private volatile LogFilter filter = LogFilter.allPass();
-    private volatile LogPattern logPattern = LogPattern.DEFAULT_PATTERN;
+    private volatile LogLayout layout = PatternLayout.DEFAULT_PATTERN;
     private final IoStringBuilder buffer = new IoStringBuilder(BUFFER_SIZE);
 
     /**
      * Set the format pattern.
-     * @param logPattern the format pattern
+     * @param layout the format pattern
      */
     @Override
-    public void setLogPattern(LogPattern logPattern) {
-        this.logPattern = logPattern;
+    public void setLayout(LogLayout layout) {
+        this.layout = layout;
     }
 
     /**
@@ -104,8 +105,8 @@ public final class ConsoleHandler implements LogHandler, LogPatternConfigurable 
      * @return the format pattern
      */
     @Override
-    public LogPattern getLogPattern() {
-        return logPattern;
+    public LogLayout getLayout() {
+        return layout;
     }
 
     /**
@@ -120,7 +121,7 @@ public final class ConsoleHandler implements LogHandler, LogPatternConfigurable 
         this.out = out;
         this.writer = new OutputStreamWriter(out, StandardCharsets.UTF_8);
         setColored(colored);
-        String header = logPattern.getHeader();
+        String header = layout.getHeader();
         if (!header.isEmpty()) {
             out.print(header);
             out.flush();
@@ -147,7 +148,7 @@ public final class ConsoleHandler implements LogHandler, LogPatternConfigurable 
             String message = msg.get();
             try {
                 synchronized (lock) {
-                    logPattern.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, consoleCodes);
+                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, consoleCodes);
                     buffer.writeTo(writer);
                     buffer.reset(0);
                     writer.flush();
@@ -204,7 +205,7 @@ public final class ConsoleHandler implements LogHandler, LogPatternConfigurable 
     @Override
     public void shutdown() {
         synchronized (lock) {
-            String footer = logPattern.getFooter();
+            String footer = layout.getFooter();
             if (!footer.isEmpty()) {
                 out.print(footer);
                 out.flush();

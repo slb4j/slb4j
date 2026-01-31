@@ -27,6 +27,7 @@ module org.slb4j {
     exports org.slb4j;
     exports org.slb4j.filter;
     exports org.slb4j.handler;
+    exports org.slb4j.layout;
     exports org.slb4j.support;
 
     exports org.slb4j.frontend.log4j;

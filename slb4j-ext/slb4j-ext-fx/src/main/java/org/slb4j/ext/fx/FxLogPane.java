@@ -18,7 +18,7 @@ package org.slb4j.ext.fx;
 import org.slb4j.ConsoleCode;
 import org.slb4j.LogFilter;
 import org.slb4j.LogLevel;
-import org.slb4j.LogPattern;
+import org.slb4j.LogLayout;
 import org.slb4j.SLB4J;
 import org.slb4j.ext.LogBuffer;
 import org.slb4j.ext.LogEntry;
@@ -55,6 +55,7 @@ import org.slb4j.filter.LogLevelFilter;
 import org.slb4j.filter.LoggerNameFilter;
 import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.filter.MessageTextFilter;
+import org.slb4j.layout.PatternLayout;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -154,7 +155,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
 
     private final LogBuffer logBuffer;
     private boolean darkMode = false;
-    private final LogPattern pattern = LogPattern.DEFAULT_PATTERN;
+    private final LogLayout pattern = PatternLayout.DEFAULT_PATTERN;
     private final TextArea details;
     private final TableView<@Nullable LogEntry> tableView;
 
@@ -165,7 +166,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
 
     private boolean autoScroll = true;
 
-    private TableColumn<LogEntry, LogEntry> createColumn(String name, LogPattern.LogPatternEntry entry, boolean fixedWidth, String... sampleTexts) {
+    private TableColumn<LogEntry, LogEntry> createColumn(String name, PatternLayout.LogPatternEntry entry, boolean fixedWidth, String... sampleTexts) {
         TableColumn<LogEntry, LogEntry> column = new TableColumn<>(name);
         column.setCellValueFactory(cd -> new SimpleObjectProperty<>(cd.getValue()));
         if (sampleTexts.length == 0) {
@@ -347,10 +348,10 @@ public final class FxLogPane extends BorderPane implements LogPane {
         tableView.setEditable(false);
         //noinspection unchecked
         tableView.getColumns().setAll(
-                createColumn(texts.headerTimeColumn(), new LogPattern.DateEntry("HH:mm:ss,SSS"), true, "88:88:88,888"),
-                createColumn(texts.headerLevelColumn(), new LogPattern.LevelEntry(0, 0, false), true, Arrays.stream(LogLevel.values()).map(Object::toString).toArray(String[]::new)),
-                createColumn(texts.headerLoggerColumn(), new LogPattern.LoggerEntry(0, 0, true, 0, false), false, "X".repeat(40)),
-                createColumn(texts.headerMessageColumn(), new LogPattern.MessageEntry(0, 0, false), false)
+                createColumn(texts.headerTimeColumn(), new PatternLayout.DateEntry("HH:mm:ss,SSS"), true, "88:88:88,888"),
+                createColumn(texts.headerLevelColumn(), new PatternLayout.LevelEntry(0, 0, false), true, Arrays.stream(LogLevel.values()).map(Object::toString).toArray(String[]::new)),
+                createColumn(texts.headerLoggerColumn(), new PatternLayout.LoggerEntry(0, 0, true, 0, false), false, "X".repeat(40)),
+                createColumn(texts.headerMessageColumn(), new PatternLayout.MessageEntry(0, 0, false), false)
         );
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 

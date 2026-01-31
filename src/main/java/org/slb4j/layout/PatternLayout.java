@@ -13,8 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.slb4j;
+package org.slb4j.layout;
 
+import org.slb4j.ConsoleCode;
+import org.slb4j.LogLayout;
+import org.slb4j.Location;
+import org.slb4j.LocationResolver;
+import org.slb4j.LogLevel;
+import org.slb4j.MDC;
 import org.slb4j.support.TimeStampFormatter;
 import org.slb4j.support.Util;
 import org.jspecify.annotations.Nullable;
@@ -31,29 +37,9 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * The LogPattern class handles the formatting of log entries using Log4J-style format strings.
+ * The StandardLogPattern class handles the formatting of log entries using Log4J-style format strings.
  */
-public final class LogPattern {
-
-    /**
-     * Represents the identifier for a simple layout pattern used in Log4J logging.
-     */
-    public static final String LOG4J_CSV_LAYOUT = "CsvLayout";
-
-    /**
-     * Represents the identifier for an XML layout pattern used in Log4J logging.
-     */
-    public static final String LOG4J_XML_LAYOUT = "XmlLayout";
-
-    /**
-     * Represents the identifier for a simple layout pattern used in Log4J logging.
-     */
-    public static final String LOG4J_SIMPLE_LAYOUT = "SimpleLayout";
-
-    /**
-     * Represents the constant string identifier for the Log4J pattern layout type.
-     */
-    public static final String LOG4J_PATTERN_LAYOUT = "PatternLayout";
+public final class PatternLayout implements LogLayout {
 
     private static final String NEWLINE = System.lineSeparator();
 
@@ -74,7 +60,7 @@ public final class LogPattern {
      * 2026-01-11 15:19:09.573 INFO  com.example.Application - Message from SLF4J
      * </pre>
      */
-    public static final LogPattern DEFAULT_PATTERN = parseLog4jPattern("%highlight{%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg}%n%ex");
+    public static final LogLayout DEFAULT_PATTERN = parseLog4jPattern("%highlight{%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg}%n%ex");
 
     /**
      * A compact log pattern used to format log entries in a concise and structured manner.
@@ -92,10 +78,10 @@ public final class LogPattern {
      * </ul>
      * Use when a compact and human-readable log format is preferred, such as console-based logging.
      */
-    public static final LogPattern COMPACT_PATTERN = parseLog4jPattern("%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%n%ex");
+    public static final LogLayout COMPACT_PATTERN = parseLog4jPattern("%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%n%ex");
 
     /**
-     * A predefined {@link LogPattern} instance representing a detailed log format.
+     * A predefined {@link LogLayout} instance representing a detailed log format.
      * <p>
      * The format includes the following components:
      * <ul>
@@ -112,24 +98,24 @@ public final class LogPattern {
      * This format provides comprehensive information about log events, including contextual
      * details, useful for debugging and auditing purposes.
      */
-    public static final LogPattern DETAILED_PATTERN = parseLog4jPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable");
+    public static final LogLayout DETAILED_PATTERN = parseLog4jPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable");
 
     /**
-     * A predefined {@link LogPattern} instance representing a simple log format.
+     * A predefined {@link LogLayout} instance representing a simple log format.
      * <p>
      * Equivalent pattern: {@code %p - %m%n}
      */
-    public static final LogPattern LOG4J_SIMPLE_PATTERN = simpleLayoutLog4jPattern();
+    public static final LogLayout LOG4J_SIMPLE_PATTERN = new SimpleLayout();
 
     /**
-     * A predefined {@link LogPattern} instance representing a log event in a CSV file.
+     * A predefined {@link LogLayout} instance representing a log event in a CSV file.
      */
-    public static final LogPattern LOG4J_CSV_PATTERN = csvLayoutLog4jPattern();
+    public static final LogLayout LOG4J_CSV_PATTERN = new CsvLayout(ZONE_ID);
 
     /**
      * A pre-configured LogPattern instance for XML layout formatting.
      */
-    public static final LogPattern LOG4J_XML_PATTERN = xmlLayoutLog4jPattern();
+    public static final LogLayout LOG4J_XML_PATTERN = new XmlLayout(ZONE_ID);
 
     /**
      * Defines an interface for formatting log entries in a customizable and extensible manner.
@@ -1138,8 +1124,8 @@ public final class LogPattern {
      * @param pattern the format pattern in JUL style
      * @return a {@code LogPattern} instance representing the parsed pattern
      */
-    public static LogPattern parseJulPattern(String pattern) {
-        return new LogPattern(LOG4J_PATTERN_LAYOUT, pattern, parseJulPatternString(pattern));
+    public static LogLayout parseJulPattern(String pattern) {
+        return new PatternLayout(pattern, parseJulPatternString(pattern));
     }
 
     private static LogPatternEntry[] parseJulPatternString(String pattern) {
@@ -1250,60 +1236,10 @@ public final class LogPattern {
      * @param pattern the format pattern in Log4J style, which may include placeholders and literals
      * @return a {@code LogPattern} instance representing the parsed pattern
      */
-    public static LogPattern parseLog4jPattern(String pattern) {
-        return new LogPattern(LOG4J_PATTERN_LAYOUT, pattern, parseLog4jPatternString(pattern));
+    public static LogLayout parseLog4jPattern(String pattern) {
+        return new PatternLayout(pattern, parseLog4jPatternString(pattern));
     }
 
-    /**
-     * Creates a simple log4j pattern layout for log formatting.
-     *
-     * The pattern includes:
-     * - The log level, formatted with unlimited width.
-     * - A literal separator " - ".
-     * - The log message, formatted with unlimited width.
-     * - A newline character at the end.
-     *
-     * @return a {@code LogPattern} instance configured with a simple layout suitable for log4j-style formatting.
-     */
-    public static LogPattern simpleLayoutLog4jPattern() {
-        return new LogPattern(LOG4J_SIMPLE_LAYOUT, "",
-                new LevelEntry(0, Integer.MAX_VALUE, true),
-                new LiteralEntry(" - "),
-                new MessageEntry(0, Integer.MAX_VALUE, true),
-                new NewlineEntry()
-        );
-    }
-
-    /**
-     * Creates a {@code LogPattern} instance for a Log4J-style CSV layout.
-     *
-     * The resulting pattern produces log entries in a comma-separated values (CSV)
-     * format, where each log entry contains the following fields:
-     * timestamp, log level, logger name, and the log message.
-     * The fields are quoted and escaped appropriately to conform to CSV conventions.
-     *
-     * @return a {@code LogPattern} instance configured for a Log4J-style CSV layout
-     */
-    public static LogPattern csvLayoutLog4jPattern() {
-        return new LogPattern(LOG4J_CSV_LAYOUT, "",
-                new CsvEntry()
-        );
-    }
-
-    /**
-     * Creates a {@code LogPattern} instance for a Log4J-style XML layout.
-     *
-     * The resulting pattern produces log entries in an XML format.
-     *
-     * @return a {@code LogPattern} instance configured for a Log4J-style XML layout
-     */
-    public static LogPattern xmlLayoutLog4jPattern() {
-        return new LogPattern(LOG4J_XML_LAYOUT, "",
-                new XmlEntry()
-        );
-    }
-
-    private final String type;
     private final String text;
     private final LogPatternEntry[] entries;
     private final boolean locationNeeded;
@@ -1311,12 +1247,10 @@ public final class LogPattern {
     /**
      * Constructs a LogPattern using the supplied entries.
      *
-     * @param type    the type of the pattern
      * @param text    the pattern text
      * @param entries the format pattern entries
      */
-    LogPattern(String type, String text, LogPatternEntry... entries) {
-        this.type = type;
+    public PatternLayout(String text, LogPatternEntry... entries) {
         this.text = text;
         this.entries = entries;
 
@@ -1335,7 +1269,7 @@ public final class LogPattern {
      * @return the type
      */
     public String getType() {
-        return type;
+        return StandardLayout.PATTERN_LAYOUT.type();
     }
 
     /**

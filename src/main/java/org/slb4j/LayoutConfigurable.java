@@ -18,16 +18,16 @@ package org.slb4j;
 /**
  * Represents a configurable contract for setting and retrieving log pattern configurations.
  */
-public interface LogPatternConfigurable {
+public interface LayoutConfigurable {
     /**
      * Set the format pattern.
-     * @param logPattern the format pattern
+     * @param layout the format pattern
      */
-    void setLogPattern(LogPattern logPattern);
+    void setLayout(LogLayout layout);
 
     /**
      * Get the format pattern.
      * @return the format pattern
      */
-    LogPattern getLogPattern();
+    LogLayout getLayout();
 }

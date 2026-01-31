@@ -18,6 +18,9 @@ package org.slb4j;
 import org.slb4j.handler.RotatingFileHandler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.slb4j.layout.PatternLayout;
+import org.slb4j.layout.StandardLayout;
+
 import java.nio.file.Files;
 
 import java.io.IOException;
@@ -62,7 +65,7 @@ class LoggingConfigurationTest {
         assertEquals(1024L, fileHandler.getMaxFileSize());
         assertNotNull(fileHandler.getRotationTimeUnit());
         assertEquals(5, fileHandler.getMaxBackupIndex());
-        assertEquals("%m%n", fileHandler.getLogPattern().getText());
+        assertEquals("%m%n", fileHandler.getLayout().getText());
 
         // Test addToProperties
         Properties outProps = new Properties();
@@ -182,7 +185,7 @@ class LoggingConfigurationTest {
         assertNotNull(handler);
         assertInstanceOf(org.slb4j.handler.ConsoleHandler.class, handler);
         org.slb4j.handler.ConsoleHandler consoleHandler = (org.slb4j.handler.ConsoleHandler) handler;
-        assertEquals(LogPattern.LOG4J_CSV_LAYOUT, consoleHandler.getLogPattern().getType());
+        assertEquals(StandardLayout.CSV.type(), consoleHandler.getLayout().getType());
 
         // Test addToProperties
         Properties outProps = new Properties();
@@ -192,7 +195,7 @@ class LoggingConfigurationTest {
 
     @Test
     void testCsvOutputFormat() throws IOException {
-        LogPattern csvPattern = LogPattern.LOG4J_CSV_PATTERN;
+        LogLayout csvPattern = PatternLayout.LOG4J_CSV_PATTERN;
         StringBuilder sb = new StringBuilder();
         long timestamp = 1738259700000L; // 2025-01-30 17:55:00 UTC (roughly)
         // Note: TimeStampFormatter uses system default timezone by default in CsvEntry
@@ -212,7 +215,7 @@ class LoggingConfigurationTest {
 
     @Test
     void testCsvOutputFormatWithNullMessage() throws IOException {
-        LogPattern csvPattern = LogPattern.LOG4J_CSV_PATTERN;
+        LogLayout csvPattern = PatternLayout.LOG4J_CSV_PATTERN;
         StringBuilder sb = new StringBuilder();
         long timestamp = 1738259700000L;
         LocationResolver loc = () -> null;
@@ -237,7 +240,7 @@ class LoggingConfigurationTest {
         assertNotNull(handler);
         assertInstanceOf(org.slb4j.handler.ConsoleHandler.class, handler);
         org.slb4j.handler.ConsoleHandler consoleHandler = (org.slb4j.handler.ConsoleHandler) handler;
-        assertEquals(LogPattern.LOG4J_XML_LAYOUT, consoleHandler.getLogPattern().getType());
+        assertEquals(StandardLayout.XML.type(), consoleHandler.getLayout().getType());
 
         // Test addToProperties
         Properties outProps = new Properties();
@@ -247,7 +250,7 @@ class LoggingConfigurationTest {
 
     @Test
     void testXmlOutputFormat() throws IOException {
-        LogPattern xmlPattern = LogPattern.LOG4J_XML_PATTERN;
+        LogLayout xmlPattern = PatternLayout.LOG4J_XML_PATTERN;
         StringBuilder sb = new StringBuilder();
         long timestamp = 1738259700000L;
 
@@ -264,27 +267,27 @@ class LoggingConfigurationTest {
 
     @Test
     void testXmlHeaderFooter() {
-        LogPattern xmlPattern = LogPattern.LOG4J_XML_PATTERN;
+        LogLayout xmlPattern = PatternLayout.LOG4J_XML_PATTERN;
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<logEvents>\n", xmlPattern.getHeader());
         assertEquals("</logEvents>\n", xmlPattern.getFooter());
     }
 
     @Test
     void testFooterOrder() {
-        LogPattern.LogPatternEntry entry1 = new LogPattern.LogPatternEntry() {
+        PatternLayout.LogPatternEntry entry1 = new PatternLayout.LogPatternEntry() {
             @Override
             public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @org.jspecify.annotations.Nullable String mrk, @org.jspecify.annotations.Nullable MDC mdc, @org.jspecify.annotations.Nullable Location location, @org.jspecify.annotations.Nullable String msg, @org.jspecify.annotations.Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {}
             @Override public String getHeader() { return "[H1]"; }
             @Override public String getFooter() { return "[F1]"; }
         };
-        LogPattern.LogPatternEntry entry2 = new LogPattern.LogPatternEntry() {
+        PatternLayout.LogPatternEntry entry2 = new PatternLayout.LogPatternEntry() {
             @Override
             public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @org.jspecify.annotations.Nullable String mrk, @org.jspecify.annotations.Nullable MDC mdc, @org.jspecify.annotations.Nullable Location location, @org.jspecify.annotations.Nullable String msg, @org.jspecify.annotations.Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {}
             @Override public String getHeader() { return "[H2]"; }
             @Override public String getFooter() { return "[F2]"; }
         };
 
-        LogPattern pattern = new LogPattern("custom", "", entry1, entry2);
+        LogLayout pattern = new PatternLayout("", entry1, entry2);
         assertEquals("[H1][H2]", pattern.getHeader());
         assertEquals("[F2][F1]", pattern.getFooter());
     }

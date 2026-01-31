@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.slb4j;
+package org.slb4j.layout;
 
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -22,6 +22,12 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.parallel.Isolated;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.slb4j.ConsoleCode;
+import org.slb4j.Location;
+import org.slb4j.LocationResolver;
+import org.slb4j.LogLevel;
+import org.slb4j.LogLayout;
+import org.slb4j.MDC;
 import org.slb4j.frontend.jul.JulHandler;
 import org.slb4j.handler.ConsoleHandler;
 
@@ -38,7 +44,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 
 @Isolated // test changes the default locale!
 @NullMarked
-class LogPatternJulCompatibilityTest {
+class LogLayoutJulCompatibilityTest {
     static final Locale systemLocale = Locale.getDefault();
 
     @BeforeAll
@@ -70,7 +76,7 @@ class LogPatternJulCompatibilityTest {
         System.setProperty("java.util.logging.SimpleFormatter.format", julPattern);
         SimpleFormatter julFormatter = new SimpleFormatter();
 
-        LogPattern slb4jPattern = LogPattern.parseJulPattern(julPattern);
+        LogLayout slb4jPattern = PatternLayout.parseJulPattern(julPattern);
 
         // Create a LogRecord
         LogRecord logRecord = new LogRecord(Level.INFO, "Test message");
@@ -94,7 +100,7 @@ class LogPatternJulCompatibilityTest {
         assertEquals(julOutput, slb4jOutput, "Discrepancy for pattern: " + julPattern);
     }
 
-    private static String formatWithSlb4j(LogPattern slb4jPattern, LogRecord logRecord) throws IOException {
+    private static String formatWithSlb4j(LogLayout slb4jPattern, LogRecord logRecord) throws IOException {
         StringBuilder sb = new StringBuilder();
         long timestamp = logRecord.getMillis();
         String loggerName = logRecord.getLoggerName();
