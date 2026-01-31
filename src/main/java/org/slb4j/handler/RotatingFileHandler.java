@@ -20,7 +20,6 @@ import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.MDC;
-import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
 
 import java.io.IOException;

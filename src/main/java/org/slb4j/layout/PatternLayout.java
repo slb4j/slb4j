@@ -584,16 +584,14 @@ public final class PatternLayout implements LogLayout {
             if (key != null) {
                 appendFormatted(app, mdc.get(key), false);
             } else {
-                if (key == null) {
-                    app.append('{');
-                    boolean first = true;
-                    for (var e : mdc.get().entrySet()) {
-                        if (!first) app.append(", ");
-                        first = false;
-                        app.append(e.getKey()).append('=').append(e.getValue());
-                    }
-                    app.append('}');
+                app.append('{');
+                boolean first = true;
+                for (var e : mdc.get().entrySet()) {
+                    if (!first) app.append(", ");
+                    first = false;
+                    app.append(e.getKey()).append('=').append(e.getValue());
                 }
+                app.append('}');
             }
         }
 
@@ -1245,6 +1243,7 @@ public final class PatternLayout implements LogLayout {
      * Get the pattern text.
      * @return the pattern text
      */
+    @Override
     public String getText() {
         return text;
     }
@@ -1254,6 +1253,7 @@ public final class PatternLayout implements LogLayout {
      *
      * @return {@code true} if this pattern requires location information, otherwise {@code false}
      */
+    @Override
     public boolean isLocationNeeded() {
         return locationNeeded;
     }
@@ -1263,6 +1263,7 @@ public final class PatternLayout implements LogLayout {
      *
      * @return the header
      */
+    @Override
     public String getHeader() {
         StringBuilder sb = new StringBuilder();
         for (LogPatternEntry entry : entries) {
@@ -1276,6 +1277,7 @@ public final class PatternLayout implements LogLayout {
      *
      * @return the footer
      */
+    @Override
     public String getFooter() {
         StringBuilder sb = new StringBuilder();
         for (int i = entries.length - 1; i >= 0; i--) {

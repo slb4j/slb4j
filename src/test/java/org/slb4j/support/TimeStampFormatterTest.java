@@ -24,7 +24,7 @@ import java.time.format.DateTimeFormatter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
-public class TimeStampFormatterTest {
+class TimeStampFormatterTest {
 
     @ParameterizedTest
     @ValueSource(strings = {
@@ -50,7 +50,7 @@ public class TimeStampFormatterTest {
             "yyyy",
             "MM-dd-yyyy HH:mm:ss"
     })
-    public void testPatterns(String pattern) {
+    void testPatterns(String pattern) {
         long timestamp = 1705574640000L; // 2024-01-18T10:44:00Z
         ZoneId zoneId = ZoneId.systemDefault();
 
@@ -71,7 +71,7 @@ public class TimeStampFormatterTest {
             1609459200000L, // 2021-01-01
             -31536000000L,  // 1969-01-01
     })
-    public void testVariousTimestamps(long timestamp) {
+    void testVariousTimestamps(long timestamp) {
         String pattern = "yyyy-MM-dd HH:mm:ss.SSS";
         ZoneId zoneId = ZoneId.systemDefault();
 
