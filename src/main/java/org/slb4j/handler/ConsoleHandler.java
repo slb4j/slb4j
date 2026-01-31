@@ -83,7 +83,6 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
     public static final ZoneId ZONE_ID = ZoneId.systemDefault();
 
     private final String name;
-    private final Object lock = new Object();
     private final PrintStream out;
     private final Writer writer;
     private volatile boolean colored = true;
@@ -147,7 +146,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
             ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
             String message = msg.get();
             try {
-                synchronized (lock) {
+                synchronized (buffer) {
                     layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, consoleCodes);
                     buffer.writeTo(writer);
                     buffer.reset(0);
@@ -164,7 +163,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
      * @param colored true, if output use colors
      */
     public void setColored(boolean colored) {
-        synchronized (lock) {
+        synchronized (buffer) {
             this.colored = colored;
             (colored ? COLOR_MAP_DEFAULT : COLOR_MAP_MONOCHROME)
                     .forEach((lvl, code) -> codesByLevelIdx[lvl.ordinal()] = code);
@@ -204,7 +203,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
 
     @Override
     public void shutdown() {
-        synchronized (lock) {
+        synchronized (buffer) {
             String footer = layout.getFooter();
             if (!footer.isEmpty()) {
                 out.print(footer);
