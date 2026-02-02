@@ -1,4 +1,17 @@
-Version 0.1
+Version 0.2
+-----------
+
+- Log4J2 compatible configuration:
+  - fix exception on reading "layout"
+  - support ThresholdFilter 
+- layouts:
+  - SimpleLayout
+  - CsVLayout
+  - XmlLayout
+  - JsonLayout
+- small bug fixes and improvements
+
+- Version 0.1
 -----------
 
 Initial release.

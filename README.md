@@ -5,15 +5,20 @@
 SLB4J is a **Simple Logging Backend for Java** that comes as a single JAR without any dependencies.
 
 - configuration using properties file or in code
-- Log4J pattern syntax (applied when log4j2.properties or test-log4j2.properties is used)
-- Java Util Logging pattern syntax (applied when logging.properties is used)
+- aims to provide compatibility with both Log4J2 and JUL logging configuration properties files
+- Log4J2 compatible layout support  (when log4j2.properties is used):
+  - PatternLayout
+  - SimpleLayout
+  - CsVLayout
+  - XmlLayout
+  - JsonLayout
+- Java Util Logging pattern syntax (when logging.properties is used)
 - Console and log file logging
 - log file rotation
 - filtering based on level, logger name and package name
+- **Requires Java 21+**
 
 There is also an extension package that provides UI elements for live monitoring an application's log messages.
-
-**Java 21+ is required.**
 
 ## Supported Logging APIs
 
@@ -34,7 +39,7 @@ SLB4J supports the following logging APIs:
 <dependency>
   <groupId>org.slb4j</groupId>
   <artifactId>slb4j</artifactId>
-  <version>0.1</version>
+  <version>0.2</version>
 </dependency>
 ```
 
@@ -42,7 +47,7 @@ SLB4J supports the following logging APIs:
 
 ```kotlin
 dependencies {
-    implementation("org.slb4j:slb4j:0.1")
+    implementation("org.slb4j:slb4j:0.2")
 }
 ```
 
@@ -50,7 +55,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'org.slb4j:slb4j:0.1'
+    implementation 'org.slb4j:slb4j:0.2'
 }
 ```
 
@@ -121,6 +126,7 @@ correctly.
   - Log4J2
   - SLF4J
   - JCL (Jakarta Commons Logging / Apache Commons Logging)
+
 - **Log4J2 compatibility**
   - automaticially load and apply log4j2.properties / test-log4j2.properties
   - Log4J2 compatible message pattern 
@@ -129,8 +135,12 @@ correctly.
     - Marker support
     - Location support
     - Locale support
-  - ** Java Util Logging compatibility**
-    - automaticially load and apply logging.properties
+  - layouts: PatternLayout, SimpleLayout, CsvLayout, XmlLayout, JsonLayout
+  
+- **Java Util Logging compatibility**
+  - automaticially load and apply logging.properties
+  - Java Util Logging pattern syntax
+
 - Logging filters
 - UI components for live monitoring
 - Benchmarks
