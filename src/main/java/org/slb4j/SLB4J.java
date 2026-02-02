@@ -73,12 +73,18 @@ public final class SLB4J {
         DISPATCHER = UniversalDispatcher.getInstance();
 
         // === configure logging
-        LoggingConfiguration config = LoggingConfiguration.load();
+        LoggingConfiguration config = null;
+        try {
+            config = LoggingConfiguration.load();
+        } catch (RuntimeException e) {
+            Util.err().println("Failed to load logging configuration, using default configuration: " + e.getMessage());
+            config = LoggingConfiguration.defaultConfiguration();
+        }
+
         config.getHandlers().forEach(DISPATCHER::addLogHandler);
         DISPATCHER.setFilter(config.getRootFilter());
 
         // === wire the logging frontends
-
         wireFrontends();
     }
 
