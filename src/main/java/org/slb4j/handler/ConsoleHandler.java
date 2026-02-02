@@ -89,6 +89,11 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
     private volatile LogLayout layout = PatternLayout.DEFAULT_PATTERN;
     private final IoStringBuilder buffer = new IoStringBuilder(BUFFER_SIZE);
 
+    @Override
+    public boolean isLocationNeeded() {
+        return layout.isLocationNeeded();
+    }
+
     /**
      * Set the format pattern.
      * @param layout the format pattern

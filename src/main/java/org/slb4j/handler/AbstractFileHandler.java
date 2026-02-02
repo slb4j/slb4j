@@ -82,6 +82,11 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
         return name;
     }
 
+    @Override
+    public boolean isLocationNeeded() {
+        return layout.isLocationNeeded();
+    }
+
     /**
      * Releases the specified {@code IoStringBuilder} buffer, resetting its state
      * and adding it back to the internal buffer pool for reuse.

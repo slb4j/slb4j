@@ -79,5 +79,10 @@ class UniversalDispatcherTest {
         public boolean isEnabled(LogLevel level) {
             return true;
         }
+
+        @Override
+        public boolean isLocationNeeded() {
+            return false;
+        }
     }
 }

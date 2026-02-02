@@ -281,6 +281,11 @@ public class LogBuffer implements LogHandler, Externalizable {
         }
     }
 
+    @Override
+    public boolean isLocationNeeded() {
+        return false;
+    }
+
     /**
      * Add LogBufferListener.
      *

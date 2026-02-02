@@ -83,7 +83,5 @@ public interface LogHandler {
      *
      * @return {@code true} if location information is needed, otherwise {@code false}
      */
-    default boolean isLocationNeeded() {
-        return false;
-    }
+    boolean isLocationNeeded();
 }
