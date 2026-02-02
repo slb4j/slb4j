@@ -104,7 +104,12 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
      */
     @Override
     public void setLayout(LogLayout layout) {
-        this.layout = layout;
+        lock.lock();
+        try {
+            this.layout = layout;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -113,7 +118,12 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
      */
     @Override
     public LogLayout getLayout() {
-        return layout;
+        lock.lock();
+        try {
+            return layout;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -171,10 +181,13 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
      * @param colored true, if output use colors
      */
     public void setColored(boolean colored) {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             this.colored = colored;
             (colored ? COLOR_MAP_DEFAULT : COLOR_MAP_MONOCHROME)
                     .forEach((lvl, code) -> codesByLevelIdx[lvl.ordinal()] = code);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -193,7 +206,12 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
      */
     @Override
     public void setFilter(LogFilter filter) {
-        this.filter = filter;
+        lock.lock();
+        try {
+            this.filter = filter;
+        } finally {
+            lock.unlock();
+        }
     }
 
     /**
@@ -206,7 +224,12 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
      */
     @Override
     public LogFilter getFilter() {
-        return filter;
+        lock.lock();
+        try {
+            return filter;
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override

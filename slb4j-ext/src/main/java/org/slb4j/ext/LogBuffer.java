@@ -35,6 +35,7 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A thread-safe log buffer class intended to provide a buffer for log messages
@@ -55,6 +56,7 @@ public class LogBuffer implements LogHandler, Externalizable {
     private final Collection<LogBufferListener> listeners = new CopyOnWriteArrayList<>();
     private final AtomicLong totalAdded = new AtomicLong(0);
     private final AtomicLong totalRemoved = new AtomicLong(0);
+    private final ReentrantLock lock = new ReentrantLock();
     private transient LogFilter filter = LogFilter.allPass();
 
     private static final class RingBuffer {
@@ -194,14 +196,18 @@ public class LogBuffer implements LogHandler, Externalizable {
         if (n < 0) {
             throw new IllegalArgumentException("Capacity cannot be negative: " + n);
         }
-        synchronized (buffer) {
+        int removed;
+        lock.lock();
+        try {
             int oldSize = buffer.size();
             buffer.setCapacity(n);
-            int removed = Math.max(0, oldSize - buffer.size());
+            removed = Math.max(0, oldSize - buffer.size());
             totalRemoved.addAndGet(removed);
-            if (removed > 0) {
-                listeners.forEach(listener -> listener.entries(removed, 0));
-            }
+        } finally {
+            lock.unlock();
+        }
+        if (removed > 0) {
+            listeners.forEach(listener -> listener.entries(removed, 0));
         }
     }
 
@@ -264,12 +270,15 @@ public class LogBuffer implements LogHandler, Externalizable {
 
         // Update buffer state and notify listeners
         int removed;
-        synchronized (buffer) {
+        lock.lock();
+        try {
             removed = buffer.size();
             buffer.clear();
             buffer.addAll(entries);
             totalAdded.set(entries.size());
             totalRemoved.set(0);
+        } finally {
+            lock.unlock();
         }
 
         // Notify listeners about the state change
@@ -314,25 +323,38 @@ public class LogBuffer implements LogHandler, Externalizable {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             LogEntry entry = LogEntry.of(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
             int removed;
-            synchronized (buffer) {
+            lock.lock();
+            try {
                 removed = buffer.put(entry) ? 0 : 1;
                 totalAdded.incrementAndGet();
                 totalRemoved.addAndGet(removed);
+            } finally {
+                lock.unlock();
             }
 
-            // Notify listeners outside the buffer synchronization to avoid deadlock
+            // Notify listeners outside the lock synchronization to avoid deadlock
             listeners.forEach(listener -> listener.entries(removed, 1));
         }
     }
 
     @Override
     public void setFilter(LogFilter filter) {
-        this.filter = filter;
+        lock.lock();
+        try {
+            this.filter = filter;
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
     public LogFilter getFilter() {
-        return filter;
+        lock.lock();
+        try {
+            return filter;
+        } finally {
+            lock.unlock();
+        }
     }
 
     @Override
@@ -345,12 +367,15 @@ public class LogBuffer implements LogHandler, Externalizable {
      * Synchronized method that clears the buffer and notifies all registered LogBufferListeners to clear their logs as well.
      */
     public void clear() {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             totalRemoved.addAndGet(buffer.size());
             buffer.clear();
+        } finally {
+            lock.unlock();
         }
 
-        // Notify listeners outside the buffer synchronization to avoid deadlock
+        // Notify listeners outside the lock synchronization to avoid deadlock
         listeners.forEach(LogBufferListener::clear);
     }
 
@@ -360,8 +385,11 @@ public class LogBuffer implements LogHandler, Externalizable {
      * @return an array of LogEntry objects representing the contents of the LogBuffer
      */
     public LogEntry[] toArray() {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             return buffer.toArray();
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -423,12 +451,15 @@ public class LogBuffer implements LogHandler, Externalizable {
      *         total removed entries, and total added entries
      */
     public BufferState getBufferState() {
-        synchronized (buffer) {
-            LogEntry[] array = toArray();
+        lock.lock();
+        try {
+            LogEntry[] array = buffer.toArray();
             long r = totalRemoved.get();
             long a = totalAdded.get();
             assert array.length == a - r;
             return new BufferState(array, r, a);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -440,8 +471,11 @@ public class LogBuffer implements LogHandler, Externalizable {
      * @return the calculated sequence number of the log buffer as a long value
      */
     public long getSequenceNumber() {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             return totalAdded.get() + totalRemoved.get();
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -452,8 +486,11 @@ public class LogBuffer implements LogHandler, Externalizable {
      * @return the LogEntry at the specified index
      */
     public LogEntry get(int i) {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             return buffer.get(i);
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -472,7 +509,8 @@ public class LogBuffer implements LogHandler, Externalizable {
      */
     public List<LogEntry> subList(int fromIndex, int toIndex) {
         LogEntry[] result;
-        synchronized (buffer) {
+        lock.lock();
+        try {
             int len = buffer.size();
             Objects.checkFromToIndex(fromIndex, toIndex, len);
             int sz = toIndex - fromIndex;
@@ -493,6 +531,8 @@ public class LogBuffer implements LogHandler, Externalizable {
             if (elementsBeforeWrap < sz) {
                 System.arraycopy(buffer.data, 0, result, elementsBeforeWrap, sz - elementsBeforeWrap);
             }
+        } finally {
+            lock.unlock();
         }
 
         return Arrays.asList(result);

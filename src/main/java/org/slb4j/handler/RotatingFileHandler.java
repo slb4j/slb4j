@@ -67,7 +67,8 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     private Writer openFile() throws IOException {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             if (writer != null) {
                 writer.close();
             }
@@ -84,6 +85,8 @@ public final class RotatingFileHandler extends AbstractFileHandler {
             updateNextRotationTime();
 
             return writer;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -102,8 +105,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @param filePattern the file pattern
      */
     public void setFilePattern(@Nullable String filePattern) {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             this.filePattern = filePattern;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -113,8 +119,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @return the file pattern
      */
     public @Nullable String getFilePattern() {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             return filePattern;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -124,8 +133,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @param maxFileSize the maximum file size in bytes, or -1 for no limit
      */
     public void setMaxFileSize(long maxFileSize) {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             this.maxFileSize = maxFileSize;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -135,9 +147,12 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @param rotationTimeUnit the time unit for rotation, or null for no time-based rotation
      */
     public void setRotationTimeUnit(@Nullable ChronoUnit rotationTimeUnit) {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             this.rotationTimeUnit = rotationTimeUnit;
             updateNextRotationTime();
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -147,8 +162,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @param maxBackupIndex the maximum number of backup files
      */
     public void setMaxBackupIndex(int maxBackupIndex) {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             this.maxBackupIndex = maxBackupIndex;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -172,7 +190,8 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     private void rotate() throws IOException {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             if (writer != null) {
                 writer.close();
             }
@@ -184,6 +203,8 @@ public final class RotatingFileHandler extends AbstractFileHandler {
             }
 
             openFile();
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -255,8 +276,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @return the maximum file size in bytes, or -1 for no limit
      */
     public long getMaxFileSize() {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             return maxFileSize;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -265,8 +289,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @return the rotation time unit, or null for no time-based rotation
      */
     public @Nullable ChronoUnit getRotationTimeUnit() {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             return rotationTimeUnit;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -275,8 +302,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @return the maximum number of backup files
      */
     public int getMaxBackupIndex() {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             return maxBackupIndex;
+        } finally {
+            lock.unlock();
         }
     }
 

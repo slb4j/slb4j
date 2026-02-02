@@ -32,6 +32,7 @@ import java.io.Writer;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A log handler that writes log entries to a file.
@@ -47,6 +48,9 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
 
     private final String name;
     private final AtomicBoolean closed = new AtomicBoolean(false);
+
+    /** The lock for thread-safe access. */
+    protected final ReentrantLock lock = new ReentrantLock();
 
     /** The internal buffer. */
     protected final IoStringBuilder buffer;
@@ -108,22 +112,31 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @param flushLevel the minimum log level to trigger a flush
      */
     public void setFlushLevel(LogLevel flushLevel) {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             this.flushLevel = Objects.requireNonNull(flushLevel);
+        } finally {
+            lock.unlock();
         }
     }
 
     @Override
     public void setFilter(LogFilter filter) {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             this.filter = Objects.requireNonNull(filter);
+        } finally {
+            lock.unlock();
         }
     }
 
     @Override
     public LogFilter getFilter() {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             return filter;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -133,26 +146,27 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      */
     @Override
     public void setLayout(LogLayout layout) {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             if (this.layout != layout) {
                 Writer writer = writer();
-                if (writer != null) {
-                    try {
-                        String footer = this.layout.getFooter();
-                        if (!footer.isEmpty()) {
-                            writer.write(footer);
-                        }
-                        String header = layout.getHeader();
-                        if (!header.isEmpty()) {
-                            writer.write(header);
-                        }
-                        writer.flush();
-                    } catch (IOException e) {
-                        Util.err().println("Error writing header/footer during pattern change: " + e.getMessage());
+                try {
+                    String footer = this.layout.getFooter();
+                    if (!footer.isEmpty()) {
+                        writer.write(footer);
                     }
+                    String header = layout.getHeader();
+                    if (!header.isEmpty()) {
+                        writer.write(header);
+                    }
+                    writer.flush();
+                } catch (IOException e) {
+                    Util.err().println("Error writing header/footer during pattern change: " + e.getMessage());
                 }
                 this.layout = layout;
             }
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -162,8 +176,11 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      */
     @Override
     public LogLayout getLayout() {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             return layout;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -172,8 +189,11 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @return the minimum log level to trigger a flush
      */
     public LogLevel getFlushLevel() {
-        synchronized (buffer) {
+        lock.lock();
+        try {
             return flushLevel;
+        } finally {
+            lock.unlock();
         }
     }
 
@@ -185,14 +205,17 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     @Override
     public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
+            lock.lock();
             try {
-                synchronized (buffer) {
-                    doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
-                }
+                doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
             } catch (IOException e) {
                 Util.err().println("Error writing log entry: " + e.getMessage());
             } finally {
-                releaseBuffer(buffer);
+                try {
+                    releaseBuffer(buffer);
+                } finally {
+                    lock.unlock();
+                }
             }
         }
     }
@@ -308,7 +331,8 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     @Override
     public void shutdown() {
         if (closed.compareAndSet(false, true)) {
-            synchronized (buffer) {
+            lock.lock();
+            try {
                 try {
                     onShutDown();
                     buffer.reset();
@@ -316,6 +340,8 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
                     Util.err().format("Error shutting down handler '%s': %s", name(), e.getMessage());
                     e.printStackTrace(Util.err());
                 }
+            } finally {
+                lock.unlock();
             }
         }
     }
