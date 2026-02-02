@@ -16,7 +16,6 @@
 package org.slb4j.ext;
 
 import org.slb4j.Location;
-import org.slb4j.LocationResolver;
 import org.slb4j.LogFilter;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
@@ -53,7 +52,6 @@ public class LogBuffer implements LogHandler, Externalizable {
     public static final int DEFAULT_CAPACITY = 10_000;
 
     private final String name;
-    private boolean resolveLocation = false;
     private final transient RingBuffer buffer;
     private final Collection<LogBufferListener> listeners = new CopyOnWriteArrayList<>();
     private final AtomicLong totalAdded = new AtomicLong(0);
@@ -308,10 +306,9 @@ public class LogBuffer implements LogHandler, Externalizable {
     }
 
     @Override
-    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, Supplier<String> msg, @Nullable Throwable t) {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
-            Location location = resolveLocation ? loc.resolve() : null;
-            LogEntry entry = LogEntry.of(timestamp, loggerName, lvl, mrk, mdc, location, msg.get(), t);
+            LogEntry entry = LogEntry.of(timestamp, loggerName, lvl, mrk, mdc, loc, msg.get(), t);
             int removed;
             synchronized (buffer) {
                 removed = buffer.put(entry) ? 0 : 1;

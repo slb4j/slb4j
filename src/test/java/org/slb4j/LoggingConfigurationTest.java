@@ -201,7 +201,7 @@ class LoggingConfigurationTest {
         // Note: TimeStampFormatter uses system default timezone by default in CsvEntry
         // Actually CsvEntry uses LogPattern.ZONE_ID which is ZoneId.systemDefault()
         
-        LocationResolver loc = () -> null;
+        Location loc = null;
         csvPattern.formatLogEntry(sb, timestamp, "test.Logger", LogLevel.INFO, null, null, loc, "Hello \"World\"", null, ConsoleCode.empty());
         
         String output = sb.toString();
@@ -218,7 +218,7 @@ class LoggingConfigurationTest {
         LogLayout csvPattern = PatternLayout.LOG4J_CSV_PATTERN;
         StringBuilder sb = new StringBuilder();
         long timestamp = 1738259700000L;
-        LocationResolver loc = () -> null;
+        Location loc = null;
         csvPattern.formatLogEntry(sb, timestamp, "test.Logger", LogLevel.ERROR, null, null, loc, null, null, ConsoleCode.empty());
 
         String output = sb.toString();
@@ -254,7 +254,7 @@ class LoggingConfigurationTest {
         StringBuilder sb = new StringBuilder();
         long timestamp = 1738259700000L;
 
-        LocationResolver loc = () -> null;
+        Location loc = null;
         xmlPattern.formatLogEntry(sb, timestamp, "test.Logger", LogLevel.INFO, null, null, loc, "Hello <World> & \"Friends\"", null, ConsoleCode.empty());
 
         String output = sb.toString();

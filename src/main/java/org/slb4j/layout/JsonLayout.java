@@ -3,7 +3,6 @@ package org.slb4j.layout;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.ConsoleCode;
 import org.slb4j.Location;
-import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.MDC;
@@ -36,7 +35,7 @@ public final class JsonLayout implements LogLayout {
     }
 
     @Override
-    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
         app.append("{\"timestamp\":\"");
         timeStampFormatter.appendTo(timestamp, app);
         app.append("\",\"level\":\"");
@@ -73,17 +72,16 @@ public final class JsonLayout implements LogLayout {
             }
         }
 
-        Location location = loc.resolve();
-        if (location != null) {
+        if (loc != null) {
             app.append(",\"location\":{");
             app.append("\"class\":\"");
-            appendJsonEscaped(app, location.getClassName());
+            appendJsonEscaped(app, loc.getClassName());
             app.append("\",\"method\":\"");
-            appendJsonEscaped(app, location.getMethodName());
+            appendJsonEscaped(app, loc.getMethodName());
             app.append("\",\"file\":\"");
-            appendJsonEscaped(app, location.getFileName());
+            appendJsonEscaped(app, loc.getFileName());
             app.append("\",\"line\":");
-            app.append(String.valueOf(location.getLineNumber()));
+            app.append(String.valueOf(loc.getLineNumber()));
             app.append("}");
         }
 

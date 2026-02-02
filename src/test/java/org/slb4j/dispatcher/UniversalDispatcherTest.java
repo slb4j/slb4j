@@ -18,10 +18,10 @@ package org.slb4j.dispatcher;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
+import org.slb4j.Location;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
-import org.slb4j.LocationResolver;
 import org.slb4j.LogFilter;
 
 import java.util.SequencedCollection;
@@ -57,7 +57,7 @@ class UniversalDispatcherTest {
         }
 
         @Override
-        public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
+        public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, Supplier<String> msg, @Nullable Throwable t) {
             // No-op
         }
 

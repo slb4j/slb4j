@@ -366,7 +366,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
 
         StringBuilder sb = new StringBuilder();
         try {
-            pattern.formatLogEntry(sb, entry.time(), entry.logger(), entry.level(), entry.marker(), entry.mdc(), entry::location, entry.message(), entry.throwable(), ConsoleCode.empty());
+            pattern.formatLogEntry(sb, entry.time(), entry.logger(), entry.level(), entry.marker(), entry.mdc(), entry.location(), entry.message(), entry.throwable(), ConsoleCode.empty());
         } catch (IOException e) {
             sb.append("Error formatting log entry: ").append(e.getMessage());
         }

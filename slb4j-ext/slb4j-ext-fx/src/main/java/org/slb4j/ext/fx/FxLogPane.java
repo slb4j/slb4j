@@ -408,7 +408,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
                     entry.level(),
                     entry.marker(),
                     entry.mdc(),
-                    entry::location,
+                    entry.location(),
                     entry.message(),
                     entry.throwable(),
                     ConsoleCode.empty()

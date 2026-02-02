@@ -16,7 +16,7 @@
 package org.slb4j.handler;
 
 import org.jspecify.annotations.Nullable;
-import org.slb4j.LocationResolver;
+import org.slb4j.Location;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.slb4j.support.Util;
@@ -153,7 +153,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     @Override
-    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, Supplier<String> msg, @Nullable Throwable t) {
         if (getFilter().test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             String message = msg.get();
             try {

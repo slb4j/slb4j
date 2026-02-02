@@ -18,7 +18,6 @@ package org.slb4j.layout;
 import org.slb4j.ConsoleCode;
 import org.slb4j.LogLayout;
 import org.slb4j.Location;
-import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.slb4j.support.TimeStampFormatter;
@@ -1301,10 +1300,9 @@ public final class PatternLayout implements LogLayout {
      * @param consoleCodes the color codes for the log level (start and end)
      * @throws IOException if an I/O error occurs while writing to the appendable
      */
-    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-        Location location = isLocationNeeded() ? loc.resolve() : null;
+    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
         for (LogPatternEntry entry : entries) {
-            entry.format(app, timestamp, loggerName, lvl, mrk, mdc, location, msg, t, consoleCodes);
+            entry.format(app, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
         }
     }
 

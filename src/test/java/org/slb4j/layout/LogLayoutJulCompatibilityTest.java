@@ -24,7 +24,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slb4j.ConsoleCode;
 import org.slb4j.Location;
-import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.MDC;
@@ -106,7 +105,7 @@ class LogLayoutJulCompatibilityTest {
         String loggerName = logRecord.getLoggerName();
         LogLevel level = JulHandler.translateJulLevel(logRecord.getLevel());
 
-        LocationResolver locResolver = () -> new Location() {
+        Location loc = new Location() {
             @Override public String getClassName() { return logRecord.getSourceClassName(); }
 
             @Override public String getMethodName() { return logRecord.getSourceMethodName(); }
@@ -123,7 +122,7 @@ class LogLayoutJulCompatibilityTest {
 
         Throwable t = logRecord.getThrown();
 
-        slb4jPattern.formatLogEntry(sb, timestamp, loggerName, level, null, mdc, locResolver,
+        slb4jPattern.formatLogEntry(sb, timestamp, loggerName, level, null, mdc, loc,
                 JulHandler.formatJulMessage(logRecord.getMessage(), logRecord.getParameters()).get(),
                 t, ConsoleHandler.COLOR_MAP_DEFAULT.getOrDefault(level, ConsoleCode.empty()));
 

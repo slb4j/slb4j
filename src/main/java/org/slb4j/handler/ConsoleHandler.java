@@ -16,6 +16,7 @@
 package org.slb4j.handler;
 
 import org.slb4j.ConsoleCode;
+import org.slb4j.Location;
 import org.slb4j.LogFilter;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
@@ -24,7 +25,6 @@ import org.slb4j.LayoutConfigurable;
 import org.slb4j.MDC;
 import org.slb4j.layout.PatternLayout;
 import org.slb4j.support.AnsiCode;
-import org.slb4j.LocationResolver;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
@@ -141,7 +141,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
     }
 
     @Override
-    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver loc, Supplier<String> msg, @Nullable Throwable t) {
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, Supplier<String> msg, @Nullable Throwable t) {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
             String message = msg.get();

@@ -15,8 +15,8 @@
  */
 package org.slb4j.handler;
 
+import org.slb4j.Location;
 import org.slb4j.LogLevel;
-import org.slb4j.LocationResolver;
 import org.slb4j.layout.PatternLayout;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -30,7 +30,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class FileHandlerTest {
 
-    private static final LocationResolver LOC = () -> null;
+    private static final Location LOC = null;
 
     @TempDir
     Path tempDir;

@@ -15,6 +15,7 @@
  */
 package org.slb4j.dispatcher;
 
+import org.slb4j.Location;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogDispatcher;
 import org.slb4j.LogFilter;
@@ -162,9 +163,13 @@ public final class UniversalDispatcher implements LogDispatcher {
      */
     public void filterAndDispatch(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver locationResolver, Supplier<String> msg, @Nullable Throwable t) {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
+            Location loc =  null;
             for (LogHandler handler : handlers) {
                 if (handler.isEnabled(lvl)) {
-                    handler.handle(timestamp, loggerName, lvl, mrk, mdc, locationResolver, msg, t);
+                    if (loc == null && handler.isLocationNeeded()) {
+                        loc = locationResolver.resolve();
+                    }
+                    handler.handle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
                 }
             }
         }

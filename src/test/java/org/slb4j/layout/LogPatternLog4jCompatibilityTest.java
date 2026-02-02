@@ -35,7 +35,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slb4j.ConsoleCode;
 import org.slb4j.Location;
-import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.MDC;
@@ -304,19 +303,28 @@ class LogPatternLog4jCompatibilityTest {
                 }
             };
 
-            LocationResolver locResolver = () -> {
-                StackTraceElement ste = event.getSource();
-                if (ste == null) return null;
-                return new Location() {
-                    @Override public String getClassName() { return ste.getClassName(); }
-                    @Override public String getMethodName() { return ste.getMethodName(); }
-                    @Override public int getLineNumber() { return ste.getLineNumber(); }
-                    @Override public @Nullable String getFileName() { return ste.getFileName(); }
+            Location loc = null;
+            StackTraceElement ste = event.getSource();
+            if (ste == null) {
+                loc = null;
+            } else {
+                loc = new Location() {
+                    @Override
+                    public String getClassName() {return ste.getClassName();}
+
+                    @Override
+                    public String getMethodName() {return ste.getMethodName();}
+
+                    @Override
+                    public int getLineNumber() {return ste.getLineNumber();}
+
+                    @Override
+                    public @Nullable String getFileName() {return ste.getFileName();}
                 };
-            };
+            }
 
             try {
-                slb4jPattern.formatLogEntry(sb, timestamp, loggerName, level, marker, mdc, locResolver, 
+                slb4jPattern.formatLogEntry(sb, timestamp, loggerName, level, marker, mdc, loc,
                     event.getMessage().getFormattedMessage(), event.getThrown(), ConsoleHandler.COLOR_MAP_DEFAULT.getOrDefault(level, ConsoleCode.empty()));
             } catch (java.io.IOException e) {
                 throw new RuntimeException(e);
