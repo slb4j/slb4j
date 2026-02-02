@@ -141,6 +141,31 @@ public final class Util {
         return -1;
     }
 
+    /**
+     * Converts a {@link java.nio.file.Path} to a normalized string representation using forward slashes
+     * as separators, regardless of the operating system.
+     *
+     * @param path the path to normalize
+     * @return the normalized path string with forward slashes
+     */
+    public static String pathToNormalizedString(java.nio.file.Path path) {
+        java.nio.file.Path p = path.normalize();  // preserves relative paths
+        StringBuilder sb = new StringBuilder();
+
+        java.nio.file.Path root = p.getRoot();
+        if (root != null) {
+            sb.append(root.toString().replace('\\', '/'));
+        }
+
+        for (java.nio.file.Path part : p) {
+            if (sb.length() != 0 && sb.charAt(sb.length() - 1) != '/')
+                sb.append('/');
+            sb.append(part.toString());
+        }
+
+        return sb.toString();
+    }
+
     private static final class CachingStringSupplier implements Supplier<String> {
         private final Supplier<String> supplier;
         private @Nullable String s;

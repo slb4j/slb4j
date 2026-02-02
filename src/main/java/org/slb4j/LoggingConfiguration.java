@@ -522,13 +522,13 @@ public final class LoggingConfiguration {
                 }
                 case FileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, "File");
-                    properties.setProperty(prefix + LOGGER_FILE_NAME, fileHandler.getPath().toString().replace('\\', '/'));
+                    properties.setProperty(prefix + LOGGER_FILE_NAME, Util.pathToNormalizedString(fileHandler.getPath()));
                     properties.setProperty(prefix + LOGGER_FILE_APPEND, String.valueOf(fileHandler.isAppend()));
                     addPatternConfiguration(properties, fileHandler.getLayout(), prefix);
                 }
                 case RotatingFileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, fileHandler.getMaxFileSize() > 0 ? "RollingFile" : "File");
-                    properties.setProperty(prefix + LOGGER_FILE_NAME, fileHandler.getPath().toString().replace('\\', '/'));
+                    properties.setProperty(prefix + LOGGER_FILE_NAME, Util.pathToNormalizedString(fileHandler.getPath()));
                     properties.setProperty(prefix + LOGGER_FILE_APPEND, String.valueOf(fileHandler.isAppend()));
                     if (fileHandler.getMaxFileSize() > 0) {
                         properties.setProperty(prefix + "policies.type", "Policies");
@@ -539,7 +539,7 @@ public final class LoggingConfiguration {
                     }
                     String filePattern = fileHandler.getFilePattern();
                     if (filePattern != null) {
-                        properties.setProperty(prefix + LOGGER_FILE_PATTERN, filePattern.replace('\\', '/'));
+                        properties.setProperty(prefix + LOGGER_FILE_PATTERN, Util.pathToNormalizedString(Paths.get(filePattern)));
                     }
                     addPatternConfiguration(properties, fileHandler.getLayout(), prefix);
                 }

@@ -15,6 +15,7 @@
  */
 package org.slb4j;
 
+import org.slb4j.support.Util;
 import org.slb4j.handler.RotatingFileHandler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -45,7 +46,7 @@ class LoggingConfigurationTest {
                 appender.file.strategy.max=5
                 appender.file.layout.type=PatternLayout
                 appender.file.layout.pattern=%%m%%n
-                """.formatted(logFile.toString());
+                """.formatted(Util.pathToNormalizedString(logFile));
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 
@@ -72,7 +73,7 @@ class LoggingConfigurationTest {
         config.addToProperties(outProps);
 
         assertEquals("RollingFile", outProps.getProperty("appender.file.type"));
-        assertEquals(logFile.toString(), outProps.getProperty("appender.file.fileName"));
+        assertEquals(Util.pathToNormalizedString(logFile), outProps.getProperty("appender.file.fileName"));
         assertEquals("false", outProps.getProperty("appender.file.append"));
         assertEquals("1024", outProps.getProperty("appender.file.policies.size.size"));
         assertEquals("5", outProps.getProperty("appender.file.strategy.max"));
@@ -86,7 +87,7 @@ class LoggingConfigurationTest {
                 appender.file.type=File
                 appender.file.fileName=%s
                 appender.file.append=false
-                """.formatted(logFile.toString());
+                """.formatted(Util.pathToNormalizedString(logFile));
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 
@@ -99,7 +100,7 @@ class LoggingConfigurationTest {
         config.addToProperties(outProps);
 
         assertEquals("File", outProps.getProperty("appender.file.type"));
-        assertEquals(logFile.toString(), outProps.getProperty("appender.file.fileName"));
+        assertEquals(Util.pathToNormalizedString(logFile), outProps.getProperty("appender.file.fileName"));
         assertEquals("false", outProps.getProperty("appender.file.append"));
     }
 
@@ -113,7 +114,7 @@ class LoggingConfigurationTest {
         config.addToProperties(props);
 
         assertEquals("File", props.getProperty("appender.file.type"));
-        assertEquals(logFile.toString(), props.getProperty("appender.file.fileName"));
+        assertEquals(Util.pathToNormalizedString(logFile), props.getProperty("appender.file.fileName"));
         assertEquals("true", props.getProperty("appender.file.append"));
     }
 
@@ -141,7 +142,7 @@ class LoggingConfigurationTest {
                 .orElseThrow();
         assertInstanceOf(RotatingFileHandler.class, fileHandler);
         RotatingFileHandler rotatingFileHandler = (RotatingFileHandler) fileHandler;
-        assertEquals("test.log", rotatingFileHandler.getPath().toString());
+        assertEquals("test.log", Util.pathToNormalizedString(rotatingFileHandler.getPath()));
         assertEquals(1024L, rotatingFileHandler.getMaxFileSize());
         assertEquals(2, rotatingFileHandler.getMaxBackupIndex()); // count 3 means 2 backups
         assertTrue(rotatingFileHandler.isAppend());
@@ -302,7 +303,7 @@ class LoggingConfigurationTest {
                 appender.file.type=File
                 appender.file.fileName=%s
                 appender.file.layout.type=XmlLayout
-                """.formatted(logFile.toString());
+                """.formatted(Util.pathToNormalizedString(logFile));
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 

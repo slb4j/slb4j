@@ -58,4 +58,9 @@
         <Class name="org.slb4j.LoggingConfiguration"/>
     </Match>
 
+    <Match>
+        <Bug pattern="DMI_HARDCODED_ABSOLUTE_FILENAME"/>
+        <Class name="org.slb4j.support.SupportTest"/>
+    </Match>
+
 </FindBugsFilter>

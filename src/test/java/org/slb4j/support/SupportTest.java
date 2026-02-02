@@ -87,4 +87,13 @@ class SupportTest {
         assertEquals("\033[38;2;255;0;0m", AnsiCode.fg(255, 0, 0));
         assertEquals("\033[48;2;0;255;0m", AnsiCode.bg(0, 255, 0));
     }
+
+    @Test
+    void testPathToNormalizedString() {
+        assertEquals("a/b/c", Util.pathToNormalizedString(java.nio.file.Paths.get("a", "b", "c")));
+        assertEquals("a/b/c", Util.pathToNormalizedString(java.nio.file.Paths.get("a/b/c")));
+        if (java.io.File.separatorChar == '\\') {
+            assertEquals("C:/a/b/c", Util.pathToNormalizedString(java.nio.file.Paths.get("C:\\a\\b\\c")));
+        }
+    }
 }
