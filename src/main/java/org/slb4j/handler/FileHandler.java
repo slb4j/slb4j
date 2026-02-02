@@ -15,12 +15,6 @@
  */
 package org.slb4j.handler;
 
-import org.slb4j.Location;
-import org.slb4j.LogLevel;
-import org.slb4j.MDC;
-import org.jspecify.annotations.Nullable;
-import org.slb4j.support.Util;
-
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.channels.Channels;
@@ -54,21 +48,6 @@ public final class FileHandler extends AbstractFileHandler {
         this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
         this.writer = Channels.newWriter(channel, StandardCharsets.UTF_8);
         writeLayoutHeader();
-    }
-
-    @Override
-    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
-        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
-            try {
-                synchronized (buffer) {
-                    doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
-                }
-            } catch (IOException e) {
-                Util.err().println("Error writing log entry: " + e.getMessage());
-            } finally {
-                releaseBuffer(buffer);
-            }
-        }
     }
 
     @Override

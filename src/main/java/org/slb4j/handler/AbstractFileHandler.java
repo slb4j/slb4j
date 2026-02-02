@@ -182,6 +182,21 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
         shutdown();
     }
 
+    @Override
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
+        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
+            try {
+                synchronized (buffer) {
+                    doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
+                }
+            } catch (IOException e) {
+                Util.err().println("Error writing log entry: " + e.getMessage());
+            } finally {
+                releaseBuffer(buffer);
+            }
+        }
+    }
+
     /**
      * Handles the processing and writing of a log entry.
      *

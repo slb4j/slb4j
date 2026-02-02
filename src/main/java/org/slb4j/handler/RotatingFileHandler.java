@@ -153,19 +153,9 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     @Override
-    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
-        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
-            try {
-                synchronized (buffer) {
-                    checkRotation(timestamp);
-                    doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
-                }
-            } catch (IOException e) {
-                Util.err().println("Error writing log entry: " + e.getMessage());
-            } finally {
-                releaseBuffer(buffer);
-            }
-        }
+    protected void doHandle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) throws IOException {
+        checkRotation(timestamp);
+        super.doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
     }
 
     private void checkRotation(long timestamp) throws IOException {
