@@ -26,8 +26,10 @@ import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
 
 import java.io.IOException;
+import java.io.Writer;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * A log handler that writes log entries to a file.
@@ -42,6 +44,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     static final StandardOpenOption[] OPTIONS_CREATE = {StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING, StandardOpenOption.WRITE};
 
     private final String name;
+    private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /** The internal buffer. */
     protected final IoStringBuilder buffer;
@@ -150,14 +153,62 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     }
 
     @Override
-    public void shutdown() {
-        synchronized (buffer) {
+    public final void close() {
+        shutdown();
+    }
+
+    /**
+     * Provides a writer instance for writing log entries.
+     * Subclasses must implement this method to supply the appropriate
+     * {@code Writer} for handling log outputs.
+     *
+     * @return a {@code Writer} instance used for writing log entries
+     */
+    protected abstract Writer writer();
+
+    /**
+     * Handles the shutdown process for the log handler, ensuring that any required
+     * cleanup tasks are performed, such as writing the footer to the log file and
+     * releasing resources.
+     *
+     * This method writes the footer, if available, by invoking {@code layout.getFooter()}
+     * and uses the {@code writer()} method to obtain a {@code Writer} instance. After writing
+     * the footer, the method ensures that the writer is properly closed, even in the event
+     * of an exception.
+     *
+     * If an {@code IOException} occurs, an error message is printed to {@code Util.err()} to
+     * indicate that the log file could not be closed successfully.
+     *
+     * The method is intended to be overridden in subclasses if additional custom cleanup
+     * tasks are required during shutdown.
+     */
+    protected void onShutDown() {
+        try {
+            Writer writer = writer();
             try {
-                close();
-                buffer.reset();
-            } catch (Exception e) {
-                Util.err().format("Error closing handler '%s': %s", name(), e.getMessage());
-                e.printStackTrace(Util.err());
+                String footer = layout.getFooter();
+                if (!footer.isEmpty()) {
+                    writer.write(footer);
+                }
+            } finally {
+                writer.close();
+            }
+        } catch (IOException e) {
+            Util.err().println("Error closing log file: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void shutdown() {
+        if (closed.compareAndSet(false, true)) {
+            synchronized (buffer) {
+                try {
+                    onShutDown();
+                    buffer.reset();
+                } catch (Exception e) {
+                    Util.err().format("Error shutting down handler '%s': %s", name(), e.getMessage());
+                    e.printStackTrace(Util.err());
+                }
             }
         }
     }

@@ -20,7 +20,6 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.slb4j.LocationResolver;
 import org.jspecify.annotations.Nullable;
-import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
 
 import java.io.IOException;
@@ -90,22 +89,8 @@ public final class FileHandler extends AbstractFileHandler {
     }
 
     @Override
-    public void close() {
-        try {
-            synchronized (buffer) {
-                String footer = layout.getFooter();
-                try {
-                    if (!footer.isEmpty()) {
-                        writer.write(footer);
-                        writer.flush();
-                    }
-                } finally {
-                    writer.close();
-                }
-            }
-        } catch (IOException e) {
-            Util.err().println("Error closing log file: " + e.getMessage());
-        }
+    protected Writer writer() {
+        return writer;
     }
 
     @Override

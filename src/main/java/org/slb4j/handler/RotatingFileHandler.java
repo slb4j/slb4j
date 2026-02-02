@@ -257,22 +257,8 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     @Override
-    public void close() {
-        synchronized (buffer) {
-            if (out != null) {
-                try {
-                    String footer = layout.getFooter();
-                    if (!footer.isEmpty()) {
-                        out.write(footer);
-                        out.flush();
-                    }
-                    out.close();
-                } catch (IOException e) {
-                    Util.err().println("Error closing log file: " + e.getMessage());
-                }
-                out = null;
-            }
-        }
+    protected Writer writer() {
+        return out;
     }
 
     /**
