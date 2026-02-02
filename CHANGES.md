@@ -1,3 +1,9 @@
+Version 0.2.1
+-------------
+
+- fix: location was not resolved
+- replace synchronizedblocks with reentrant locks to avoid pinning virtual threads
+
 Version 0.2
 -----------
 
