@@ -16,11 +16,13 @@
 package org.slb4j.handler;
 
 import org.jspecify.annotations.Nullable;
+import org.slb4j.Location;
 import org.slb4j.LogFilter;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.LayoutConfigurable;
+import org.slb4j.MDC;
 import org.slb4j.layout.PatternLayout;
 import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.Util;
@@ -181,13 +183,41 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     }
 
     /**
+     * Handles the processing and writing of a log entry.
+     *
+     * This method formats a log entry using the specified parameters, writes the formatted
+     * log entry to the associated writer, and optionally flushes the writer if the log level
+     * meets or exceeds the configured flush threshold.
+     *
+     * @param timestamp the timestamp of the log entry in milliseconds since the epoch
+     * @param loggerName the name of the logger instance
+     * @param lvl the log level of the entry
+     * @param mrk an optional marker associated with the log entry, or null if not applicable
+     * @param mdc an optional Mapping Diagnostic Context (MDC) providing contextual data for the log entry, or null if not applicable
+     * @param loc an optional location context providing code-related metadata (e.g., class name, method name, etc.), or null if not available
+     * @param msg the message to be logged
+     * @param t an optional throwable associated with the log entry, such as an exception, or null if not applicable
+     * @throws IOException if an error occurs while writing or flushing the log entry
+     */
+    protected void doHandle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) throws IOException {
+        Writer writer = writer();
+
+        layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
+        buffer.writeTo(writer);
+
+        if (lvl.ordinal() >= flushLevel.ordinal()) {
+            writer.flush();
+        }
+    }
+
+    /**
      * Provides a writer instance for writing log entries.
      * Subclasses must implement this method to supply the appropriate
      * {@code Writer} for handling log outputs.
      *
      * @return a {@code Writer} instance used for writing log entries
      */
-    protected abstract @Nullable Writer writer();
+    protected abstract Writer writer();
 
     /**
      * Writes the layout header to the underlying writer, if it is defined and non-empty.
@@ -201,12 +231,10 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      */
     protected void writeLayoutHeader() throws IOException {
         Writer writer = writer();
-        if (writer != null) {
-            String header = layout.getHeader();
-            if (!header.isEmpty()) {
-                writer.write(header);
-                writer.flush();
-            }
+        String header = layout.getHeader();
+        if (!header.isEmpty()) {
+            writer.write(header);
+            writer.flush();
         }
     }
 
@@ -224,12 +252,10 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      */
     protected void writeLayoutFooter() throws IOException {
         Writer writer = writer();
-        if (writer != null) {
-            String footer = layout.getFooter();
-            if (!footer.isEmpty()) {
-                writer.write(footer);
-                writer.flush();
-            }
+        String footer = layout.getFooter();
+        if (!footer.isEmpty()) {
+            writer.write(footer);
+            writer.flush();
         }
     }
 

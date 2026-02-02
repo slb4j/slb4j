@@ -42,7 +42,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     private final boolean append;
     private @Nullable String filePattern;
 
-    private @Nullable Writer out;
+    private Writer writer;
     private @Nullable FileChannel channel;
 
     private long nextRotationTime = -1;
@@ -63,13 +63,13 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         super(name);
         this.path = path;
         this.append = append;
-        openFile();
+        this.writer = openFile();
     }
 
-    private void openFile() throws IOException {
+    private Writer openFile() throws IOException {
         synchronized (buffer) {
-            if (out != null) {
-                out.close();
+            if (writer != null) {
+                writer.close();
             }
 
             Path parent = path.getParent();
@@ -78,11 +78,12 @@ public final class RotatingFileHandler extends AbstractFileHandler {
             }
 
             this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
-            this.out = Channels.newWriter(channel, StandardCharsets.UTF_8);
+            this.writer = Channels.newWriter(channel, StandardCharsets.UTF_8);
 
             writeLayoutHeader();
-
             updateNextRotationTime();
+
+            return writer;
         }
     }
 
@@ -156,19 +157,8 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             try {
                 synchronized (buffer) {
-                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
                     checkRotation(timestamp);
-                    if (out != null) {
-                        buffer.writeTo(out);
-
-                        if (lvl.ordinal() >= flushLevel.ordinal()) {
-                            try {
-                                out.flush();
-                            } catch (IOException e) {
-                                Util.err().println("Error flushing log file: " + e.getMessage());
-                            }
-                        }
-                    }
+                    doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
                 }
             } catch (IOException e) {
                 Util.err().println("Error writing log entry: " + e.getMessage());
@@ -193,9 +183,8 @@ public final class RotatingFileHandler extends AbstractFileHandler {
 
     private void rotate() throws IOException {
         synchronized (buffer) {
-            if (out != null) {
-                out.close();
-                out = null;
+            if (writer != null) {
+                writer.close();
             }
 
             if (filePattern != null && !filePattern.isEmpty()) {
@@ -252,7 +241,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
 
     @Override
     protected Writer writer() {
-        return out;
+        return writer;
     }
 
     /**

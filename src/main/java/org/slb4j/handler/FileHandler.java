@@ -61,17 +61,7 @@ public final class FileHandler extends AbstractFileHandler {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             try {
                 synchronized (buffer) {
-                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
-
-                    buffer.writeTo(writer);
-
-                    if (lvl.ordinal() >= flushLevel.ordinal()) {
-                        try {
-                            writer.flush();
-                        } catch (IOException e) {
-                            Util.err().println("Error flushing log file: " + e.getMessage());
-                        }
-                    }
+                    doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
                 }
             } catch (IOException e) {
                 Util.err().println("Error writing log entry: " + e.getMessage());
