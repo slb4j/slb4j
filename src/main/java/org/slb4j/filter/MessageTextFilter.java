@@ -52,8 +52,8 @@ public final class MessageTextFilter implements LogFilter {
     }
 
     @Override
-    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
-        return textFilter.test(msg.get());
+    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
+        return textFilter.test(msg);
     }
 
     @Override

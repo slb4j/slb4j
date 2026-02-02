@@ -31,7 +31,6 @@ import java.nio.file.Path;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Objects;
-import java.util.function.Supplier;
 
 /**
  * A log handler that writes log entries to a file.
@@ -153,12 +152,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     @Override
-    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, Supplier<String> msg, @Nullable Throwable t) {
-        if (getFilter().test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
-            String message = msg.get();
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
+        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             try {
                 synchronized (buffer) {
-                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, org.slb4j.ConsoleCode.empty());
+                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
                     checkRotation(timestamp);
                     if (out != null) {
                         buffer.writeTo(out);

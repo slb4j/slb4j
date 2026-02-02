@@ -163,13 +163,18 @@ public final class UniversalDispatcher implements LogDispatcher {
      */
     public void filterAndDispatch(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver locationResolver, Supplier<String> msg, @Nullable Throwable t) {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
+            String message = null;
             Location loc =  null;
             for (LogHandler handler : handlers) {
                 if (handler.isEnabled(lvl)) {
                     if (loc == null && handler.isLocationNeeded()) {
                         loc = locationResolver.resolve();
                     }
-                    handler.handle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
+                    if (message == null) {
+                        message = msg.get();
+                        if (message == null) message = "null";
+                    }
+                    handler.handle(timestamp, loggerName, lvl, mrk, mdc, loc, message, t);
                 }
             }
         }

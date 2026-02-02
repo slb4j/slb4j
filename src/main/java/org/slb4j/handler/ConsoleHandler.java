@@ -36,7 +36,6 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * The ConsoleHandler class is an implementation of the LogEntryHandler interface.
@@ -141,13 +140,12 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
     }
 
     @Override
-    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, Supplier<String> msg, @Nullable Throwable t) {
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
-            String message = msg.get();
             try {
                 synchronized (buffer) {
-                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, consoleCodes);
+                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
                     buffer.writeTo(writer);
                     buffer.reset(0);
                     writer.flush();

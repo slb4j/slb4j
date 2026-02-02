@@ -22,7 +22,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -52,7 +51,7 @@ public final class CombinedFilter implements LogFilter {
     }
 
     @Override
-    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
+    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
         for (LogFilter filter : filters) {
             if (!filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
                 return false;

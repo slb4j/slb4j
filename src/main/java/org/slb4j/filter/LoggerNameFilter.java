@@ -48,7 +48,7 @@ public final class LoggerNameFilter implements LogFilter {
     }
 
     @Override
-    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
+    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
         return predicate.test(loggerName);
     }
 

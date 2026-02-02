@@ -40,8 +40,8 @@ class FileHandlerTest {
         Path logFile = tempDir.resolve("test.log");
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Hello, World!", null);
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Second line", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Hello, World!", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Second line", null);
         }
 
         assertTrue(Files.exists(logFile));
@@ -58,7 +58,7 @@ class FileHandlerTest {
 
         try (FileHandler handler = new FileHandler("test", logFile, true)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "Second line", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Second line", null);
         }
         
         List<String> lines = Files.readAllLines(logFile);
@@ -74,7 +74,7 @@ class FileHandlerTest {
 
         try (FileHandler handler = new FileHandler("test", logFile, false)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "New content", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "New content", null);
         }
 
         List<String> lines = Files.readAllLines(logFile);
@@ -91,12 +91,12 @@ class FileHandlerTest {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg"));
             handler.setFlushLevel(LogLevel.ERROR);
 
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, () -> "info", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "info", null);
             // Should be in buffer, not necessarily on disk. 
             // Files.size() might still show 0 or old size if OS/JVM hasn't flushed.
             // But wait, our check for flush is logical. 
 
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.ERROR, null, null, LOC, () -> "error", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.ERROR, null, null, LOC, "error", null);
             // This should trigger a flush.
         }
         assertEquals("infoerror", Files.readString(logFile));

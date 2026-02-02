@@ -27,7 +27,6 @@ import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
-import java.util.function.Supplier;
 
 /**
  * A log handler that writes log entries to a file.
@@ -58,12 +57,11 @@ public final class FileHandler extends AbstractFileHandler {
     }
 
     @Override
-    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, Supplier<String> msg, @Nullable Throwable t) {
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
-            String message = msg.get();
             try {
                 synchronized (buffer) {
-                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, message, t, org.slb4j.ConsoleCode.empty());
+                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
 
                     buffer.writeTo(writer);
 

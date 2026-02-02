@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.function.Supplier;
 
 /**
  * A thread-safe log buffer class intended to provide a buffer for log messages
@@ -306,9 +305,9 @@ public class LogBuffer implements LogHandler, Externalizable {
     }
 
     @Override
-    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, Supplier<String> msg, @Nullable Throwable t) {
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
-            LogEntry entry = LogEntry.of(timestamp, loggerName, lvl, mrk, mdc, loc, msg.get(), t);
+            LogEntry entry = LogEntry.of(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
             int removed;
             synchronized (buffer) {
                 removed = buffer.put(entry) ? 0 : 1;

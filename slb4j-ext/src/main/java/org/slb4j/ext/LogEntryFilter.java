@@ -21,7 +21,6 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * The {@code LogEntryFilter} class is an implementation of the {@link LogFilter} interface
@@ -67,7 +66,7 @@ public final class LogEntryFilter implements LogFilter, Predicate<LogEntry> {
     }
 
     @Override
-    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
+    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
         return filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t);
     }
 }
