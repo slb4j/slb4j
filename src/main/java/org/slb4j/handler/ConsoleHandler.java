@@ -36,6 +36,8 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.util.Map;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The ConsoleHandler class is an implementation of the LogEntryHandler interface.
@@ -71,6 +73,8 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
             LogLevel.WARN, ConsoleCode.empty(),
             LogLevel.ERROR, ConsoleCode.empty()
     );
+
+    private final Lock lock = new ReentrantLock();
 
     private final ConsoleCode[] codesByLevelIdx = new ConsoleCode[LogLevel.values().length];
 
@@ -149,14 +153,15 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
         if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
             try {
-                synchronized (buffer) {
-                    layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
-                    buffer.writeTo(writer);
-                    buffer.reset(0);
-                    writer.flush();
-                }
+                lock.lock();
+                layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
+                buffer.writeTo(writer);
+                buffer.reset(0);
+                writer.flush();
             } catch (IOException e) {
                 Util.err().println("Error writing log entry: " + e.getMessage());
+            } finally {
+                lock.unlock();
             }
         }
     }
@@ -206,13 +211,16 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
 
     @Override
     public void shutdown() {
-        synchronized (buffer) {
+        try {
+            lock.lock();
             String footer = layout.getFooter();
             if (!footer.isEmpty()) {
                 out.print(footer);
                 out.flush();
             }
             buffer.reset(0);
+        } finally {
+            lock.unlock();
         }
     }
 }
