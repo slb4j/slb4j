@@ -18,7 +18,6 @@ package org.slb4j.handler;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
-import org.slb4j.LogLayout;
 import org.slb4j.MDC;
 import org.slb4j.support.Util;
 
@@ -81,11 +80,8 @@ public final class RotatingFileHandler extends AbstractFileHandler {
 
             this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
             this.out = Channels.newWriter(channel, StandardCharsets.UTF_8);
-            String header = layout.getHeader();
-            if (!header.isEmpty()) {
-                out.write(header);
-                out.flush();
-            }
+
+            writeLayoutHeader();
 
             updateNextRotationTime();
         }
@@ -307,27 +303,4 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         }
     }
 
-    @Override
-    public void setLayout(LogLayout layout) {
-        synchronized (buffer) {
-            if (this.layout != layout) {
-                if (out != null) {
-                    try {
-                        String footer = this.layout.getFooter();
-                        if (!footer.isEmpty()) {
-                            out.write(footer);
-                        }
-                        String header = layout.getHeader();
-                        if (!header.isEmpty()) {
-                            out.write(header);
-                        }
-                        out.flush();
-                    } catch (IOException e) {
-                        Util.err().println("Error writing header/footer during pattern change: " + e.getMessage());
-                    }
-                }
-                this.layout = layout;
-            }
-        }
-    }
 }

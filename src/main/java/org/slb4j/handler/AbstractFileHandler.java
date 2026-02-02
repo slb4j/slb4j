@@ -127,7 +127,25 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     @Override
     public void setLayout(LogLayout layout) {
         synchronized (buffer) {
-            this.layout = layout;
+            if (this.layout != layout) {
+                Writer writer = writer();
+                if (writer != null) {
+                    try {
+                        String footer = this.layout.getFooter();
+                        if (!footer.isEmpty()) {
+                            writer.write(footer);
+                        }
+                        String header = layout.getHeader();
+                        if (!header.isEmpty()) {
+                            writer.write(header);
+                        }
+                        writer.flush();
+                    } catch (IOException e) {
+                        Util.err().println("Error writing header/footer during pattern change: " + e.getMessage());
+                    }
+                }
+                this.layout = layout;
+            }
         }
     }
 
@@ -164,7 +182,51 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      *
      * @return a {@code Writer} instance used for writing log entries
      */
-    protected abstract Writer writer();
+    protected abstract @Nullable Writer writer();
+
+    /**
+     * Writes the layout header to the underlying writer, if it is defined and non-empty.
+     *
+     * This method retrieves the header from the layout using {@code layout.getHeader()},
+     * and writes it to the {@code Writer} instance provided by the {@code writer()} method.
+     * If the header is an empty string, no action is performed. The writer is flushed
+     * after the header is written to ensure the content is immediately written to the output.
+     *
+     * @throws IOException if an I/O error occurs while writing to the {@code Writer}
+     */
+    protected void writeLayoutHeader() throws IOException {
+        Writer writer = writer();
+        if (writer != null) {
+            String header = layout.getHeader();
+            if (!header.isEmpty()) {
+                writer.write(header);
+                writer.flush();
+            }
+        }
+    }
+
+    /**
+     * Writes the footer section of the log layout to the underlying writer, if the
+     * footer is defined and non-empty.
+     *
+     * This method retrieves the footer from the layout using {@code layout.getFooter()}
+     * and writes it to the {@code Writer} instance provided by the {@code writer()} method.
+     * If the footer is an empty string or the writer is {@code null}, no action is performed.
+     * After writing the footer, the writer is flushed to ensure the content is immediately
+     * written to the output destination.
+     *
+     * @throws IOException if an I/O error occurs while writing to or flushing the {@code Writer}
+     */
+    protected void writeLayoutFooter() throws IOException {
+        Writer writer = writer();
+        if (writer != null) {
+            String footer = layout.getFooter();
+            if (!footer.isEmpty()) {
+                writer.write(footer);
+                writer.flush();
+            }
+        }
+    }
 
     /**
      * Handles the shutdown process for the log handler, ensuring that any required
@@ -185,13 +247,12 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     protected void onShutDown() {
         try {
             Writer writer = writer();
-            try {
-                String footer = layout.getFooter();
-                if (!footer.isEmpty()) {
-                    writer.write(footer);
+            if (writer != null) {
+                try {
+                    writeLayoutFooter();
+                } finally {
+                    writer.close();
                 }
-            } finally {
-                writer.close();
             }
         } catch (IOException e) {
             Util.err().println("Error closing log file: " + e.getMessage());

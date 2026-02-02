@@ -15,7 +15,6 @@
  */
 package org.slb4j.handler;
 
-import org.slb4j.LogLayout;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.slb4j.LocationResolver;
@@ -55,11 +54,7 @@ public final class FileHandler extends AbstractFileHandler {
         this.append = append;
         this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
         this.writer = Channels.newWriter(channel, StandardCharsets.UTF_8);
-        String header = layout.getHeader();
-        if (!header.isEmpty()) {
-            writer.write(header);
-            writer.flush();
-        }
+        writeLayoutHeader();
     }
 
     @Override
@@ -91,28 +86,6 @@ public final class FileHandler extends AbstractFileHandler {
     @Override
     protected Writer writer() {
         return writer;
-    }
-
-    @Override
-    public void setLayout(LogLayout layout) {
-        synchronized (buffer) {
-            if (this.layout != layout) {
-                try {
-                    String footer = this.layout.getFooter();
-                    if (!footer.isEmpty()) {
-                        writer.write(footer);
-                    }
-                    String header = layout.getHeader();
-                    if (!header.isEmpty()) {
-                        writer.write(header);
-                    }
-                    writer.flush();
-                } catch (IOException e) {
-                    Util.err().println("Error writing header/footer during pattern change: " + e.getMessage());
-                }
-                this.layout = layout;
-            }
-        }
     }
 
     /**
