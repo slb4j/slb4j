@@ -522,13 +522,13 @@ public final class LoggingConfiguration {
                 }
                 case FileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, "File");
-                    properties.setProperty(prefix + LOGGER_FILE_NAME, fileHandler.getPath().toString());
+                    properties.setProperty(prefix + LOGGER_FILE_NAME, fileHandler.getPath().toString().replace('\\', '/'));
                     properties.setProperty(prefix + LOGGER_FILE_APPEND, String.valueOf(fileHandler.isAppend()));
                     addPatternConfiguration(properties, fileHandler.getLayout(), prefix);
                 }
                 case RotatingFileHandler fileHandler -> {
                     properties.setProperty(prefix + LOGGING_TYPE, fileHandler.getMaxFileSize() > 0 ? "RollingFile" : "File");
-                    properties.setProperty(prefix + LOGGER_FILE_NAME, fileHandler.getPath().toString());
+                    properties.setProperty(prefix + LOGGER_FILE_NAME, fileHandler.getPath().toString().replace('\\', '/'));
                     properties.setProperty(prefix + LOGGER_FILE_APPEND, String.valueOf(fileHandler.isAppend()));
                     if (fileHandler.getMaxFileSize() > 0) {
                         properties.setProperty(prefix + "policies.type", "Policies");
@@ -536,6 +536,10 @@ public final class LoggingConfiguration {
                         properties.setProperty(prefix + LOGGER_FILE_MAX_SIZE, String.valueOf(fileHandler.getMaxFileSize()));
                         properties.setProperty(prefix + "strategy.type", "DefaultRolloverStrategy");
                         properties.setProperty(prefix + LOGGER_FILE_MAX_BACKUPS, String.valueOf(fileHandler.getMaxBackupIndex()));
+                    }
+                    String filePattern = fileHandler.getFilePattern();
+                    if (filePattern != null) {
+                        properties.setProperty(prefix + LOGGER_FILE_PATTERN, filePattern.replace('\\', '/'));
                     }
                     addPatternConfiguration(properties, fileHandler.getLayout(), prefix);
                 }
