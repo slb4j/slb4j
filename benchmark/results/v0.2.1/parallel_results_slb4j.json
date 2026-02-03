@@ -1,0 +1,1600 @@
+[
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_1",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 5630140.320121709,
+            "scoreError" : 115904.05369273468,
+            "scoreConfidence" : [
+                5514236.266428974,
+                5746044.373814444
+            ],
+            "scorePercentiles" : {
+                "0.0" : 5623205.56591942,
+                "50.0" : 5631535.580025529,
+                "90.0" : 5635679.8144201785,
+                "95.0" : 5635679.8144201785,
+                "99.0" : 5635679.8144201785,
+                "99.9" : 5635679.8144201785,
+                "99.99" : 5635679.8144201785,
+                "99.999" : 5635679.8144201785,
+                "99.9999" : 5635679.8144201785,
+                "100.0" : 5635679.8144201785
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    5623205.56591942,
+                    5631535.580025529,
+                    5635679.8144201785
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_1",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 497087.90900507336,
+            "scoreError" : 77219.9283440235,
+            "scoreConfidence" : [
+                419867.98066104983,
+                574307.8373490969
+            ],
+            "scorePercentiles" : {
+                "0.0" : 493664.84091598203,
+                "50.0" : 495778.2554364889,
+                "90.0" : 501820.6306627492,
+                "95.0" : 501820.6306627492,
+                "99.0" : 501820.6306627492,
+                "99.9" : 501820.6306627492,
+                "99.99" : 501820.6306627492,
+                "99.999" : 501820.6306627492,
+                "99.9999" : 501820.6306627492,
+                "100.0" : 501820.6306627492
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    501820.6306627492,
+                    495778.2554364889,
+                    493664.84091598203
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_128",
+        "mode" : "thrpt",
+        "threads" : 128,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 3007796.388775024,
+            "scoreError" : 279375.4757672298,
+            "scoreConfidence" : [
+                2728420.9130077944,
+                3287171.864542254
+            ],
+            "scorePercentiles" : {
+                "0.0" : 2990117.152082831,
+                "50.0" : 3016340.8652727595,
+                "90.0" : 3016931.1489694803,
+                "95.0" : 3016931.1489694803,
+                "99.0" : 3016931.1489694803,
+                "99.9" : 3016931.1489694803,
+                "99.99" : 3016931.1489694803,
+                "99.999" : 3016931.1489694803,
+                "99.9999" : 3016931.1489694803,
+                "100.0" : 3016931.1489694803
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    2990117.152082831,
+                    3016340.8652727595,
+                    3016931.1489694803
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_128",
+        "mode" : "thrpt",
+        "threads" : 128,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 372930.5801696503,
+            "scoreError" : 27003.06953527224,
+            "scoreConfidence" : [
+                345927.51063437806,
+                399933.6497049226
+            ],
+            "scorePercentiles" : {
+                "0.0" : 371694.4934337626,
+                "50.0" : 372526.44444105035,
+                "90.0" : 374570.8026341381,
+                "95.0" : 374570.8026341381,
+                "99.0" : 374570.8026341381,
+                "99.9" : 374570.8026341381,
+                "99.99" : 374570.8026341381,
+                "99.999" : 374570.8026341381,
+                "99.9999" : 374570.8026341381,
+                "100.0" : 374570.8026341381
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    372526.44444105035,
+                    374570.8026341381,
+                    371694.4934337626
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_16",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 4110570.0705208867,
+            "scoreError" : 137964.43648548616,
+            "scoreConfidence" : [
+                3972605.6340354006,
+                4248534.507006373
+            ],
+            "scorePercentiles" : {
+                "0.0" : 4102332.911202405,
+                "50.0" : 4112178.624252056,
+                "90.0" : 4117198.676108198,
+                "95.0" : 4117198.676108198,
+                "99.0" : 4117198.676108198,
+                "99.9" : 4117198.676108198,
+                "99.99" : 4117198.676108198,
+                "99.999" : 4117198.676108198,
+                "99.9999" : 4117198.676108198,
+                "100.0" : 4117198.676108198
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    4112178.624252056,
+                    4102332.911202405,
+                    4117198.676108198
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_16",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 395467.6453458548,
+            "scoreError" : 48626.94776215019,
+            "scoreConfidence" : [
+                346840.6975837046,
+                444094.593108005
+            ],
+            "scorePercentiles" : {
+                "0.0" : 392516.26710184314,
+                "50.0" : 396187.41131897294,
+                "90.0" : 397699.2576167483,
+                "95.0" : 397699.2576167483,
+                "99.0" : 397699.2576167483,
+                "99.9" : 397699.2576167483,
+                "99.99" : 397699.2576167483,
+                "99.999" : 397699.2576167483,
+                "99.9999" : 397699.2576167483,
+                "100.0" : 397699.2576167483
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    396187.41131897294,
+                    397699.2576167483,
+                    392516.26710184314
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_2",
+        "mode" : "thrpt",
+        "threads" : 2,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 3479160.4911898184,
+            "scoreError" : 2429056.21727598,
+            "scoreConfidence" : [
+                1050104.2739138384,
+                5908216.708465798
+            ],
+            "scorePercentiles" : {
+                "0.0" : 3366431.7874760726,
+                "50.0" : 3444989.1666589016,
+                "90.0" : 3626060.51943448,
+                "95.0" : 3626060.51943448,
+                "99.0" : 3626060.51943448,
+                "99.9" : 3626060.51943448,
+                "99.99" : 3626060.51943448,
+                "99.999" : 3626060.51943448,
+                "99.9999" : 3626060.51943448,
+                "100.0" : 3626060.51943448
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    3366431.7874760726,
+                    3444989.1666589016,
+                    3626060.51943448
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_2",
+        "mode" : "thrpt",
+        "threads" : 2,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 392425.6487857864,
+            "scoreError" : 235866.05166871723,
+            "scoreConfidence" : [
+                156559.59711706918,
+                628291.7004545036
+            ],
+            "scorePercentiles" : {
+                "0.0" : 377501.176948928,
+                "50.0" : 399581.0132792286,
+                "90.0" : 400194.75612920255,
+                "95.0" : 400194.75612920255,
+                "99.0" : 400194.75612920255,
+                "99.9" : 400194.75612920255,
+                "99.99" : 400194.75612920255,
+                "99.999" : 400194.75612920255,
+                "99.9999" : 400194.75612920255,
+                "100.0" : 400194.75612920255
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    377501.176948928,
+                    400194.75612920255,
+                    399581.0132792286
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_4",
+        "mode" : "thrpt",
+        "threads" : 4,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 3914878.651490345,
+            "scoreError" : 1887304.7426553722,
+            "scoreConfidence" : [
+                2027573.908834973,
+                5802183.394145718
+            ],
+            "scorePercentiles" : {
+                "0.0" : 3795470.7882675803,
+                "50.0" : 3971731.3973831236,
+                "90.0" : 3977433.7688203314,
+                "95.0" : 3977433.7688203314,
+                "99.0" : 3977433.7688203314,
+                "99.9" : 3977433.7688203314,
+                "99.99" : 3977433.7688203314,
+                "99.999" : 3977433.7688203314,
+                "99.9999" : 3977433.7688203314,
+                "100.0" : 3977433.7688203314
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    3977433.7688203314,
+                    3971731.3973831236,
+                    3795470.7882675803
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_4",
+        "mode" : "thrpt",
+        "threads" : 4,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 400516.7316863367,
+            "scoreError" : 48385.31339775168,
+            "scoreConfidence" : [
+                352131.41828858503,
+                448902.04508408834
+            ],
+            "scorePercentiles" : {
+                "0.0" : 397568.07059892314,
+                "50.0" : 401274.8128395564,
+                "90.0" : 402707.3116205305,
+                "95.0" : 402707.3116205305,
+                "99.0" : 402707.3116205305,
+                "99.9" : 402707.3116205305,
+                "99.99" : 402707.3116205305,
+                "99.999" : 402707.3116205305,
+                "99.9999" : 402707.3116205305,
+                "100.0" : 402707.3116205305
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    402707.3116205305,
+                    397568.07059892314,
+                    401274.8128395564
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_64",
+        "mode" : "thrpt",
+        "threads" : 64,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 4212581.143802578,
+            "scoreError" : 2381881.3893910088,
+            "scoreConfidence" : [
+                1830699.7544115689,
+                6594462.533193586
+            ],
+            "scorePercentiles" : {
+                "0.0" : 4093527.047879385,
+                "50.0" : 4192013.0437191264,
+                "90.0" : 4352203.339809223,
+                "95.0" : 4352203.339809223,
+                "99.0" : 4352203.339809223,
+                "99.9" : 4352203.339809223,
+                "99.99" : 4352203.339809223,
+                "99.999" : 4352203.339809223,
+                "99.9999" : 4352203.339809223,
+                "100.0" : 4352203.339809223
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    4352203.339809223,
+                    4093527.047879385,
+                    4192013.0437191264
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_64",
+        "mode" : "thrpt",
+        "threads" : 64,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 386525.2914900621,
+            "scoreError" : 40922.39650301487,
+            "scoreConfidence" : [
+                345602.8949870472,
+                427447.687993077
+            ],
+            "scorePercentiles" : {
+                "0.0" : 384504.9460272914,
+                "50.0" : 386131.8521964254,
+                "90.0" : 388939.07624646934,
+                "95.0" : 388939.07624646934,
+                "99.0" : 388939.07624646934,
+                "99.9" : 388939.07624646934,
+                "99.99" : 388939.07624646934,
+                "99.999" : 388939.07624646934,
+                "99.9999" : 388939.07624646934,
+                "100.0" : 388939.07624646934
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    386131.8521964254,
+                    388939.07624646934,
+                    384504.9460272914
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_8",
+        "mode" : "thrpt",
+        "threads" : 8,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 4076820.4045899655,
+            "scoreError" : 2157095.7933702515,
+            "scoreConfidence" : [
+                1919724.611219714,
+                6233916.197960217
+            ],
+            "scorePercentiles" : {
+                "0.0" : 3949376.7435663217,
+                "50.0" : 4098130.69813971,
+                "90.0" : 4182953.7720638635,
+                "95.0" : 4182953.7720638635,
+                "99.0" : 4182953.7720638635,
+                "99.9" : 4182953.7720638635,
+                "99.99" : 4182953.7720638635,
+                "99.999" : 4182953.7720638635,
+                "99.9999" : 4182953.7720638635,
+                "100.0" : 4182953.7720638635
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    3949376.7435663217,
+                    4182953.7720638635,
+                    4098130.69813971
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.log4j_8",
+        "mode" : "thrpt",
+        "threads" : 8,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 380660.98508734925,
+            "scoreError" : 46182.55897818022,
+            "scoreConfidence" : [
+                334478.426109169,
+                426843.5440655295
+            ],
+            "scorePercentiles" : {
+                "0.0" : 377794.3074409461,
+                "50.0" : 381599.63587005634,
+                "90.0" : 382589.0119510453,
+                "95.0" : 382589.0119510453,
+                "99.0" : 382589.0119510453,
+                "99.9" : 382589.0119510453,
+                "99.99" : 382589.0119510453,
+                "99.999" : 382589.0119510453,
+                "99.9999" : 382589.0119510453,
+                "100.0" : 382589.0119510453
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    382589.0119510453,
+                    377794.3074409461,
+                    381599.63587005634
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_1",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 3967380.7250720733,
+            "scoreError" : 2.020649575685546E7,
+            "scoreConfidence" : [
+                -1.6239115031783389E7,
+                2.4173876481927536E7
+            ],
+            "scorePercentiles" : {
+                "0.0" : 2785272.1077353214,
+                "50.0" : 4135692.039796996,
+                "90.0" : 4981178.027683903,
+                "95.0" : 4981178.027683903,
+                "99.0" : 4981178.027683903,
+                "99.9" : 4981178.027683903,
+                "99.99" : 4981178.027683903,
+                "99.999" : 4981178.027683903,
+                "99.9999" : 4981178.027683903,
+                "100.0" : 4981178.027683903
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    2785272.1077353214,
+                    4135692.039796996,
+                    4981178.027683903
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_1",
+        "mode" : "thrpt",
+        "threads" : 1,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 513514.5713081367,
+            "scoreError" : 23750.957442911375,
+            "scoreConfidence" : [
+                489763.6138652253,
+                537265.528751048
+            ],
+            "scorePercentiles" : {
+                "0.0" : 512657.8632959668,
+                "50.0" : 512873.15695164533,
+                "90.0" : 515012.6936767979,
+                "95.0" : 515012.6936767979,
+                "99.0" : 515012.6936767979,
+                "99.9" : 515012.6936767979,
+                "99.99" : 515012.6936767979,
+                "99.999" : 515012.6936767979,
+                "99.9999" : 515012.6936767979,
+                "100.0" : 515012.6936767979
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    512657.8632959668,
+                    515012.6936767979,
+                    512873.15695164533
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_128",
+        "mode" : "thrpt",
+        "threads" : 128,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 2577998.5828973725,
+            "scoreError" : 478179.2841089901,
+            "scoreConfidence" : [
+                2099819.2987883827,
+                3056177.8670063624
+            ],
+            "scorePercentiles" : {
+                "0.0" : 2550977.2368669813,
+                "50.0" : 2579703.251069408,
+                "90.0" : 2603315.260755729,
+                "95.0" : 2603315.260755729,
+                "99.0" : 2603315.260755729,
+                "99.9" : 2603315.260755729,
+                "99.99" : 2603315.260755729,
+                "99.999" : 2603315.260755729,
+                "99.9999" : 2603315.260755729,
+                "100.0" : 2603315.260755729
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    2579703.251069408,
+                    2603315.260755729,
+                    2550977.2368669813
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_128",
+        "mode" : "thrpt",
+        "threads" : 128,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 357100.48221238673,
+            "scoreError" : 246877.2328286717,
+            "scoreConfidence" : [
+                110223.24938371504,
+                603977.7150410584
+            ],
+            "scorePercentiles" : {
+                "0.0" : 343260.7101720118,
+                "50.0" : 357738.2292278617,
+                "90.0" : 370302.5072372867,
+                "95.0" : 370302.5072372867,
+                "99.0" : 370302.5072372867,
+                "99.9" : 370302.5072372867,
+                "99.99" : 370302.5072372867,
+                "99.999" : 370302.5072372867,
+                "99.9999" : 370302.5072372867,
+                "100.0" : 370302.5072372867
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    357738.2292278617,
+                    370302.5072372867,
+                    343260.7101720118
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_16",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 3786232.900290767,
+            "scoreError" : 1364187.0061338928,
+            "scoreConfidence" : [
+                2422045.894156874,
+                5150419.90642466
+            ],
+            "scorePercentiles" : {
+                "0.0" : 3700777.9190265257,
+                "50.0" : 3818260.4421465835,
+                "90.0" : 3839660.339699193,
+                "95.0" : 3839660.339699193,
+                "99.0" : 3839660.339699193,
+                "99.9" : 3839660.339699193,
+                "99.99" : 3839660.339699193,
+                "99.999" : 3839660.339699193,
+                "99.9999" : 3839660.339699193,
+                "100.0" : 3839660.339699193
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    3700777.9190265257,
+                    3839660.339699193,
+                    3818260.4421465835
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_16",
+        "mode" : "thrpt",
+        "threads" : 16,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 377971.7111729241,
+            "scoreError" : 13772.344490070322,
+            "scoreConfidence" : [
+                364199.3666828538,
+                391744.0556629944
+            ],
+            "scorePercentiles" : {
+                "0.0" : 377162.419298452,
+                "50.0" : 378095.8716331544,
+                "90.0" : 378656.84258716577,
+                "95.0" : 378656.84258716577,
+                "99.0" : 378656.84258716577,
+                "99.9" : 378656.84258716577,
+                "99.99" : 378656.84258716577,
+                "99.999" : 378656.84258716577,
+                "99.9999" : 378656.84258716577,
+                "100.0" : 378656.84258716577
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    378095.8716331544,
+                    377162.419298452,
+                    378656.84258716577
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_2",
+        "mode" : "thrpt",
+        "threads" : 2,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 2835297.5228992603,
+            "scoreError" : 1050126.4807071264,
+            "scoreConfidence" : [
+                1785171.0421921338,
+                3885424.0036063865
+            ],
+            "scorePercentiles" : {
+                "0.0" : 2773123.5900313193,
+                "50.0" : 2846035.8407187504,
+                "90.0" : 2886733.1379477093,
+                "95.0" : 2886733.1379477093,
+                "99.0" : 2886733.1379477093,
+                "99.9" : 2886733.1379477093,
+                "99.99" : 2886733.1379477093,
+                "99.999" : 2886733.1379477093,
+                "99.9999" : 2886733.1379477093,
+                "100.0" : 2886733.1379477093
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    2886733.1379477093,
+                    2846035.8407187504,
+                    2773123.5900313193
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_2",
+        "mode" : "thrpt",
+        "threads" : 2,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 403173.2102509352,
+            "scoreError" : 19685.7264367698,
+            "scoreConfidence" : [
+                383487.4838141654,
+                422858.93668770505
+            ],
+            "scorePercentiles" : {
+                "0.0" : 402304.6884000718,
+                "50.0" : 402833.7903473098,
+                "90.0" : 404381.152005424,
+                "95.0" : 404381.152005424,
+                "99.0" : 404381.152005424,
+                "99.9" : 404381.152005424,
+                "99.99" : 404381.152005424,
+                "99.999" : 404381.152005424,
+                "99.9999" : 404381.152005424,
+                "100.0" : 404381.152005424
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    402833.7903473098,
+                    402304.6884000718,
+                    404381.152005424
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_4",
+        "mode" : "thrpt",
+        "threads" : 4,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 3848767.801394447,
+            "scoreError" : 2856100.7749974793,
+            "scoreConfidence" : [
+                992667.0263969679,
+                6704868.576391926
+            ],
+            "scorePercentiles" : {
+                "0.0" : 3671397.168403433,
+                "50.0" : 3907230.018568624,
+                "90.0" : 3967676.2172112837,
+                "95.0" : 3967676.2172112837,
+                "99.0" : 3967676.2172112837,
+                "99.9" : 3967676.2172112837,
+                "99.99" : 3967676.2172112837,
+                "99.999" : 3967676.2172112837,
+                "99.9999" : 3967676.2172112837,
+                "100.0" : 3967676.2172112837
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    3967676.2172112837,
+                    3907230.018568624,
+                    3671397.168403433
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_4",
+        "mode" : "thrpt",
+        "threads" : 4,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 378301.84308304335,
+            "scoreError" : 61795.97230582056,
+            "scoreConfidence" : [
+                316505.8707772228,
+                440097.8153888639
+            ],
+            "scorePercentiles" : {
+                "0.0" : 374571.87504205946,
+                "50.0" : 379147.5441837376,
+                "90.0" : 381186.110023333,
+                "95.0" : 381186.110023333,
+                "99.0" : 381186.110023333,
+                "99.9" : 381186.110023333,
+                "99.99" : 381186.110023333,
+                "99.999" : 381186.110023333,
+                "99.9999" : 381186.110023333,
+                "100.0" : 381186.110023333
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    381186.110023333,
+                    374571.87504205946,
+                    379147.5441837376
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_64",
+        "mode" : "thrpt",
+        "threads" : 64,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 2926631.8174878447,
+            "scoreError" : 698222.163516721,
+            "scoreConfidence" : [
+                2228409.6539711235,
+                3624853.981004566
+            ],
+            "scorePercentiles" : {
+                "0.0" : 2884301.788514179,
+                "50.0" : 2936802.9338128115,
+                "90.0" : 2958790.7301365444,
+                "95.0" : 2958790.7301365444,
+                "99.0" : 2958790.7301365444,
+                "99.9" : 2958790.7301365444,
+                "99.99" : 2958790.7301365444,
+                "99.999" : 2958790.7301365444,
+                "99.9999" : 2958790.7301365444,
+                "100.0" : 2958790.7301365444
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    2936802.9338128115,
+                    2884301.788514179,
+                    2958790.7301365444
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_64",
+        "mode" : "thrpt",
+        "threads" : 64,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 384185.4023552818,
+            "scoreError" : 67754.20285736717,
+            "scoreConfidence" : [
+                316431.19949791464,
+                451939.605212649
+            ],
+            "scorePercentiles" : {
+                "0.0" : 380002.81074073387,
+                "50.0" : 385456.9256476278,
+                "90.0" : 387096.4706774836,
+                "95.0" : 387096.4706774836,
+                "99.0" : 387096.4706774836,
+                "99.9" : 387096.4706774836,
+                "99.99" : 387096.4706774836,
+                "99.999" : 387096.4706774836,
+                "99.9999" : 387096.4706774836,
+                "100.0" : 387096.4706774836
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    385456.9256476278,
+                    380002.81074073387,
+                    387096.4706774836
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_8",
+        "mode" : "thrpt",
+        "threads" : 8,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "CONSOLE"
+        },
+        "primaryMetric" : {
+            "score" : 3961880.6198918726,
+            "scoreError" : 1393442.7500669674,
+            "scoreConfidence" : [
+                2568437.869824905,
+                5355323.36995884
+            ],
+            "scorePercentiles" : {
+                "0.0" : 3916154.683827365,
+                "50.0" : 3919431.6333658174,
+                "90.0" : 4050055.542482436,
+                "95.0" : 4050055.542482436,
+                "99.0" : 4050055.542482436,
+                "99.9" : 4050055.542482436,
+                "99.99" : 4050055.542482436,
+                "99.999" : 4050055.542482436,
+                "99.9999" : 4050055.542482436,
+                "100.0" : 4050055.542482436
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    4050055.542482436,
+                    3916154.683827365,
+                    3919431.6333658174
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    },
+    {
+        "jmhVersion" : "1.37",
+        "benchmark" : "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_8",
+        "mode" : "thrpt",
+        "threads" : 8,
+        "forks" : 1,
+        "jvm" : "/Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java",
+        "jvmArgs" : [
+            "-Dfile.encoding=UTF-8",
+            "-Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-slb4j/build/tmp/jmh",
+            "-Duser.country=DE",
+            "-Duser.language=de",
+            "-Duser.variant"
+        ],
+        "jdkVersion" : "25.0.2",
+        "vmName" : "OpenJDK 64-Bit Server VM",
+        "vmVersion" : "25.0.2+12-LTS",
+        "warmupIterations" : 3,
+        "warmupTime" : "1 s",
+        "warmupBatchSize" : 1,
+        "measurementIterations" : 3,
+        "measurementTime" : "1 s",
+        "measurementBatchSize" : 1,
+        "params" : {
+            "category" : "FILE"
+        },
+        "primaryMetric" : {
+            "score" : 390768.3603390598,
+            "scoreError" : 24085.075912383632,
+            "scoreConfidence" : [
+                366683.28442667617,
+                414853.4362514434
+            ],
+            "scorePercentiles" : {
+                "0.0" : 389272.84372738184,
+                "50.0" : 391260.2689094464,
+                "90.0" : 391771.9683803512,
+                "95.0" : 391771.9683803512,
+                "99.0" : 391771.9683803512,
+                "99.9" : 391771.9683803512,
+                "99.99" : 391771.9683803512,
+                "99.999" : 391771.9683803512,
+                "99.9999" : 391771.9683803512,
+                "100.0" : 391771.9683803512
+            },
+            "scoreUnit" : "ops/s",
+            "rawData" : [
+                [
+                    389272.84372738184,
+                    391771.9683803512,
+                    391260.2689094464
+                ]
+            ]
+        },
+        "secondaryMetrics" : {
+        }
+    }
+]
+
+

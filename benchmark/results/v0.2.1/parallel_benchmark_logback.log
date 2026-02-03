@@ -1,0 +1,1001 @@
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_1
+# Parameters: (category = CONSOLE)
+
+# Run progress: 0,00% complete, ETA 00:02:48
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_1 ...
+5166629,042 ops/s
+# Warmup Iteration   2: 5655847,839 ops/s
+# Warmup Iteration   3: 5728485,622 ops/s
+Iteration   1: 5727869,651 ops/s
+Iteration   2: 5729055,192 ops/s
+Iteration   3: 5709456,039 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_1":
+  5722126,961 ±(99.9%) 200486,457 ops/s [Average]
+  (min, avg, max) = (5709456,039, 5722126,961, 5729055,192), stdev = 10989,339
+  CI (99.9%): [5521640,503, 5922613,418] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_1
+# Parameters: (category = FILE)
+
+# Run progress: 3,57% complete, ETA 00:02:50
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_1 ...
+452581,711 ops/s
+# Warmup Iteration   2: 489742,745 ops/s
+# Warmup Iteration   3: 497199,972 ops/s
+Iteration   1: 489507,336 ops/s
+Iteration   2: 499780,139 ops/s
+Iteration   3: 464374,819 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_1":
+  484554,098 ±(99.9%) 332308,848 ops/s [Average]
+  (min, avg, max) = (464374,819, 484554,098, 499780,139), stdev = 18214,969
+  CI (99.9%): [152245,250, 816862,946] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 128 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_128
+# Parameters: (category = CONSOLE)
+
+# Run progress: 7,14% complete, ETA 00:02:43
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_128 ...
+3546623,708 ops/s
+# Warmup Iteration   2: 3577954,094 ops/s
+# Warmup Iteration   3: 4086255,271 ops/s
+Iteration   1: 4120342,517 ops/s
+Iteration   2: 4083855,468 ops/s
+Iteration   3: 4108897,097 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_128":
+  4104365,027 ±(99.9%) 340445,136 ops/s [Average]
+  (min, avg, max) = (4083855,468, 4104365,027, 4120342,517), stdev = 18660,947
+  CI (99.9%): [3763919,891, 4444810,163] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 128 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_128
+# Parameters: (category = FILE)
+
+# Run progress: 10,71% complete, ETA 00:02:37
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_128 ...
+350281,746 ops/s
+# Warmup Iteration   2: 344715,870 ops/s
+# Warmup Iteration   3: 360268,152 ops/s
+Iteration   1: 357871,865 ops/s
+Iteration   2: 355448,527 ops/s
+Iteration   3: 355689,843 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_128":
+  356336,745 ±(99.9%) 24353,858 ops/s [Average]
+  (min, avg, max) = (355448,527, 356336,745, 357871,865), stdev = 1334,917
+  CI (99.9%): [331982,887, 380690,604] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 16 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_16
+# Parameters: (category = CONSOLE)
+
+# Run progress: 14,29% complete, ETA 00:02:38
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_16 ...
+4118710,584 ops/s
+# Warmup Iteration   2: 4459438,031 ops/s
+# Warmup Iteration   3: 4633142,362 ops/s
+Iteration   1: 4614212,707 ops/s
+Iteration   2: 4635580,187 ops/s
+Iteration   3: 4661134,024 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_16":
+  4636975,640 ±(99.9%) 428577,219 ops/s [Average]
+  (min, avg, max) = (4614212,707, 4636975,640, 4661134,024), stdev = 23491,764
+  CI (99.9%): [4208398,421, 5065552,858] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 16 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_16
+# Parameters: (category = FILE)
+
+# Run progress: 17,86% complete, ETA 00:02:30
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_16 ...
+364150,559 ops/s
+# Warmup Iteration   2: 369871,658 ops/s
+# Warmup Iteration   3: 370213,627 ops/s
+Iteration   1: 370475,124 ops/s
+Iteration   2: 368999,670 ops/s
+Iteration   3: 370138,562 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_16":
+  369871,118 ±(99.9%) 14106,607 ops/s [Average]
+  (min, avg, max) = (368999,670, 369871,118, 370475,124), stdev = 773,231
+  CI (99.9%): [355764,512, 383977,725] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 2 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_2
+# Parameters: (category = CONSOLE)
+
+# Run progress: 21,43% complete, ETA 00:02:26
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_2 ...
+6938648,325 ops/s
+# Warmup Iteration   2: 7607040,858 ops/s
+# Warmup Iteration   3: 7661733,091 ops/s
+Iteration   1: 7163563,804 ops/s
+Iteration   2: 7360612,213 ops/s
+Iteration   3: 7619076,278 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_2":
+  7381084,098 ±(99.9%) 4167691,579 ops/s [Average]
+  (min, avg, max) = (7163563,804, 7381084,098, 7619076,278), stdev = 228445,239
+  CI (99.9%): [3213392,519, 11548775,678] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 2 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_2
+# Parameters: (category = FILE)
+
+# Run progress: 25,00% complete, ETA 00:02:19
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_2 ...
+373874,107 ops/s
+# Warmup Iteration   2: 369922,785 ops/s
+# Warmup Iteration   3: 366139,900 ops/s
+Iteration   1: 355339,930 ops/s
+Iteration   2: 355689,131 ops/s
+Iteration   3: 355297,419 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_2":
+  355442,160 ±(99.9%) 3921,249 ops/s [Average]
+  (min, avg, max) = (355297,419, 355442,160, 355689,131), stdev = 214,937
+  CI (99.9%): [351520,911, 359363,408] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_4
+# Parameters: (category = CONSOLE)
+
+# Run progress: 28,57% complete, ETA 00:02:14
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_4 ...
+4353313,017 ops/s
+# Warmup Iteration   2: 4707219,664 ops/s
+# Warmup Iteration   3: 4750462,377 ops/s
+Iteration   1: 4810711,897 ops/s
+Iteration   2: 4772835,389 ops/s
+Iteration   3: 4827286,657 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_4":
+  4803611,314 ±(99.9%) 509208,699 ops/s [Average]
+  (min, avg, max) = (4772835,389, 4803611,314, 4827286,657), stdev = 27911,447
+  CI (99.9%): [4294402,615, 5312820,013] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_4
+# Parameters: (category = FILE)
+
+# Run progress: 32,14% complete, ETA 00:02:06
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_4 ...
+358092,825 ops/s
+# Warmup Iteration   2: 363386,924 ops/s
+# Warmup Iteration   3: 360406,059 ops/s
+Iteration   1: 356867,964 ops/s
+Iteration   2: 354733,505 ops/s
+Iteration   3: 352606,562 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_4":
+  354736,011 ±(99.9%) 38871,935 ops/s [Average]
+  (min, avg, max) = (352606,562, 354736,011, 356867,964), stdev = 2130,702
+  CI (99.9%): [315864,075, 393607,946] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 64 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_64
+# Parameters: (category = CONSOLE)
+
+# Run progress: 35,71% complete, ETA 00:02:01
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_64 ...
+3927678,732 ops/s
+# Warmup Iteration   2: 4284077,344 ops/s
+# Warmup Iteration   3: 4664870,869 ops/s
+Iteration   1: 4635453,606 ops/s
+Iteration   2: 4673958,669 ops/s
+Iteration   3: 4644633,263 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_64":
+  4651348,513 ±(99.9%) 366912,463 ops/s [Average]
+  (min, avg, max) = (4635453,606, 4651348,513, 4673958,669), stdev = 20111,710
+  CI (99.9%): [4284436,050, 5018260,976] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 64 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_64
+# Parameters: (category = FILE)
+
+# Run progress: 39,29% complete, ETA 00:01:53
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_64 ...
+357690,901 ops/s
+# Warmup Iteration   2: 348985,912 ops/s
+# Warmup Iteration   3: 364906,665 ops/s
+Iteration   1: 366488,933 ops/s
+Iteration   2: 366580,131 ops/s
+Iteration   3: 363013,930 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_64":
+  365360,998 ±(99.9%) 37091,893 ops/s [Average]
+  (min, avg, max) = (363013,930, 365360,998, 366580,131), stdev = 2033,132
+  CI (99.9%): [328269,105, 402452,891] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 8 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_8
+# Parameters: (category = CONSOLE)
+
+# Run progress: 42,86% complete, ETA 00:01:48
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_8 ...
+4357766,220 ops/s
+# Warmup Iteration   2: 4745184,612 ops/s
+# Warmup Iteration   3: 4816404,084 ops/s
+Iteration   1: 4827116,284 ops/s
+Iteration   2: 4777247,387 ops/s
+Iteration   3: 4796648,065 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_8":
+  4800337,246 ±(99.9%) 458616,226 ops/s [Average]
+  (min, avg, max) = (4777247,387, 4800337,246, 4827116,284), stdev = 25138,303
+  CI (99.9%): [4341721,019, 5258953,472] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 8 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.log4j_8
+# Parameters: (category = FILE)
+
+# Run progress: 46,43% complete, ETA 00:01:40
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-log4j_8 ...
+365013,116 ops/s
+# Warmup Iteration   2: 367847,682 ops/s
+# Warmup Iteration   3: 365052,961 ops/s
+Iteration   1: 367357,758 ops/s
+Iteration   2: 365480,024 ops/s
+Iteration   3: 358876,365 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.log4j_8":
+  363904,716 ±(99.9%) 81271,030 ops/s [Average]
+  (min, avg, max) = (358876,365, 363904,716, 367357,758), stdev = 4454,739
+  CI (99.9%): [282633,686, 445175,745] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_1
+# Parameters: (category = CONSOLE)
+
+# Run progress: 50,00% complete, ETA 00:01:34
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_1 ...
+4439353,309 ops/s
+# Warmup Iteration   2: 4806364,204 ops/s
+# Warmup Iteration   3: 4798898,698 ops/s
+Iteration   1: 4806354,121 ops/s
+Iteration   2: 4819078,709 ops/s
+Iteration   3: 4797190,917 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_1":
+  4807541,249 ±(99.9%) 200536,447 ops/s [Average]
+  (min, avg, max) = (4797190,917, 4807541,249, 4819078,709), stdev = 10992,079
+  CI (99.9%): [4607004,802, 5008077,697] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 1 thread, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_1
+# Parameters: (category = FILE)
+
+# Run progress: 53,57% complete, ETA 00:01:27
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_1 ...
+458294,051 ops/s
+# Warmup Iteration   2: 457031,163 ops/s
+# Warmup Iteration   3: 479063,571 ops/s
+Iteration   1: 489170,913 ops/s
+Iteration   2: 477222,300 ops/s
+Iteration   3: 483202,161 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_1":
+  483198,458 ±(99.9%) 108993,604 ops/s [Average]
+  (min, avg, max) = (477222,300, 483198,458, 489170,913), stdev = 5974,307
+  CI (99.9%): [374204,854, 592192,062] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 128 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_128
+# Parameters: (category = CONSOLE)
+
+# Run progress: 57,14% complete, ETA 00:01:20
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_128 ...
+3653359,260 ops/s
+# Warmup Iteration   2: 3890784,456 ops/s
+# Warmup Iteration   3: 3819634,361 ops/s
+Iteration   1: 3891693,921 ops/s
+Iteration   2: 3912551,718 ops/s
+Iteration   3: 3923427,922 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_128":
+  3909224,520 ±(99.9%) 294207,608 ops/s [Average]
+  (min, avg, max) = (3891693,921, 3909224,520, 3923427,922), stdev = 16126,512
+  CI (99.9%): [3615016,913, 4203432,128] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 128 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_128
+# Parameters: (category = FILE)
+
+# Run progress: 60,71% complete, ETA 00:01:13
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_128 ...
+353568,958 ops/s
+# Warmup Iteration   2: 362841,336 ops/s
+# Warmup Iteration   3: 365166,900 ops/s
+Iteration   1: 365247,714 ops/s
+Iteration   2: 363564,898 ops/s
+Iteration   3: 362308,338 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_128":
+  363706,984 ±(99.9%) 26906,393 ops/s [Average]
+  (min, avg, max) = (362308,338, 363706,984, 365247,714), stdev = 1474,830
+  CI (99.9%): [336800,591, 390613,376] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 16 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_16
+# Parameters: (category = CONSOLE)
+
+# Run progress: 64,29% complete, ETA 00:01:07
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_16 ...
+3848110,195 ops/s
+# Warmup Iteration   2: 4157971,565 ops/s
+# Warmup Iteration   3: 4229023,667 ops/s
+Iteration   1: 4249621,168 ops/s
+Iteration   2: 4242965,938 ops/s
+Iteration   3: 4213611,308 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_16":
+  4235399,471 ±(99.9%) 349554,713 ops/s [Average]
+  (min, avg, max) = (4213611,308, 4235399,471, 4249621,168), stdev = 19160,273
+  CI (99.9%): [3885844,758, 4584954,184] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 16 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_16
+# Parameters: (category = FILE)
+
+# Run progress: 67,86% complete, ETA 00:01:00
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_16 ...
+362869,204 ops/s
+# Warmup Iteration   2: 363215,086 ops/s
+# Warmup Iteration   3: 357393,914 ops/s
+Iteration   1: 365228,240 ops/s
+Iteration   2: 345896,186 ops/s
+Iteration   3: 358665,031 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_16":
+  356596,486 ±(99.9%) 179347,235 ops/s [Average]
+  (min, avg, max) = (345896,186, 356596,486, 365228,240), stdev = 9830,627
+  CI (99.9%): [177249,250, 535943,721] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 2 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_2
+# Parameters: (category = CONSOLE)
+
+# Run progress: 71,43% complete, ETA 00:00:53
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_2 ...
+5954175,481 ops/s
+# Warmup Iteration   2: 5300050,125 ops/s
+# Warmup Iteration   3: 2434569,390 ops/s
+Iteration   1: 2438298,223 ops/s
+Iteration   2: 2440283,650 ops/s
+Iteration   3: 2484221,075 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_2":
+  2454267,649 ±(99.9%) 473596,385 ops/s [Average]
+  (min, avg, max) = (2438298,223, 2454267,649, 2484221,075), stdev = 25959,416
+  CI (99.9%): [1980671,264, 2927864,035] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 2 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_2
+# Parameters: (category = FILE)
+
+# Run progress: 75,00% complete, ETA 00:00:47
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_2 ...
+369031,373 ops/s
+# Warmup Iteration   2: 366317,281 ops/s
+# Warmup Iteration   3: 361864,370 ops/s
+Iteration   1: 361001,585 ops/s
+Iteration   2: 364177,615 ops/s
+Iteration   3: 362717,071 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_2":
+  362632,090 ±(99.9%) 29002,394 ops/s [Average]
+  (min, avg, max) = (361001,585, 362632,090, 364177,615), stdev = 1589,719
+  CI (99.9%): [333629,696, 391634,485] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_4
+# Parameters: (category = CONSOLE)
+
+# Run progress: 78,57% complete, ETA 00:00:40
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_4 ...
+3992937,899 ops/s
+# Warmup Iteration   2: 4308701,382 ops/s
+# Warmup Iteration   3: 4392508,796 ops/s
+Iteration   1: 4305600,947 ops/s
+Iteration   2: 4375659,727 ops/s
+Iteration   3: 4367080,368 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_4":
+  4349447,014 ±(99.9%) 697153,621 ops/s [Average]
+  (min, avg, max) = (4305600,947, 4349447,014, 4375659,727), stdev = 38213,342
+  CI (99.9%): [3652293,393, 5046600,635] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 4 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_4
+# Parameters: (category = FILE)
+
+# Run progress: 82,14% complete, ETA 00:00:33
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_4 ...
+370675,169 ops/s
+# Warmup Iteration   2: 372723,214 ops/s
+# Warmup Iteration   3: 368193,350 ops/s
+Iteration   1: 370202,991 ops/s
+Iteration   2: 369837,456 ops/s
+Iteration   3: 358074,476 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_4":
+  366038,308 ±(99.9%) 125868,944 ops/s [Average]
+  (min, avg, max) = (358074,476, 366038,308, 370202,991), stdev = 6899,302
+  CI (99.9%): [240169,364, 491907,251] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 64 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_64
+# Parameters: (category = CONSOLE)
+
+# Run progress: 85,71% complete, ETA 00:00:27
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_64 ...
+3525521,108 ops/s
+# Warmup Iteration   2: 3927332,100 ops/s
+# Warmup Iteration   3: 4008497,995 ops/s
+Iteration   1: 4037892,115 ops/s
+Iteration   2: 4034456,659 ops/s
+Iteration   3: 4042173,825 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_64":
+  4038174,200 ±(99.9%) 70535,867 ops/s [Average]
+  (min, avg, max) = (4034456,659, 4038174,200, 4042173,825), stdev = 3866,309
+  CI (99.9%): [3967638,332, 4108710,067] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 64 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_64
+# Parameters: (category = FILE)
+
+# Run progress: 89,29% complete, ETA 00:00:20
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_64 ...
+357774,888 ops/s
+# Warmup Iteration   2: 363930,258 ops/s
+# Warmup Iteration   3: 354351,809 ops/s
+Iteration   1: 359736,844 ops/s
+Iteration   2: 357511,035 ops/s
+Iteration   3: 358777,892 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_64":
+  358675,257 ±(99.9%) 20368,180 ops/s [Average]
+  (min, avg, max) = (357511,035, 358675,257, 359736,844), stdev = 1116,449
+  CI (99.9%): [338307,077, 379043,437] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 8 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_8
+# Parameters: (category = CONSOLE)
+
+# Run progress: 92,86% complete, ETA 00:00:13
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_8 ...
+3926337,695 ops/s
+# Warmup Iteration   2: 4323939,269 ops/s
+# Warmup Iteration   3: 4420027,873 ops/s
+Iteration   1: 4254082,014 ops/s
+Iteration   2: 3678584,638 ops/s
+Iteration   3: 3766808,072 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_8":
+  3899824,908 ±(99.9%) 5654654,031 ops/s [Average]
+  (min, avg, max) = (3678584,638, 3899824,908, 4254082,014), stdev = 309950,668
+  CI (99.9%): [≈ 0, 9554478,939] (assumes normal distribution)
+
+
+# JMH version: 1.37
+# VM version: JDK 25.0.2, OpenJDK 64-Bit Server VM, 25.0.2+12-LTS
+# VM invoker: /Library/Java/JavaVirtualMachines/liberica-jdk-25-full.jdk/Contents/Home/bin/java
+# VM options: -Dfile.encoding=UTF-8 -Djava.io.tmpdir=/Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/tmp/jmh -Duser.country=DE -Duser.language=de -Duser.variant
+# Blackhole mode: compiler (auto-detected, use -Djmh.blackhole.autoDetect=false to disable)
+# Warmup: 3 iterations, 1 s each
+# Measurement: 3 iterations, 1 s each
+# Timeout: 10 min per iteration
+# Threads: 8 threads, will synchronize iterations
+# Benchmark mode: Throughput, ops/time
+# Benchmark: org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_8
+# Parameters: (category = FILE)
+
+# Run progress: 96,43% complete, ETA 00:00:06
+# Fork: 1 of 1
+WARNING: A terminally deprecated method in sun.misc.Unsafe has been called
+WARNING: sun.misc.Unsafe::objectFieldOffset has been called by org.openjdk.jmh.util.Utils (file:/Users/axelhowind/.m2/repository/org/openjdk/jmh/jmh-core/1.37/jmh-core-1.37.jar)
+WARNING: Please consider reporting this to the maintainers of class org.openjdk.jmh.util.Utils
+WARNING: sun.misc.Unsafe::objectFieldOffset will be removed in a future release
+# Warmup Iteration   1: Testing parallel logback-slf4j_8 ...
+341985,535 ops/s
+# Warmup Iteration   2: 339362,564 ops/s
+# Warmup Iteration   3: 342894,369 ops/s
+Iteration   1: 342298,813 ops/s
+Iteration   2: 347237,475 ops/s
+Iteration   3: 347067,438 ops/s
+
+
+Result "org.slb4j.benchmark.LogbackParallelBenchmark.slf4j_8":
+  345534,575 ±(99.9%) 51147,042 ops/s [Average]
+  (min, avg, max) = (342298,813, 345534,575, 347237,475), stdev = 2803,542
+  CI (99.9%): [294387,533, 396681,617] (assumes normal distribution)
+
+
+# Run complete. Total time: 00:03:09
+
+REMEMBER: The numbers below are just data. To gain reusable insights, you need to follow up on
+why the numbers are the way they are. Use profilers (see -prof, -lprof), design factorial
+experiments, perform baseline and negative tests that provide experimental control, make sure
+the benchmarking environment is safe on JVM/OS/HW level, ask for reviews from the domain experts.
+Do not assume the numbers tell you what you want them to tell.
+
+NOTE: Current JVM experimentally supports Compiler Blackholes, and they are in use. Please exercise
+extra caution when trusting the results, look into the generated code to check the benchmark still
+works, and factor in a small probability of new VM bugs. Additionally, while comparisons between
+different JVMs are already problematic, the performance difference caused by different Blackhole
+modes can be very significant. Please make sure you use the consistent Blackhole mode for comparisons.
+
+Benchmark                           (category)   Mode  Cnt        Score         Error  Units
+LogbackParallelBenchmark.log4j_1       CONSOLE  thrpt    3  5722126,961 ±  200486,457  ops/s
+LogbackParallelBenchmark.log4j_1          FILE  thrpt    3   484554,098 ±  332308,848  ops/s
+LogbackParallelBenchmark.log4j_128     CONSOLE  thrpt    3  4104365,027 ±  340445,136  ops/s
+LogbackParallelBenchmark.log4j_128        FILE  thrpt    3   356336,745 ±   24353,858  ops/s
+LogbackParallelBenchmark.log4j_16      CONSOLE  thrpt    3  4636975,640 ±  428577,219  ops/s
+LogbackParallelBenchmark.log4j_16         FILE  thrpt    3   369871,118 ±   14106,607  ops/s
+LogbackParallelBenchmark.log4j_2       CONSOLE  thrpt    3  7381084,098 ± 4167691,579  ops/s
+LogbackParallelBenchmark.log4j_2          FILE  thrpt    3   355442,160 ±    3921,249  ops/s
+LogbackParallelBenchmark.log4j_4       CONSOLE  thrpt    3  4803611,314 ±  509208,699  ops/s
+LogbackParallelBenchmark.log4j_4          FILE  thrpt    3   354736,011 ±   38871,935  ops/s
+LogbackParallelBenchmark.log4j_64      CONSOLE  thrpt    3  4651348,513 ±  366912,463  ops/s
+LogbackParallelBenchmark.log4j_64         FILE  thrpt    3   365360,998 ±   37091,893  ops/s
+LogbackParallelBenchmark.log4j_8       CONSOLE  thrpt    3  4800337,246 ±  458616,226  ops/s
+LogbackParallelBenchmark.log4j_8          FILE  thrpt    3   363904,716 ±   81271,030  ops/s
+LogbackParallelBenchmark.slf4j_1       CONSOLE  thrpt    3  4807541,249 ±  200536,447  ops/s
+LogbackParallelBenchmark.slf4j_1          FILE  thrpt    3   483198,458 ±  108993,604  ops/s
+LogbackParallelBenchmark.slf4j_128     CONSOLE  thrpt    3  3909224,520 ±  294207,608  ops/s
+LogbackParallelBenchmark.slf4j_128        FILE  thrpt    3   363706,984 ±   26906,393  ops/s
+LogbackParallelBenchmark.slf4j_16      CONSOLE  thrpt    3  4235399,471 ±  349554,713  ops/s
+LogbackParallelBenchmark.slf4j_16         FILE  thrpt    3   356596,486 ±  179347,235  ops/s
+LogbackParallelBenchmark.slf4j_2       CONSOLE  thrpt    3  2454267,649 ±  473596,385  ops/s
+LogbackParallelBenchmark.slf4j_2          FILE  thrpt    3   362632,090 ±   29002,394  ops/s
+LogbackParallelBenchmark.slf4j_4       CONSOLE  thrpt    3  4349447,014 ±  697153,621  ops/s
+LogbackParallelBenchmark.slf4j_4          FILE  thrpt    3   366038,308 ±  125868,944  ops/s
+LogbackParallelBenchmark.slf4j_64      CONSOLE  thrpt    3  4038174,200 ±   70535,867  ops/s
+LogbackParallelBenchmark.slf4j_64         FILE  thrpt    3   358675,257 ±   20368,180  ops/s
+LogbackParallelBenchmark.slf4j_8       CONSOLE  thrpt    3  3899824,908 ± 5654654,031  ops/s
+LogbackParallelBenchmark.slf4j_8          FILE  thrpt    3   345534,575 ±   51147,042  ops/s
+
+Benchmark result is saved to /Users/axelhowind/IdeaProjects/slb4j/benchmark/benchmark-logback/build/results/jmh/results.json
