@@ -17,102 +17,95 @@ import java.util.Locale;
 import java.util.Map;
 
 /**
- * The JsonLayout class implements the {@link LogLayout} interface and formats log entries into a JSON format.
+ * The YamlLayout class implements the {@link LogLayout} interface and formats log entries into a YAML format.
  */
-public final class JsonLayout implements LogLayout {
+public final class YamlLayout implements LogLayout {
 
     private static final class SingletonHolder {
-        static final JsonLayout INSTANCE = new JsonLayout(ZoneId.systemDefault());
+        static final YamlLayout INSTANCE = new YamlLayout(ZoneId.systemDefault());
     }
 
     /**
      * Return the singleton instance for this {@link LogLayout}.
      *
-     * @return the singleton instance of JsonLayout
+     * @return the singleton instance of YamlLayout
      */
-    public static JsonLayout instance() {
-        return JsonLayout.SingletonHolder.INSTANCE;
+    public static YamlLayout instance() {
+        return YamlLayout.SingletonHolder.INSTANCE;
     }
 
     private final TimeStampFormatter timeStampFormatter;
 
     /**
-     * Constructs a new instance of the JsonLayout class for the given ZoneId.
+     * Constructs a new instance of the YamlLayout class for the given ZoneId.
      *
      * @param zoneId the time zone for formatting timestamps.
      */
-    public JsonLayout(ZoneId zoneId) {
+    public YamlLayout(ZoneId zoneId) {
         this.timeStampFormatter = new ISO8601TimeStampFormatter('T', '.', zoneId);
     }
 
     @Override
     public String getType() {
-        return StandardLayout.JSON.type();
+        return StandardLayout.YAML.type();
     }
 
     @Override
     public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-        app.append("{\"timestamp\":\"");
+        app.append("---\n");
+        app.append("timestamp: \"");
         timeStampFormatter.appendTo(timestamp, app);
-        app.append("\",\"level\":\"");
+        app.append("\"\nlevel: \"");
         app.append(lvl.name());
-        app.append("\",\"logger\":\"");
-        appendJsonEscaped(app, loggerName);
-        app.append("\",\"message\":\"");
-        appendJsonEscaped(app, msg);
-        app.append("\"");
+        app.append("\"\nlogger: \"");
+        appendYamlEscaped(app, loggerName);
+        app.append("\"\nmessage: \"");
+        appendYamlEscaped(app, msg);
+        app.append("\"\n");
 
         if (mrk != null) {
-            app.append(",\"marker\":\"");
-            appendJsonEscaped(app, mrk);
-            app.append("\"");
+            app.append("marker: \"");
+            appendYamlEscaped(app, mrk);
+            app.append("\"\n");
         }
 
         if (mdc != null) {
             Map<String, String> contextMap = mdc.get();
             if (!contextMap.isEmpty()) {
-                app.append(",\"mdc\":{");
-                boolean first = true;
+                app.append("mdc:\n");
                 for (Map.Entry<String, String> entry : contextMap.entrySet()) {
-                    if (!first) {
-                        app.append(",");
-                    }
-                    app.append("\"");
-                    appendJsonEscaped(app, entry.getKey());
-                    app.append("\":\"");
-                    appendJsonEscaped(app, entry.getValue());
-                    app.append("\"");
-                    first = false;
+                    app.append("  ");
+                    appendYamlEscaped(app, entry.getKey());
+                    app.append(": \"");
+                    appendYamlEscaped(app, entry.getValue());
+                    app.append("\"\n");
                 }
-                app.append("}");
             }
         }
 
         if (loc != null) {
-            app.append(",\"location\":{");
-            app.append("\"class\":\"");
-            appendJsonEscaped(app, loc.getClassName());
-            app.append("\",\"method\":\"");
-            appendJsonEscaped(app, loc.getMethodName());
-            app.append("\",\"file\":\"");
-            appendJsonEscaped(app, loc.getFileName());
-            app.append("\",\"line\":");
+            app.append("location:\n");
+            app.append("  class: \"");
+            appendYamlEscaped(app, loc.getClassName());
+            app.append("\"\n  method: \"");
+            appendYamlEscaped(app, loc.getMethodName());
+            app.append("\"\n  file: \"");
+            appendYamlEscaped(app, loc.getFileName());
+            app.append("\"\n  line: ");
             app.append(String.valueOf(loc.getLineNumber()));
-            app.append("}");
+            app.append("\n");
         }
 
         if (t != null) {
-            app.append(",\"exception\":\"");
+            app.append("exception: \"");
             StringBuilder sb = new StringBuilder();
             Util.appendStackTrace(sb, t);
-            appendJsonEscaped(app, sb.toString());
-            app.append("\"");
+            appendYamlEscaped(app, sb.toString());
+            app.append("\"\n");
         }
-
-        app.append("}\n");
     }
 
-    private void appendJsonEscaped(Appendable app, @Nullable String s) throws IOException {
+    private void appendYamlEscaped(Appendable app, @Nullable String s) throws IOException {
         if (s == null) {
             app.append("null");
             return;
@@ -123,7 +116,6 @@ public final class JsonLayout implements LogLayout {
             switch (c) {
                 case '"' -> app.append("\\\"");
                 case '\\' -> app.append("\\\\");
-                case '/' -> app.append("\\/");
                 case '\b' -> app.append("\\b");
                 case '\f' -> app.append("\\f");
                 case '\n' -> app.append("\\n");

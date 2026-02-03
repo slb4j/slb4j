@@ -20,6 +20,7 @@ import org.slb4j.LogLayout;
 import org.slb4j.Location;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
+import org.slb4j.support.formatter.PatternTimeStampFormatter;
 import org.slb4j.support.TimeStampFormatter;
 import org.slb4j.support.Util;
 import org.jspecify.annotations.Nullable;
@@ -64,7 +65,7 @@ public final class PatternLayout implements LogLayout {
      * 2026-01-11 15:19:09.573 INFO  com.example.Application - Message from SLF4J
      * </pre>
      */
-    public static final LogLayout DEFAULT_PATTERN = parseLog4jPattern("%highlight{" + DEFAULT_PATTERN_STRING +"%ex}");
+    public static final LogLayout LAYOUT_INSTANCE_DEFAULT = parseLog4jPattern("%highlight{" + DEFAULT_PATTERN_STRING +"%ex}");
 
     /**
      * A compact log pattern used to format log entries in a concise and structured manner.
@@ -82,7 +83,7 @@ public final class PatternLayout implements LogLayout {
      * </ul>
      * Use when a compact and human-readable log format is preferred, such as console-based logging.
      */
-    public static final LogLayout COMPACT_PATTERN = parseLog4jPattern("%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%n%ex");
+    public static final LogLayout LAYOUT_INSTANCE_COMPACT = parseLog4jPattern("%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%n%ex");
 
     /**
      * A predefined {@link LogLayout} instance representing a detailed log format.
@@ -102,29 +103,7 @@ public final class PatternLayout implements LogLayout {
      * This format provides comprehensive information about log events, including contextual
      * details, useful for debugging and auditing purposes.
      */
-    public static final LogLayout DETAILED_PATTERN = parseLog4jPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable");
-
-    /**
-     * A predefined {@link LogLayout} instance representing a simple log format.
-     * <p>
-     * Equivalent pattern: {@code %p - %m%n}
-     */
-    public static final LogLayout LOG4J_SIMPLE_PATTERN = new SimpleLayout();
-
-    /**
-     * A predefined {@link LogLayout} instance representing a log event in a CSV file.
-     */
-    public static final LogLayout LOG4J_CSV_PATTERN = new CsvLayout(ZONE_ID);
-
-    /**
-     * A pre-configured LogPattern instance for XML layout formatting.
-     */
-    public static final LogLayout LOG4J_XML_PATTERN = new XmlLayout(ZONE_ID);
-
-    /**
-     * A pre-configured LogPattern instance for JSON layout formatting.
-     */
-    public static final LogLayout LOG4J_JSON_PATTERN = new JsonLayout(ZONE_ID);
+    public static final LogLayout LAYOUT_INSTANCE_DETAILED = parseLog4jPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable");
 
     /**
      * Defines an interface for formatting log entries in a customizable and extensible manner.
@@ -317,7 +296,7 @@ public final class PatternLayout implements LogLayout {
      * </pre>
      */
     public static final class DefaultPatternEntry implements LogPatternEntry {
-        private TimeStampFormatter timeStampFormatter = TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, Locale.getDefault());
+        private TimeStampFormatter timeStampFormatter = PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, Locale.getDefault());
         private LevelEntry levelEntry = new LevelEntry(5, 5, true);
         private LoggerEntry loggerEntry = new LoggerEntry(0, 0, false, 36, false);
 
@@ -984,11 +963,11 @@ public final class PatternLayout implements LogLayout {
             this.datePattern = pattern;
             this.locale = locale;
             this.formatter = (switch (pattern) {
-                case "ISO8601" -> TimeStampFormatter.parse("yyyy-MM-dd'T'HH:mm:ss,SSS", ZONE_ID, locale);
-                case "HH:mm:ss,SSS" -> TimeStampFormatter.parse("HH:mm:ss,SSS", ZONE_ID, locale);
-                case "yyyy-MM-dd HH:mm:ss,SSS" -> TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, locale);
-                case "yyyy-MM-dd HH:mm:ss" -> TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss", ZONE_ID, locale);
-                default -> TimeStampFormatter.parse(pattern.isEmpty() ? "HH:mm:ss" : pattern, ZONE_ID, locale);
+                case "ISO8601" -> PatternTimeStampFormatter.parse("yyyy-MM-dd'T'HH:mm:ss,SSS", ZONE_ID, locale);
+                case "HH:mm:ss,SSS" -> PatternTimeStampFormatter.parse("HH:mm:ss,SSS", ZONE_ID, locale);
+                case "yyyy-MM-dd HH:mm:ss,SSS" -> PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, locale);
+                case "yyyy-MM-dd HH:mm:ss" -> PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss", ZONE_ID, locale);
+                default -> PatternTimeStampFormatter.parse(pattern.isEmpty() ? "HH:mm:ss" : pattern, ZONE_ID, locale);
             });
         }
 
@@ -1039,7 +1018,7 @@ public final class PatternLayout implements LogLayout {
      * Represents a log format entry in CSV output.
      */
     public static final class CsvEntry implements LogPatternEntry {
-        TimeStampFormatter formatter = TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, Locale.getDefault());
+        TimeStampFormatter formatter = PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, Locale.getDefault());
 
         /**
          * Constructs a new instance of the NewlineEntry class which represents a log format entry

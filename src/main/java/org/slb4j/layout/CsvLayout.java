@@ -6,6 +6,7 @@ import org.slb4j.Location;
 import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.MDC;
+import org.slb4j.support.formatter.PatternTimeStampFormatter;
 import org.slb4j.support.TimeStampFormatter;
 
 import java.io.IOException;
@@ -25,6 +26,20 @@ import java.util.Locale;
  * This class assumes a fixed CSV structure and does not include fields like marker, MDC, location, or throwable details.
  */
 public final class CsvLayout implements LogLayout {
+
+    private static final class SingletonHolder {
+        static final CsvLayout INSTANCE = new CsvLayout(ZoneId.systemDefault());
+    }
+
+    /**
+     * Return the singleton instance for this {@link LogLayout}.
+     *
+     * @return the singleton instance of CsvLayout
+     */
+    public static CsvLayout instance() {
+        return SingletonHolder.INSTANCE;
+    }
+
     private final TimeStampFormatter timeStampFormatter;
 
     /**
@@ -33,7 +48,7 @@ public final class CsvLayout implements LogLayout {
      * @param zoneId the time zone for formatting timestamps.
      */
     public CsvLayout(ZoneId zoneId) {
-        this.timeStampFormatter = TimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", zoneId, Locale.getDefault());
+        this.timeStampFormatter = PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", zoneId, Locale.getDefault());
     }
 
     @Override

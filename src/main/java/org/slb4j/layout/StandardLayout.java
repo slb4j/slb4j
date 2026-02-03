@@ -1,7 +1,5 @@
 package org.slb4j.layout;
 
-import org.jspecify.annotations.Nullable;
-
 import java.util.Optional;
 
 /**
@@ -14,11 +12,14 @@ public enum StandardLayout {
     /** XML layout. */
     XML("XmlLayout"),
 
+    /** YAML layout. */
+    YAML("YamlLayout"),
+
     /** JSON layout. */
     JSON("JsonLayout"),
 
     /** Log4J SimpleLayout. */
-    LOG4J_SIMPLE_LAYOUT("SimpleLayout"),
+    SIMPLE_LAYOUT("SimpleLayout"),
 
     /** Pattern layout. */
     PATTERN_LAYOUT("PatternLayout");

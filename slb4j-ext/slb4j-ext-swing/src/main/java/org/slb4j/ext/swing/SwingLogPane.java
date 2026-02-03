@@ -95,7 +95,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
     /** The text area for displaying log entry details. */
     private final JTextArea details;
     /** The pattern used for formatting log entries. */
-    private final LogLayout pattern = PatternLayout.DEFAULT_PATTERN;
+    private final LogLayout pattern = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
     /** Buffer for formatting log entries. */
     @SuppressWarnings("StringBufferField")
     private final StringBuilder buffer = new StringBuilder(4096);

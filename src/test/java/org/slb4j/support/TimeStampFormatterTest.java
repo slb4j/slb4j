@@ -17,6 +17,8 @@ package org.slb4j.support;
 
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
+import org.slb4j.support.formatter.PatternTimeStampFormatter;
+import org.slb4j.support.formatter.AbstractTimeStampFormatter;
 
 import java.time.Instant;
 import java.time.ZoneId;
@@ -54,7 +56,7 @@ class TimeStampFormatterTest {
         long timestamp = 1705574640000L; // 2024-01-18T10:44:00Z
         ZoneId zoneId = ZoneId.systemDefault();
 
-        TimeStampFormatter formatter = TimeStampFormatter.parse(pattern, zoneId);
+        TimeStampFormatter formatter = PatternTimeStampFormatter.parse(pattern, zoneId);
         DateTimeFormatter stdFormatter = DateTimeFormatter.ofPattern(pattern).withZone(zoneId);
 
         String expected = stdFormatter.format(Instant.ofEpochMilli(timestamp));
@@ -75,7 +77,7 @@ class TimeStampFormatterTest {
         String pattern = "yyyy-MM-dd HH:mm:ss.SSS";
         ZoneId zoneId = ZoneId.systemDefault();
 
-        TimeStampFormatter formatter = TimeStampFormatter.parse(pattern, zoneId);
+        TimeStampFormatter formatter = PatternTimeStampFormatter.parse(pattern, zoneId);
         DateTimeFormatter stdFormatter = DateTimeFormatter.ofPattern(pattern).withZone(zoneId);
 
         String expected = stdFormatter.format(Instant.ofEpochMilli(timestamp));

@@ -90,7 +90,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
     private final Writer writer;
     private volatile boolean colored = true;
     private volatile LogFilter filter = LogFilter.allPass();
-    private volatile LogLayout layout = PatternLayout.DEFAULT_PATTERN;
+    private volatile LogLayout layout = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
     private final IoStringBuilder buffer = new IoStringBuilder(BUFFER_SIZE);
 
     @Override

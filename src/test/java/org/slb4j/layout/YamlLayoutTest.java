@@ -13,28 +13,28 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class JsonLayoutTest {
+class YamlLayoutTest {
 
     @Test
-    void testJsonOutputFormat() throws IOException {
-        JsonLayout layout = new JsonLayout(ZoneId.of("UTC"));
+    void testYamlOutputFormat() throws IOException {
+        YamlLayout layout = new YamlLayout(ZoneId.of("UTC"));
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L; // 2024-01-31 04:00:00 UTC
         
         layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.INFO, "testMarker", null, null, "test message with \"quotes\"", null, ConsoleCode.empty());
         
         String output = sb.toString();
-        assertTrue(output.contains("\"timestamp\":\"2024-01-31T04:00:00.000\""), "output: " + output);
-        assertTrue(output.contains("\"level\":\"INFO\""), "output: " + output);
-        assertTrue(output.contains("\"logger\":\"testLogger\""), "output: " + output);
-        assertTrue(output.contains("\"message\":\"test message with \\\"quotes\\\"\""), "output: " + output);
-        assertTrue(output.contains("\"marker\":\"testMarker\""), "output: " + output);
-        assertTrue(output.startsWith("{") && output.endsWith("}\n"), "output: " + output);
+        assertTrue(output.contains("---\n"));
+        assertTrue(output.contains("timestamp: \"2024-01-31T04:00:00.000\""));
+        assertTrue(output.contains("level: \"INFO\""));
+        assertTrue(output.contains("logger: \"testLogger\""));
+        assertTrue(output.contains("message: \"test message with \\\"quotes\\\"\""));
+        assertTrue(output.contains("marker: \"testMarker\""));
     }
 
     @Test
-    void testJsonOutputFormatWithMdc() throws IOException {
-        JsonLayout layout = new JsonLayout(ZoneId.of("UTC"));
+    void testYamlOutputFormatWithMdc() throws IOException {
+        YamlLayout layout = new YamlLayout(ZoneId.of("UTC"));
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L;
         
@@ -53,12 +53,13 @@ class JsonLayoutTest {
         layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.INFO, null, mdc, null, "msg", null, ConsoleCode.empty());
         
         String output = sb.toString();
-        assertTrue(output.contains("\"mdc\":{\"key1\":\"value1\"}"));
+        assertTrue(output.contains("mdc:\n"));
+        assertTrue(output.contains("  key1: \"value1\""));
     }
 
     @Test
-    void testJsonOutputFormatWithLocation() throws IOException {
-        JsonLayout layout = new JsonLayout(ZoneId.of("UTC"));
+    void testYamlOutputFormatWithLocation() throws IOException {
+        YamlLayout layout = new YamlLayout(ZoneId.of("UTC"));
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L;
         
@@ -76,16 +77,16 @@ class JsonLayoutTest {
         layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.INFO, null, null, location, "msg", null, ConsoleCode.empty());
         
         String output = sb.toString();
-        assertTrue(output.contains("\"location\":{"));
-        assertTrue(output.contains("\"class\":\"com.example.Test\""));
-        assertTrue(output.contains("\"method\":\"testMethod\""));
-        assertTrue(output.contains("\"file\":\"Test.java\""));
-        assertTrue(output.contains("\"line\":123"));
+        assertTrue(output.contains("location:\n"));
+        assertTrue(output.contains("  class: \"com.example.Test\""));
+        assertTrue(output.contains("  method: \"testMethod\""));
+        assertTrue(output.contains("  file: \"Test.java\""));
+        assertTrue(output.contains("  line: 123"));
     }
 
     @Test
-    void testJsonOutputFormatWithException() throws IOException {
-        JsonLayout layout = new JsonLayout(ZoneId.of("UTC"));
+    void testYamlOutputFormatWithException() throws IOException {
+        YamlLayout layout = new YamlLayout(ZoneId.of("UTC"));
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L;
         
@@ -94,7 +95,7 @@ class JsonLayoutTest {
         layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.ERROR, null, null, null, "msg", t, ConsoleCode.empty());
         
         String output = sb.toString();
-        assertTrue(output.contains("\"exception\":\"java.lang.RuntimeException: test exception"));
+        assertTrue(output.contains("exception: \"java.lang.RuntimeException: test exception"));
         assertTrue(output.contains("\\n\\tat "));
     }
 }

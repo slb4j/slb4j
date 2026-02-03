@@ -52,7 +52,7 @@ public class Slb4jParallelBenchmark extends ParallelLoggingBenchmark {
 
         tempFile = Files.createTempFile("slb4j-parallel-bench", ".log");
 
-        LogLayout pattern = PatternLayout.DEFAULT_PATTERN;
+        LogLayout pattern = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
 
         UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
         dispatcher.getLogHandlers().forEach(dispatcher::removeLogHandler);

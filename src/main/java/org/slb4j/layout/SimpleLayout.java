@@ -14,6 +14,19 @@ import java.io.IOException;
  */
 public class SimpleLayout implements LogLayout {
 
+    private static final class SingletonHolder {
+        static final SimpleLayout INSTANCE = new SimpleLayout();
+    }
+
+    /**
+     * Return the singleton instance for this {@link LogLayout}.
+     *
+     * @return the singleton instance of SimpleLayout
+     */
+    public static SimpleLayout instance() {
+        return SimpleLayout.SingletonHolder.INSTANCE;
+    }
+
     /**
      * Default constructor.
      */
@@ -21,7 +34,7 @@ public class SimpleLayout implements LogLayout {
 
     @Override
     public String getType() {
-        return StandardLayout.LOG4J_SIMPLE_LAYOUT.type();
+        return StandardLayout.SIMPLE_LAYOUT.type();
     }
 
     @Override

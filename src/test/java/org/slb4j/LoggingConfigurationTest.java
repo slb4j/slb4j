@@ -15,11 +15,12 @@
  */
 package org.slb4j;
 
+import org.slb4j.layout.CsvLayout;
+import org.slb4j.layout.XmlLayout;
 import org.slb4j.support.Util;
 import org.slb4j.handler.RotatingFileHandler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
-import org.slb4j.layout.PatternLayout;
 import org.slb4j.layout.StandardLayout;
 
 import java.nio.file.Files;
@@ -196,7 +197,7 @@ class LoggingConfigurationTest {
 
     @Test
     void testCsvOutputFormat() throws IOException {
-        LogLayout csvPattern = PatternLayout.LOG4J_CSV_PATTERN;
+        LogLayout csvPattern = CsvLayout.instance();
         StringBuilder sb = new StringBuilder();
         long timestamp = 1738259700000L; // 2025-01-30 17:55:00 UTC (roughly)
         // Note: TimeStampFormatter uses system default timezone by default in CsvEntry
@@ -216,7 +217,7 @@ class LoggingConfigurationTest {
 
     @Test
     void testCsvOutputFormatWithNullMessage() throws IOException {
-        LogLayout csvPattern = PatternLayout.LOG4J_CSV_PATTERN;
+        LogLayout csvPattern = CsvLayout.instance();
         StringBuilder sb = new StringBuilder();
         long timestamp = 1738259700000L;
         Location loc = null;
@@ -251,7 +252,7 @@ class LoggingConfigurationTest {
 
     @Test
     void testXmlOutputFormat() throws IOException {
-        LogLayout xmlPattern = PatternLayout.LOG4J_XML_PATTERN;
+        LogLayout xmlPattern = XmlLayout.instance();
         StringBuilder sb = new StringBuilder();
         long timestamp = 1738259700000L;
 
@@ -268,7 +269,7 @@ class LoggingConfigurationTest {
 
     @Test
     void testXmlHeaderFooter() {
-        LogLayout xmlPattern = PatternLayout.LOG4J_XML_PATTERN;
+        LogLayout xmlPattern = XmlLayout.instance();
         assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<logEvents>\n", xmlPattern.getHeader());
         assertEquals("</logEvents>\n", xmlPattern.getFooter());
     }
@@ -294,6 +295,29 @@ class LoggingConfigurationTest {
         Properties outProps = new Properties();
         config.addToProperties(outProps);
         assertEquals("JsonLayout", outProps.getProperty("appender.console.layout.type"));
+    }
+
+    @Test
+    void testYamlLayoutConfiguration() throws IOException {
+        String propertyText = """
+                appender.console.type=Console
+                appender.console.layout.type=YamlLayout
+                """;
+        Properties props = new Properties();
+        props.load(new StringReader(propertyText));
+
+        LoggingConfiguration config = LoggingConfiguration.parseLog4j(props);
+
+        LogHandler handler = config.getHandler("console");
+        assertNotNull(handler);
+        assertInstanceOf(org.slb4j.handler.ConsoleHandler.class, handler);
+        org.slb4j.handler.ConsoleHandler consoleHandler = (org.slb4j.handler.ConsoleHandler) handler;
+        assertEquals(StandardLayout.YAML.type(), consoleHandler.getLayout().getType());
+
+        // Test addToProperties
+        Properties outProps = new Properties();
+        config.addToProperties(outProps);
+        assertEquals("YamlLayout", outProps.getProperty("appender.console.layout.type"));
     }
 
     @Test

@@ -12,6 +12,7 @@ SLB4J is a **Simple Logging Backend for Java** that comes as a single JAR withou
   - CsVLayout
   - XmlLayout
   - JsonLayout
+  - YamlLayout
 - Java Util Logging pattern syntax (when logging.properties is used)
 - Console and log file logging
 - log file rotation
@@ -135,7 +136,7 @@ correctly.
     - Marker support
     - Location support
     - Locale support
-  - layouts: PatternLayout, SimpleLayout, CsvLayout, XmlLayout, JsonLayout
+  - layouts: PatternLayout, SimpleLayout, CsvLayout, XmlLayout, JsonLayout, YamlLayout
   
 - **Java Util Logging compatibility**
   - automaticially load and apply logging.properties
@@ -151,10 +152,10 @@ correctly.
 ### Todo
 
 - Publish Javadoc
+- Layouts: YAML, HTML
 
 ### Later
 
-- JSON output format
 - Read back JSON logs for later analysis
 
 ### Not Planned

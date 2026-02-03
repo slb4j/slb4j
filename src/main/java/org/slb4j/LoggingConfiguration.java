@@ -21,8 +21,13 @@ import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.handler.FileHandler;
 import org.slb4j.handler.RotatingFileHandler;
+import org.slb4j.layout.CsvLayout;
+import org.slb4j.layout.JsonLayout;
 import org.slb4j.layout.PatternLayout;
+import org.slb4j.layout.SimpleLayout;
 import org.slb4j.layout.StandardLayout;
+import org.slb4j.layout.XmlLayout;
+import org.slb4j.layout.YamlLayout;
 import org.slb4j.support.Util;
 
 import java.io.IOException;
@@ -425,7 +430,7 @@ public final class LoggingConfiguration {
                         patternConfigurable.setLayout(p);
                     }
                 },
-                () -> PatternLayout.DEFAULT_PATTERN
+                () -> PatternLayout.LAYOUT_INSTANCE_DEFAULT
         );
 
         // Configures handler pattern based on layout type property
@@ -434,10 +439,11 @@ public final class LoggingConfiguration {
             if (sLayoutType != null) {
                 StandardLayout sl = StandardLayout.forType(sLayoutType.strip()).orElse(null);
                 switch (sl) {
-                    case LOG4J_SIMPLE_LAYOUT -> patternConfigurable.setLayout(PatternLayout.LOG4J_SIMPLE_PATTERN);
-                    case CSV -> patternConfigurable.setLayout(PatternLayout.LOG4J_CSV_PATTERN);
-                    case XML -> patternConfigurable.setLayout(PatternLayout.LOG4J_XML_PATTERN);
-                    case JSON -> patternConfigurable.setLayout(PatternLayout.LOG4J_JSON_PATTERN);
+                    case SIMPLE_LAYOUT -> patternConfigurable.setLayout(SimpleLayout.instance());
+                    case CSV -> patternConfigurable.setLayout(CsvLayout.instance());
+                    case XML -> patternConfigurable.setLayout(XmlLayout.instance());
+                    case JSON -> patternConfigurable.setLayout(JsonLayout.instance());
+                    case YAML -> patternConfigurable.setLayout(YamlLayout.instance());
                     case PATTERN_LAYOUT -> {}
                     default -> {
                         Util.err().println("slb4j: handler '" + name + "' - layout type '" + sLayoutType + "' is not supported, using PatternLayout");
@@ -580,7 +586,7 @@ public final class LoggingConfiguration {
             case null -> {
                 Util.err().format("slb4j: unknown log pattern type '%s' for handler '%s', using default layout%n", layout.getType(), prefix);
                 properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, StandardLayout.PATTERN_LAYOUT.type());
-                properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, PatternLayout.COMPACT_PATTERN.getText());
+                properties.setProperty(prefix + LOGGER_LAYOUT_PATTERN, PatternLayout.LAYOUT_INSTANCE_COMPACT.getText());
             }
             default -> properties.setProperty(prefix + LOGGER_LAYOUT_TYPE, sl.type());
         }

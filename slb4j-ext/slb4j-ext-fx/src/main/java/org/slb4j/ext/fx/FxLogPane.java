@@ -155,7 +155,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
 
     private final LogBuffer logBuffer;
     private boolean darkMode = false;
-    private final LogLayout pattern = PatternLayout.DEFAULT_PATTERN;
+    private final LogLayout pattern = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
     private final TextArea details;
     private final TableView<@Nullable LogEntry> tableView;
 

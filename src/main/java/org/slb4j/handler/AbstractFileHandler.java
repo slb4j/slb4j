@@ -60,7 +60,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @see #setLayout(LogLayout) for modifying the log pattern.
      * @see #getLayout() for retrieving the current log pattern.
      */
-    protected volatile LogLayout layout = PatternLayout.DEFAULT_PATTERN;
+    protected volatile LogLayout layout = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
     /**
      * Represents the log filtering mechanism for the file handler.
      */
