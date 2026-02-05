@@ -16,6 +16,8 @@
 package org.slb4j;
 
 import org.jspecify.annotations.Nullable;
+import org.slb4j.config.ConfigParser;
+import org.slb4j.config.ConfigParserJul;
 import org.slb4j.config.ConfigParserLog4j;
 import org.slb4j.filter.LogLevelFilter;
 import org.slb4j.handler.ConsoleHandler;
@@ -25,10 +27,11 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.LinkedHashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.SequencedCollection;
+import java.util.function.Supplier;
 
 /**
  * A configuration class for setting up and managing logging behaviors and settings.
@@ -52,6 +55,12 @@ public final class LoggingConfiguration {
      * A constant representing the key for specifying the handler type in configuration properties.
      */
     public static final String LOGGING_TYPE = "type";
+
+    private static final Map<String, Supplier<ConfigParser>> CONFIG_PARSERS = Map.of(
+            "log4j2-test.properties", ConfigParserLog4j::new,
+            "log4j2.properties", ConfigParserLog4j::new,
+            "logging.properties", ConfigParserJul::new
+    );
 
     // *** ConsoleHandler configuration ***
 
@@ -185,37 +194,31 @@ public final class LoggingConfiguration {
 
     /**
      * Automatically loads the logging configuration from the classpath.
-     * It checks for {@code log4j2.properties} (Log4J2 format) and then for
-     * {@code logging.properties} (JUL format).
+     * <p>
+     * The method  checks for the filenames defined in {@code CONFIG_PARSERS} and tries to
+     * load and parse the corresponding properties file. If none of the files are found
+     * or can be loaded, the default configuration is returned.
      *
-     * @return the loaded {@code LoggingConfiguration} or {@link #defaultConfiguration()} if no file is found.
+     * @return the loaded {@code LoggingConfiguration} or {@link #defaultConfiguration()}
+     *         if none could be loaded.
      */
     public static LoggingConfiguration load() {
-        for (String propertiesFileName: List.of("log4j2-test.properties", "log4j2.properties")) {
-            try (InputStream in = ClassLoader.getSystemResourceAsStream(propertiesFileName)) {
-                if (in != null) {
-                    Properties properties = new Properties();
-                    properties.load(in);
-                    return new ConfigParserLog4j().parse(properties);
-                }
-            } catch (IOException e) {
-                Util.err().println("Failed to load " + propertiesFileName + ": " + e.getMessage());
-                e.printStackTrace(Util.err());
-            }
-        }
-/*
-        try (InputStream in = ClassLoader.getSystemResourceAsStream("logging.properties")) {
-            if (in != null) {
-                Properties properties = new Properties();
-                properties.load(in);
-                return parseJul(properties);
-            }
-        } catch (IOException e) {
-            Util.err().println("Failed to load logging.properties: " + e.getMessage());
-            e.printStackTrace(Util.err());
-        }
-*/
-        return defaultConfiguration();
+        return CONFIG_PARSERS.entrySet().stream().map(entry -> {
+                    String fileName = entry.getKey();
+                    try (InputStream in = ClassLoader.getSystemResourceAsStream(fileName)) {
+                        if (in != null) {
+                            Properties properties = new Properties();
+                            properties.load(in);
+                            return entry.getValue().get().parse(properties);
+                        }
+                    } catch (IOException e) {
+                        Util.err().println("Failed to load " + fileName + ": " + e.getMessage());
+                        e.printStackTrace(Util.err());
+                    }
+                    return null;
+                }).filter(Objects::nonNull)
+                .findFirst()
+                .orElseGet(LoggingConfiguration::defaultConfiguration);
     }
 
     @Override
