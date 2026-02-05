@@ -6,12 +6,12 @@ import org.slb4j.Location;
 import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.MDC;
-import org.slb4j.support.formatter.PatternTimeStampFormatter;
+import org.slb4j.support.formatter.ISO8601TimeStampFormatter;
 import org.slb4j.support.TimeStampFormatter;
 
 import java.io.IOException;
 import java.time.ZoneId;
-import java.util.Locale;
+import java.time.ZoneOffset;
 
 /**
  * The XmlLogPattern class implements the {@link LogLayout} interface and formats log entries into an XML format.
@@ -19,7 +19,7 @@ import java.util.Locale;
 public final class XmlLayout implements LogLayout {
 
     private static final class SingletonHolder {
-        static final XmlLayout INSTANCE = new XmlLayout(ZoneId.systemDefault());
+        static final XmlLayout INSTANCE = new XmlLayout(ZoneOffset.UTC);
     }
 
     /**
@@ -34,12 +34,12 @@ public final class XmlLayout implements LogLayout {
     private final TimeStampFormatter timeStampFormatter;
 
     /**
-     * Constructs a new instance of the XmlLogPattern class for the given ZoneId..
+     * Constructs a new instance of the XmlLogPattern class for the given ZoneId.
      *
-     * @param zoneId the time zone for formatting timestamps.
+     * @param zoneId the time zone identifier for formatting timestamps
      */
     public XmlLayout(ZoneId zoneId) {
-        this.timeStampFormatter = PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", zoneId, Locale.getDefault());
+        this.timeStampFormatter = new ISO8601TimeStampFormatter('T', '.', true, zoneId);
     }
 
     @Override
@@ -89,7 +89,7 @@ public final class XmlLayout implements LogLayout {
      * @param s the input string to be XML-escaped; may be null
      * @throws IOException if an I/O error occurs while appending to the {@code Appendable}
      */
-    private void appendXmlEscaped(Appendable app, @Nullable String s) throws IOException {
+    private static void appendXmlEscaped(Appendable app, @Nullable String s) throws IOException {
         if (s == null) {
             app.append("null");
             return;

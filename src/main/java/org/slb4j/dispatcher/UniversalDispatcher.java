@@ -172,7 +172,6 @@ public final class UniversalDispatcher implements LogDispatcher {
                     }
                     if (message == null) {
                         message = msg.get();
-                        if (message == null) message = "null";
                     }
                     handler.handle(timestamp, loggerName, lvl, mrk, mdc, loc, message, t);
                 }

@@ -6,12 +6,52 @@ import org.slb4j.support.formatter.MillisTimeStampFormatter;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 
+/**
+ * Defines a contract for formatting timestamps represented as epoch milliseconds
+ * into human-readable string representations or appending them to an output target.
+ * This interface provides both performance-optimized and debug-friendly methods
+ * for working with timestamp data.
+ */
 public interface TimeStampFormatter {
-    TimeStampFormatter DEFAULT_FORMATTER = new ISO8601TimeStampFormatter(' ', ',', ZoneId.systemDefault());
-    TimeStampFormatter ISO8601_FORMATTER = new ISO8601TimeStampFormatter('T', '.', ZoneId.systemDefault());
-    TimeStampFormatter MILLIS_FORMATTER = new MillisTimeStampFormatter();
+    /**
+     * A preconfigured instance of {@code ISO8601TimeStampFormatter} for formatting timestamps
+     * in the ISO 8601 standard format using the UTC time zone.
+     */
+    TimeStampFormatter ISO8601_FORMATTER = new ISO8601TimeStampFormatter('T', '.', true, ZoneOffset.UTC);
+    /**
+     * A preconfigured instance of {@code ISO8601TimeStampFormatter} for formatting timestamps
+     * in the ISO 8601 standard format using the system default time zone.
+     */
+    TimeStampFormatter ISO8601_FORMATTER_LOCAL_ZONE = new ISO8601TimeStampFormatter('T', '.', true, ZoneId.systemDefault());
+    /**
+     * Default {@link TimeStampFormatter} implementation that formats timestamps in a human-readable
+     * ISO 8601-like pattern with a space (' ') between date and time, and a comma (',') separating
+     * seconds and milliseconds. The timestamps are formatted based on the UTC time zone.
+     */
+    TimeStampFormatter DEFAULT_FORMATTER = new ISO8601TimeStampFormatter(' ', ',', true, ZoneOffset.UTC);
+    /**
+     * Default {@link TimeStampFormatter} implementation that formats timestamps in a human-readable
+     * ISO 8601-like pattern with a space (' ') between date and time, and a comma (',') separating
+     * seconds and milliseconds. The timestamps are formatted based on the system default time zone.
+     */
+    TimeStampFormatter DEFAULT_FORMATTER_LOCAL_ZONE = new ISO8601TimeStampFormatter(' ', ',', true, ZoneId.systemDefault());
+    /**
+     * A predefined instance of {@link MillisTimeStampFormatter} used to format
+     * timestamps by directly representing the epoch milliseconds as a string.
+     */
+    TimeStampFormatter MILLIS_FORMATTER_LOCAL_ZONE = new MillisTimeStampFormatter();
 
+    /**
+     * Appends a formatted representation of the given timestamp to the provided {@code Appendable}.
+     * The timestamp is expected to be in epoch milliseconds, and it is formatted based on
+     * the internal configuration of the implementing formatter.
+     *
+     * @param timestamp the epoch timestamp in milliseconds to be formatted and appended.
+     * @param app the {@code Appendable} to which the formatted timestamp will be written.
+     * @throws IOException if an I/O error occurs while appending to the {@code Appendable}.
+     */
     void appendTo(long timestamp, Appendable app) throws IOException;
 
     /**

@@ -6,29 +6,27 @@ import org.slb4j.Location;
 import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.MDC;
-import org.slb4j.support.formatter.PatternTimeStampFormatter;
 import org.slb4j.support.TimeStampFormatter;
 
 import java.io.IOException;
-import java.time.ZoneId;
-import java.util.Locale;
 
 /**
  * The CsvLogPattern class implements the {@link LogLayout} interface and formats log entries into a CSV-compatible format.
  * Each log entry is represented as a single line in CSV format, with fields enclosed in double quotes and properly escaped.
- *
+ * <p>
  * The following fields are included in each log entry:
- * - Timestamp in "yyyy-MM-dd HH:mm:ss,SSS" format.
- * - Log level.
- * - Logger name.
- * - Message, with special characters and quotes properly escaped.
- *
+ * <ul>
+ * <li>Timestamp in "yyyy-MM-dd HH:mm:ss,SSS" format.
+ * <li>Log level.
+ * <li>Logger name.
+ * <li>Message, with special characters and quotes properly escaped.
+ * </ul>
  * This class assumes a fixed CSV structure and does not include fields like marker, MDC, location, or throwable details.
  */
 public final class CsvLayout implements LogLayout {
 
     private static final class SingletonHolder {
-        static final CsvLayout INSTANCE = new CsvLayout(ZoneId.systemDefault());
+        static final CsvLayout INSTANCE = new CsvLayout();
     }
 
     /**
@@ -44,11 +42,9 @@ public final class CsvLayout implements LogLayout {
 
     /**
      * Constructs a new instance of the CsvLogPattern class for the given ZoneId.
-     *
-     * @param zoneId the time zone for formatting timestamps.
      */
-    public CsvLayout(ZoneId zoneId) {
-        this.timeStampFormatter = PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", zoneId, Locale.getDefault());
+    public CsvLayout() {
+        this.timeStampFormatter = TimeStampFormatter.ISO8601_FORMATTER;
     }
 
     @Override

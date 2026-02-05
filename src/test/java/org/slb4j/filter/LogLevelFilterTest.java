@@ -53,7 +53,7 @@ class LogLevelFilterTest {
             "ERROR, ERROR, true"
     })
     void testLogLevelFilter(LogLevel threshold, LogLevel level, boolean expected) {
-        LogLevelFilter filter = new LogLevelFilter("test", threshold);
+        LogLevelFilter filter = LogLevelFilter.pass(threshold);
 
         assertEquals(expected, filter.isLevelEnabled(level),
                 () -> "isLevelEnabled failed for threshold " + threshold + " and level " + level);

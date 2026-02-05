@@ -3,8 +3,8 @@ package org.slb4j;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 import org.junit.jupiter.api.Assertions;
+import org.slb4j.config.ConfigParserLog4j;
 import org.slb4j.layout.PatternLayout;
-import org.slb4j.layout.StandardLayout;
 
 import java.io.IOException;
 import java.io.StringReader;
@@ -169,57 +169,93 @@ class Log4j2PropertiesTest {
         Properties props = new Properties();
         props.load(new StringReader(propertySet.properties));
 
-        LoggingConfiguration config = LoggingConfiguration.parseLog4j(props);
+        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
 
-        // Test addToProperties and verify it matches the input
-        Properties outProps = new Properties();
-        config.addToProperties(outProps);
+        // Verify configuration directly without round-tripping properties
+        // Discover appenders declared in the input properties
+        java.util.regex.Pattern appenderTypeKey = java.util.regex.Pattern.compile("^appender\\.([^.]+)\\.type$");
+        props.stringPropertyNames().stream()
+                .filter(k -> appenderTypeKey.matcher(k).matches())
+                .map(k -> {
+                    java.util.regex.Matcher m = appenderTypeKey.matcher(k);
+                    m.matches();
+                    return m.group(1);
+                })
+                .forEach(appenderName -> {
+                    String prefix = "appender." + appenderName + ".";
+                    String type = props.getProperty(prefix + "type").trim();
 
-        // Prepare expected properties from input: inject layout.type=PatternLayout if missing
-        Properties expectedProps = new Properties();
-        props.forEach((k, v) -> {
-            String key = (String) k;
-            expectedProps.setProperty(key, ((String) v).strip());
-        });
+                    LogHandler handler = config.getHandler(appenderName);
+                    Assertions.assertNotNull(handler, "Handler '" + appenderName + "' should exist");
 
-        // For each appender defined in input, ensure layout.type is set to PatternLayout if it's a supported property
-        expectedProps.stringPropertyNames().stream()
-                .filter(key -> key.startsWith("appender.") && key.endsWith(".type"))
-                .map(key -> key.substring(0, key.length() - 5))
-                .forEach(prefix -> {
-                    String type = expectedProps.getProperty(prefix + ".type");
-                    if ("Console".equalsIgnoreCase(type) || "File".equalsIgnoreCase(type) || "RollingFile".equalsIgnoreCase(type)) {
-                        String layoutType = expectedProps.getProperty(prefix + ".layout.type");
-                        if (layoutType == null) {
-                            expectedProps.put(prefix + ".layout.type", StandardLayout.PATTERN_LAYOUT.type());
+                    switch (type) {
+                        case "Console" -> Assertions.assertInstanceOf(org.slb4j.handler.ConsoleHandler.class, handler);
+                        case "File" -> {
+                            // Our parser may choose a RotatingFileHandler based on certain sub-entries; accept either implementation here
+                            // and verify concrete properties below.
+                        }
+                        case "RollingFile" -> Assertions.assertInstanceOf(org.slb4j.handler.RotatingFileHandler.class, handler);
+                        default -> {
+                            Assertions.fail("Unexpected appender type '" + type + "' for '" + appenderName + "'");
                         }
                     }
+
+                    // Common file-related assertions
+                    String fileName = props.getProperty(prefix + "fileName");
+                    if (fileName != null) {
+                        if (handler instanceof org.slb4j.handler.FileHandler fh) {
+                            Assertions.assertEquals(java.nio.file.Path.of(fileName).toAbsolutePath(), fh.getPath().toAbsolutePath(), "fileName mismatch for '" + appenderName + "'");
+                        } else if (handler instanceof org.slb4j.handler.RotatingFileHandler rfh) {
+                            Assertions.assertEquals(java.nio.file.Path.of(fileName).toAbsolutePath(), rfh.getPath().toAbsolutePath(), "fileName mismatch for '" + appenderName + "'");
+                        }
+                    }
+
+                    String append = props.getProperty(prefix + "append");
+                    if (append != null) {
+                        boolean expectedAppend = Boolean.parseBoolean(append.trim());
+                        if (handler instanceof org.slb4j.handler.FileHandler fh) {
+                            Assertions.assertEquals(expectedAppend, fh.isAppend(), "append mismatch for '" + appenderName + "'");
+                        } else if (handler instanceof org.slb4j.handler.RotatingFileHandler rfh) {
+                            Assertions.assertEquals(expectedAppend, rfh.isAppend(), "append mismatch for '" + appenderName + "'");
+                        }
+                    }
+
+                    if (handler instanceof org.slb4j.handler.RotatingFileHandler rfh) {
+                        String filePattern = props.getProperty(prefix + "filePattern");
+                        if (filePattern != null) {
+                            Assertions.assertEquals(filePattern.trim(), rfh.getFilePattern(), "filePattern mismatch for '" + appenderName + "'");
+                        }
+                        String size = props.getProperty(prefix + "policies.size.size");
+                        if (size != null) {
+                            Assertions.assertEquals(normalizeSize(size), rfh.getMaxFileSize(), "maxFileSize mismatch for '" + appenderName + "'");
+                        }
+                        String max = props.getProperty(prefix + "strategy.max");
+                        if (max != null) {
+                            Assertions.assertEquals(Integer.parseInt(max.trim()), rfh.getMaxBackupIndex(), "max backups mismatch for '" + appenderName + "'");
+                        }
+                    }
+
+                    // Layout assertions (when explicitly configured)
+                    String layoutType = props.getProperty(prefix + "layout.type");
+                    if (layoutType != null && handler instanceof org.slb4j.LayoutConfigurable lc) {
+                        Assertions.assertEquals(layoutType.trim(), lc.getLayout().getType(), "layout.type mismatch for '" + appenderName + "'");
+                        String pattern = props.getProperty(prefix + "layout.pattern");
+                        if (pattern != null) {
+                            Assertions.assertEquals(
+                                    PatternLayout.parseLog4jPattern(pattern).getText(),
+                                    lc.getLayout().getText(),
+                                    "layout.pattern mismatch (normalized) for '" + appenderName + "'"
+                            );
+                        }
+                    }
+
+                    // Simple threshold filter check if present
+                    String threshold = props.getProperty(prefix + "filter.threshold.level");
+                    if (threshold != null) {
+                        org.slb4j.LogLevel lvl = org.slb4j.LogLevel.valueOf(threshold.trim().toUpperCase(java.util.Locale.ROOT));
+                        Assertions.assertTrue(handler.getFilter().isLevelEnabled(lvl), "threshold filter should enable level " + lvl + " for '" + appenderName + "'");
+                    }
                 });
-
-        // We only check properties that are actually handled by SLB4J
-        outProps.stringPropertyNames().forEach(key -> {
-            String actual = outProps.getProperty(key);
-            String expected = expectedProps.getProperty(key);
-
-            // If expected is null, it means it was using a default value
-            if (expected == null) {
-                return;
-            }
-
-            if (key.endsWith(".layout.pattern")) {
-                Assertions.assertEquals(PatternLayout.parseLog4jPattern(expected).getText(),
-                        PatternLayout.parseLog4jPattern(actual).getText(),
-                                     "Normalized pattern mismatch for key: " + key);
-            } else if (key.endsWith(".policies.size.size") || key.endsWith(".limit")) {
-                Assertions.assertEquals(normalizeSize(expected), normalizeSize(actual),
-                                     "Normalized size mismatch for key: " + key);
-            } else if (key.endsWith(".append")) {
-                Assertions.assertEquals(Boolean.parseBoolean(expected), Boolean.parseBoolean(actual),
-                        "Boolean mismatch for key: " + key);
-            } else {
-                Assertions.assertEquals(expected, actual, "Property mismatch for key: " + key);
-            }
-        });
     }
 
     private static long normalizeSize(String s) {

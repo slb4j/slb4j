@@ -21,7 +21,6 @@ import org.slb4j.MDC;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.support.StackWalkerLocationResolver;
-import org.slb4j.support.Util;
 import org.slf4j.Marker;
 import org.slf4j.event.Level;
 import org.slf4j.helpers.AbstractLogger;
@@ -49,7 +48,7 @@ public final class LoggerSlf4j extends AbstractLogger {
     private static final long serialVersionUID = 1L;
 
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
-    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(LoggerSlf4j.class.getName(), "org.slf4j");
+    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(LoggerSlf4j.class, "org.slf4j");
     private static final MDC MDC_INSTANCE = new MDC() {
         @Override
         public @Nullable String get(String key) {
@@ -109,13 +108,13 @@ public final class LoggerSlf4j extends AbstractLogger {
      */
     public static Supplier<String> formatSlf4jMessage(String messagePattern, @Nullable Object @Nullable [] arguments) {
         if (arguments != null && arguments.length > 0) {
-            return Util.cachingStringSupplier(() -> {
+            return () -> {
                 try {
                     return MessageFormatter.arrayFormat(messagePattern, arguments).getMessage();
                 } catch (Exception e) {
                     return messagePattern + " " + Arrays.toString(arguments);
                 }
-            });
+            };
         } else {
             return messagePattern::toString;
         }

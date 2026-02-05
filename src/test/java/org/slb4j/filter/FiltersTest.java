@@ -95,7 +95,7 @@ class FiltersTest {
 
     @Test
     void testCombinedFilter() {
-        LogLevelFilter f1 = new LogLevelFilter("f1", LogLevel.INFO);
+        LogLevelFilter f1 = LogLevelFilter.pass(LogLevel.INFO);
         MarkerFilter f2 = new MarkerFilter("f2", "IMPORTANT"::equals);
         CombinedFilter combined = new CombinedFilter(f1, f2);
 

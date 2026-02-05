@@ -17,6 +17,7 @@ package org.slb4j;
 
 import org.slb4j.filter.CombinedFilter;
 import org.jspecify.annotations.Nullable;
+import org.slb4j.filter.LogLevelFilter;
 
 import java.util.function.Supplier;
 
@@ -105,7 +106,7 @@ public interface LogFilter {
      * @param t          the throwable associated with the log entry, can be {@code null}
      * @return {@code true}, if the log entry should be processed, {@code false} if it should be filtered out
      */
-    default boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<@Nullable String> msg, @Nullable Throwable t) {
+    default boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, Supplier<String> msg, @Nullable Throwable t) {
         return test(timestamp, loggerName, lvl, mrk, mdc, msg.get(), t);
     }
 
@@ -166,62 +167,12 @@ final class LogFilterConstants {
      * <p>This filter implementation always returns true, indicating that all log entries should be included and
      * none filtered out.
      */
-    static final LogFilter ALL_PASS_FILTER = new LogFilter() {
-        @Override
-        public String name() {
-            return "ALL PASS";
-        }
-
-        @Override
-        public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
-            return true;
-        }
-
-        @Override
-        public boolean isEnabled(String loggerName, LogLevel logLevel, @Nullable String marker) {
-            return true;
-        }
-
-        @Override
-        public LogFilter andThen(LogFilter other) {
-            return other;
-        }
-    };
+    static final LogFilter ALL_PASS_FILTER = LogLevelFilter.allPass();
 
     /**
      * A LogFilter that allows no log entries to pass through.
      *
      * <p>This filter implementation always returns false, indicating that all log entries should be filtered out.
      */
-    static final LogFilter NONE_PASS_FILTER = new LogFilter() {
-        @Override
-        public String name() {
-            return "NONE PASS";
-        }
-
-        @Override
-        public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
-            return false;
-        }
-
-        @Override
-        public boolean isEnabled(String loggerName, LogLevel logLevel, @Nullable String marker) {
-            return false;
-        }
-
-        @Override
-        public boolean isLevelEnabled(LogLevel logLevel) {
-            return false;
-        }
-
-        @Override
-        public boolean isMarkerEnabled(@Nullable String marker) {
-            return false;
-        }
-
-        @Override
-        public LogFilter andThen(LogFilter other) {
-            return this;
-        }
-    };
+    static final LogFilter NONE_PASS_FILTER = LogLevelFilter.nonePass();
 }

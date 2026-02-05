@@ -31,7 +31,9 @@ import java.util.stream.Stream;
  */
 public final class StackWalkerLocationResolver implements LocationResolver {
 
-    private final String loggerClassName;
+    private static final StackWalker STACK_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+
+    private final Class<?> loggerClass;
     private final String infraPackage;
 
     /**
@@ -40,13 +42,13 @@ public final class StackWalkerLocationResolver implements LocationResolver {
      * which package names to treat as part of the logging infrastructure when analyzing
      * the call stack.
      *
-     * @param loggerClassName the fully qualified class name of the logger
-     * @param infraPackage a list of package name prefixes representing the
+     * @param loggerClass   the class of the logger
+     * @param infraPackage  a list of package name prefixes representing the
      *                      infrastructure components to be excluded when resolving
      *                      the relevant stack frame
      */
-    public StackWalkerLocationResolver(String loggerClassName, String infraPackage) {
-        this.loggerClassName = loggerClassName;
+    public StackWalkerLocationResolver(Class<?> loggerClass, String infraPackage) {
+        this.loggerClass = loggerClass;
         this.infraPackage = infraPackage;
     }
 
@@ -58,7 +60,7 @@ public final class StackWalkerLocationResolver implements LocationResolver {
      *         frame exists in the stack trace.
      */
     public Location resolve() {
-        return StackWalker.getInstance().walk(this::findStackFrame);
+        return STACK_WALKER.walk(this::findStackFrame);
     }
 
     private StackFrameLocation findStackFrame(Stream<StackFrame> stream) {
@@ -69,7 +71,7 @@ public final class StackWalkerLocationResolver implements LocationResolver {
             iterator.next();
 
             // 2. Skip frames until we hit the logger instance
-            while (!loggerClassName.equals(iterator.next().getClassName())) {
+            while (loggerClass != iterator.next().getDeclaringClass()) {
                 // nothing to do
             }
 

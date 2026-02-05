@@ -81,7 +81,7 @@ public final class SLB4J {
             config = LoggingConfiguration.defaultConfiguration();
         }
 
-        config.getHandlers().forEach(DISPATCHER::addLogHandler);
+        config.getHandlers().values().forEach(DISPATCHER::addLogHandler);
         DISPATCHER.setFilter(config.getRootFilter());
 
         // === wire the logging frontends

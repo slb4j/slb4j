@@ -34,6 +34,7 @@ public final class ISO8601TimeStampFormatter extends AbstractTimeStampFormatter 
 
     private final char dateTimeSeparator;
     private final char millisSeparator;
+    private final boolean includeOffset;
 
     /**
      * Constructs an {@code ISO8601TimeStampFormatter} with custom separators for date-time and milliseconds,
@@ -41,16 +42,18 @@ public final class ISO8601TimeStampFormatter extends AbstractTimeStampFormatter 
      *
      * @param dateTimeSeparator the character used to separate the date and time components in the formatted timestamp
      * @param millisSeparator   the character used to separate the seconds and milliseconds components in the formatted timestamp
+     * @param inlcudeOffset     whether to include the time zone offset in the formatted timestamp
      * @param zoneId            the {@link ZoneId} used for formatting the timestamp, or {@code null} to default to the system time zone
      */
-    public ISO8601TimeStampFormatter(char dateTimeSeparator, char millisSeparator, @Nullable ZoneId zoneId) {
+    public ISO8601TimeStampFormatter(char dateTimeSeparator, char millisSeparator, boolean inlcudeOffset, @Nullable ZoneId zoneId) {
         super(zoneId == null ? ZoneId.systemDefault() : zoneId);
         this.dateTimeSeparator = dateTimeSeparator;
         this.millisSeparator = millisSeparator;
+        this.includeOffset = inlcudeOffset;
     }
 
     @Override
-    protected void appendTo(Appendable app, int y, int M, int d, int H, int m, int s, int S) throws IOException {
+    protected void appendTo(Appendable app, int y, int M, int d, int H, int m, int s, int S, int offsetSeconds) throws IOException {
         int q = y / 100;
         app.append(DIGIT_TENS[q]).append(DIGIT_ONES[q]);
         q = y % 100;
@@ -70,5 +73,8 @@ public final class ISO8601TimeStampFormatter extends AbstractTimeStampFormatter 
         app.append(DIGIT_ONES[q1]);
         q1 = S % 100;
         app.append(DIGIT_TENS[q1]).append(DIGIT_ONES[q1]);
+        if (includeOffset) {
+            appendOffset(app, offsetSeconds);
+        }
     }
 }

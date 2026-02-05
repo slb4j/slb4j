@@ -199,7 +199,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
             String loggerText = tfLoggerName.getText().toLowerCase(Locale.ROOT).strip();
             String messageText = tfMessageContent.getText();
 
-            LogFilter filter = level == null ? LogFilter.allPass() : new LogLevelFilter("Filter level", level);
+            LogFilter filter = level == null ? LogFilter.allPass() : LogLevelFilter.pass(level);
             if (!loggerText.isEmpty()) {
                 filter = filter.andThen(new LoggerNameFilter("loggerName", name -> name.toLowerCase(Locale.ROOT).contains(loggerText)));
             }

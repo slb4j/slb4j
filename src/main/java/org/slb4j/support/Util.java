@@ -19,6 +19,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.Locale;
 import java.util.function.Supplier;
 
 /**
@@ -158,12 +159,39 @@ public final class Util {
         }
 
         for (java.nio.file.Path part : p) {
-            if (sb.length() != 0 && sb.charAt(sb.length() - 1) != '/')
+            if (!sb.isEmpty() && sb.charAt(sb.length() - 1) != '/')
                 sb.append('/');
             sb.append(part.toString());
         }
 
         return sb.toString();
+    }
+
+    /**
+     * Parses a human-readable size string and converts it into a size in bytes.
+     * The input string can include units such as "B" (bytes), "KB" (kilobytes),
+     * "MB" (megabytes), or "GB" (gigabytes). If no unit is provided, the input
+     * is interpreted as bytes.
+     *
+     * @param s the size string to parse; must not be null or empty and must follow
+     *          the format {@literal "<number><unit>"} where the unit is optional or one of
+     *          "B", "KB", "MB", "GB". It is case-insensitive.
+     * @return the parsed size in bytes as a long value. If the unit is not specified,
+     *         the value is assumed to be in bytes.
+     * @throws NumberFormatException if the numeric part of the size string is invalid.
+     */
+    public static long parseSize(String s) {
+        s = s.strip().toUpperCase(Locale.ROOT);
+        if (s.endsWith("MB")) {
+            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024L * 1024L;
+        } else if (s.endsWith("KB")) {
+            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024L;
+        } else if (s.endsWith("GB")) {
+            return Long.parseLong(s.substring(0, s.length() - 2).strip()) * 1024L * 1024L * 1024L;
+        } else if (s.endsWith("B")) {
+            return Long.parseLong(s.substring(0, s.length() - 1).strip());
+        }
+        return Long.parseLong(s);
     }
 
     private static final class CachingStringSupplier implements Supplier<String> {

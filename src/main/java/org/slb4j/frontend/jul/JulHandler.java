@@ -21,7 +21,6 @@ import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.support.StackWalkerLocationResolver;
-import org.slb4j.support.Util;
 
 import java.util.function.Supplier;
 import java.util.logging.Handler;
@@ -39,7 +38,7 @@ import java.util.logging.Logger;
 public final class JulHandler extends Handler {
 
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
-    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(Logger.class.getName(), "java.util.logging");
+    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(Logger.class, "java.util.logging");
 
     /**
      * Constructs a new instance of the {@code JulHandler}.
@@ -77,16 +76,10 @@ public final class JulHandler extends Handler {
      *         no parameters are provided or an error occurs during formatting
      */
     public static Supplier<String> formatJulMessage(String pattern, @Nullable Object @Nullable [] params) {
-        if (params == null || params.length == 0) {
-            return pattern::toString;
+        if (pattern.indexOf('{') != -1 || pattern.indexOf('\'') != -1) {
+            return () -> java.text.MessageFormat.format(pattern, params);
         }
-        return Util.cachingStringSupplier(() -> {
-            try {
-                return java.text.MessageFormat.format(pattern, params);
-            } catch (Exception e) {
-                return pattern;
-            }
-        });
+        return pattern::toString;
     }
 
     @Override

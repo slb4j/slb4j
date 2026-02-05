@@ -222,7 +222,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
 
     /**
      * Handles the processing and writing of a log entry.
-     *
+     * <p>
      * This method formats a log entry using the specified parameters, writes the formatted
      * log entry to the associated writer, and optionally flushes the writer if the log level
      * meets or exceeds the configured flush threshold.
@@ -259,7 +259,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
 
     /**
      * Writes the layout header to the underlying writer, if it is defined and non-empty.
-     *
+     * <p>
      * This method retrieves the header from the layout using {@code layout.getHeader()},
      * and writes it to the {@code Writer} instance provided by the {@code writer()} method.
      * If the header is an empty string, no action is performed. The writer is flushed
@@ -279,7 +279,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     /**
      * Writes the footer section of the log layout to the underlying writer, if the
      * footer is defined and non-empty.
-     *
+     * <p>
      * This method retrieves the footer from the layout using {@code layout.getFooter()}
      * and writes it to the {@code Writer} instance provided by the {@code writer()} method.
      * If the footer is an empty string or the writer is {@code null}, no action is performed.
@@ -301,27 +301,22 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * Handles the shutdown process for the log handler, ensuring that any required
      * cleanup tasks are performed, such as writing the footer to the log file and
      * releasing resources.
-     *
+     * <p>
      * This method writes the footer, if available, by invoking {@code layout.getFooter()}
      * and uses the {@code writer()} method to obtain a {@code Writer} instance. After writing
      * the footer, the method ensures that the writer is properly closed, even in the event
      * of an exception.
-     *
+     * <p>
      * If an {@code IOException} occurs, an error message is printed to {@code Util.err()} to
      * indicate that the log file could not be closed successfully.
-     *
+     * <p>
      * The method is intended to be overridden in subclasses if additional custom cleanup
      * tasks are required during shutdown.
      */
     protected void onShutDown() {
         try {
-            Writer writer = writer();
-            if (writer != null) {
-                try {
-                    writeLayoutFooter();
-                } finally {
-                    writer.close();
-                }
+            try (Writer writer = writer()) {
+                writeLayoutFooter();
             }
         } catch (IOException e) {
             Util.err().println("Error closing log file: " + e.getMessage());

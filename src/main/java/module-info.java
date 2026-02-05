@@ -38,6 +38,7 @@ module org.slb4j {
     opens org.slb4j.frontend.slf4j;
     opens org.slb4j.frontend.jcl;
     exports org.slb4j.support.formatter;
+    exports org.slb4j.config;
 
     requires org.jspecify;
 

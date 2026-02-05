@@ -63,16 +63,23 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         super(name);
         this.path = path;
         this.append = append;
+        this.rotationTimeUnit = java.time.temporal.ChronoUnit.DAYS;
         this.writer = openFile();
+    }
+
+    private Writer nextFile() throws IOException {
+        lock.lock();
+        try {
+            writer.close();
+            return openFile();
+        } finally {
+            lock.unlock();
+        }
     }
 
     private Writer openFile() throws IOException {
         lock.lock();
         try {
-            if (writer != null) {
-                writer.close();
-            }
-
             Path parent = path.getParent();
             if (parent != null) {
                 Files.createDirectories(parent);
@@ -192,9 +199,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     private void rotate() throws IOException {
         lock.lock();
         try {
-            if (writer != null) {
-                writer.close();
-            }
+            writer.close();
 
             if (filePattern != null && !filePattern.isEmpty()) {
                 rotateWithPattern();
@@ -202,7 +207,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
                 rotateWithIndex();
             }
 
-            openFile();
+            nextFile();
         } finally {
             lock.unlock();
         }

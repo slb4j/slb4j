@@ -18,7 +18,7 @@ public abstract sealed class AbstractTimeStampFormatter implements TimeStampForm
      */
     @FunctionalInterface
     interface Part {
-        void append(Appendable app, int y, int M, int d, int H, int m, int s, int S) throws IOException;
+        void append(Appendable app, int y, int M, int d, int H, int m, int s, int S, int offsetSeconds) throws IOException;
     }
 
     /**
@@ -67,7 +67,7 @@ public abstract sealed class AbstractTimeStampFormatter implements TimeStampForm
      *
      * @param zoneId the zone ID to use
      */
-    public AbstractTimeStampFormatter(ZoneId zoneId) {this.offsetProvider = new TimeZoneOffsetProvider(zoneId);}
+    protected AbstractTimeStampFormatter(ZoneId zoneId) {this.offsetProvider = new TimeZoneOffsetProvider(zoneId);}
 
     /**
      * {@inheritDoc}
@@ -103,24 +103,25 @@ public abstract sealed class AbstractTimeStampFormatter implements TimeStampForm
         int hour = secsOfDay / 3600;
         int minute = (secsOfDay % 3600) / 60;
         int second = secsOfDay % 60;
-
-        appendTo(app, y, m, d, hour, minute, second, millis);
+        
+        appendTo(app, y, m, d, hour, minute, second, millis, offset);
     }
 
     /**
      * Formats the timestamp components into the given {@link Appendable}.
      *
-     * @param app    the appendable to write to
-     * @param y      the year
-     * @param m      the month (1-12)
-     * @param d      the day of month (1-31)
-     * @param hour   the hour (0-23)
-     * @param minute the minute (0-59)
-     * @param second the second (0-59)
-     * @param millis the milliseconds (0-999)
+     * @param app           the appendable to write to
+     * @param y             the year
+     * @param m             the month (1-12)
+     * @param d             the day of month (1-31)
+     * @param hour          the hour (0-23)
+     * @param minute        the minute (0-59)
+     * @param second        the second (0-59)
+     * @param millis        the milliseconds (0-999)
+     * @param offsetSeconds the timezone offset in seconds
      * @throws IOException if an I/O error occurs
      */
-    protected abstract void appendTo(Appendable app, int y, int m, int d, int hour, int minute, int second, int millis) throws IOException;
+    protected abstract void appendTo(Appendable app, int y, int m, int d, int hour, int minute, int second, int millis, int offsetSeconds) throws IOException;
 
     /**
      * Returns the day of week for the given date using Zeller's congruence.
@@ -256,6 +257,35 @@ public abstract sealed class AbstractTimeStampFormatter implements TimeStampForm
     }
 
     /**
+     * Appends the timezone offset in ISO 8601 format (e.g., "Z" or "+HH:mm").
+     *
+     * @param app           the appendable
+     * @param offsetSeconds the offset in seconds
+     * @throws IOException if an I/O error occurs
+     */
+    protected static void appendOffset(Appendable app, int offsetSeconds) throws IOException {
+        if (offsetSeconds == 0) {
+            app.append('Z');
+            return;
+        }
+
+        if (offsetSeconds < 0) {
+            app.append('-');
+            offsetSeconds = -offsetSeconds;
+        } else {
+            app.append('+');
+        }
+
+        int totalMinutes = offsetSeconds / 60;
+        int hours = totalMinutes / 60;
+        int minutes = totalMinutes % 60;
+
+        appendInt2(app, hours);
+        app.append(':');
+        appendInt2(app, minutes);
+    }
+
+    /**
      * Converts the given timestamp to its corresponding string representation.
      * The method formats the timestamp using a builder-like approach, relying on
      * internally configured components such as pre-defined formatting rules and
@@ -272,6 +302,7 @@ public abstract sealed class AbstractTimeStampFormatter implements TimeStampForm
      * @throws UncheckedIOException if an I/O error occurs while constructing
      *                              the formatted string.
      */
+    @Override
     public String toString(long timestamp) {
         try {
             StringBuilder sb = new StringBuilder(32);

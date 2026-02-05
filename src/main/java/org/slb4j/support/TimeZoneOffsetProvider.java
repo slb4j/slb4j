@@ -77,9 +77,15 @@ public class TimeZoneOffsetProvider {
         }
 
         // Directional search: search only the half of the array where the timestamp could be
-        boolean isPast = timestamp < startup.start;
-        int start = isPast ? 0 : startupIdx + 1;
-        int end = isPast ? startupIdx : intervals.length;
+        int start;
+        int end;
+        if (timestamp < startup.start) {
+            start = 0;
+            end = startupIdx;
+        } else {
+            start = startupIdx + 1;
+            end = intervals.length;
+        }
 
         for (int i = start; i < end; i++) {
             if (intervals[i].contains(timestamp)) {

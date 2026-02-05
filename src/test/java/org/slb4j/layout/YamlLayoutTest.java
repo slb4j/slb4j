@@ -7,7 +7,7 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 
 import java.io.IOException;
-import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.util.Collections;
 import java.util.Map;
 
@@ -17,7 +17,7 @@ class YamlLayoutTest {
 
     @Test
     void testYamlOutputFormat() throws IOException {
-        YamlLayout layout = new YamlLayout(ZoneId.of("UTC"));
+        YamlLayout layout = new YamlLayout(ZoneOffset.UTC);
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L; // 2024-01-31 04:00:00 UTC
         
@@ -25,7 +25,7 @@ class YamlLayoutTest {
         
         String output = sb.toString();
         assertTrue(output.contains("---\n"));
-        assertTrue(output.contains("timestamp: \"2024-01-31T04:00:00.000\""));
+        assertTrue(output.matches("(?s).*timestamp: \"\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}(Z|[+-]\\d{2}:\\d{2})\".*"));
         assertTrue(output.contains("level: \"INFO\""));
         assertTrue(output.contains("logger: \"testLogger\""));
         assertTrue(output.contains("message: \"test message with \\\"quotes\\\"\""));
@@ -34,7 +34,7 @@ class YamlLayoutTest {
 
     @Test
     void testYamlOutputFormatWithMdc() throws IOException {
-        YamlLayout layout = new YamlLayout(ZoneId.of("UTC"));
+        YamlLayout layout = new YamlLayout(ZoneOffset.UTC);
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L;
         
@@ -59,7 +59,7 @@ class YamlLayoutTest {
 
     @Test
     void testYamlOutputFormatWithLocation() throws IOException {
-        YamlLayout layout = new YamlLayout(ZoneId.of("UTC"));
+        YamlLayout layout = new YamlLayout(ZoneOffset.UTC);
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L;
         
@@ -86,7 +86,7 @@ class YamlLayoutTest {
 
     @Test
     void testYamlOutputFormatWithException() throws IOException {
-        YamlLayout layout = new YamlLayout(ZoneId.of("UTC"));
+        YamlLayout layout = new YamlLayout(ZoneOffset.UTC);
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L;
         

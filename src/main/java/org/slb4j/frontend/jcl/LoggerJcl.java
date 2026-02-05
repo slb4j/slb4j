@@ -22,7 +22,6 @@ import org.slb4j.LogLevel;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.apache.commons.logging.Log;
 import org.slb4j.support.StackWalkerLocationResolver;
-import org.slb4j.support.Util;
 
 import java.util.function.Supplier;
 
@@ -32,7 +31,7 @@ import java.util.function.Supplier;
  */
 public final class LoggerJcl implements Log {
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
-    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(LoggerJcl.class.getName(), "org.slb4j.frontend.jcl");
+    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(LoggerJcl.class, "org.slb4j.frontend.jcl");
 
     private final String name;
 
@@ -68,11 +67,7 @@ public final class LoggerJcl implements Log {
     }
 
     private static Supplier<String> formatMessageJcl(@Nullable Object message) {
-        return switch (message) {
-            case null -> "null"::toString;
-            case String s -> s::toString;
-            default -> Util.cachingStringSupplier(message::toString);
-        };
+        return () -> String.valueOf(message);
     }
 
     @Override

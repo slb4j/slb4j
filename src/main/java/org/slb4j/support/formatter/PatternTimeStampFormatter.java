@@ -91,10 +91,14 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
     public static TimeStampFormatter parse(String pattern, ZoneId zoneId, Locale locale) {
         // highly optimized timestamp formatters for the most use formats
         return switch (pattern) {
-            case "yyyy-MM-dd HH:mm:ss,SSS" -> TimeStampFormatter.DEFAULT_FORMATTER;
-            case "yyyy-MM-ddTHH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss.SSS" -> TimeStampFormatter.ISO8601_FORMATTER;
-            case "yyyy-MM-dd HH:mm:ss.SSS" -> new ISO8601TimeStampFormatter(' ', '.', zoneId);
-            case "yyyy-MM-ddTHH:mm:ss,SSS", "yyyy-MM-dd'T'HH:mm:ss,SSS" -> new ISO8601TimeStampFormatter('T', ',', zoneId);
+            case "yyyy-MM-ddTHH:mm:ss.SSS", "yyyy-MM-dd'T'HH:mm:ss.SSS" -> new ISO8601TimeStampFormatter('T', '.', false, zoneId);
+            case "yyyy-MM-dd HH:mm:ss.SSS" -> new ISO8601TimeStampFormatter(' ', '.', false, zoneId);
+            case "yyyy-MM-dd HH:mm:ss,SSS" -> new ISO8601TimeStampFormatter(' ', ',', false, zoneId);
+            case "yyyy-MM-ddTHH:mm:ss,SSS", "yyyy-MM-dd'T'HH:mm:ss,SSS" -> new ISO8601TimeStampFormatter('T', ',', false, zoneId);
+            case "yyyy-MM-ddTHH:mm:ss.SSSX", "yyyy-MM-dd'T'HH:mm:ss.SSSX" -> TimeStampFormatter.ISO8601_FORMATTER;
+            case "yyyy-MM-dd HH:mm:ss.SSSX" -> new ISO8601TimeStampFormatter(' ', '.', true, zoneId);
+            case "yyyy-MM-dd HH:mm:ss,SSSX" -> TimeStampFormatter.DEFAULT_FORMATTER;
+            case "yyyy-MM-ddTHH:mm:ss,SSSX", "yyyy-MM-dd'T'HH:mm:ss,SSSX" -> new ISO8601TimeStampFormatter('T', ',', true, zoneId);
             default -> parseCustomFormat(pattern, zoneId, locale);
         };
     }
@@ -177,7 +181,7 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
      */
     private static final class EmptyPart implements Part {
         @Override
-        public void append(Appendable app, int y, int M, int d, int H, int m, int s, int S) throws IOException {
+        public void append(Appendable app, int y, int M, int d, int H, int m, int s, int S, int offsetSeconds) throws IOException {
             // nothing to do
         }
     }
@@ -189,7 +193,7 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
      */
     private static final record LiteralStringPart(String literal) implements Part {
         @Override
-        public void append(Appendable app, int y, int M, int d, int H, int m, int s, int S) throws IOException {
+        public void append(Appendable app, int y, int M, int d, int H, int m, int s, int S, int offsetSeconds) throws IOException {
             app.append(literal);
         }
     }
@@ -201,14 +205,15 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
      */
     private static final record LiteralCharPart(char c) implements Part {
         @Override
-        public void append(Appendable app, int y, int M, int d, int H, int m, int s, int S) throws IOException {
+        public void append(Appendable app, int y, int M, int d, int H, int m, int s, int S, int offsetSeconds) throws IOException {
             app.append(c);
         }
     }
 
-    protected void appendTo(Appendable app, int y, int m, int d, int hour, int minute, int second, int millis) throws IOException {
+    @Override
+    protected void appendTo(Appendable app, int y, int m, int d, int hour, int minute, int second, int millis, int offsetSeconds) throws IOException {
         for (Part part : compiledParts) {
-            part.append(app, y, m, d, hour, minute, second, millis);
+            part.append(app, y, m, d, hour, minute, second, millis, offsetSeconds);
         }
     }
 
@@ -216,63 +221,64 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
         return switch (c) {
             case 'y' ->
                 switch (count) {
-                     case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, y % 100);
-                     case 4 -> (app, y, M, d, H, m, s, S) -> appendInt4(app, y);
-                     default -> (app, y, M, d, H, m, s, S) -> app.append(Integer.toString(y));
+                     case 2 -> (app, y, M, d, H, m, s, S, O) -> appendInt2(app, y % 100);
+                     case 4 -> (app, y, M, d, H, m, s, S, O) -> appendInt4(app, y);
+                     default -> (app, y, M, d, H, m, s, S, O) -> app.append(Integer.toString(y));
                 };
             case 'M' ->
                 switch (count) {
-                    case 0, 1 -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, M);
-                    case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, M);
+                    case 0, 1 -> (app, y, M, d, H, m, s, S, O) -> appendInt(app, count, M);
+                    case 2 -> (app, y, M, d, H, m, s, S, O) -> appendInt2(app, M);
                     default -> {
                         String[] names = getMonthNames(locale, count >= 4);
-                        yield (app, y, M, d, H, m, s, S) -> app.append(names[M - 1]);
+                        yield (app, y, M, d, H, m, s, S, O) -> app.append(names[M - 1]);
                     }
                 };
             case 'd' -> switch (count) {
-                case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, d);
-                default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, d);
+                case 2 -> (app, y, M, d, H, m, s, S, O) -> appendInt2(app, d);
+                default -> (app, y, M, d, H, m, s, S, O) -> appendInt(app, count, d);
             };
             case 'E' -> {
                 String[] names = getDayNames(locale, count >= 4);
-                yield (app, y, M, d, H, m, s, S) -> app.append(names[getDayOfWeek(y, M, d)]);
+                yield (app, y, M, d, H, m, s, S, O) -> app.append(names[getDayOfWeek(y, M, d)]);
             }
             case 'h' ->
                 switch (count) {
-                    case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, getHour12(H));
-                    default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, getHour12(H));
+                    case 2 -> (app, y, M, d, H, m, s, S, O) -> appendInt2(app, getHour12(H));
+                    default -> (app, y, M, d, H, m, s, S, O) -> appendInt(app, count, getHour12(H));
                 };
             case 'H' ->
                     switch (count) {
-                        case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, H);
-                        default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, H);
+                        case 2 -> (app, y, M, d, H, m, s, S, O) -> appendInt2(app, H);
+                        default -> (app, y, M, d, H, m, s, S, O) -> appendInt(app, count, H);
                     };
             case 'm' ->
                     switch (count) {
-                        case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, m);
-                        default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, m);
+                        case 2 -> (app, y, M, d, H, m, s, S, O) -> appendInt2(app, m);
+                        default -> (app, y, M, d, H, m, s, S, O) -> appendInt(app, count, m);
                     };
             case 's' ->
                     switch (count) {
-                        case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, s);
-                        default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, s);
+                        case 2 -> (app, y, M, d, H, m, s, S, O) -> appendInt2(app, s);
+                        default -> (app, y, M, d, H, m, s, S, O) -> appendInt(app, count, s);
                     };
             case 'S' ->
                     switch (count) {
-                        case 2 -> (app, y, M, d, H, m, s, S) -> appendInt2(app, S);
-                        case 3 -> (app, y, M, d, H, m, s, S) -> appendInt3(app, S);
-                        default -> (app, y, M, d, H, m, s, S) -> appendInt(app, count, S);
+                        case 2 -> (app, y, M, d, H, m, s, S, O) -> appendInt2(app, S);
+                        case 3 -> (app, y, M, d, H, m, s, S, O) -> appendInt3(app, S);
+                        default -> (app, y, M, d, H, m, s, S, O) -> appendInt(app, count, S);
                     };
             case 'a' -> {
                 String[] ampm = getAmPmStrings(locale);
-                yield (app, y, M, d, H, m, s, S) -> app.append(H < 12 ? ampm[0] : ampm[1]);
+                yield (app, y, M, d, H, m, s, S, O) -> app.append(H < 12 ? ampm[0] : ampm[1]);
             }
+            case 'X' -> (app, y, M, d, H, m, s, S, O) -> appendOffset(app, O);
             default -> switch (count) {
-                case 0 -> (app, y, M, d, H, m, s, S) -> {};
-                case 1 -> (app, y, M, d, H, m, s, S) -> app.append(c);
+                case 0 -> (app, y, M, d, H, m, s, S, O) -> {};
+                case 1 -> (app, y, M, d, H, m, s, S, O) -> app.append(c);
                 default -> {
                     String literal = String.valueOf(c).repeat(count);
-                    yield (app, y, M, d, H, m, s, S) -> app.append(literal);
+                    yield (app, y, M, d, H, m, s, S, O) -> app.append(literal);
                 }
             };
         };

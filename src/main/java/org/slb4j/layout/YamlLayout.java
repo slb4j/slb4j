@@ -7,13 +7,12 @@ import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.MDC;
 import org.slb4j.support.formatter.ISO8601TimeStampFormatter;
-import org.slb4j.support.formatter.PatternTimeStampFormatter;
 import org.slb4j.support.TimeStampFormatter;
 import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.time.ZoneId;
-import java.util.Locale;
+import java.time.ZoneOffset;
 import java.util.Map;
 
 /**
@@ -22,7 +21,7 @@ import java.util.Map;
 public final class YamlLayout implements LogLayout {
 
     private static final class SingletonHolder {
-        static final YamlLayout INSTANCE = new YamlLayout(ZoneId.systemDefault());
+        static final YamlLayout INSTANCE = new YamlLayout(ZoneOffset.UTC);
     }
 
     /**
@@ -39,10 +38,10 @@ public final class YamlLayout implements LogLayout {
     /**
      * Constructs a new instance of the YamlLayout class for the given ZoneId.
      *
-     * @param zoneId the time zone for formatting timestamps.
+     * @param zoneId the time zone identifier for formatting timestamps
      */
     public YamlLayout(ZoneId zoneId) {
-        this.timeStampFormatter = new ISO8601TimeStampFormatter('T', '.', zoneId);
+        this.timeStampFormatter = new ISO8601TimeStampFormatter('T', '.', true, zoneId);
     }
 
     @Override
@@ -105,7 +104,7 @@ public final class YamlLayout implements LogLayout {
         }
     }
 
-    private void appendYamlEscaped(Appendable app, @Nullable String s) throws IOException {
+    private static void appendYamlEscaped(Appendable app, @Nullable String s) throws IOException {
         if (s == null) {
             app.append("null");
             return;

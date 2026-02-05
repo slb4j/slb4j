@@ -38,7 +38,7 @@ import java.util.function.Supplier;
  */
 public final class LoggerLog4j extends AbstractLogger {
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
-    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver("org.apache.logging.log4j.spi.AbstractLogger", "org.apache.logging");
+    private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(LoggerLog4j.class, "org.apache.logging");
 
     private static final MDC MDC_INSTANCE = new MDC() {
         @Override

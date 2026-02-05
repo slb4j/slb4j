@@ -143,6 +143,14 @@ public final class FxLogPane extends BorderPane implements LogPane {
     private static final int MAX_BUFFER_SIZE = 4096;
 
     /**
+     * A static constant representing the default log layout used for formatting
+     * log entries within the application. This layout is a predefined instance
+     * provided by the {@link PatternLayout}, typically configured to determine
+     * how log messages are displayed or recorded.
+     */
+    private static final LogLayout LAYOUT = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
+
+    /**
      * A {@code StringBuilder} instance used as a buffer for accumulating
      * log entry data before rendering or outputting. The initial capacity of
      * the buffer is defined by the constant {@code MAX_BUFFER_SIZE}.
@@ -155,7 +163,6 @@ public final class FxLogPane extends BorderPane implements LogPane {
 
     private final LogBuffer logBuffer;
     private boolean darkMode = false;
-    private final LogLayout pattern = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
     private final TextArea details;
     private final TableView<@Nullable LogEntry> tableView;
 
@@ -401,7 +408,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
     private String formatLogEntry(LogEntry entry) {
         try {
             StringBuilder sb = getStringBuilder();
-            pattern.formatLogEntry(
+            LAYOUT.formatLogEntry(
                     sb,
                     entry.time(),
                     entry.logger(),
@@ -495,7 +502,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
     private static void updateFilter(ComboBox<LogLevel> cbLogLevel, TextField tfLoggerName, TextField tfMessageContent, FilteredList<LogEntry> entries) {
         LogLevel level = cbLogLevel.getSelectionModel().getSelectedItem();
 
-        LogFilter filter = new LogLevelFilter("Filter level", level);
+        LogFilter filter = LogLevelFilter.pass(level);
 
         String loggerText = tfLoggerName.getText().toLowerCase(Locale.ROOT).strip();
         if (!loggerText.isEmpty()) {

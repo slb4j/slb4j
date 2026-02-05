@@ -74,7 +74,7 @@ public final class PatternLayout implements LogLayout {
      * <p>
      * Pattern description:
      * <ul>
-     * <li>`%highlight{...}`: Highlights the enclosed pattern with console color codes (if supported by the logging system).
+     * <li>`%highlight{...}`: Highlights the enclosed pattern with console color codes (if isSupported by the logging system).
      * <li>`%d{HH:mm:ss.SSS}`: The timestamp of the log entry without the date.
      * <li>`%-5level`: The log level, left-aligned with a width of 5 characters.
      * <li>`%-30.30c{1.}`: The logger name, left-aligned and truncated to a maximum of 30 characters, showing only the first fragment of the name.
@@ -945,7 +945,7 @@ public final class PatternLayout implements LogLayout {
          * Constructs a {@code DateEntry} instance with the specified date-time pattern.
          *
          * @param pattern the pattern to be used for formatting date-time values;
-         *                supported patterns include "ISO8601", "HH:mm:ss,SSS",
+         *                isSupported patterns include "ISO8601", "HH:mm:ss,SSS",
          *                "yyyy-MM-dd HH:mm:ss,SSS", "yyyy-MM-dd HH:mm:ss", or a custom pattern.
          *                If the pattern is empty, "HH:mm:ss" will be used as the default.
          */
@@ -1046,7 +1046,7 @@ public final class PatternLayout implements LogLayout {
             app.append("\"\n");
         }
 
-        private void appendCsvEscaped(Appendable app, @Nullable String msg) throws IOException {
+        private static void appendCsvEscaped(Appendable app, @Nullable String msg) throws IOException {
             if (msg == null) {
                 app.append("null");
                 return;
@@ -1192,11 +1192,11 @@ public final class PatternLayout implements LogLayout {
     /**
      * Constructs a LogPattern using the supplied entries.
      *
-     * @param text    the pattern text
+     * @param pattern    the pattern text
      * @param entries the format pattern entries
      */
-    public PatternLayout(String text, LogPatternEntry... entries) {
-        this.text = text;
+    public PatternLayout(String pattern, LogPatternEntry... entries) {
+        this.text = pattern;
         this.entries = entries;
 
         boolean locationNeeded = false;
@@ -1295,7 +1295,7 @@ public final class PatternLayout implements LogLayout {
      * @param pattern the pattern string in Log4J style, which may include placeholders and literals
      * @return an array of {@code LogPatternEntry} instances representing the parsed pattern
      */
-    private static LogPatternEntry[] parseLog4jPatternString(String pattern) {
+    public static LogPatternEntry[] parseLog4jPatternString(String pattern) {
         List<LogPatternEntry> entries = new ArrayList<>();
         int lastEnd = 0;
         int highlightStart;

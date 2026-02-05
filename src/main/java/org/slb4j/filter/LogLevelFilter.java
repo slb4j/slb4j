@@ -20,7 +20,7 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 
-import java.util.function.Supplier;
+import java.util.Arrays;
 
 /**
  * The DefaultLogEntryFilter class is an implementation of the LogEntryFilter interface
@@ -32,26 +32,82 @@ import java.util.function.Supplier;
 public final class LogLevelFilter implements LogFilter {
 
     private final String name;
-    private final LogLevel level;
+    private final boolean[] pass;
 
     /**
-     * Constructs a new DefaultLogEntryFilter with the specified log level and filter.
+     * Constructs a LogLevelFilter instance that filters log entries based on the provided
+     * log level pass settings.
      *
-     * @param name  the name of the filter
-     * @param level the minimal level to let through
+     * @param name the name of the filter
+     * @param pass an array of boolean values indicating whether each log level should pass the filter.
+     *             The array must have a length equal to the number of LogLevel values.
+     *             Each index corresponds to a specific log level in the order they are declared
+     *             in the LogLevel enum.
      */
-    public LogLevelFilter(String name, LogLevel level) {
+    public LogLevelFilter(String name, boolean[] pass) {
         this.name = name;
-        this.level = level;
+        this.pass = Arrays.copyOf(pass, LogLevel.values().length);
     }
 
     /**
-     * Retrieves the minimum log level that this filter allows.
+     * Creates a LogLevelFilter that allows only the specified log level to pass.
      *
-     * @return the minimal log level required to pass through the filter
+     * @param level the log level to match. Only this level will be allowed to pass through the filter.
+     * @return a LogLevelFilter instance that matches the specified log level.
      */
-    public LogLevel level() {
-        return level;
+    public static LogLevelFilter match(LogLevel level) {
+        boolean[] levels = new boolean[LogLevel.values().length];
+        levels[level.ordinal()] = true;
+        return new LogLevelFilter("filter[level = " + level.name() + "]", levels);
+    }
+
+    /**
+     * Creates a {@code LogLevelFilter} that blocks all log levels, effectively allowing none to pass.
+     *
+     * @return a {@code LogLevelFilter} instance configured with all log levels denied.
+     */
+    public static LogLevelFilter nonePass() {
+        boolean[] levels = new boolean[LogLevel.values().length];
+        return new LogLevelFilter("filter[nonePass]", levels);
+    }
+
+    /**
+     * Creates a LogLevelFilter instance that allows all log levels to pass through the filter.
+     *
+     * @return A LogLevelFilter that permits all log levels without restriction.
+     */
+    public static LogLevelFilter allPass() {
+        boolean[] levels = new boolean[LogLevel.values().length];
+        Arrays.fill(levels, true);
+        return new LogLevelFilter("filter[allPass]", levels);
+    }
+
+    /**
+     * Creates a {@link LogLevelFilter} that allows log messages at the specified log level
+     * and any higher levels to pass through.
+     *
+     * @param level the minimum log level that should pass the filter; log levels lower than
+     *              this will be denied.
+     * @return a new {@link LogLevelFilter} that filters log entries based on the specified log level.
+     */
+    public static LogLevelFilter pass(LogLevel level) {
+        boolean[] levels = new boolean[LogLevel.values().length];
+        Arrays.fill(levels, level.ordinal(), LogLevel.values().length, true);
+        return new LogLevelFilter("filter[level >= " + level.name() + "]", levels);
+    }
+
+    /**
+     * Creates a {@code LogLevelFilter} that denies logging for all log levels less than
+     * the specified {@code level}. All log levels greater than or equal to the given
+     * level will not pass the filter.
+     *
+     * @param level the log level below which all log entries are denied
+     * @return a {@code LogLevelFilter} that denies log entries below the specified level
+     */
+    public static LogLevelFilter deny(LogLevel level) {
+        boolean[] levels = new boolean[LogLevel.values().length];
+        Arrays.fill(levels, 0, level.ordinal() + 1, true);
+        return new LogLevelFilter("filter[level < " + level.name() + "]", levels);
     }
 
     @Override
@@ -61,16 +117,16 @@ public final class LogLevelFilter implements LogFilter {
 
     @Override
     public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
-        return lvl.ordinal() >= level.ordinal();
+        return pass[lvl.ordinal()];
     }
 
     @Override
-    public boolean isEnabled(String loggerName, LogLevel logLevel, @Nullable String marker) {
-        return isLevelEnabled(logLevel);
+    public boolean isEnabled(String loggerName, LogLevel lvl, @Nullable String marker) {
+        return pass[lvl.ordinal()];
     }
 
     @Override
-    public boolean isLevelEnabled(LogLevel logLevel) {
-        return logLevel.ordinal() >= level.ordinal();
+    public boolean isLevelEnabled(LogLevel lvl) {
+        return pass[lvl.ordinal()];
     }
 }

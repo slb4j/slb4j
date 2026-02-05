@@ -7,7 +7,6 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 
 import java.io.IOException;
-import java.time.ZoneId;
 import java.util.Collections;
 import java.util.Map;
 
@@ -17,24 +16,24 @@ class JsonLayoutTest {
 
     @Test
     void testJsonOutputFormat() throws IOException {
-        JsonLayout layout = new JsonLayout(ZoneId.of("UTC"));
+        JsonLayout layout = new JsonLayout(true, true, true, 1024, "...");
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L; // 2024-01-31 04:00:00 UTC
         
         layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.INFO, "testMarker", null, null, "test message with \"quotes\"", null, ConsoleCode.empty());
         
         String output = sb.toString();
-        assertTrue(output.contains("\"timestamp\":\"2024-01-31T04:00:00.000\""), "output: " + output);
+        assertTrue(output.contains("\"epochSecond\":1706673600"), "output: " + output);
         assertTrue(output.contains("\"level\":\"INFO\""), "output: " + output);
-        assertTrue(output.contains("\"logger\":\"testLogger\""), "output: " + output);
+        assertTrue(output.contains("\"loggerName\":\"\""), "output: " + output);
         assertTrue(output.contains("\"message\":\"test message with \\\"quotes\\\"\""), "output: " + output);
         assertTrue(output.contains("\"marker\":\"testMarker\""), "output: " + output);
-        assertTrue(output.startsWith("{") && output.endsWith("}\n"), "output: " + output);
+        assertTrue(output.startsWith("\"thread\":") && output.endsWith("}\n"), "output: " + output);
     }
 
     @Test
     void testJsonOutputFormatWithMdc() throws IOException {
-        JsonLayout layout = new JsonLayout(ZoneId.of("UTC"));
+        JsonLayout layout = new JsonLayout(true, true, true, 1024, "...");
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L;
         
@@ -53,12 +52,12 @@ class JsonLayoutTest {
         layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.INFO, null, mdc, null, "msg", null, ConsoleCode.empty());
         
         String output = sb.toString();
-        assertTrue(output.contains("\"mdc\":{\"key1\":\"value1\"}"));
+        assertTrue(output.contains("\"contextMap\":{\"key1\":\"value1\"}"));
     }
 
     @Test
     void testJsonOutputFormatWithLocation() throws IOException {
-        JsonLayout layout = new JsonLayout(ZoneId.of("UTC"));
+        JsonLayout layout = new JsonLayout(true, true, true, 1024, "...");
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L;
         
@@ -85,7 +84,7 @@ class JsonLayoutTest {
 
     @Test
     void testJsonOutputFormatWithException() throws IOException {
-        JsonLayout layout = new JsonLayout(ZoneId.of("UTC"));
+        JsonLayout layout = new JsonLayout(true, true, true, 1024, "...");
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L;
         
@@ -94,7 +93,8 @@ class JsonLayoutTest {
         layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.ERROR, null, null, null, "msg", t, ConsoleCode.empty());
         
         String output = sb.toString();
-        assertTrue(output.contains("\"exception\":\"java.lang.RuntimeException: test exception"));
-        assertTrue(output.contains("\\n\\tat "));
+        assertTrue(output.contains("\"thrown\":\"{"));
+        assertTrue(output.contains("\"message\": \"test exception\""));
+        assertTrue(output.contains("\"stacktrace\":\"java.lang.RuntimeException: test exception"));
     }
 }

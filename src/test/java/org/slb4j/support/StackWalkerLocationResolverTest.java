@@ -26,7 +26,7 @@ class StackWalkerLocationResolverTest {
     void testResolve() {
         // loggerClassName is Infra, infraPackage is also Infra
         StackWalkerLocationResolver resolver = new StackWalkerLocationResolver(
-                Infra.class.getName(),
+                Infra.class,
                 "org.slb4j.support.StackWalkerLocationResolverTest$Infra"
         );
 
@@ -41,7 +41,7 @@ class StackWalkerLocationResolverTest {
     void testResolveWithOtherInfra() {
         // Logger is Infra, but it calls OtherInfra which is also part of infraPackage
         StackWalkerLocationResolver resolver = new StackWalkerLocationResolver(
-                Infra.class.getName(),
+                Infra.class,
                 "org.slb4j.support.StackWalkerLocationResolverTest$"
         );
 
@@ -58,7 +58,7 @@ class StackWalkerLocationResolverTest {
         // The logger class is Infra.
         // It should find NotInfra.callInfra as the caller.
         StackWalkerLocationResolver resolver = new StackWalkerLocationResolver(
-                Infra.class.getName(),
+                Infra.class,
                 "org.slb4j.support.StackWalkerLocationResolverTest$Infra"
         );
 
@@ -72,7 +72,7 @@ class StackWalkerLocationResolverTest {
     @Test
     void testResolveNoLoggerFound() {
         StackWalkerLocationResolver resolver = new StackWalkerLocationResolver(
-                "non.existent.Logger",
+                Object.class,
                 "org.slb4j"
         );
 
