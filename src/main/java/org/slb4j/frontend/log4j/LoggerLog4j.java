@@ -175,8 +175,7 @@ public final class LoggerLog4j extends AbstractLogger {
             Supplier<String> msg;
             if (message instanceof ReusableMessage rm) {
                 // for reusable messages, do eager evaluation
-                String m = rm.getFormattedMessage();
-                msg = m::toString;
+                msg = rm.getFormattedMessage()::toString;
             } else {
                 msg = message::getFormattedMessage;
             }

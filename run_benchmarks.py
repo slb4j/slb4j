@@ -272,7 +272,7 @@ def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None)
         print(f"{LIGHT_CYAN}Testing parallel backend: {backend}{RESET}")
         
         benchmark_class = PARALLEL_BACKENDS_MAP[backend]
-        effective_frontends = args.frontends if args.frontends else ["slf4j", "log4j"]
+        effective_frontends = args.frontends if args.frontends else ["jul", "jcl", "slf4j", "log4j"]
         
         include_pattern = f"{benchmark_class}\\.({'|'.join(effective_frontends)})_.*"
         
@@ -308,7 +308,7 @@ def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None)
         results_file_src = os.path.join("benchmark", f"benchmark-{backend}", "build", "results", "jmh", "results.json")
         results_file_dst = os.path.join(results_dir, f"parallel_results_{backend}.json")
         
-        if args.dry_run:
+        if args.dryrun:
             print(f"{LIGHT_YELLOW}Dry run: {cmd}{RESET}")
         else:
             # Remove old result file if exists
@@ -329,7 +329,7 @@ def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None)
                 print(f"{BOLD_RED}Parallel benchmark failed for backend: {backend}{RESET}")
                 success = False
         
-        if not args.dry_run and args.profile:
+        if not args.dryrun and args.profile:
             move_profiler_outputs(backend, results_dir, profiler_subdir)
                 
     return all_results
@@ -379,20 +379,20 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None):
 
         for i, run in enumerate(runs):
             benchmark_class = SEQUENTIAL_BACKENDS_MAP[backend]
-            effective_frontends = args.frontends if args.frontends else ["slf4j", "log4j", "jul", "jcl"]
+            effective_frontends = args.frontends if args.frontends else ["jul", "jcl", "slf4j", "log4j"]
             
             # Filter out jcl for non-CONSTANT message types
             if run["exclude"] and ".*jcl.*" in run["exclude"]:
                 effective_frontends = [f for f in effective_frontends if f != "jcl"]
             
             if not effective_frontends:
-                if args.dry_run:
+                if args.dryrun:
                     print(f"{LIGHT_YELLOW}Dry run (Run {i+1}/{len(runs)}): Skipping backend {backend} for messageTypes {run['msg_types']} (no frontends to test){RESET}")
                 else:
                     print(f"  Skipping Run {i+1}/{len(runs)} for backend {backend} (no frontends to test)")
                 continue
 
-            if not args.dry_run and len(runs) > 1:
+            if not args.dryrun and len(runs) > 1:
                 print(f"  Run {i+1}/{len(runs)}: messageType={run['msg_types']}, exclude={run['exclude']}")
             
             cmd = f"./gradlew --quiet :benchmark:benchmark-{backend}:jmh"
@@ -443,7 +443,7 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None):
             jvm_args = ["-Djmh.ignoreLock=true"]
             cmd += f" -Pjmh.jvmArgs='{' '.join(jvm_args)}'"
 
-            if args.dry_run:
+            if args.dryrun:
                 print(f"{LIGHT_YELLOW}Dry run (Run {i+1}/{len(runs)}): Would execute command for backend {backend}:{RESET}")
                 print(f"  Command: {cmd}")
                 continue
@@ -465,11 +465,11 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None):
                         all_results.extend(data)
                 else:
                     print(f"Warning: Result file {src_json} not found for {backend}")
-            elif not args.dry_run:
+            elif not args.dryrun:
                 print(f"{BOLD_RED}Error: Benchmark failed for {backend} (run {i}){RESET}")
                 success = False
         
-        if not args.dry_run:
+        if not args.dryrun:
             # Check for profiler output files in the root directory and move them
             if args.profile:
                 move_profiler_outputs(backend, results_dir, profiler_subdir)
@@ -810,7 +810,7 @@ if __name__ == "__main__":
     parser.add_argument("--time", help="Time per iteration (e.g. 1s)")
     parser.add_argument("--forks", type=int, help="Number of forks")
     parser.add_argument("--output-to-file", action="store_true", help="Write logging output to a file instead of a blackhole")
-    parser.add_argument("--dry-run", action="store_true", help="Show the benchmarks that will run without actually executing them")
+    parser.add_argument("--dryrun", action="store_true", help="Show the benchmarks that will run without actually executing them")
     parser.add_argument("--mode", choices=["smoketest", "quick", "full"], help="Benchmark mode")
     parser.add_argument("--profile", nargs="+", help="JMH profilers to use (gc, stack, cl, comp, jfr, pauses safepoints)")
     parser.add_argument("--serial", action="store_true", help="Run single-threaded (serial) benchmarks")
@@ -863,11 +863,11 @@ if __name__ == "__main__":
     if run_serial:
         profiler_subdir = "profile-serial" if args.profile else None
         results = collect_results(args, timestamp, results_dir, profiler_subdir=profiler_subdir)
-        if not args.dry_run:
+        if not args.dryrun:
             generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line)
     
     if run_parallel:
         profiler_subdir = "profile-parallel" if args.profile else None
         results = collect_parallel_results(args, timestamp, results_dir, profiler_subdir=profiler_subdir)
-        if not args.dry_run:
+        if not args.dryrun:
             generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line)

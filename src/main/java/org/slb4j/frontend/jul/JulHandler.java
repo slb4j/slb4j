@@ -16,7 +16,6 @@
 package org.slb4j.frontend.jul;
 
 
-import org.jspecify.annotations.Nullable;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.dispatcher.UniversalDispatcher;
@@ -37,6 +36,7 @@ import java.util.logging.Logger;
  */
 public final class JulHandler extends Handler {
 
+    private static final java.util.logging.Formatter FORMATTER = new java.util.logging.SimpleFormatter();
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
     private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(Logger.class, "java.util.logging");
 
@@ -69,17 +69,12 @@ public final class JulHandler extends Handler {
      * or empty, the raw pattern is returned. In case of a formatting error, the method
      * falls back to returning the raw pattern.
      *
-     * @param pattern the message pattern to be formatted; must not be null
-     * @param params the parameters to replace the placeholders in the pattern; may be null
-     *               or an empty array
+     * @param logRecord the log record to format
      * @return the formatted message if formatting is successful, or the raw pattern if
      *         no parameters are provided or an error occurs during formatting
      */
-    public static Supplier<String> formatJulMessage(String pattern, @Nullable Object @Nullable [] params) {
-        if (pattern.indexOf('{') != -1 || pattern.indexOf('\'') != -1) {
-            return () -> java.text.MessageFormat.format(pattern, params);
-        }
-        return pattern::toString;
+    public static Supplier<String> formatJulMessage(LogRecord logRecord) {
+        return () -> FORMATTER.formatMessage(logRecord);
     }
 
     @Override
@@ -95,11 +90,9 @@ public final class JulHandler extends Handler {
         )) {
             LogLevel lvl = translateJulLevel(logRecord.getLevel());
             if (DISPATCHER.isLevelEnabled(lvl)) {
-                String loggerName1 = logRecord.getLoggerName();
-                Supplier<String> msg = formatJulMessage(logRecord.getMessage(), logRecord.getParameters());
+                Supplier<String> msg = formatJulMessage(logRecord);
                 Throwable t = logRecord.getThrown();
-
-                DISPATCHER.filterAndDispatch(logRecord.getMillis(), loggerName1, lvl, null, null, LOCATION_RESOLVER, msg, t);
+                DISPATCHER.filterAndDispatch(logRecord.getMillis(), loggerName, lvl, null, null, LOCATION_RESOLVER, msg, t);
             }
         }
     }
