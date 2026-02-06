@@ -17,24 +17,19 @@ package org.slb4j.benchmark;
 
 import org.openjdk.jmh.annotations.Param;
 import org.slb4j.LogLayout;
-import org.slb4j.SLB4J;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.handler.FileHandler;
 import org.slb4j.layout.PatternLayout;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
+
+import static org.slb4j.layout.PatternLayout.DEFAULT_PATTERN_STRING;
 
 public class Slb4jParallelBenchmark extends ParallelLoggingBenchmark {
 
     @Param({"CONSOLE", "FILE"})
     public String category;
-
-    private Path tempFile;
-    private FileHandler fileHandler;
 
     @Override
     public String backend() {
@@ -47,39 +42,21 @@ public class Slb4jParallelBenchmark extends ParallelLoggingBenchmark {
     }
 
     @Override
-    protected void setupLogging() throws IOException {
-        SLB4J.init();
-
-        tempFile = Files.createTempFile("slb4j-parallel-bench", ".log");
-
-        LogLayout pattern = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
-
+    public void setupBackend() throws IOException {
         UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
         dispatcher.getLogHandlers().forEach(dispatcher::removeLogHandler);
 
         if ("CONSOLE".equals(category)) {
+            LogLayout pattern = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
             ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, true);
             consoleHandler.setLayout(pattern);
             dispatcher.addLogHandler(consoleHandler);
         } else {
-            fileHandler = new FileHandler("file", tempFile, false);
+            // use pattern without highlighting
+            LogLayout pattern = PatternLayout.parseLog4jPattern(DEFAULT_PATTERN_STRING);
+            FileHandler fileHandler = new FileHandler("file", tempFile, false);
             fileHandler.setLayout(pattern);
             dispatcher.addLogHandler(fileHandler);
-        }
-
-        slf4jLogger = LoggerFactory.getLogger(Slb4jParallelBenchmark.class);
-        log4jLogger = org.apache.logging.log4j.LogManager.getLogger(Slb4jParallelBenchmark.class);
-    }
-
-    @Override
-    protected void tearDownLogging() {
-        if (fileHandler != null) {
-            fileHandler.close();
-        }
-        try {
-            Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 }

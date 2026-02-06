@@ -19,16 +19,9 @@ import ch.qos.logback.classic.LoggerContext;
 import org.openjdk.jmh.annotations.Param;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-
 public class LogbackParallelBenchmark extends ParallelLoggingBenchmark {
-
     @Param({"CONSOLE", "FILE"})
     public String category;
-
-    private Path tempFile;
 
     @Override
     public String backend() {
@@ -41,9 +34,7 @@ public class LogbackParallelBenchmark extends ParallelLoggingBenchmark {
     }
 
     @Override
-    protected void setupLogging() throws IOException {
-        tempFile = Files.createTempFile("logback-parallel-bench", ".log");
-
+    public void setupBackend() {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.reset();
 
@@ -73,19 +64,5 @@ public class LogbackParallelBenchmark extends ParallelLoggingBenchmark {
         root.detachAndStopAllAppenders();
         root.addAppender(appender);
         root.setLevel(ch.qos.logback.classic.Level.INFO);
-
-        slf4jLogger = LoggerFactory.getLogger(LogbackParallelBenchmark.class);
-        log4jLogger = org.apache.logging.log4j.LogManager.getLogger(LogbackParallelBenchmark.class);
-    }
-
-    @Override
-    protected void tearDownLogging() {
-        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        context.stop();
-        try {
-            Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

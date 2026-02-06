@@ -15,6 +15,7 @@
  */
 package org.slb4j.benchmark;
 
+import org.apache.commons.logging.Log;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
@@ -25,18 +26,30 @@ import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.FileHandler;
+import java.util.logging.LogManager;
+import java.util.logging.Logger;
+import java.util.logging.SimpleFormatter;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 public abstract class ParallelLoggingBenchmark {
 
+    protected Path tempFile;
+    private FileHandler fileHandler;
+
+    protected java.util.logging.Logger julLogger;
+    protected org.apache.commons.logging.Log jclLogger;
     protected org.slf4j.Logger slf4jLogger;
     protected org.apache.logging.log4j.Logger log4jLogger;
 
@@ -60,6 +73,12 @@ public abstract class ParallelLoggingBenchmark {
         System.setErr(new PrintStream(OutputStream.nullOutputStream(), false, StandardCharsets.UTF_8));
 
         setupLogging();
+        setupBackend();
+
+        System.err.println("JUL: " + julLogger.getClass());
+        System.err.println("JCL: " + jclLogger.getClass());
+        System.err.println("Log4J: " + log4jLogger.getClass());
+        System.err.println("SLF4J: " + slf4jLogger.getClass());
     }
 
     @TearDown(Level.Trial)
@@ -69,9 +88,46 @@ public abstract class ParallelLoggingBenchmark {
         tearDownLogging();
     }
 
-    protected abstract void setupLogging() throws IOException;
+    void setupLogging() throws IOException {
+        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+        org.apache.commons.logging.LogFactory.releaseAll();
 
-    protected abstract void tearDownLogging();
+        LogManager manager = LogManager.getLogManager();
+        Logger root = Logger.getLogger("");
+        for (java.util.logging.Handler h : root.getHandlers()) {
+            root.removeHandler(h);
+        }
+
+        root.setLevel(java.util.logging.Level.INFO);
+
+        Class<? extends ParallelLoggingBenchmark> benchmarkClass = getClass();
+        Logger benchmarkLogger = Logger.getLogger(benchmarkClass.getName());
+        benchmarkLogger.setLevel(java.util.logging.Level.INFO);
+
+        tempFile = Files.createTempFile(backend() + "-parallel-bench", ".log");
+        fileHandler = new FileHandler(tempFile.toString());
+        fileHandler.setFormatter(new SimpleFormatter());
+        fileHandler.setLevel(java.util.logging.Level.INFO);
+        root.addHandler(fileHandler);
+
+        slf4jLogger = LoggerFactory.getLogger(benchmarkClass);
+        log4jLogger = org.apache.logging.log4j.LogManager.getLogger(benchmarkClass);
+        julLogger = java.util.logging.Logger.getLogger(benchmarkClass.getName());
+        jclLogger = org.apache.commons.logging.LogFactory.getLog(benchmarkClass);
+    }
+
+    void tearDownLogging() {
+        if (fileHandler != null) {
+            fileHandler.close();
+        }
+        try {
+            Files.deleteIfExists(tempFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    protected abstract void setupBackend() throws IOException;
 
     @Benchmark
     @Threads(1)
@@ -157,13 +213,103 @@ public abstract class ParallelLoggingBenchmark {
         log4j();
     }
 
+    @Benchmark
+    @Threads(1)
+    public void jul_1() {
+        jul();
+    }
+
+    @Benchmark
+    @Threads(2)
+    public void jul_2() {
+        jul();
+    }
+
+    @Benchmark
+    @Threads(4)
+    public void jul_4() {
+        jul();
+    }
+
+    @Benchmark
+    @Threads(8)
+    public void jul_8() {
+        jul();
+    }
+
+    @Benchmark
+    @Threads(16)
+    public void jul_16() {
+        jul();
+    }
+
+    @Benchmark
+    @Threads(64)
+    public void jul_64() {
+        jul();
+    }
+
+    @Benchmark
+    @Threads(128)
+    public void jul_128() {
+        jul();
+    }
+
+    @Benchmark
+    @Threads(1)
+    public void jcl_1() {
+        jcl();
+    }
+
+    @Benchmark
+    @Threads(2)
+    public void jcl_2() {
+        jcl();
+    }
+
+    @Benchmark
+    @Threads(4)
+    public void jcl_4() {
+        jcl();
+    }
+
+    @Benchmark
+    @Threads(8)
+    public void jcl_8() {
+        jcl();
+    }
+
+    @Benchmark
+    @Threads(16)
+    public void jcl_16() {
+        jcl();
+    }
+
+    @Benchmark
+    @Threads(64)
+    public void jcl_64() {
+        jcl();
+    }
+
+    @Benchmark
+    @Threads(128)
+    public void jcl_128() {
+        jcl();
+    }
+
     private void slf4j() {
-        if (slf4jLogger.isInfoEnabled()) {
-            slf4jLogger.info("Parallel benchmark slf4j backend={}", backend());
-        }
+        slf4jLogger.info("Parallel benchmark slf4j backend={}", backend());
     }
 
     private void log4j() {
         log4jLogger.info(() -> "Parallel benchmark log4j backend=" + backend());
+    }
+
+    private void jul() {
+        julLogger.log(java.util.logging.Level.INFO, "Parallel benchmark slf4j backend={}", backend());
+    }
+
+    private void jcl() {
+        jclLogger.info("Parallel benchmark jcl backend=" + backend());
     }
 }

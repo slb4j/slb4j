@@ -18,20 +18,11 @@ package org.slb4j.benchmark;
 import org.openjdk.jmh.annotations.Param;
 
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.logging.FileHandler;
 import java.util.logging.LogManager;
-import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 public class JulParallelBenchmark extends ParallelLoggingBenchmark {
-
     @Param({"CONSOLE", "FILE"})
     public String category;
-
-    private Path tempFile;
-    private FileHandler fileHandler;
 
     @Override
     public String backend() {
@@ -44,40 +35,7 @@ public class JulParallelBenchmark extends ParallelLoggingBenchmark {
     }
 
     @Override
-    protected void setupLogging() throws IOException {
+    protected void setupBackend() throws IOException {
         System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
-        org.apache.commons.logging.LogFactory.releaseAll();
-
-        LogManager manager = LogManager.getLogManager();
-        Logger root = Logger.getLogger("");
-        for (java.util.logging.Handler h : root.getHandlers()) {
-            root.removeHandler(h);
-        }
-
-        root.setLevel(java.util.logging.Level.INFO);
-
-        Logger benchmarkLogger = Logger.getLogger(JulParallelBenchmark.class.getName());
-        benchmarkLogger.setLevel(java.util.logging.Level.INFO);
-
-        tempFile = Files.createTempFile("jul-parallel-bench", ".log");
-        fileHandler = new FileHandler(tempFile.toString());
-        fileHandler.setFormatter(new SimpleFormatter());
-        fileHandler.setLevel(java.util.logging.Level.INFO);
-        root.addHandler(fileHandler);
-
-        this.slf4jLogger = org.slf4j.LoggerFactory.getLogger(JulParallelBenchmark.class);
-        this.log4jLogger = org.apache.logging.log4j.LogManager.getLogger(JulParallelBenchmark.class);
-    }
-
-    @Override
-    protected void tearDownLogging() {
-        if (fileHandler != null) {
-            fileHandler.close();
-        }
-        try {
-            Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 }

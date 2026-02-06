@@ -21,14 +21,10 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class Log4jParallelBenchmark extends ParallelLoggingBenchmark {
-
     @Param({"CONSOLE", "FILE"})
     public String category;
-
-    private Path tempFile;
 
     @Override
     public String backend() {
@@ -41,9 +37,7 @@ public class Log4jParallelBenchmark extends ParallelLoggingBenchmark {
     }
 
     @Override
-    protected void setupLogging() throws IOException {
-        tempFile = Files.createTempFile("log4j-parallel-bench", ".log");
-
+    protected void setupBackend() throws IOException {
         org.apache.logging.log4j.core.LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
         org.apache.logging.log4j.core.config.Configuration config = context.getConfiguration();
 
@@ -70,6 +64,7 @@ public class Log4jParallelBenchmark extends ParallelLoggingBenchmark {
 
         appender.start();
         config.addAppender(appender);
+        org.apache.logging.log4j.core.config.AppenderRef ref = org.apache.logging.log4j.core.config.AppenderRef.createAppenderRef(appender.getName(), null, null);
 
         org.apache.logging.log4j.core.config.LoggerConfig loggerConfig = config.getRootLogger();
         loggerConfig.getAppenders().forEach((name, a) -> loggerConfig.removeAppender(name));
@@ -77,9 +72,6 @@ public class Log4jParallelBenchmark extends ParallelLoggingBenchmark {
         loggerConfig.setLevel(org.apache.logging.log4j.Level.INFO);
 
         context.updateLoggers();
-
-        slf4jLogger = LoggerFactory.getLogger(Log4jParallelBenchmark.class);
-        log4jLogger = LogManager.getLogger(Log4jParallelBenchmark.class);
     }
 
     @Override
