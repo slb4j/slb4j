@@ -158,6 +158,7 @@ public final class IoStringBuilder implements Appendable {
         }
 
         int len = end - start;
+        ensureCapacity(len);
         switch (len) {
             case 0 -> { return this; }
             case 1 -> { append(csq.charAt(start)); return this; }
@@ -179,7 +180,6 @@ public final class IoStringBuilder implements Appendable {
             default -> {
                 // Guaranteed zero-allocation fallback
                 // reason for manual copy: some implementations of append call String.valueOf(csq) internally
-                ensureCapacity(len);
                 for (int i = start; i < end; i++) {
                     buffer.put(csq.charAt(i));
                 }
