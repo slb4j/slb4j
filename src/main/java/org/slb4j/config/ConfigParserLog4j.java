@@ -237,7 +237,7 @@ public class ConfigParserLog4j implements ConfigParser {
                                 handler = new org.slb4j.handler.FileHandler(appenderName, path, append);
                             }
                         } catch (java.io.IOException e) {
-                            Util.err().format("Appender %s: Failed to create file handler for %s: %s%n", appenderName, fileName, e.getMessage());
+                            Util.err().format("Appender %s: Failed to create file handler for %s: %s%n", appenderName, fileName, e);
                         }
                     }
                 }

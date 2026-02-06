@@ -20,6 +20,7 @@ import java.io.Writer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
@@ -45,6 +46,12 @@ public final class FileHandler extends AbstractFileHandler {
         super(name);
         this.path = path;
         this.append = append;
+
+        Path parent = path.getParent();
+        if (parent != null) {
+            Files.createDirectories(parent);
+        }
+
         this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
         this.writer = Channels.newWriter(channel, StandardCharsets.UTF_8);
         writeLayoutHeader();
