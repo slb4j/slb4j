@@ -1,3 +1,17 @@
+Version 0.3.1
+-------------
+
+- fix: exception thrown when formatting certain messages from PlatformLogger
+- cleanp parallel benchmark code; include al backends
+
+Version 0.3
+-----------
+
+- added YamlLayout
+- rewrote properties parser for better log4j2.properties compatibility
+- added rudimentary JUL logging.properties parser
+- small fixes abd improvements
+
 Version 0.2.1
 -------------
 
