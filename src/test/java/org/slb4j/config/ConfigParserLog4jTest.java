@@ -63,7 +63,7 @@ class ConfigParserLog4jTest {
                         
                         appender.file.type = File
                         appender.file.name = File
-                        appender.file.fileName = logs/app.log
+                        appender.file.fileName = build/logs/app.log
                         appender.file.layout.type = SimpleLayout
                         """),
                 new TestCase("Appender with filter", """

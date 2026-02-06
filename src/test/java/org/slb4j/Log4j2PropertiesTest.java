@@ -35,7 +35,7 @@ class Log4j2PropertiesTest {
                 new PropertySet("Basic File", """
                         appender.file.type = File
                         appender.file.name = File
-                        appender.file.fileName = target/test.log
+                        appender.file.fileName = build/test.log
                         appender.file.layout.type = PatternLayout
                         appender.file.layout.pattern = %d %p %C{1.} [%t] %m%n
                         rootLogger.level = info
@@ -44,8 +44,8 @@ class Log4j2PropertiesTest {
                 new PropertySet("Rolling File", """
                         appender.rolling.type = RollingFile
                         appender.rolling.name = RollingFile
-                        appender.rolling.fileName = target/rolling.log
-                        appender.rolling.filePattern = target/rolling-%d{MM-dd-yy-HH-mm-ss}-%i.log.gz
+                        appender.rolling.fileName = build/rolling.log
+                        appender.rolling.filePattern = build/rolling-%d{MM-dd-yy-HH-mm-ss}-%i.log.gz
                         appender.rolling.layout.type = PatternLayout
                         appender.rolling.layout.pattern = %d %p %C{1.} [%t] %m%n
                         appender.rolling.policies.size.size = 100MB
@@ -58,7 +58,7 @@ class Log4j2PropertiesTest {
                         appender.console.name = STDOUT
                         appender.file.type = File
                         appender.file.name = FILE
-                        appender.file.fileName = target/test.log
+                        appender.file.fileName = build/test.log
                         rootLogger.level = debug
                         rootLogger.appenderRef.stdout.ref = STDOUT
                         rootLogger.appenderRef.file.ref = FILE
@@ -145,8 +145,8 @@ class Log4j2PropertiesTest {
                 new PropertySet("Complex Policies", """
                         appender.rolling.type = RollingFile
                         appender.rolling.name = RollingFile
-                        appender.rolling.fileName = target/rolling.log
-                        appender.rolling.filePattern = target/rolling-%d{MM-dd-yy-HH-mm-ss}-%i.log.gz
+                        appender.rolling.fileName = build/rolling.log
+                        appender.rolling.filePattern = build/rolling-%d{MM-dd-yy-HH-mm-ss}-%i.log.gz
                         appender.rolling.policies.type = Policies
                         appender.rolling.policies.time.type = TimeBasedTriggeringPolicy
                         appender.rolling.policies.time.interval = 2
