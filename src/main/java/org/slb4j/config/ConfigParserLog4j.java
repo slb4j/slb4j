@@ -77,7 +77,8 @@ public class ConfigParserLog4j implements ConfigParser {
      */
     public static final Pattern PATTERN_LOG4J2_CONFIG = Pattern.compile(
             "^(" +
-                    "(appender.(?<appenderName>[^\\.]*)\\.)?" +
+                    "((?<appender>appender)\\.(?<appenderName>[^\\.]*)\\.)?" +
+                    "((?<root>rootLogger)\\.)?" +
                     "(((?<entry>[^.]*)\\.)((?<entryName>[^.]*)\\.)?)" +
                     "?(?<option>.*)" +
                     ")$"
@@ -110,9 +111,18 @@ public class ConfigParserLog4j implements ConfigParser {
                 MatchResult mr = matcher.toMatchResult();
 
                 String appenderName = Objects.requireNonNullElse(mr.group("appenderName"), "");
+                String isRoot = mr.group("root");
                 String entry = Objects.requireNonNullElse(mr.group("entry"), "");
                 String entryName = Objects.requireNonNullElse(mr.group("entryName"), "");
                 String option = Objects.requireNonNullElse(mr.group("option"), "");
+
+                if (isRoot != null) {
+                    appenderName = "rootLogger";
+                    if (entry.isEmpty() && !option.isEmpty() && !"level".equals(option) && !"appenderRef".equals(option)) {
+                        entry = option;
+                        option = "";
+                    }
+                }
 
                 if (entry.isEmpty()) {
                     // configure the appender itself
@@ -137,13 +147,18 @@ public class ConfigParserLog4j implements ConfigParser {
         compoundEntryConfig.forEach((appenderName, config) -> {
             List<LogFilter> list = new ArrayList<>();
             config.forEach((name, defs) -> {
-                defs.forEach((entryName, options) -> {
-                    list.add(parseFilterDefinition(appenderName, options));
-                });
+                if ("filter".equals(name)) {
+                    defs.forEach((entryName, options) -> {
+                        list.add(parseFilterDefinition(appenderName, options));
+                    });
+                }
             });
-            LogFilter old = filters.put(appenderName, LogFilter.combine(list.toArray(LogFilter[]::new)));
-            if (old != null) {
-                SLB4J.logInternal(LogLevel.WARN, "Duplicate compound filter definition for appender %s!", appenderName);
+            if (!list.isEmpty()) {
+                LogFilter filter = LogFilter.combine(list.toArray(LogFilter[]::new));
+                LogFilter old = filters.put(appenderName, filter);
+                if (old != null) {
+                    SLB4J.logInternal(LogLevel.WARN, "Duplicate compound filter definition for appender %s!", appenderName);
+                }
             }
         });
 
@@ -157,7 +172,7 @@ public class ConfigParserLog4j implements ConfigParser {
                         Map<String, Map<String, String>> appenderHandlerOptions = handlerOptions.computeIfAbsent(appenderName, k -> new HashMap<>());
                         appenderHandlerOptions.put(appenderName, options);
                     }
-                    case "layout" -> {
+                    case "layout", "appenderRef" -> {
                         layouts.put(appenderName, parseLayoutDefinition(appenderName, options));
                     }
                     case "policies", "strategy" -> {
@@ -177,8 +192,12 @@ public class ConfigParserLog4j implements ConfigParser {
         LoggingConfiguration configuration = new LoggingConfiguration();
 
         // create appenders
-        appenderConfig.forEach((appenderName, options) -> {
+        appenderConfig.forEach((appenderIdentifier, options) -> {
+            if ("rootLogger".equals(appenderIdentifier)) {
+                return;
+            }
             LogHandler handler = null;
+            String appenderName = options.getOrDefault("name", appenderIdentifier);
             String type = options.getOrDefault("type", "Console");
             switch (type) {
                 case "Console" -> {
@@ -248,7 +267,7 @@ public class ConfigParserLog4j implements ConfigParser {
             }
 
             if (handler != null) {
-                configuration.addHandler(appenderName, handler);
+                configuration.addHandler(appenderIdentifier, handler);
             }
         });
 
@@ -263,7 +282,13 @@ public class ConfigParserLog4j implements ConfigParser {
         });
 
         // add filters
+        final boolean[] rootFilterSet = {false};
         filters.forEach((appenderName, filter) -> {
+            if ("rootLogger".equals(appenderName)) {
+                configuration.setRootFilter(filter);
+                rootFilterSet[0] = true;
+                return;
+            }
             LogHandler handler = configuration.getHandlers().get(appenderName);
             if (handler != null) {
                 handler.setFilter(filter);
@@ -272,6 +297,16 @@ public class ConfigParserLog4j implements ConfigParser {
             }
         });
 
+        // process rootLogger level if filter was not set
+        Map<String, String> rootOptions = appenderConfig.get("rootLogger");
+        if (rootOptions != null && !rootFilterSet[0]) {
+            String level = rootOptions.get("level");
+            if (level != null) {
+                Map<String, String> filterDefs = new HashMap<>();
+                filterDefs.put("level", level);
+                configuration.setRootFilter(parseThresholFilter(filterDefs));
+            }
+        }
 
         return configuration;
     }
