@@ -24,7 +24,7 @@ java {
     withJavadocJar()
 }
 
-description = "SLB4J layout extensions"
+description = "SLB4J addition layouts extensions"
 
 dependencies {
     implementation(libs.jspecify)

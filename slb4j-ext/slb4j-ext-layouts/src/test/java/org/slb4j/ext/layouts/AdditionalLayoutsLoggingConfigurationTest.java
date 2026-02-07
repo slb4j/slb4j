@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.slb4j.ext.layout;
+package org.slb4j.ext.layouts;
 
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
@@ -24,6 +24,7 @@ import org.slb4j.LogHandler;
 import org.slb4j.LogLayout;
 import org.slb4j.LogLevel;
 import org.slb4j.LoggingConfiguration;
+import org.slb4j.SLB4J;
 import org.slb4j.config.ConfigParserLog4j;
 import org.slb4j.layout.Layouts;
 import org.slb4j.support.Util;
@@ -41,9 +42,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class AdditionalLayoutsLoggingConfigurationTest {
 
-    @BeforeAll
-    static void setup() {
-        org.slb4j.SLB4J.init();
+    @Test
+    void testPluginLoaded() {
+        assertEquals("org.slb4j.ext.layouts.LayoutsPlugin", SLB4J.getLoadedPlugins().get("org.slb4j.ext.layouts"));
     }
 
     @Test

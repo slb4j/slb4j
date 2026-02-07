@@ -15,13 +15,13 @@
  */
 
 import org.jspecify.annotations.NullMarked;
-import org.slb4j.ext.layout.LayoutsPlugin;
+import org.slb4j.ext.layouts.LayoutsPlugin;
 
 /**
  * Module-info for the SLB4J extension layouts library.
  */
 @NullMarked
-module org.slb4j.ext.layout {
+module org.slb4j.ext.layouts {
     requires org.slb4j;
     requires org.jspecify;
     requires static org.slb4j.ext;

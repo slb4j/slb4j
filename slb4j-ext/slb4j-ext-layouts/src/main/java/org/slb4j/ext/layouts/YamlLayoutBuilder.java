@@ -1,29 +1,30 @@
-package org.slb4j.ext.layout;
+package org.slb4j.ext.layouts;
 
 import org.slb4j.LogLayout;
 import org.slb4j.layout.LayoutBuilder;
 
+import java.time.ZoneOffset;
 import java.util.Map;
 
 /**
- * A builder class for creating instances of {@link CsvLayout} using Log4J2 options.
+ * A builder class for creating instances of {@link YamlLayout} using Log4J2 options.
  */
-public class CsvLayoutBuilder extends LayoutBuilder {
+public class YamlLayoutBuilder extends LayoutBuilder {
 
     private static final Map<String, LayoutAtribute> ATTRIBUTES = Map.of(
     );
 
     /**
-     * Constructs a new instance of {@code CsvLayoutBuilder}.
+     * Constructs a new instance of {@code YamlLayoutBuilder}.
      *
      * @param name the name of the layout to be built
      */
-    CsvLayoutBuilder(String name) {
+    YamlLayoutBuilder(String name) {
         super(name, ATTRIBUTES);
     }
 
     @Override
     public LogLayout build() {
-        return new CsvLayout();
+        return new YamlLayout(ZoneOffset.UTC);
     }
 }

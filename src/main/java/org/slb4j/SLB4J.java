@@ -19,9 +19,11 @@ import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.frontend.jul.JulHandler;
 import org.slb4j.support.Util;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Stream;
 
 /**
@@ -31,6 +33,8 @@ public final class SLB4J {
     private SLB4J() { /* utility class */ }
 
     private static final LogDispatcher DISPATCHER;
+
+    private static final Map<String, String> LOADED_PLUGINS = new ConcurrentHashMap<>();
 
     static {
         // === check classpath pollution
@@ -96,6 +100,7 @@ public final class SLB4J {
         ServiceLoader.load(Plugin.class, SLB4J.class.getClassLoader()).forEach(plugin -> {
             try {
                 plugin.init();
+                LOADED_PLUGINS.put(plugin.name(), plugin.getClass().getName());
             } catch (Exception e) {
                 Util.err().println("Failed to initialize plugin " + plugin.name() + ": " + e.getMessage());
             }
@@ -135,5 +140,18 @@ public final class SLB4J {
      */
     public static LogDispatcher getDispatcher() {
         return DISPATCHER;
+    }
+
+    /**
+     * Retrieves a read-only view of the currently loaded plugins.
+     *
+     * The map contains plugin names as keys and their respective configurations or descriptions
+     * as values. The returned map is immutable, ensuring that the caller cannot modify its contents.
+     *
+     * @return an immutable map of loaded plugins, where the keys represent plugin names
+     *         and the values represent their configurations or descriptions.
+     */
+    public static Map<String, String> getLoadedPlugins() {
+        return Map.copyOf(LOADED_PLUGINS);
     }
 }

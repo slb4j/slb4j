@@ -1,4 +1,4 @@
-package org.slb4j.ext.layout;
+package org.slb4j.ext.layouts;
 
 import org.slb4j.Plugin;
 import org.slb4j.layout.Layouts;
@@ -17,7 +17,7 @@ public class LayoutsPlugin implements Plugin {
 
     @Override
     public String name() {
-        return "Layouts";
+        return getClass().getPackageName();
     }
 
     @Override
