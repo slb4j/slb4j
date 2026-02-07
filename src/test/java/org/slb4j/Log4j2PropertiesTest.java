@@ -48,6 +48,8 @@ class Log4j2PropertiesTest {
                         appender.rolling.filePattern = build/rolling-%d{MM-dd-yy-HH-mm-ss}-%i.log.gz
                         appender.rolling.layout.type = PatternLayout
                         appender.rolling.layout.pattern = %d %p %C{1.} [%t] %m%n
+                        appender.rolling.policies.type = Policies
+                        appender.rolling.policies.size.type = SizeBasedTriggeringPolicy
                         appender.rolling.policies.size.size = 100MB
                         appender.rolling.strategy.max = 5
                         rootLogger.level = info

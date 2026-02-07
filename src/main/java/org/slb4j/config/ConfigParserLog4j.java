@@ -221,18 +221,18 @@ public class ConfigParserLog4j implements ConfigParser {
                         java.nio.file.Path path = java.nio.file.Path.of(fileName);
 
                         try {
-                            Map<String, Map<String, String>> appenderEntries = entryConfig.getOrDefault(appenderName, Map.of());
+                            Map<String, Map<String, String>> appenderEntries = entryConfig.getOrDefault(appenderIdentifier, Map.of());
                             Map<String, String> policies = appenderEntries.getOrDefault("policies", Map.of());
                             String size = policies.get("size.size");
                             if (size == null) {
                                 // check for appender.NAME.policies.size.size in compound entry config
-                                size = compoundEntryConfig.getOrDefault(appenderName, Map.of())
+                                size = compoundEntryConfig.getOrDefault(appenderIdentifier, Map.of())
                                         .getOrDefault("policies", Map.of())
                                         .getOrDefault("size", Map.of())
                                         .get("size");
                             }
 
-                            if ("RollingFile".equals(type) || compoundEntryConfig.containsKey(appenderName) || appenderEntries.containsKey("policies") || size != null) {
+                            if ("RollingFile".equals(type) || compoundEntryConfig.containsKey(appenderIdentifier) || appenderEntries.containsKey("policies") || size != null) {
                                 org.slb4j.handler.RotatingFileHandler rfh = new org.slb4j.handler.RotatingFileHandler(appenderName, path, append);
                                 if (size != null) {
                                     rfh.setMaxFileSize(Util.parseSize(size));
@@ -244,7 +244,7 @@ public class ConfigParserLog4j implements ConfigParser {
                                 Map<String, String> strategy = appenderEntries.getOrDefault("strategy", Map.of());
                                 String max = strategy.get("max");
                                 if (max == null) {
-                                    max = compoundEntryConfig.getOrDefault(appenderName, Map.of())
+                                    max = compoundEntryConfig.getOrDefault(appenderIdentifier, Map.of())
                                             .getOrDefault("strategy", Map.of())
                                             .getOrDefault("max", Map.of())
                                             .get("max");
@@ -272,28 +272,28 @@ public class ConfigParserLog4j implements ConfigParser {
         });
 
         // add layouts
-        layouts.forEach((appenderName, layout) -> {
-            LogHandler handler = configuration.getHandlers().get(appenderName);
+        layouts.forEach((appenderIdentifier, layout) -> {
+            LogHandler handler = configuration.getHandlers().get(appenderIdentifier);
             if (handler instanceof LayoutConfigurable lc) {
                 lc.setLayout(layout);
             } else {
-                SLB4J.logInternal(LogLevel.WARN, "Ignoring layout definition for appender %s: no handler found", appenderName);
+                SLB4J.logInternal(LogLevel.WARN, "Ignoring layout definition for appender %s: no handler found", appenderIdentifier);
             }
         });
 
         // add filters
         final boolean[] rootFilterSet = {false};
-        filters.forEach((appenderName, filter) -> {
-            if ("rootLogger".equals(appenderName)) {
+        filters.forEach((appenderIdentifier, filter) -> {
+            if ("rootLogger".equals(appenderIdentifier)) {
                 configuration.setRootFilter(filter);
                 rootFilterSet[0] = true;
                 return;
             }
-            LogHandler handler = configuration.getHandlers().get(appenderName);
+            LogHandler handler = configuration.getHandlers().get(appenderIdentifier);
             if (handler != null) {
                 handler.setFilter(filter);
             } else {
-                SLB4J.logInternal(LogLevel.WARN, "Ignoring filter definition for appender %s: handler not found", appenderName);
+                SLB4J.logInternal(LogLevel.WARN, "Ignoring filter definition for appender %s: handler not found", appenderIdentifier);
             }
         });
 
