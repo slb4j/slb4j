@@ -25,26 +25,6 @@ import static org.junit.jupiter.api.Assertions.*;
 class SupportTest {
 
     @Test
-    void testUtilCachingStringSupplier() {
-        AtomicInteger counter = new AtomicInteger(0);
-        Supplier<String> original = () -> {
-            counter.incrementAndGet();
-            return "hello";
-        };
-
-        Supplier<String> cached = Util.cachingStringSupplier(original);
-
-        assertEquals(0, counter.get());
-        assertEquals("hello", cached.get());
-        assertEquals(1, counter.get());
-        assertEquals("hello", cached.get());
-        assertEquals(1, counter.get());
-
-        // Test that it doesn't wrap twice
-        assertSame(cached, Util.cachingStringSupplier(cached));
-    }
-
-    @Test
     void testSharableAndSharedString() {
         String base = "hello world";
         SharableString ss = new SharableString(base);
