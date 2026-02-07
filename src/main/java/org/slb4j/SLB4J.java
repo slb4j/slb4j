@@ -17,8 +17,10 @@ package org.slb4j;
 
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.frontend.jul.JulHandler;
+import org.slb4j.support.TimeStampFormatter;
 import org.slb4j.support.Util;
 
+import java.io.IOException;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
@@ -30,11 +32,17 @@ import java.util.stream.Stream;
  * Utility class for logging operations.
  */
 public final class SLB4J {
+
+
     private SLB4J() { /* utility class */ }
+
+    private static final StackWalker STACK_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
     private static final LogDispatcher DISPATCHER;
 
     private static final Map<String, String> LOADED_PLUGINS = new ConcurrentHashMap<>();
+
+    private static LogLevel statusLevel = LogLevel.WARN;
 
     static {
         // === check classpath pollution
@@ -70,7 +78,7 @@ public final class SLB4J {
         ).forEach(ci -> {
             // Warn about conflicting logging implementations on classpath
             if (Util.isClassOnClasspath(ci.className()) && !Objects.equals("slb4j", ci.framework())) {
-                Util.err().format("WARNING: Classpath contains conflicting %s implementation: %s%n", ci.type(), ci.description());
+                SLB4J.logInternal(LogLevel.WARN, "WARNING: Classpath contains conflicting %s implementation: %s%n", ci.type(), ci.description());
             }
         });
 
@@ -82,7 +90,7 @@ public final class SLB4J {
         try {
             config = LoggingConfiguration.load();
         } catch (RuntimeException e) {
-            Util.err().println("Failed to load logging configuration, using default configuration: " + e.getMessage());
+            SLB4J.logInternal(LogLevel.WARN, "Failed to load logging configuration, using default configuration: %s", e);
             config = LoggingConfiguration.defaultConfiguration();
         }
 
@@ -102,7 +110,7 @@ public final class SLB4J {
                 plugin.init();
                 LOADED_PLUGINS.put(plugin.name(), plugin.getClass().getName());
             } catch (Exception e) {
-                Util.err().println("Failed to initialize plugin " + plugin.name() + ": " + e.getMessage());
+                SLB4J.logInternal(LogLevel.WARN, "Failed to initialize plugin %s: %s", plugin.name(), e);
             }
         });
     }
@@ -154,4 +162,61 @@ public final class SLB4J {
     public static Map<String, String> getLoadedPlugins() {
         return Map.copyOf(LOADED_PLUGINS);
     }
+
+    /**
+     * Sets the global status logging level for the framework.
+     *
+     * This method updates the logging level that determines which log messages
+     * will be processed and displayed. Log messages with a level below the specified
+     * threshold will be ignored.
+     *
+     * @param level the logging level to be set. Must be a value from the {@code LogLevel} enumeration.
+     */
+    public static void setStatusLevel(LogLevel level) {
+        statusLevel = level;
+    }
+
+    /**
+     * Retrieves the current status level of the logging framework.
+     *
+     * The status level determines the minimum severity of log messages
+     * that should be processed or displayed by the framework. Messages
+     * with a severity lower than the status level may be ignored.
+     *
+     * @return the current status {@link LogLevel} of the logging framework.
+     */
+    public static LogLevel getStatusLevel() {
+        return statusLevel;
+    }
+
+    /**
+     * Logs a message at the specified log level, formatting the message with optional arguments.
+     * The message will only be logged if the specified log level meets or exceeds the current
+     * logging status level.
+     *
+     * @param level the log level at which the message should be logged. Determines whether the
+     *              message will be logged based on the current status level.
+     * @param msg the message to be logged. Supports formatting placeholders similar to
+     *            {@link String#format(String, Object...)}.
+     * @param args optional arguments to fill placeholders in the message string.
+     */
+    public static void logInternal(LogLevel level, String msg, Object...args) {
+        if (level.ordinal() >= statusLevel.ordinal()) {
+            try {
+                StringBuilder sb = new StringBuilder();
+
+                TimeStampFormatter.ISO8601_FORMATTER.appendTo(System.currentTimeMillis(), sb);
+
+                Class<?> caller = STACK_WALKER.getCallerClass();
+                sb.append(" [").append(level).append("] ").append(caller.getName());
+
+                sb.append(" - ").append(String.format(msg, args));
+
+                System.err.println(sb);
+            } catch (IOException e) {
+                // swallowed
+            }
+        }
+    }
+
 }

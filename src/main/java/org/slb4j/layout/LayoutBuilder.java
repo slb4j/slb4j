@@ -2,7 +2,8 @@ package org.slb4j.layout;
 
 import org.jspecify.annotations.Nullable;
 import org.slb4j.LogLayout;
-import org.slb4j.support.Util;
+import org.slb4j.LogLevel;
+import org.slb4j.SLB4J;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -75,16 +76,16 @@ public abstract class LayoutBuilder {
         defs.forEach((attributeName, value) -> {
             LayoutAtribute attribute = attributes.get(attributeName);
             if (attribute == null) {
-                Util.err().format("Ignoring unknown attribute %s in definition of layout %s!%n", attributeName, layoutName);
+                SLB4J.logInternal(LogLevel.WARN, "Ignoring unknown attribute %s in definition of layout %s!", attributeName, layoutName);
                 return;
             }
             if (!attribute.isSupported()) {
                 if (attribute.defaultValue() == null) {
-                    Util.err().format("Ignoring unsupported attribute %s in definition of layout %s!%n", attributeName, layoutName);
+                    SLB4J.logInternal(LogLevel.WARN, "Ignoring unsupported attribute %s in definition of layout %s!", attributeName, layoutName);
                     return;
                 }
                 if (!Objects.equals(attribute.defaultValue(), value)) {
-                    Util.err().format("Unsupported value for attribute %s in definition of layout %s, using default %s instead of supplied value %s!%n", attributeName, layoutName, attribute.defaultValue(), value);
+                    SLB4J.logInternal(LogLevel.WARN, "Unsupported value for attribute %s in definition of layout %s, using default %s instead of supplied value %s!", attributeName, layoutName, attribute.defaultValue(), value);
                 }
                 value = attribute.defaultValue();
             }

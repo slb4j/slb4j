@@ -19,7 +19,7 @@ import org.jspecify.annotations.Nullable;
 import org.slb4j.Location;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
-import org.slb4j.support.Util;
+import org.slb4j.SLB4J;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -191,7 +191,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
             try {
                 rotate();
             } catch (IOException e) {
-                Util.err().println("Error during log rotation: " + e.getMessage());
+                SLB4J.logInternal(LogLevel.WARN, "Error during log rotation: %s", e);
             }
         }
     }

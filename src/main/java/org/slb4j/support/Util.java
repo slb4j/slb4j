@@ -18,7 +18,6 @@ package org.slb4j.support;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
-import java.io.PrintStream;
 import java.util.Locale;
 import java.util.function.Supplier;
 
@@ -34,24 +33,6 @@ public final class Util {
 
     private Util() {
         // utility class, no instances
-    }
-
-    /**
-     * Provides access to the standard output stream.
-     *
-     * @return the standard output stream
-     */
-    public static PrintStream out() {
-        return System.out;
-    }
-
-    /**
-     * Provides access to the error output stream.
-     *
-     * @return the standard output stream
-     */
-    public static PrintStream err() {
-        return System.err;
     }
 
     /**

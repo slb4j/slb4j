@@ -23,7 +23,7 @@ import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
-import org.slb4j.support.Util;
+import org.slb4j.SLB4J;
 
 import java.util.List;
 import java.util.SequencedCollection;
@@ -95,7 +95,7 @@ public final class UniversalDispatcher implements LogDispatcher {
             try {
                 handler.shutdown();
             } catch (Exception e) {
-                Util.err().println("Error shutting down log handler: '" + handler.name() + "': " + e.getMessage());
+                SLB4J.logInternal(LogLevel.WARN, "Error shutting down log handler %s: %s", handler.name(), e);
             }
         }
     }

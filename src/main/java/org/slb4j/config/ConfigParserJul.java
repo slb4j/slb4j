@@ -3,10 +3,10 @@ package org.slb4j.config;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.LoggingConfiguration;
+import org.slb4j.SLB4J;
 import org.slb4j.filter.LogLevelFilter;
 import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.handler.ConsoleHandler;
-import org.slb4j.support.Util;
 
 import java.io.PrintStream;
 import java.nio.file.Path;
@@ -98,7 +98,7 @@ public class ConfigParserJul implements ConfigParser {
                     }
                 }
                 default -> {
-                    Util.err().format("JUL: Unsupported handler class %s — ignoring.%n", hc);
+                    SLB4J.logInternal(LogLevel.WARN, "JUL: Unsupported handler class %s — ignoring.", hc);
                 }
             }
         }
@@ -127,7 +127,7 @@ public class ConfigParserJul implements ConfigParser {
         String pattern = props.getProperty(prefix + "pattern");
         if (pattern == null || pattern.isBlank()) {
             // No pattern set — JUL would use a default in user home; here we ignore
-            Util.err().println("JUL: FileHandler.pattern not set — skipping file handler creation");
+            SLB4J.logInternal(LogLevel.WARN, "JUL: FileHandler.pattern not set — skipping file handler creation");
             return null;
         }
 
@@ -152,7 +152,7 @@ public class ConfigParserJul implements ConfigParser {
                 return new org.slb4j.handler.FileHandler(name, path, append);
             }
         } catch (java.io.IOException e) {
-            Util.err().format("JUL: Failed creating FileHandler for %s: %s%n", pattern, e.getMessage());
+            SLB4J.logInternal(LogLevel.WARN, "JUL: Failed creating FileHandler for %s: %s", pattern, e);
             return null;
         }
     }

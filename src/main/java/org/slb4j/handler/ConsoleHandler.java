@@ -23,11 +23,11 @@ import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.LayoutConfigurable;
 import org.slb4j.MDC;
+import org.slb4j.SLB4J;
 import org.slb4j.layout.PatternLayout;
 import org.slb4j.support.AnsiCode;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.support.IoStringBuilder;
-import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -169,7 +169,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
                 buffer.reset(0);
                 writer.flush();
             } catch (IOException e) {
-                Util.err().println("Error writing log entry: " + e.getMessage());
+                SLB4J.logInternal(LogLevel.WARN, "Error writing log entry: %s", e);
             } finally {
                 lock.unlock();
             }

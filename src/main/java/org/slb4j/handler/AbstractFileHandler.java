@@ -23,9 +23,9 @@ import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.LayoutConfigurable;
 import org.slb4j.MDC;
+import org.slb4j.SLB4J;
 import org.slb4j.layout.PatternLayout;
 import org.slb4j.support.IoStringBuilder;
-import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -161,7 +161,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
                     }
                     writer.flush();
                 } catch (IOException e) {
-                    Util.err().println("Error writing header/footer during pattern change: " + e.getMessage());
+                    SLB4J.logInternal(LogLevel.WARN, "Error writing header/footer during pattern change: %s", e);
                 }
                 this.layout = layout;
             }
@@ -209,7 +209,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
             try {
                 doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
             } catch (IOException e) {
-                Util.err().println("Error writing log entry: " + e.getMessage());
+                SLB4J.logInternal(LogLevel.WARN, "Error writing log entry: %s", e);
             } finally {
                 try {
                     releaseBuffer(buffer);
@@ -319,7 +319,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
                 writeLayoutFooter();
             }
         } catch (IOException e) {
-            Util.err().println("Error closing log file: " + e.getMessage());
+            SLB4J.logInternal(LogLevel.WARN, "Error closing log file: %s", e);
         }
     }
 
@@ -332,8 +332,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
                     onShutDown();
                     buffer.reset();
                 } catch (Exception e) {
-                    Util.err().format("Error shutting down handler '%s': %s", name(), e.getMessage());
-                    e.printStackTrace(Util.err());
+                    SLB4J.logInternal(LogLevel.WARN, "Error shutting down handler '%s': %s", name(), e);
                 }
             } finally {
                 lock.unlock();

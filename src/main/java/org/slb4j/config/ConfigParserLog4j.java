@@ -6,6 +6,7 @@ import org.slb4j.LogHandler;
 import org.slb4j.LogLayout;
 import org.slb4j.LogLevel;
 import org.slb4j.LoggingConfiguration;
+import org.slb4j.SLB4J;
 import org.slb4j.filter.LogLevelFilter;
 import org.slb4j.filter.MarkerFilter;
 import org.slb4j.filter.MessageTextFilter;
@@ -142,7 +143,7 @@ public class ConfigParserLog4j implements ConfigParser {
             });
             LogFilter old = filters.put(appenderName, LogFilter.combine(list.toArray(LogFilter[]::new)));
             if (old != null) {
-                Util.err().format("Duplicate compound filter definition for appender %s!%n", appenderName);
+                SLB4J.logInternal(LogLevel.WARN, "Duplicate compound filter definition for appender %s!", appenderName);
             }
         });
 
@@ -165,10 +166,10 @@ public class ConfigParserLog4j implements ConfigParser {
                     case "filter" -> {
                         LogFilter old = filters.put(appenderName, parseFilterDefinition(appenderName, options));
                         if (old != null) {
-                            Util.err().format("Duplicate compound filter definition for appender %s!%n", appenderName);
+                            SLB4J.logInternal(LogLevel.WARN, "Duplicate compound filter definition for appender %s!", appenderName);
                         }
                     }
-                    default -> Util.err().format("Ignoring unknown entry %s in appender definition for appender %s!", entryName, appenderName);
+                    default -> SLB4J.logInternal(LogLevel.WARN, "Ignoring unknown entry %s in appender definition for appender %s!", entryName, appenderName);
                 }
             });
         });
@@ -186,7 +187,7 @@ public class ConfigParserLog4j implements ConfigParser {
                         case SYSTEM_OUT -> System.out;
                         case SYSTEM_ERR -> System.err;
                         default -> {
-                            Util.err().format("Appender %s: Ignoring unknown target %s, using %s instead%n", appenderName, target, SYSTEM_OUT);
+                            SLB4J.logInternal(LogLevel.WARN, "Appender %s: Ignoring unknown target %s, using %s instead", appenderName, target, SYSTEM_OUT);
                             yield System.out;
                         }
                     };
@@ -195,7 +196,7 @@ public class ConfigParserLog4j implements ConfigParser {
                 case "File", "RollingFile" -> {
                     String fileName = options.get("fileName");
                     if (fileName == null) {
-                        Util.err().format("Appender %s: Missing fileName for File/RollingFile appender%n", appenderName);
+                        SLB4J.logInternal(LogLevel.WARN, "Appender %s: Missing fileName for File/RollingFile appender", appenderName);
                     } else {
                         boolean append = Boolean.parseBoolean(options.getOrDefault("append", "true"));
                         java.nio.file.Path path = java.nio.file.Path.of(fileName);
@@ -237,12 +238,12 @@ public class ConfigParserLog4j implements ConfigParser {
                                 handler = new org.slb4j.handler.FileHandler(appenderName, path, append);
                             }
                         } catch (java.io.IOException e) {
-                            Util.err().format("Appender %s: Failed to create file handler for %s: %s%n", appenderName, fileName, e);
+                            SLB4J.logInternal(LogLevel.WARN, "Appender %s: Failed to create file handler for %s: %s", appenderName, fileName, e);
                         }
                     }
                 }
                 default -> {
-                    Util.err().format("Ignoring unknown appender type %s!%n", type);
+                    SLB4J.logInternal(LogLevel.WARN, "Ignoring unknown appender type %s!", type);
                 }
             }
 
@@ -257,7 +258,7 @@ public class ConfigParserLog4j implements ConfigParser {
             if (handler instanceof LayoutConfigurable lc) {
                 lc.setLayout(layout);
             } else {
-                Util.err().format("Ignoring layout definition for appender %s: no handler found%n", appenderName);
+                SLB4J.logInternal(LogLevel.WARN, "Ignoring layout definition for appender %s: no handler found", appenderName);
             }
         });
 
@@ -267,7 +268,7 @@ public class ConfigParserLog4j implements ConfigParser {
             if (handler != null) {
                 handler.setFilter(filter);
             } else {
-                Util.err().format("Ignoring filter definition for appender %s: handler not found%n", appenderName);
+                SLB4J.logInternal(LogLevel.WARN, "Ignoring filter definition for appender %s: handler not found", appenderName);
             }
         });
 
@@ -291,7 +292,7 @@ public class ConfigParserLog4j implements ConfigParser {
             case MARKER_FILTER -> parseMarkerFilter(defs);
             case REGEX_FILTER -> parseRegexFilter(defs);
             default -> {
-                Util.err().format("Ignoring unknown filter type %s in definition of appender %s!", type, appenderName);
+                SLB4J.logInternal(LogLevel.WARN, "Ignoring unknown filter type %s in definition of appender %s!", type, appenderName);
                 yield  LogLevelFilter.allPass();
             }
         };
@@ -304,7 +305,7 @@ public class ConfigParserLog4j implements ConfigParser {
         try {
             threshold = LogLevel.valueOf(levelStr);
         } catch (IllegalArgumentException e) {
-            Util.err().format("Ignoring unknown threshold level %s in filter definition!", levelStr);
+            SLB4J.logInternal(LogLevel.WARN, "Ignoring unknown threshold level %s in filter definition!", levelStr);
             return LogFilter.allPass();
         }
 

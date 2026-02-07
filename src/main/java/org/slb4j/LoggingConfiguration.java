@@ -21,7 +21,6 @@ import org.slb4j.config.ConfigParserJul;
 import org.slb4j.config.ConfigParserLog4j;
 import org.slb4j.filter.LogLevelFilter;
 import org.slb4j.handler.ConsoleHandler;
-import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -212,8 +211,7 @@ public final class LoggingConfiguration {
                             return entry.getValue().get().parse(properties);
                         }
                     } catch (IOException e) {
-                        Util.err().println("Failed to load " + fileName + ": " + e.getMessage());
-                        e.printStackTrace(Util.err());
+                        SLB4J.logInternal(LogLevel.WARN, "Failed to load %s: %s", fileName, e);
                     }
                     return null;
                 }).filter(Objects::nonNull)
