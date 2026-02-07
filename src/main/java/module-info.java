@@ -50,4 +50,6 @@ module org.slb4j {
     provides org.slf4j.spi.SLF4JServiceProvider with LoggingServiceProviderSlf4j;
     provides org.apache.logging.log4j.spi.Provider with ProviderLog4j;
     provides org.apache.commons.logging.LogFactory with LogFactoryJcl;
+
+    uses org.slb4j.Plugin;
 }

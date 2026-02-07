@@ -43,7 +43,7 @@ class AdditionalLayoutsLoggingConfigurationTest {
 
     @BeforeAll
     static void setup() {
-        new LayoutsPlugin().init();
+        org.slb4j.SLB4J.init();
     }
 
     @Test

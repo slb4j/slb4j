@@ -21,6 +21,7 @@ import org.slb4j.support.Util;
 
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
+import java.util.ServiceLoader;
 import java.util.stream.Stream;
 
 /**
@@ -86,6 +87,19 @@ public final class SLB4J {
 
         // === wire the logging frontends
         wireFrontends();
+
+        // === load plugins
+        loadPlugins();
+    }
+
+    private static void loadPlugins() {
+        ServiceLoader.load(Plugin.class, SLB4J.class.getClassLoader()).forEach(plugin -> {
+            try {
+                plugin.init();
+            } catch (Exception e) {
+                Util.err().println("Failed to initialize plugin " + plugin.name() + ": " + e.getMessage());
+            }
+        });
     }
 
     private static void wireFrontends() {
