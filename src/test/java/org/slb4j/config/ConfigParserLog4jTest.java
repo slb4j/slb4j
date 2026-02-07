@@ -13,6 +13,7 @@ import org.slb4j.handler.FileHandler;
 import org.slb4j.handler.RotatingFileHandler;
 import org.slb4j.layout.PatternLayout;
 import org.slb4j.layout.SimpleLayout;
+import org.slb4j.support.Util;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -96,7 +97,7 @@ class ConfigParserLog4jTest {
                             assertNotNull(fileHandler, "Handler 'file' should be present");
                             assertEquals("File", fileHandler.name(), "Handler 'file' should have expected name");
                             assertInstanceOf(FileHandler.class, fileHandler, "Handler 'file' should be FileHandler");
-                            assertEquals("build/logs/app.log", ((FileHandler) fileHandler).getPath().toString(), "Handler 'file' should use expected file path");
+                            assertEquals("build/logs/app.log", Util.pathToNormalizedString(((FileHandler) fileHandler).getPath()), "Handler 'file' should use expected file path");
                             assertInstanceOf(SimpleLayout.class, ((FileHandler) fileHandler).getLayout(), "Handler 'file' layout should be SimpleLayout");
                         }
                 ),
