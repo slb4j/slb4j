@@ -134,8 +134,13 @@ class ConfigParserLog4jTest {
                             assertNotNull(handler);
                             LogFilter filter = handler.getFilter();
                             assertNotNull(filter);
-                            // It should be a CombinedFilter because multiple filters were added
                             assertInstanceOf(CombinedFilter.class, filter);
+                            // Check that it contains both filters by checking behavior
+                            assertTrue(filter.isLevelEnabled(LogLevel.INFO));
+                            assertTrue(!filter.isLevelEnabled(LogLevel.DEBUG));
+                            // MarkerFilter behavior
+                            assertTrue(filter.isEnabled("any", LogLevel.INFO, "TEST"));
+                            assertTrue(!filter.isEnabled("any", LogLevel.INFO, "OTHER"));
                         }
                 ),
                 new TestCase("rootLogger", """
@@ -158,7 +163,14 @@ class ConfigParserLog4jTest {
                             assertTrue(!rootFilter.isLevelEnabled(LogLevel.DEBUG));
 
                             LogHandler consoleHandler = config.getHandlers().get("console");
-                            assertNotNull(consoleHandler);
+                            assertNotNull(consoleHandler, "Handler 'console' should be present");
+                            assertEquals("Console", consoleHandler.name(), "Handler 'console' name should be 'Console'");
+                            assertInstanceOf(ConsoleHandler.class, consoleHandler);
+                            ConsoleHandler ch = (ConsoleHandler) consoleHandler;
+                            assertSame(System.out, ch.getOut());
+                            assertInstanceOf(PatternLayout.class, ch.getLayout());
+                            PatternLayout layout = (PatternLayout) ch.getLayout();
+                            assertEquals("%d{yy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n", layout.getText());
                         }
                 ),
                 new TestCase("Basic Console", """
@@ -195,8 +207,11 @@ class ConfigParserLog4jTest {
                             LogHandler handler = config.getHandler("file");
                             assertNotNull(handler);
                             assertInstanceOf(FileHandler.class, handler);
-                            assertEquals("File", handler.name());
-                            assertEquals(Path.of("build/test.log").toAbsolutePath(), ((FileHandler) handler).getPath().toAbsolutePath());
+                            FileHandler fh = (FileHandler) handler;
+                            assertEquals("File", fh.name());
+                            assertEquals(Path.of("build/test.log").toAbsolutePath(), fh.getPath().toAbsolutePath());
+                            assertInstanceOf(PatternLayout.class, fh.getLayout());
+                            assertEquals("%d %p %C{1.} [%t] %m%n", ((PatternLayout) fh.getLayout()).getText());
 
                             LogFilter rootFilter = config.getRootFilter();
                             assertInstanceOf(LogLevelFilter.class, rootFilter);
@@ -228,6 +243,13 @@ class ConfigParserLog4jTest {
                             assertEquals("build/rolling-%d{MM-dd-yy-HH-mm-ss}-%i.log.gz", rfh.getFilePattern());
                             assertEquals(100L * 1024 * 1024, rfh.getMaxFileSize());
                             assertEquals(5, rfh.getMaxBackupIndex());
+                            assertInstanceOf(PatternLayout.class, rfh.getLayout());
+                            assertEquals("%d %p %C{1.} [%t] %m%n", ((PatternLayout) rfh.getLayout()).getText());
+
+                            LogFilter rootFilter = config.getRootFilter();
+                            assertInstanceOf(LogLevelFilter.class, rootFilter);
+                            assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO));
+                            assertTrue(!rootFilter.isLevelEnabled(LogLevel.DEBUG));
                         }
                 ),
                 new TestCase("Multiple Appenders", """
@@ -242,10 +264,21 @@ class ConfigParserLog4jTest {
                         """,
                         config -> {
                             assertEquals(2, config.getHandlers().size());
-                            assertNotNull(config.getHandler("console"));
-                            assertNotNull(config.getHandler("file"));
-                            assertEquals(LogLevelFilter.class, config.getRootFilter().getClass());
-                            assertTrue(config.getRootFilter().isLevelEnabled(LogLevel.DEBUG));
+                            LogHandler console = config.getHandler("console");
+                            assertNotNull(console);
+                            assertEquals("STDOUT", console.name());
+                            assertInstanceOf(ConsoleHandler.class, console);
+
+                            LogHandler file = config.getHandler("file");
+                            assertNotNull(file);
+                            assertEquals("FILE", file.name());
+                            assertInstanceOf(FileHandler.class, file);
+                            assertEquals(Path.of("build/test.log").toAbsolutePath(), ((FileHandler) file).getPath().toAbsolutePath());
+
+                            LogFilter rootFilter = config.getRootFilter();
+                            assertNotNull(rootFilter);
+                            assertInstanceOf(LogLevelFilter.class, rootFilter);
+                            assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG));
                         }
                 ),
                 new TestCase("Logger levels", """
@@ -261,11 +294,15 @@ class ConfigParserLog4jTest {
                         config -> {
                             LogHandler console = config.getHandlers().get("console");
                             assertNotNull(console);
+                            assertEquals("STDOUT", console.name());
+
                             LogFilter appFilter = console.getFilter();
                             assertNotNull(appFilter);
                             assertTrue(appFilter.isLevelEnabled(LogLevel.DEBUG));
 
                             LogFilter rootFilter = config.getRootFilter();
+                            assertNotNull(rootFilter);
+                            assertInstanceOf(LogLevelFilter.class, rootFilter);
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO));
                             assertTrue(!rootFilter.isLevelEnabled(LogLevel.DEBUG));
                         }
@@ -284,7 +321,15 @@ class ConfigParserLog4jTest {
                             LogHandler handler = config.getHandler("console");
                             assertNotNull(handler);
                             assertEquals("STDOUT", handler.name());
-                            assertTrue(config.getRootFilter().isLevelEnabled(LogLevel.DEBUG));
+                            assertInstanceOf(ConsoleHandler.class, handler);
+                            ConsoleHandler ch = (ConsoleHandler) handler;
+                            assertInstanceOf(PatternLayout.class, ch.getLayout());
+                            assertEquals("%msg%n", ((PatternLayout) ch.getLayout()).getText());
+
+                            LogFilter rootFilter = config.getRootFilter();
+                            assertNotNull(rootFilter);
+                            assertInstanceOf(LogLevelFilter.class, rootFilter);
+                            assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG));
                         }
                 ),
                 new TestCase("Baeldung - 7.2 Console Logging", """
@@ -300,7 +345,16 @@ class ConfigParserLog4jTest {
                         config -> {
                             LogHandler handler = config.getHandler("console");
                             assertNotNull(handler);
-                            assertTrue(config.getRootFilter().isLevelEnabled(LogLevel.DEBUG));
+                            assertEquals("STDOUT", handler.name());
+                            assertInstanceOf(ConsoleHandler.class, handler);
+                            ConsoleHandler ch = (ConsoleHandler) handler;
+                            assertInstanceOf(PatternLayout.class, ch.getLayout());
+                            assertEquals("[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %C{1} - %msg%n", ((PatternLayout) ch.getLayout()).getText());
+
+                            LogFilter rootFilter = config.getRootFilter();
+                            assertNotNull(rootFilter);
+                            assertInstanceOf(LogLevelFilter.class, rootFilter);
+                            assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG));
                         }
                 ),
                 new TestCase("Baeldung - 7.3. Multiple Destinations", """
@@ -323,9 +377,38 @@ class ConfigParserLog4jTest {
                         appender.file.filter.threshold.level = info
                         """,
                         config -> {
+                            LogHandler consoleHandler = config.getHandler("console");
+                            assertNotNull(consoleHandler);
+                            assertEquals("STDOUT", consoleHandler.name());
+                            assertInstanceOf(ConsoleHandler.class, consoleHandler);
+                            ConsoleHandler ch = (ConsoleHandler) consoleHandler;
+                            assertInstanceOf(PatternLayout.class, ch.getLayout());
+                            assertEquals("[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %C{1} - %msg%n", ((PatternLayout) ch.getLayout()).getText());
+
                             LogHandler fileHandler = config.getHandler("file");
-                            assertNotNull(fileHandler.getFilter());
-                            assertTrue(fileHandler.getFilter().isLevelEnabled(LogLevel.INFO));
+                            assertNotNull(fileHandler);
+                            assertEquals("LOGFILE", fileHandler.name());
+                            // This might be RotatingFileHandler if it has filters or other triggers
+                            assertInstanceOf(LogHandler.class, fileHandler);
+                            if (fileHandler instanceof FileHandler fh) {
+                                assertEquals(Path.of("build/tmp/baeldung/logs/log4j2.log").toAbsolutePath(), fh.getPath().toAbsolutePath());
+                                assertInstanceOf(PatternLayout.class, fh.getLayout());
+                                assertEquals("[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %C{1} - %msg%n", ((PatternLayout) fh.getLayout()).getText());
+                            } else if (fileHandler instanceof RotatingFileHandler rfh) {
+                                assertEquals(Path.of("build/tmp/baeldung/logs/log4j2.log").toAbsolutePath(), rfh.getPath().toAbsolutePath());
+                                assertInstanceOf(PatternLayout.class, rfh.getLayout());
+                                assertEquals("[%-5level] %d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %C{1} - %msg%n", ((PatternLayout) rfh.getLayout()).getText());
+                            }
+
+                            LogFilter fileFilter = fileHandler.getFilter();
+                            assertNotNull(fileFilter);
+                            assertTrue(fileFilter.isLevelEnabled(LogLevel.INFO));
+                            assertTrue(!fileFilter.isLevelEnabled(LogLevel.DEBUG));
+
+                            LogFilter rootFilter = config.getRootFilter();
+                            assertNotNull(rootFilter);
+                            assertInstanceOf(LogLevelFilter.class, rootFilter);
+                            assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO));
                         }
                 ),
                 new TestCase("JSON Layout", """
@@ -339,7 +422,14 @@ class ConfigParserLog4jTest {
                             LogHandler handler = config.getHandler("console");
                             assertNotNull(handler);
                             assertInstanceOf(ConsoleHandler.class, handler);
-                            assertEquals("JsonLayout", ((ConsoleHandler) handler).getLayout().getType());
+                            ConsoleHandler ch = (ConsoleHandler) handler;
+                            assertEquals("STDOUT", ch.name());
+                            assertEquals("JsonLayout", ch.getLayout().getType());
+
+                            LogFilter rootFilter = config.getRootFilter();
+                            assertNotNull(rootFilter);
+                            assertInstanceOf(LogLevelFilter.class, rootFilter);
+                            assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG));
                         }
                 ),
                 new TestCase("Custom Filter", """
@@ -352,8 +442,17 @@ class ConfigParserLog4jTest {
                         """,
                         config -> {
                             LogHandler handler = config.getHandler("console");
-                            assertNotNull(handler.getFilter());
-                            assertTrue(handler.getFilter().isLevelEnabled(LogLevel.DEBUG));
+                            assertNotNull(handler);
+                            assertEquals("STDOUT", handler.name());
+                            assertInstanceOf(ConsoleHandler.class, handler);
+
+                            LogFilter filter = handler.getFilter();
+                            assertNotNull(filter);
+                            assertTrue(filter.isLevelEnabled(LogLevel.DEBUG));
+
+                            LogFilter rootFilter = config.getRootFilter();
+                            assertNotNull(rootFilter);
+                            assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG));
                         }
                 ),
                 new TestCase("Simple Layout", """
@@ -365,7 +464,16 @@ class ConfigParserLog4jTest {
                         """,
                         config -> {
                             LogHandler handler = config.getHandler("console");
-                            assertInstanceOf(SimpleLayout.class, ((ConsoleHandler) handler).getLayout());
+                            assertNotNull(handler);
+                            assertEquals("STDOUT", handler.name());
+                            assertInstanceOf(ConsoleHandler.class, handler);
+                            ConsoleHandler ch = (ConsoleHandler) handler;
+                            assertInstanceOf(SimpleLayout.class, ch.getLayout());
+
+                            LogFilter rootFilter = config.getRootFilter();
+                            assertNotNull(rootFilter);
+                            assertInstanceOf(LogLevelFilter.class, rootFilter);
+                            assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG));
                         }
                 ),
                 new TestCase("Syslog Appender", """
@@ -378,7 +486,13 @@ class ConfigParserLog4jTest {
                         rootLogger.appenderRef.syslog.ref = Syslog
                         """,
                         config -> {
-                            // Currently unsupported, should not crash and maybe return no handler or a default one
+                            // Currently unsupported, should not crash and returns no handler
+                            assertTrue(config.getHandlers().isEmpty(), "Unsupported appender should result in no handlers");
+                            
+                            LogFilter rootFilter = config.getRootFilter();
+                            assertNotNull(rootFilter);
+                            assertInstanceOf(LogLevelFilter.class, rootFilter);
+                            assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG));
                         }
                 ),
                 new TestCase("Complex Policies", """
@@ -401,6 +515,19 @@ class ConfigParserLog4jTest {
                             LogHandler handler = config.getHandler("rolling");
                             assertNotNull(handler);
                             assertInstanceOf(RotatingFileHandler.class, handler);
+                            RotatingFileHandler rfh = (RotatingFileHandler) handler;
+                            assertEquals("RollingFile", rfh.name());
+                            assertEquals(Path.of("build/rolling.log").toAbsolutePath(), rfh.getPath().toAbsolutePath());
+                            assertEquals("build/rolling-%d{MM-dd-yy-HH-mm-ss}-%i.log.gz", rfh.getFilePattern());
+                            assertEquals(100L * 1024 * 1024, rfh.getMaxFileSize());
+                            assertEquals(5, rfh.getMaxBackupIndex());
+                            assertInstanceOf(PatternLayout.class, rfh.getLayout());
+
+                            LogFilter rootFilter = config.getRootFilter();
+                            assertNotNull(rootFilter);
+                            assertInstanceOf(LogLevelFilter.class, rootFilter);
+                            assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO));
+                            assertTrue(!rootFilter.isLevelEnabled(LogLevel.DEBUG));
                         }
                 )
         );
