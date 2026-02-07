@@ -11,7 +11,7 @@ import java.util.Map;
 /**
  * A builder class for creating instances of {@link PatternLayout} using Log4J2 options.
  */
-public class PatternLayoutBuilderLog4j extends LayoutBuilder {
+public class PatternLayoutBuilder extends LayoutBuilder {
 
     private static final String CHARSET = "charset";
     private static final String PATTERN = "pattern";
@@ -32,7 +32,7 @@ public class PatternLayoutBuilderLog4j extends LayoutBuilder {
      *
      * @param name the name of the layout to be built
      */
-    PatternLayoutBuilderLog4j(String name) {
+    PatternLayoutBuilder(String name) {
         super(name, ATTRIBUTES);
     }
 

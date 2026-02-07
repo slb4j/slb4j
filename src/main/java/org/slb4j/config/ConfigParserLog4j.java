@@ -11,7 +11,7 @@ import org.slb4j.filter.MarkerFilter;
 import org.slb4j.filter.MessageTextFilter;
 import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.layout.LayoutBuilder;
-import org.slb4j.layout.StandardLayout;
+import org.slb4j.layout.Layouts;
 import org.slb4j.support.Util;
 
 import java.io.PrintStream;
@@ -277,9 +277,9 @@ public class ConfigParserLog4j implements ConfigParser {
 
     private static LogLayout parseLayoutDefinition(String appenderName, Map<String, String> defs) {
         String type = defs.getOrDefault("type", "PatternLayout");
-        LayoutBuilder builder = StandardLayout.forType(type)
+        LayoutBuilder builder = Layouts.getBuilder(type)
                 .orElseThrow(() -> new IllegalStateException("unsupported Layout: " + type))
-                .builderFactory().apply(appenderName);
+                .apply(appenderName);
         builder.applyDefinitions(defs);
         return builder.build();
     }

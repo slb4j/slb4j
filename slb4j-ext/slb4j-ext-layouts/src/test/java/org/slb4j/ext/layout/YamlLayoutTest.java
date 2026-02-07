@@ -1,4 +1,4 @@
-package org.slb4j.layout;
+package org.slb4j.ext.layout;
 
 import org.junit.jupiter.api.Test;
 import org.slb4j.ConsoleCode;

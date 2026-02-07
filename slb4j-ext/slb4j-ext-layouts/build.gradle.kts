@@ -13,25 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-rootProject.name = "slb4j"
+plugins {
+    id("java-library")
+    id("maven-publish")
+    id("signing")
+}
 
-include("benchmark")
-include("samples:jul")
-include("samples:jcl")
-include("samples:log4j")
-include("samples:slf4j")
-include("samples:all")
-include("slb4j-ext")
-include("slb4j-ext:slb4j-ext-fx")
-include("slb4j-ext:slb4j-ext-fx:samples")
-include("slb4j-ext:slb4j-ext-swing")
-include("slb4j-ext:slb4j-ext-swing:samples")
+java {
+    withSourcesJar()
+    withJavadocJar()
+}
 
-include("native:slb4j-native-test")
-include("native:slb4j-fx-native-test")
+description = "SLB4J layout extensions"
 
-include("benchmark:benchmark-jul")
-include("benchmark:benchmark-logback")
-include("benchmark:benchmark-log4j")
-include("benchmark:benchmark-slb4j")
-include("slb4j-ext:slb4j-ext-layouts")
+dependencies {
+    implementation(libs.jspecify)
+    testImplementation(platform(libs.junit.bom))
+    testImplementation(libs.junit.jupiter)
+    testRuntimeOnly(libs.junit.platform.launcher)
+
+    api(rootProject)
+    api(project(":slb4j-ext"))
+}
+
+tasks.test {
+    useJUnitPlatform()
+}

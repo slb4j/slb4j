@@ -1,10 +1,10 @@
-package org.slb4j.layout;
+package org.slb4j.ext.layout;
 
 import org.jspecify.annotations.Nullable;
 import org.slb4j.ConsoleCode;
 import org.slb4j.Location;
-import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
+import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.slb4j.support.formatter.ISO8601TimeStampFormatter;
 import org.slb4j.support.TimeStampFormatter;
@@ -44,7 +44,7 @@ public final class XmlLayout implements LogLayout {
 
     @Override
     public String getType() {
-        return StandardLayout.XML.type();
+        return "XmlLayout";
     }
 
     @Override

@@ -34,7 +34,7 @@ public class SimpleLayout implements LogLayout {
 
     @Override
     public String getType() {
-        return StandardLayout.SIMPLE_LAYOUT.type();
+        return "SimpleLayout";
     }
 
     @Override

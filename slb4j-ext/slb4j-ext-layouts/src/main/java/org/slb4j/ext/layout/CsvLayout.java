@@ -1,4 +1,4 @@
-package org.slb4j.layout;
+package org.slb4j.ext.layout;
 
 import org.jspecify.annotations.Nullable;
 import org.slb4j.ConsoleCode;
@@ -49,7 +49,7 @@ public final class CsvLayout implements LogLayout {
 
     @Override
     public String getType() {
-        return StandardLayout.CSV.type();
+        return "CsvLayout";
     }
 
     @Override

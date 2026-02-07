@@ -41,7 +41,7 @@ public final class JsonLayout implements LogLayout {
 
     @Override
     public String getType() {
-        return StandardLayout.JSON.type();
+        return "JsonLayout";
     }
 
     @Override

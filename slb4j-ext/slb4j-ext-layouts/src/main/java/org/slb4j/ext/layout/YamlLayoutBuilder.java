@@ -1,6 +1,7 @@
-package org.slb4j.layout;
+package org.slb4j.ext.layout;
 
 import org.slb4j.LogLayout;
+import org.slb4j.layout.LayoutBuilder;
 
 import java.time.ZoneOffset;
 import java.util.Map;

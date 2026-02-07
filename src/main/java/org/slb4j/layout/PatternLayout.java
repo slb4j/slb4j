@@ -1214,7 +1214,7 @@ public final class PatternLayout implements LogLayout {
      * @return the type
      */
     public String getType() {
-        return StandardLayout.PATTERN_LAYOUT.type();
+        return "PatternLayout";
     }
 
     /**

@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * A builder class for creating instances of {@link JsonLayout} using Log4J2 options.
  */
-public class JsonLayoutBuilderLog4j extends LayoutBuilder {
+public class JsonLayoutBuilder extends LayoutBuilder {
 
     private static final String CHARSET = "charset";
     private static final String PROPERTIES = "properties";
@@ -47,7 +47,7 @@ public class JsonLayoutBuilderLog4j extends LayoutBuilder {
      *
      * @param name the name of the layout to be built
      */
-    JsonLayoutBuilderLog4j(String name) {
+    JsonLayoutBuilder(String name) {
         super(name, ATTRIBUTES);
     }
 

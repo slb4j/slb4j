@@ -25,12 +25,20 @@ public abstract class LayoutBuilder {
      * @param defaultValue  The default value of the attribute as a string.
      * @param converter     A function to convert string values into their corresponding object representation.
      */
-    record LayoutAtribute(
+    protected record LayoutAtribute(
             String attribute,
             boolean isSupported,
             @Nullable String defaultValue,
             Function<String, Object> converter
     ) {
+        /**
+         * Converts the default value of the attribute from its string representation
+         * to its corresponding object representation using the provided converter function.
+         * <p>
+         * If the default value is {@code null}, this method returns {@code null}.
+         *
+         * @return the default value as an {@link Object}, or {@code null} if the default value is not set.
+         */
         public @Nullable Object defaultValueAsObject() {
             return defaultValue == null ? null : converter.apply(defaultValue);
         }
