@@ -119,6 +119,21 @@ class ConfigParserLog4jTest {
                             assertTrue(!filter.isLevelEnabled(LogLevel.DEBUG));
                         }
                 ),
+                new TestCase("Logger entries", """
+                        logger.com_foo.name = com.foo
+                        logger.com_foo.level = DEBUG
+                        logger.com_bar.name = com.bar
+                        logger.com_bar.level = ERROR
+                        """,
+                        config -> {
+                            LogFilter rootFilter = config.getRootFilter();
+                            assertNotNull(rootFilter, "Root filter should not be null when loggers are defined");
+                            assertInstanceOf(org.slb4j.filter.LoggerNamePrefixFilter.class, rootFilter);
+                            org.slb4j.filter.LoggerNamePrefixFilter filter = (org.slb4j.filter.LoggerNamePrefixFilter) rootFilter;
+                            assertEquals(LogLevel.DEBUG, filter.getLevel("com.foo"));
+                            assertEquals(LogLevel.ERROR, filter.getLevel("com.bar"));
+                        }
+                ),
                 new TestCase("Appender with compound filter (manual combine)", """
                         appender.console.type = Console
                         appender.console.name = STDOUT
@@ -303,7 +318,7 @@ class ConfigParserLog4jTest {
 
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter);
-                            assertInstanceOf(LogLevelFilter.class, rootFilter);
+                            assertInstanceOf(org.slb4j.filter.LoggerNamePrefixFilter.class, rootFilter);
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO));
                             assertTrue(!rootFilter.isLevelEnabled(LogLevel.DEBUG));
                         }
@@ -529,6 +544,25 @@ class ConfigParserLog4jTest {
                             assertInstanceOf(LogLevelFilter.class, rootFilter);
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO));
                             assertTrue(!rootFilter.isLevelEnabled(LogLevel.DEBUG));
+                        }
+                ),
+                new TestCase("package log level", """
+                        status = WARN
+                        
+                        appender.console.type = Console
+                        appender.console.name = Console
+                        appender.console.target = SYSTEM_OUT
+                        appender.console.layout.type = PatternLayout
+                        appender.console.layout.pattern = %d{yy-MM-dd HH:mm:ss} %-5p %c{1}:%L - %m%n
+                        
+                        loggers = comsun
+                        logger.comsun.name = com.sun
+                        logger.comsun.level = WARN
+                        
+                        rootLogger.level = debug
+                        rootLogger.appenderRef.console.ref = Console
+                        """,
+                        config -> {
                         }
                 )
         );

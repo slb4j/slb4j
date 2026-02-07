@@ -77,7 +77,7 @@ public class ConfigParserLog4j implements ConfigParser {
      */
     public static final Pattern PATTERN_LOG4J2_CONFIG = Pattern.compile(
             "^(" +
-                    "((?<appender>appender)\\.(?<appenderName>[^\\.]*)\\.)?" +
+                    "((?<appender>appender|logger)\\.(?<appenderName>[^\\.]*)\\.)?" +
                     "((?<root>rootLogger)\\.)?" +
                     "(((?<entry>[^.]*)\\.)((?<entryName>[^.]*)\\.)?)" +
                     "?(?<option>.*)" +
@@ -99,6 +99,7 @@ public class ConfigParserLog4j implements ConfigParser {
         public LoggingConfiguration parse(Properties properties) {
         // collect all definitions
         Map<String, Map<String, String>> appenderConfig = new HashMap<>();
+        Map<String, Map<String, String>> loggerConfig = new HashMap<>();
         Map<String, Map<String, Map<String, String>>> entryConfig = new HashMap<>();
         Map<String, Map<String, Map<String, Map<String, String>>>> compoundEntryConfig = new HashMap<>();
         properties.forEach((keyObject, valueObject) -> {
@@ -111,6 +112,7 @@ public class ConfigParserLog4j implements ConfigParser {
                 MatchResult mr = matcher.toMatchResult();
 
                 String appenderName = Objects.requireNonNullElse(mr.group("appenderName"), "");
+                String appenderOrLogger = Objects.requireNonNullElse(mr.group("appender"), "");
                 String isRoot = mr.group("root");
                 String entry = Objects.requireNonNullElse(mr.group("entry"), "");
                 String entryName = Objects.requireNonNullElse(mr.group("entryName"), "");
@@ -124,20 +126,35 @@ public class ConfigParserLog4j implements ConfigParser {
                     }
                 }
 
-                if (entry.isEmpty()) {
-                    // configure the appender itself
-                    appenderConfig.computeIfAbsent(appenderName, k -> new HashMap<>()).put(option, value);
-                } else if (entryName.isEmpty()) {
-                    // configure the entry
-                    entryConfig.computeIfAbsent(appenderName, k -> new HashMap<>())
-                            .computeIfAbsent(entry, k -> new HashMap<>())
-                            .put(option, value);
+                if ("logger".equals(appenderOrLogger)) {
+                    if (entry.isEmpty()) {
+                        loggerConfig.computeIfAbsent(appenderName, k -> new HashMap<>()).put(option, value);
+                    } else if (entryName.isEmpty()) {
+                        entryConfig.computeIfAbsent("logger." + appenderName, k -> new HashMap<>())
+                                .computeIfAbsent(entry, k -> new HashMap<>())
+                                .put(option, value);
+                    } else {
+                        compoundEntryConfig.computeIfAbsent("logger." + appenderName, k -> new HashMap<>())
+                                .computeIfAbsent(entry, k -> new HashMap<>())
+                                .computeIfAbsent(entryName, k -> new HashMap<>())
+                                .put(option, value);
+                    }
                 } else {
-                    // configure the entry
-                    compoundEntryConfig.computeIfAbsent(appenderName, k -> new HashMap<>())
-                            .computeIfAbsent(entry, k -> new HashMap<>())
-                            .computeIfAbsent(entryName, k -> new HashMap<>())
-                            .put(option, value);
+                    if (entry.isEmpty()) {
+                        // configure the appender itself
+                        appenderConfig.computeIfAbsent(appenderName, k -> new HashMap<>()).put(option, value);
+                    } else if (entryName.isEmpty()) {
+                        // configure the entry
+                        entryConfig.computeIfAbsent(appenderName, k -> new HashMap<>())
+                                .computeIfAbsent(entry, k -> new HashMap<>())
+                                .put(option, value);
+                    } else {
+                        // configure the entry
+                        compoundEntryConfig.computeIfAbsent(appenderName, k -> new HashMap<>())
+                                .computeIfAbsent(entry, k -> new HashMap<>())
+                                .computeIfAbsent(entryName, k -> new HashMap<>())
+                                .put(option, value);
+                    }
                 }
             }
         });
@@ -297,14 +314,50 @@ public class ConfigParserLog4j implements ConfigParser {
             }
         });
 
+        // process logger entries
+        if (!loggerConfig.isEmpty()) {
+            org.slb4j.filter.LoggerNamePrefixFilter loggerFilter = new org.slb4j.filter.LoggerNamePrefixFilter("loggers");
+            loggerConfig.forEach((loggerIdentifier, options) -> {
+                String name = options.getOrDefault("name", loggerIdentifier);
+                String levelStr = options.get("level");
+                if (levelStr != null) {
+                    try {
+                        LogLevel level = LogLevel.valueOf(levelStr.toUpperCase(Locale.ROOT));
+                        loggerFilter.setLevel(name, level);
+                    } catch (IllegalArgumentException e) {
+                        SLB4J.logInternal(LogLevel.WARN, "Logger %s: Ignoring unknown level %s", name, levelStr);
+                    }
+                }
+            });
+            LogFilter currentRoot = configuration.getRootFilter();
+            if (currentRoot == LogFilter.allPass()) {
+                configuration.setRootFilter(loggerFilter);
+                rootFilterSet[0] = true;
+            } else {
+                configuration.setRootFilter(LogFilter.combine(currentRoot, loggerFilter));
+                rootFilterSet[0] = true;
+            }
+        }
+
         // process rootLogger level if filter was not set
         Map<String, String> rootOptions = appenderConfig.get("rootLogger");
-        if (rootOptions != null && !rootFilterSet[0]) {
-            String level = rootOptions.get("level");
-            if (level != null) {
-                Map<String, String> filterDefs = new HashMap<>();
-                filterDefs.put("level", level);
-                configuration.setRootFilter(parseThresholFilter(filterDefs));
+        if (rootOptions != null) {
+            String levelStr = rootOptions.get("level");
+            if (levelStr != null) {
+                try {
+                    LogLevel level = LogLevel.valueOf(levelStr.toUpperCase(Locale.ROOT));
+                    LogFilter currentRoot = configuration.getRootFilter();
+                    if (currentRoot instanceof org.slb4j.filter.LoggerNamePrefixFilter lnpf) {
+                        lnpf.setLevel(level);
+                    } else if (!rootFilterSet[0]) {
+                        Map<String, String> filterDefs = new HashMap<>();
+                        filterDefs.put("level", levelStr);
+                        configuration.setRootFilter(parseThresholFilter(filterDefs));
+                        rootFilterSet[0] = true;
+                    }
+                } catch (IllegalArgumentException e) {
+                    SLB4J.logInternal(LogLevel.WARN, "rootLogger: Ignoring unknown level %s", levelStr);
+                }
             }
         }
 
