@@ -83,7 +83,7 @@ public final class PatternLayout implements LogLayout {
      * </ul>
      * Use when a compact and human-readable log format is preferred, such as console-based logging.
      */
-    public static final LogLayout LAYOUT_INSTANCE_COMPACT = parseLog4jPattern("%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%n%ex");
+    public static final LogLayout LAYOUT_INSTANCE_COMPACT = parseLog4jPattern("%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%ex");
 
     /**
      * A predefined {@link LogLayout} instance representing a detailed log format.
@@ -865,6 +865,7 @@ public final class PatternLayout implements LogLayout {
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             if (t != null) {
+                app.append(NEWLINE);
                 Util.appendStackTrace(app, t);
             }
         }
