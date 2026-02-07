@@ -1,3 +1,10 @@
+Version 0.4
+-----------
+
+- feature: extensible using plugins
+- fix: IOOBE when logging messages that exceed the preallocated buffer size
+- moved CsvLayout, XmlLayout, YamlLayout into org.slb4j.ext.layouts plugin
+
 Version 0.3.1
 -------------
 

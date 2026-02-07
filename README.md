@@ -40,7 +40,7 @@ SLB4J supports the following logging APIs:
 <dependency>
   <groupId>org.slb4j</groupId>
   <artifactId>slb4j</artifactId>
-  <version>0.3.1</version>
+  <version>0.4</version>
 </dependency>
 ```
 
@@ -48,7 +48,7 @@ SLB4J supports the following logging APIs:
 
 ```kotlin
 dependencies {
-    implementation("org.slb4j:slb4j:0.3.1")
+    implementation("org.slb4j:slb4j:0.4")
 }
 ```
 
@@ -56,7 +56,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'org.slb4j:slb4j:0.3.1'
+    implementation 'org.slb4j:slb4j:0.4'
 }
 ```
 
