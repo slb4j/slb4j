@@ -65,7 +65,7 @@ public final class PatternLayout implements LogLayout {
      * 2026-01-11 15:19:09.573 INFO  com.example.Application - Message from SLF4J
      * </pre>
      */
-    public static final LogLayout LAYOUT_INSTANCE_DEFAULT = parseLog4jPattern("%highlight{" + DEFAULT_PATTERN_STRING +"%ex}");
+    public static final LogLayout LAYOUT_INSTANCE_DEFAULT = parseLog4jPattern("%highlight{" + DEFAULT_PATTERN_STRING.replaceFirst("%n$", "%ex%n") +"}");
 
     /**
      * A compact log pattern used to format log entries in a concise and structured manner.
@@ -83,7 +83,7 @@ public final class PatternLayout implements LogLayout {
      * </ul>
      * Use when a compact and human-readable log format is preferred, such as console-based logging.
      */
-    public static final LogLayout LAYOUT_INSTANCE_COMPACT = parseLog4jPattern("%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%ex");
+    public static final LogLayout LAYOUT_INSTANCE_COMPACT = parseLog4jPattern("%highlight{%d{HH:mm:ss.SSS} %-5level %-30.30c{1.} - %msg}%ex%n");
 
     /**
      * A predefined {@link LogLayout} instance representing a detailed log format.
@@ -103,7 +103,7 @@ public final class PatternLayout implements LogLayout {
      * This format provides comprehensive information about log events, including contextual
      * details, useful for debugging and auditing purposes.
      */
-    public static final LogLayout LAYOUT_INSTANCE_DETAILED = parseLog4jPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%n%throwable");
+    public static final LogLayout LAYOUT_INSTANCE_DETAILED = parseLog4jPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%throwable%n");
 
     /**
      * Defines an interface for formatting log entries in a customizable and extensible manner.
@@ -865,8 +865,8 @@ public final class PatternLayout implements LogLayout {
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             if (t != null) {
-                app.append(NEWLINE);
                 Util.appendStackTrace(app, t);
+                app.append(NEWLINE);
             }
         }
     }

@@ -50,8 +50,9 @@ public class PatternLayoutBuilder extends LayoutBuilder {
         }
 
         if (alwaysWriteExceptions && logPatternEntries.stream().noneMatch(entry -> entry instanceof PatternLayout.ExceptionEntry)) {
-            logPatternEntries.add(new PatternLayout.NewlineEntry());
-            logPatternEntries.add(new PatternLayout.ExceptionEntry(0, Integer.MAX_VALUE, true));
+            PatternLayout.ExceptionEntry exceptionEntry = new PatternLayout.ExceptionEntry(0, Integer.MAX_VALUE, true);
+            int insertOffset =  !logPatternEntries.isEmpty() && logPatternEntries.getLast() instanceof PatternLayout.NewlineEntry ? -1 : 0;
+            logPatternEntries.add(logPatternEntries.size() + insertOffset, exceptionEntry);
         }
 
         return new PatternLayout(pattern, logPatternEntries.toArray(PatternLayout.LogPatternEntry[]::new));
