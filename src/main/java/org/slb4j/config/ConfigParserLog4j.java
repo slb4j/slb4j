@@ -118,6 +118,19 @@ public class ConfigParserLog4j implements ConfigParser {
                 String entryName = Objects.requireNonNullElse(mr.group("entryName"), "");
                 String option = Objects.requireNonNullElse(mr.group("option"), "");
 
+                if ("rootLogger".equals(key)) {
+                    String[] parts = value.split(",");
+                    if (parts.length > 0) {
+                        appenderConfig.computeIfAbsent("rootLogger", k -> new HashMap<>()).put("level", parts[0].trim());
+                        for (int i = 1; i < parts.length; i++) {
+                            entryConfig.computeIfAbsent("rootLogger", k -> new HashMap<>())
+                                    .computeIfAbsent("appenderRef", k -> new HashMap<>())
+                                    .put(String.valueOf(i - 1), parts[i].trim());
+                        }
+                    }
+                    return;
+                }
+
                 if (isRoot != null) {
                     appenderName = "rootLogger";
                     if (entry.isEmpty() && !option.isEmpty() && !"level".equals(option) && !"appenderRef".equals(option)) {
