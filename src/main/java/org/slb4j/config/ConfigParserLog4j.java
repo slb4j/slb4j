@@ -39,8 +39,8 @@ public class ConfigParserLog4j implements ConfigParser {
     private static final String THRESHOLD_FILTER = "ThresholdFilter";
     private static final String MARKER_FILTER = "MarkerFilter";
     private static final String REGEX_FILTER = "RegexFilter";
-    private static final String SYSTEM_OUT = "System.out";
-    private static final String SYSTEM_ERR = "System.err";
+    private static final String SYSTEM_OUT = "SYSTEM_OUT";
+    private static final String SYSTEM_ERR = "SYSTEM_ERR";
 
     /**
      * Default constructor.
