@@ -56,11 +56,45 @@ public final class LoggingConfiguration {
      */
     public static final String LOGGING_TYPE = "type";
 
-    private static final Map<String, Supplier<ConfigParser>> CONFIG_PARSERS = Map.of(
-            "log4j2-test.properties", ConfigParserLog4j::new,
-            "log4j2.properties", ConfigParserLog4j::new,
-            "logging.properties", ConfigParserJul::new
-    );
+    /**
+     * A static mapping between configuration file paths and the corresponding suppliers
+     * that provide instances of {@link ConfigParser}.
+     *
+     * This map is used for automatic lookup of configuration files. Entries are tried top to bottom.
+     */
+    private static final Map<String, Supplier<ConfigParser>> CONFIG_PARSERS;
+
+    /*
+     * Configure the set and order of configuration files to check for loading.
+     */
+    static {
+        CONFIG_PARSERS = new LinkedHashMap<>();
+
+        // 1. Get configuration path from System Property or Environment Variable
+        String property = System.getProperty("log4j2.configurationFile");
+        if (property == null) {
+            property = System.getenv("LOG4J_CONFIGURATION_FILE");
+        }
+
+        // 2. Log4j2 supports "Composite Configurations" via comma-separated paths
+        if (property != null) {
+            for (String path : property.split(",")) {
+                String trimmed = path.trim();
+                // Only register if it's a property file to avoid errors on XML/JSON paths
+                if (trimmed.endsWith(".properties")) {
+                    CONFIG_PARSERS.put(trimmed, ConfigParserLog4j::new);
+                }
+            }
+        }
+
+        // 3. Default Classpath Lookups (Ordered by priority)
+        // Log4j2-test always overrides log4j2 production files
+        CONFIG_PARSERS.putIfAbsent("log4j2-test.properties", ConfigParserLog4j::new);
+        CONFIG_PARSERS.putIfAbsent("log4j2.properties", ConfigParserLog4j::new);
+
+        // 4. Legacy JUL Support
+        CONFIG_PARSERS.putIfAbsent("logging.properties", ConfigParserJul::new);
+    }
 
     // *** ConsoleHandler configuration ***
 
