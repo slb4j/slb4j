@@ -1,3 +1,18 @@
+Version 0.5
+-----------
+
+- Provide a mechanism for backend internal logging instead of simply writing to stderr
+- Log4J2 configuration parser
+  - support shorthand definition in log4j2.properties ("rootLogger=DEBUG, STDOUT")
+  - supper apenderref
+  - support setting the level for backend status messages
+  - fix Rolling File Appender configuration parsing
+  - Refactor tests, stricter validation of parsing results
+  - fix wrong names being used for stdout and stderr in ConsoleHandler
+  - fix incorrect warnings being displayed for valid configurations
+- PatternLayout: fix extra newline when pattern includes exception but nothing was thrown
+- Remove unused code
+
 Version 0.4
 -----------
 
