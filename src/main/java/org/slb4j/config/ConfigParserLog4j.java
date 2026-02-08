@@ -228,8 +228,11 @@ public class ConfigParserLog4j implements ConfigParser {
                         Map<String, Map<String, String>> appenderHandlerOptions = handlerOptions.computeIfAbsent(appenderName, k -> new HashMap<>());
                         appenderHandlerOptions.put(appenderName, options);
                     }
-                    case LAYOUT, APPENDER_REF ->
+                    case LAYOUT ->
                         layouts.put(appenderName, parseLayoutDefinition(appenderName, options));
+                    case APPENDER_REF -> {
+                        // handled during appender creation or rootLogger setup
+                    }
                     case POLICIES, STRATEGY -> {
                         // handled during appender creation
                     }
