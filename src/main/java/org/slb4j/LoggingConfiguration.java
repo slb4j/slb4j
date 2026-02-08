@@ -165,6 +165,8 @@ public final class LoggingConfiguration {
     // *** end of configuration constants ***
 
     private LogLevel statusLevel = LogLevel.WARN;
+    private String statusName = "";
+    private String statusDest = "err";
     private LoggerNamePrefixFilter loggerFilter = new LoggerNamePrefixFilter("logger filter");
     private final LinkedHashMap<String, LogHandler> handlers = new LinkedHashMap<>();
     private final LinkedHashMap<String, LogFilter> filters = new LinkedHashMap<>();
@@ -319,5 +321,50 @@ public final class LoggingConfiguration {
      */
     public LogLevel getStatusLevel() {
         return statusLevel;
+    }
+
+    /**
+     * Sets the logging status level for the configuration.
+     *
+     * @param statusLevel the {@link LogLevel} to set
+     */
+    public void setStatusLevel(LogLevel statusLevel) {
+        this.statusLevel = statusLevel;
+    }
+
+    /**
+     * Retrieves the name for the status logger.
+     *
+     * @return the status name
+     */
+    public String getStatusName() {
+        return statusName;
+    }
+
+    /**
+     * Sets the name for the status logger.
+     *
+     * @param statusName the status name to set
+     */
+    public void setStatusName(String statusName) {
+        this.statusName = statusName;
+    }
+
+    /**
+     * Retrieves the destination for status logs.
+     *
+     * @return the status destination
+     */
+    public String getStatusDest() {
+        return statusDest;
+    }
+
+    /**
+     * Sets the destination for status logs.
+     *
+     * @param statusDest the status destination to set (err, out, or a file path)
+     */
+    public void setStatusDest(String statusDest) {
+        this.statusDest = statusDest;
     }
 }

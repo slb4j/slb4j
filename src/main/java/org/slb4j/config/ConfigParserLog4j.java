@@ -52,6 +52,10 @@ public class ConfigParserLog4j implements ConfigParser {
     private static final String ON_MISMATCH = "onMismatch";
     private static final String NEUTRAL = "NEUTRAL";
     private static final String DENY = "DENY";
+    private static final String STATUS_CONFIG = "statusConfig";
+    private static final String NAME = "name";
+    private static final String DEST = "dest";
+    private static final String MAX_ENTRIES = "maxEntries";
 
     /**
      * Default constructor.
@@ -110,6 +114,8 @@ public class ConfigParserLog4j implements ConfigParser {
         public LoggingConfiguration parse(Properties properties) {
         // collect all definitions
         LogLevel[] statusLevel = {LogLevel.WARN}; // level for internal backend logging
+        String[] statusName = {""};
+        String[] statusDest = {"err"};
         Map<String, Map<String, String>> appenderConfig = new HashMap<>();
         Map<String, Map<String, String>> loggerConfig = new HashMap<>();
         Map<String, Map<String, Map<String, String>>> entryConfig = new HashMap<>();
@@ -153,6 +159,21 @@ public class ConfigParserLog4j implements ConfigParser {
                     } else {
                         SLB4J.logInternal(LogLevel.WARN, "Ignoring status option for entry %s", entry);
                     }
+                    return;
+                }
+
+                if (STATUS_CONFIG.equals(key) || STATUS_CONFIG.equals(entry)) {
+                    // Handle both statusConfig = value and statusConfig.option = value
+                    // but the regex usually puts "statusConfig" in entry if it's statusConfig.dest
+                    String actualOption = entry.equals(STATUS_CONFIG) ? option : key.substring("statusConfig.".length());
+
+                    switch (actualOption) {
+                        case NAME -> statusName[0] = value;
+                        case DEST -> statusDest[0] = value;
+                        case MAX_ENTRIES -> { /* ignore as per requirement */ }
+                        default -> SLB4J.logInternal(LogLevel.WARN, "Ignoring unknown statusConfig option %s", actualOption);
+                    }
+                    return;
                 }
 
                 if (isRoot != null) {
@@ -248,6 +269,9 @@ public class ConfigParserLog4j implements ConfigParser {
         });
 
         LoggingConfiguration configuration = new LoggingConfiguration();
+        configuration.setStatusLevel(statusLevel[0]);
+        configuration.setStatusName(statusName[0]);
+        configuration.setStatusDest(statusDest[0]);
 
         // create appenders
         appenderConfig.forEach((appenderIdentifier, options) -> {
@@ -255,7 +279,7 @@ public class ConfigParserLog4j implements ConfigParser {
                 return;
             }
             LogHandler handler = null;
-            String appenderName = options.getOrDefault("name", appenderIdentifier);
+            String appenderName = options.getOrDefault(NAME, appenderIdentifier);
             String type = options.getOrDefault("type", "Console");
             switch (type) {
                 case "Console" -> {
@@ -356,7 +380,7 @@ public class ConfigParserLog4j implements ConfigParser {
         if (!loggerConfig.isEmpty()) {
             org.slb4j.filter.LoggerNamePrefixFilter loggerFilter = new org.slb4j.filter.LoggerNamePrefixFilter("loggers");
             loggerConfig.forEach((loggerIdentifier, options) -> {
-                String name = options.getOrDefault("name", loggerIdentifier);
+                String name = options.getOrDefault(NAME, loggerIdentifier);
                 String levelStr = options.get(LEVEL);
                 if (levelStr != null) {
                     try {

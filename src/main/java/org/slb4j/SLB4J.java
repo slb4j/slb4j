@@ -21,6 +21,7 @@ import org.slb4j.support.TimeStampFormatter;
 import org.slb4j.support.Util;
 
 import java.io.IOException;
+import java.io.PrintStream;
 import java.util.Map;
 import java.util.Objects;
 import java.util.ServiceConfigurationError;
@@ -43,6 +44,8 @@ public final class SLB4J {
     private static final Map<String, String> LOADED_PLUGINS = new ConcurrentHashMap<>();
 
     private static LogLevel statusLevel = LogLevel.WARN;
+    private static String statusName = "";
+    private static String statusDest = "err";
 
     static {
         // === check classpath pollution
@@ -95,6 +98,8 @@ public final class SLB4J {
         }
 
         setStatusLevel(config.getStatusLevel());
+        setStatusName(config.getStatusName());
+        setStatusDest(config.getStatusDest());
 
         config.getHandlers().values().forEach(DISPATCHER::addLogHandler);
         DISPATCHER.setLoggerFilter(config.getLoggerFilter());
@@ -180,6 +185,24 @@ public final class SLB4J {
     }
 
     /**
+     * Sets the global status logging name for the framework.
+     *
+     * @param name the status name to be set.
+     */
+    public static void setStatusName(String name) {
+        statusName = name;
+    }
+
+    /**
+     * Sets the global status logging destination for the framework.
+     *
+     * @param dest the status destination to be set (err, out, or a file path).
+     */
+    public static void setStatusDest(String dest) {
+        statusDest = dest;
+    }
+
+    /**
      * Retrieves the current status level of the logging framework.
      *
      * The status level determines the minimum severity of log messages
@@ -190,6 +213,24 @@ public final class SLB4J {
      */
     public static LogLevel getStatusLevel() {
         return statusLevel;
+    }
+
+    /**
+     * Retrieves the current status name of the logging framework.
+     *
+     * @return the current status name.
+     */
+    public static String getStatusName() {
+        return statusName;
+    }
+
+    /**
+     * Retrieves the current status destination of the logging framework.
+     *
+     * @return the current status destination.
+     */
+    public static String getStatusDest() {
+        return statusDest;
     }
 
     /**
@@ -210,12 +251,24 @@ public final class SLB4J {
 
                 TimeStampFormatter.ISO8601_FORMATTER.appendTo(System.currentTimeMillis(), sb);
 
+                if (!statusName.isEmpty()) {
+                    sb.append(" ").append(statusName);
+                }
+
                 Class<?> caller = STACK_WALKER.getCallerClass();
                 sb.append(" [").append(level).append("] ").append(caller.getName());
 
                 sb.append(" - ").append(String.format(msg, args));
 
-                System.err.println(sb);
+                PrintStream dest = switch (statusDest.toLowerCase()) {
+                    case "out", "system_out" -> System.out;
+                    case "err", "system_err" -> System.out;
+                    default -> {
+                        System.err.println("Setting status logger output to a file is not supported, using SYSTEM_ERR instead.");
+                        yield System.err;
+                    }
+                };
+                dest.println(sb);
             } catch (IOException e) {
                 // swallowed
             }
