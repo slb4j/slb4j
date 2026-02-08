@@ -38,7 +38,7 @@ public final class SLB4J {
 
     private static final StackWalker STACK_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
 
-    private static final LogDispatcher DISPATCHER;
+    private static final UniversalDispatcher DISPATCHER;
 
     private static final Map<String, String> LOADED_PLUGINS = new ConcurrentHashMap<>();
 
@@ -95,6 +95,7 @@ public final class SLB4J {
         }
 
         config.getHandlers().values().forEach(DISPATCHER::addLogHandler);
+        DISPATCHER.setLoggerFilter(config.getLoggerFilter());
         DISPATCHER.setFilter(config.getRootFilter());
 
         // === wire the logging frontends

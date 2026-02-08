@@ -37,7 +37,7 @@ public interface LogHandler {
      * @return {@code true} if logging is enabled for the specified log level, otherwise {@code false}
      */
     default boolean isEnabled(LogLevel lvl) {
-        return !(getFilter() instanceof LoggerNamePrefixFilter filter) || filter.getLevel().ordinal() <= lvl.ordinal();
+        return getFilter().isLevelEnabled(lvl);
     }
 
     /**

@@ -299,11 +299,9 @@ public class ConfigParserLog4j implements ConfigParser {
         });
 
         // add filters
-        final boolean[] rootFilterSet = {false};
         filters.forEach((appenderIdentifier, filter) -> {
             if ("rootLogger".equals(appenderIdentifier)) {
                 configuration.setRootFilter(filter);
-                rootFilterSet[0] = true;
                 return;
             }
             LogHandler handler = configuration.getHandlers().get(appenderIdentifier);
@@ -329,14 +327,7 @@ public class ConfigParserLog4j implements ConfigParser {
                     }
                 }
             });
-            LogFilter currentRoot = configuration.getRootFilter();
-            if (currentRoot == LogFilter.allPass()) {
-                configuration.setRootFilter(loggerFilter);
-                rootFilterSet[0] = true;
-            } else {
-                configuration.setRootFilter(LogFilter.combine(currentRoot, loggerFilter));
-                rootFilterSet[0] = true;
-            }
+            configuration.setLoggerFilter(loggerFilter);
         }
 
         // process rootLogger level if filter was not set
@@ -346,15 +337,7 @@ public class ConfigParserLog4j implements ConfigParser {
             if (levelStr != null) {
                 try {
                     LogLevel level = LogLevel.valueOf(levelStr.toUpperCase(Locale.ROOT));
-                    LogFilter currentRoot = configuration.getRootFilter();
-                    if (currentRoot instanceof org.slb4j.filter.LoggerNamePrefixFilter lnpf) {
-                        lnpf.setLevel(level);
-                    } else if (!rootFilterSet[0]) {
-                        Map<String, String> filterDefs = new HashMap<>();
-                        filterDefs.put("level", levelStr);
-                        configuration.setRootFilter(parseThresholFilter(filterDefs));
-                        rootFilterSet[0] = true;
-                    }
+                    configuration.setRootFilter(LogLevelFilter.pass(level));
                 } catch (IllegalArgumentException e) {
                     SLB4J.logInternal(LogLevel.WARN, "rootLogger: Ignoring unknown level %s", levelStr);
                 }

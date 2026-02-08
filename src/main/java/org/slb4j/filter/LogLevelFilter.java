@@ -21,6 +21,7 @@ import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
  * The DefaultLogEntryFilter class is an implementation of the LogEntryFilter interface
@@ -128,5 +129,17 @@ public final class LogLevelFilter implements LogFilter {
     @Override
     public boolean isLevelEnabled(LogLevel lvl) {
         return pass[lvl.ordinal()];
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        LogLevelFilter that = (LogLevelFilter) o;
+        return Objects.equals(name, that.name) && Objects.deepEquals(pass, that.pass);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, Arrays.hashCode(pass));
     }
 }

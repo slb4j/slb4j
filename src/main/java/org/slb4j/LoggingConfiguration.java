@@ -20,6 +20,7 @@ import org.slb4j.config.ConfigParser;
 import org.slb4j.config.ConfigParserJul;
 import org.slb4j.config.ConfigParserLog4j;
 import org.slb4j.filter.LogLevelFilter;
+import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.handler.ConsoleHandler;
 
 import java.io.IOException;
@@ -163,6 +164,7 @@ public final class LoggingConfiguration {
 
     // *** end of configuration constants ***
 
+    private LoggerNamePrefixFilter loggerFilter = new LoggerNamePrefixFilter("logger filter");
     private final LinkedHashMap<String, LogHandler> handlers = new LinkedHashMap<>();
     private final LinkedHashMap<String, LogFilter> filters = new LinkedHashMap<>();
 
@@ -170,7 +172,7 @@ public final class LoggingConfiguration {
      * Default constructor.
      */
     public LoggingConfiguration() {
-        // nothing to do
+        setRootFilter(LogLevelFilter.pass(LogLevel.ERROR));
     }
 
     /**
@@ -235,6 +237,30 @@ public final class LoggingConfiguration {
      */
     public LogFilter getRootFilter() {
         return filters.getOrDefault("", LogFilter.allPass());
+    }
+
+    /**
+     * Retrieves the logger filter for the logging configuration.
+     * The logger filter is responsible for controlling the logging behavior
+     * based on logger name and defined log level rules.
+     *
+     * @return the {@link LoggerNamePrefixFilter} instance associated with the configuration,
+     *         or {@code null} if no logger filter has been set.
+     */
+    public LoggerNamePrefixFilter getLoggerFilter() {
+        return this.loggerFilter;
+    }
+
+    /**
+     * Sets the logger filter for the logging configuration.
+     * The logger filter determines which log entries are allowed based on
+     * the logger name prefixes and log levels.
+     *
+     * @param loggerFilter the {@link LoggerNamePrefixFilter} instance to set as the logger filter;
+     *                     can be customized to define filtering behavior, must not be null.
+     */
+    public void setLoggerFilter(LoggerNamePrefixFilter loggerFilter) {
+        this.loggerFilter = loggerFilter;
     }
 
     /**

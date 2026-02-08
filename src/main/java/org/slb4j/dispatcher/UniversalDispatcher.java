@@ -24,6 +24,7 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.SLB4J;
+import org.slb4j.filter.LoggerNamePrefixFilter;
 
 import java.util.List;
 import java.util.SequencedCollection;
@@ -62,6 +63,7 @@ public final class UniversalDispatcher implements LogDispatcher {
         return SingletonHolder.INSTANCE;
     }
 
+    private LoggerNamePrefixFilter loggerFilter = new LoggerNamePrefixFilter("root");
     private LogFilter filter = LogFilter.allPass();
 
     /**
@@ -119,7 +121,7 @@ public final class UniversalDispatcher implements LogDispatcher {
      * @return true if the logging configuration is enabled, false otherwise
      */
     public boolean isEnabled(String name, LogLevel logLevel, @Nullable String marker) {
-        return isLevelEnabled(logLevel) && filter.isEnabled(name, logLevel, marker);
+        return filter.isEnabled(name, logLevel, marker) && loggerFilter.isEnabled(name, logLevel, marker);
     }
 
     @Override
@@ -142,6 +144,17 @@ public final class UniversalDispatcher implements LogDispatcher {
         return filter;
     }
 
+    /**
+     * Sets the logger filter for the dispatcher, enabling log entries to be filtered
+     * based on the criteria defined by the provided {@code LoggerNamePrefixFilter}.
+     *
+     * @param loggerFilter the filter to be used for controlling which log entries
+     *                     are processed; must not be null
+     */
+    public void setLoggerFilter(LoggerNamePrefixFilter loggerFilter) {
+        this.loggerFilter = loggerFilter;
+    }
+
     @Override
     public SequencedCollection<LogHandler> getLogHandlers() {
         return List.copyOf(handlers);
@@ -162,7 +175,8 @@ public final class UniversalDispatcher implements LogDispatcher {
      * @param t an optional {@code Throwable} associated with the log event; may be null
      */
     public void filterAndDispatch(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver locationResolver, Supplier<String> msg, @Nullable Throwable t) {
-        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
+        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)
+            && loggerFilter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             String message = null;
             Location loc =  null;
             for (LogHandler handler : handlers) {
