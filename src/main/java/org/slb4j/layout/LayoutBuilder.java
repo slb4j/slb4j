@@ -26,7 +26,7 @@ public abstract class LayoutBuilder {
      * @param defaultValue  The default value of the attribute as a string.
      * @param converter     A function to convert string values into their corresponding object representation.
      */
-    protected record LayoutAtribute(
+    public record LayoutAtribute(
             String attribute,
             boolean isSupported,
             @Nullable String defaultValue,

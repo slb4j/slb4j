@@ -203,7 +203,7 @@ public final class SLB4J {
      *            {@link String#format(String, Object...)}.
      * @param args optional arguments to fill placeholders in the message string.
      */
-    public static void logInternal(LogLevel level, String msg, Object...args) {
+    public static void logInternal(LogLevel level, String msg, Object... args) {
         if (level.ordinal() >= statusLevel.ordinal()) {
             try {
                 StringBuilder sb = new StringBuilder();

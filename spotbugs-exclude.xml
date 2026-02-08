@@ -63,4 +63,14 @@
         <Class name="org.slb4j.support.SupportTest"/>
     </Match>
 
+    <Match>
+        <Or>
+            <Bug pattern="EI_EXPOSE_REP"/>
+            <Bug pattern="EI_EXPOSE_REP2"/>
+        </Or>
+        <Or>
+            <Class name="org.slb4j.LoggingConfiguration"/>
+            <Class name="org.slb4j.dispatcher.UniversalDispatcher"/>
+        </Or>
+    </Match>
 </FindBugsFilter>

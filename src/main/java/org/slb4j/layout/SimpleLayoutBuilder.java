@@ -9,7 +9,10 @@ import java.util.Map;
  */
 public class SimpleLayoutBuilder extends LayoutBuilder {
 
+    private static final String TYPE = "type";
+
     private static final Map<String, LayoutAtribute> ATTRIBUTES = Map.of(
+            TYPE, new LayoutAtribute(TYPE, true, null, null)
     );
 
     /**

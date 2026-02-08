@@ -99,6 +99,7 @@ cabe {
 
 tasks.test {
     useJUnitPlatform()
+    outputs.upToDateWhen { false }
     dependsOn(
         ":samples:all:classes",
         ":samples:jul:classes",

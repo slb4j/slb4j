@@ -10,6 +10,7 @@ import java.util.Map;
  */
 public class JsonLayoutBuilder extends LayoutBuilder {
 
+    private static final String TYPE = "type";
     private static final String CHARSET = "charset";
     private static final String PROPERTIES = "properties";
     private static final String LOCATION_INFO_ENABLED = "locationInfoEnabled";
@@ -26,6 +27,7 @@ public class JsonLayoutBuilder extends LayoutBuilder {
     private static final String RECYCLER_FACTORY = "recyclerFactory";
 
     private static final Map<String, LayoutAtribute> ATTRIBUTES = Map.ofEntries(
+            Map.entry(TYPE, new LayoutAtribute(TYPE, true, null, null)),
             Map.entry(CHARSET, new LayoutAtribute(CHARSET, false, "UTF-8", Charset::forName)),
             Map.entry(PROPERTIES, new LayoutAtribute(PROPERTIES, true, "true", Boolean::parseBoolean)),
             Map.entry(LOCATION_INFO_ENABLED, new LayoutAtribute(LOCATION_INFO_ENABLED, true, "false", Boolean::parseBoolean)),
