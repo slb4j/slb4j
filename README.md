@@ -9,10 +9,10 @@ SLB4J is a **Simple Logging Backend for Java** that comes as a single JAR withou
 - Log4J2 compatible layout support  (when log4j2.properties is used):
   - PatternLayout
   - SimpleLayout
-  - CsVLayout
-  - XmlLayout
   - JsonLayout
-  - YamlLayout
+  - CsVLayout (module slb4j-ext-layouts)
+  - XmlLayout (module slb4j-ext-layouts)
+  - YamlLayout (module slb4j-ext-layouts)
 - Java Util Logging pattern syntax (when logging.properties is used)
 - Console and log file logging
 - log file rotation
@@ -40,7 +40,7 @@ SLB4J supports the following logging APIs:
 <dependency>
   <groupId>org.slb4j</groupId>
   <artifactId>slb4j</artifactId>
-  <version>0.4</version>
+  <version>0.5</version>
 </dependency>
 ```
 
@@ -48,7 +48,7 @@ SLB4J supports the following logging APIs:
 
 ```kotlin
 dependencies {
-    implementation("org.slb4j:slb4j:0.4")
+    implementation("org.slb4j:slb4j:0.5")
 }
 ```
 
@@ -56,7 +56,7 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'org.slb4j:slb4j:0.4'
+    implementation 'org.slb4j:slb4j:0.5'
 }
 ```
 
@@ -152,7 +152,7 @@ correctly.
 ### Todo
 
 - Publish Javadoc
-- Layouts: YAML, HTML
+- Layouts: HTML
 
 ### Later
 
