@@ -30,7 +30,7 @@ public abstract class LayoutBuilder {
             String attribute,
             boolean isSupported,
             @Nullable String defaultValue,
-            Function<String, Object> converter
+            @Nullable Function<String, Object> converter
     ) {
         /**
          * Converts the default value of the attribute from its string representation
@@ -42,6 +42,16 @@ public abstract class LayoutBuilder {
          */
         public @Nullable Object defaultValueAsObject() {
             return defaultValue == null ? null : converter.apply(defaultValue);
+        }
+
+        /**
+         * Determines whether the attribute should be ignored based on its configuration.
+         * An attribute is considered ignored if both the default value and the converter are {@code null}.
+         *
+         * @return {@code true} if the attribute is ignored; {@code false} otherwise.
+         */
+        public boolean isIgnored() {
+            return defaultValue == null && converter == null;
         }
     }
 
@@ -77,6 +87,9 @@ public abstract class LayoutBuilder {
             LayoutAtribute attribute = attributes.get(attributeName);
             if (attribute == null) {
                 SLB4J.logInternal(LogLevel.WARN, "Ignoring unknown attribute %s in definition of layout %s!", attributeName, layoutName);
+                return;
+            }
+            if (attribute.isIgnored()) {
                 return;
             }
             if (!attribute.isSupported()) {

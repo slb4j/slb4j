@@ -164,6 +164,7 @@ public final class LoggingConfiguration {
 
     // *** end of configuration constants ***
 
+    private LogLevel statusLevel = LogLevel.WARN;
     private LoggerNamePrefixFilter loggerFilter = new LoggerNamePrefixFilter("logger filter");
     private final LinkedHashMap<String, LogHandler> handlers = new LinkedHashMap<>();
     private final LinkedHashMap<String, LogFilter> filters = new LinkedHashMap<>();
@@ -307,5 +308,16 @@ public final class LoggingConfiguration {
         configuration.setRootFilter(LogLevelFilter.pass(LogLevel.INFO));
         configuration.addHandler("console", new ConsoleHandler("console", System.out, true));
         return configuration;
+    }
+
+    /**
+     * Retrieves the current logging status level for the configuration, i.e., the level to set for backend internal
+     * log messages.
+     *
+     * @return the {@link LogLevel} representing the current logging level
+     *         associated with the configuration.
+     */
+    public LogLevel getStatusLevel() {
+        return statusLevel;
     }
 }

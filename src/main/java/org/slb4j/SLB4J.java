@@ -94,6 +94,8 @@ public final class SLB4J {
             config = LoggingConfiguration.defaultConfiguration();
         }
 
+        setStatusLevel(config.getStatusLevel());
+
         config.getHandlers().values().forEach(DISPATCHER::addLogHandler);
         DISPATCHER.setLoggerFilter(config.getLoggerFilter());
         DISPATCHER.setFilter(config.getRootFilter());

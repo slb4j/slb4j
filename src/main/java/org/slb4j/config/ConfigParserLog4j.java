@@ -41,6 +41,17 @@ public class ConfigParserLog4j implements ConfigParser {
     private static final String REGEX_FILTER = "RegexFilter";
     private static final String SYSTEM_OUT = "SYSTEM_OUT";
     private static final String SYSTEM_ERR = "SYSTEM_ERR";
+    private static final String APPENDER_REF = "appenderRef";
+    private static final String ROOT_LOGGER = "rootLogger";
+    private static final String LEVEL = "level";
+    private static final String LAYOUT = "layout";
+    private static final String POLICIES = "policies";
+    private static final String STRATEGY = "strategy";
+    private static final String FILTER = "filter";
+    private static final String ON_MATCH = "onMatch";
+    private static final String ON_MISMATCH = "onMismatch";
+    private static final String NEUTRAL = "NEUTRAL";
+    private static final String DENY = "DENY";
 
     /**
      * Default constructor.
@@ -98,6 +109,7 @@ public class ConfigParserLog4j implements ConfigParser {
     @Override
         public LoggingConfiguration parse(Properties properties) {
         // collect all definitions
+        LogLevel[] statusLevel = {LogLevel.WARN}; // level for internal backend logging
         Map<String, Map<String, String>> appenderConfig = new HashMap<>();
         Map<String, Map<String, String>> loggerConfig = new HashMap<>();
         Map<String, Map<String, Map<String, String>>> entryConfig = new HashMap<>();
@@ -118,22 +130,34 @@ public class ConfigParserLog4j implements ConfigParser {
                 String entryName = Objects.requireNonNullElse(mr.group("entryName"), "");
                 String option = Objects.requireNonNullElse(mr.group("option"), "");
 
-                if ("rootLogger".equals(key)) {
+                if (ROOT_LOGGER.equals(key)) {
                     String[] parts = value.split(",");
                     if (parts.length > 0) {
-                        appenderConfig.computeIfAbsent("rootLogger", k -> new HashMap<>()).put("level", parts[0].trim());
+                        appenderConfig.computeIfAbsent(ROOT_LOGGER, k -> new HashMap<>()).put(LEVEL, parts[0].trim());
                         for (int i = 1; i < parts.length; i++) {
-                            entryConfig.computeIfAbsent("rootLogger", k -> new HashMap<>())
-                                    .computeIfAbsent("appenderRef", k -> new HashMap<>())
+                            entryConfig.computeIfAbsent(ROOT_LOGGER, k -> new HashMap<>())
+                                    .computeIfAbsent(APPENDER_REF, k -> new HashMap<>())
                                     .put(String.valueOf(i - 1), parts[i].trim());
                         }
                     }
                     return;
                 }
 
+                if ("status".equals(key)) {
+                    if (entry.isEmpty()) {
+                        try {
+                            statusLevel[0] = LogLevel.valueOf(value.toUpperCase());
+                        } catch (IllegalArgumentException e) {
+                            SLB4J.logInternal(LogLevel.WARN, "Ignoring unknown status level %s", value);
+                        }
+                    } else {
+                        SLB4J.logInternal(LogLevel.WARN, "Ignoring status option for entry %s", entry);
+                    }
+                }
+
                 if (isRoot != null) {
-                    appenderName = "rootLogger";
-                    if (entry.isEmpty() && !option.isEmpty() && !"level".equals(option) && !"appenderRef".equals(option)) {
+                    appenderName = ROOT_LOGGER;
+                    if (entry.isEmpty() && !option.isEmpty() && !LEVEL.equals(option) && !APPENDER_REF.equals(option)) {
                         entry = option;
                         option = "";
                     }
@@ -155,7 +179,9 @@ public class ConfigParserLog4j implements ConfigParser {
                 } else {
                     if (entry.isEmpty()) {
                         // configure the appender itself
-                        appenderConfig.computeIfAbsent(appenderName, k -> new HashMap<>()).put(option, value);
+                        if  (!appenderName.isEmpty()) {
+                            appenderConfig.computeIfAbsent(appenderName, k -> new HashMap<>()).put(option, value);
+                        }
                     } else if (entryName.isEmpty()) {
                         // configure the entry
                         entryConfig.computeIfAbsent(appenderName, k -> new HashMap<>())
@@ -177,10 +203,10 @@ public class ConfigParserLog4j implements ConfigParser {
         compoundEntryConfig.forEach((appenderName, config) -> {
             List<LogFilter> list = new ArrayList<>();
             config.forEach((name, defs) -> {
-                if ("filter".equals(name)) {
-                    defs.forEach((entryName, options) -> {
-                        list.add(parseFilterDefinition(appenderName, options));
-                    });
+                if (FILTER.equals(name)) {
+                    defs.forEach((entryName, options) ->
+                        list.add(parseFilterDefinition(appenderName, options))
+                    );
                 }
             });
             if (!list.isEmpty()) {
@@ -202,13 +228,12 @@ public class ConfigParserLog4j implements ConfigParser {
                         Map<String, Map<String, String>> appenderHandlerOptions = handlerOptions.computeIfAbsent(appenderName, k -> new HashMap<>());
                         appenderHandlerOptions.put(appenderName, options);
                     }
-                    case "layout", "appenderRef" -> {
+                    case LAYOUT, APPENDER_REF ->
                         layouts.put(appenderName, parseLayoutDefinition(appenderName, options));
-                    }
-                    case "policies", "strategy" -> {
+                    case POLICIES, STRATEGY -> {
                         // handled during appender creation
                     }
-                    case "filter" -> {
+                    case FILTER -> {
                         LogFilter old = filters.put(appenderName, parseFilterDefinition(appenderName, options));
                         if (old != null) {
                             SLB4J.logInternal(LogLevel.WARN, "Duplicate compound filter definition for appender %s!", appenderName);
@@ -223,7 +248,7 @@ public class ConfigParserLog4j implements ConfigParser {
 
         // create appenders
         appenderConfig.forEach((appenderIdentifier, options) -> {
-            if ("rootLogger".equals(appenderIdentifier)) {
+            if (ROOT_LOGGER.equals(appenderIdentifier)) {
                 return;
             }
             LogHandler handler = null;
@@ -252,17 +277,17 @@ public class ConfigParserLog4j implements ConfigParser {
 
                         try {
                             Map<String, Map<String, String>> appenderEntries = entryConfig.getOrDefault(appenderIdentifier, Map.of());
-                            Map<String, String> policies = appenderEntries.getOrDefault("policies", Map.of());
+                            Map<String, String> policies = appenderEntries.getOrDefault(POLICIES, Map.of());
                             String size = policies.get("size.size");
                             if (size == null) {
                                 // check for appender.NAME.policies.size.size in compound entry config
                                 size = compoundEntryConfig.getOrDefault(appenderIdentifier, Map.of())
-                                        .getOrDefault("policies", Map.of())
+                                        .getOrDefault(POLICIES, Map.of())
                                         .getOrDefault("size", Map.of())
                                         .get("size");
                             }
 
-                            if ("RollingFile".equals(type) || compoundEntryConfig.containsKey(appenderIdentifier) || appenderEntries.containsKey("policies") || size != null) {
+                            if ("RollingFile".equals(type) || compoundEntryConfig.containsKey(appenderIdentifier) || appenderEntries.containsKey(POLICIES) || size != null) {
                                 org.slb4j.handler.RotatingFileHandler rfh = new org.slb4j.handler.RotatingFileHandler(appenderName, path, append);
                                 if (size != null) {
                                     rfh.setMaxFileSize(Util.parseSize(size));
@@ -271,11 +296,11 @@ public class ConfigParserLog4j implements ConfigParser {
                                 if (filePattern != null) {
                                     rfh.setFilePattern(filePattern);
                                 }
-                                Map<String, String> strategy = appenderEntries.getOrDefault("strategy", Map.of());
+                                Map<String, String> strategy = appenderEntries.getOrDefault(STRATEGY, Map.of());
                                 String max = strategy.get("max");
                                 if (max == null) {
                                     max = compoundEntryConfig.getOrDefault(appenderIdentifier, Map.of())
-                                            .getOrDefault("strategy", Map.of())
+                                            .getOrDefault(STRATEGY, Map.of())
                                             .getOrDefault("max", Map.of())
                                             .get("max");
                                 }
@@ -291,9 +316,8 @@ public class ConfigParserLog4j implements ConfigParser {
                         }
                     }
                 }
-                default -> {
+                default ->
                     SLB4J.logInternal(LogLevel.WARN, "Ignoring unknown appender type %s!", type);
-                }
             }
 
             if (handler != null) {
@@ -313,7 +337,7 @@ public class ConfigParserLog4j implements ConfigParser {
 
         // add filters
         filters.forEach((appenderIdentifier, filter) -> {
-            if ("rootLogger".equals(appenderIdentifier)) {
+            if (ROOT_LOGGER.equals(appenderIdentifier)) {
                 configuration.setRootFilter(filter);
                 return;
             }
@@ -330,7 +354,7 @@ public class ConfigParserLog4j implements ConfigParser {
             org.slb4j.filter.LoggerNamePrefixFilter loggerFilter = new org.slb4j.filter.LoggerNamePrefixFilter("loggers");
             loggerConfig.forEach((loggerIdentifier, options) -> {
                 String name = options.getOrDefault("name", loggerIdentifier);
-                String levelStr = options.get("level");
+                String levelStr = options.get(LEVEL);
                 if (levelStr != null) {
                     try {
                         LogLevel level = LogLevel.valueOf(levelStr.toUpperCase(Locale.ROOT));
@@ -344,9 +368,9 @@ public class ConfigParserLog4j implements ConfigParser {
         }
 
         // process rootLogger level if filter was not set
-        Map<String, String> rootOptions = appenderConfig.get("rootLogger");
+        Map<String, String> rootOptions = appenderConfig.get(ROOT_LOGGER);
         if (rootOptions != null) {
-            String levelStr = rootOptions.get("level");
+            String levelStr = rootOptions.get(LEVEL);
             if (levelStr != null) {
                 try {
                     LogLevel level = LogLevel.valueOf(levelStr.toUpperCase(Locale.ROOT));
@@ -384,7 +408,7 @@ public class ConfigParserLog4j implements ConfigParser {
 
     private static LogFilter parseThresholFilter(Map<String, String> options) {
         // 1. Resolve the Threshold Level (default to ALL/TRACE if missing)
-        String levelStr = options.getOrDefault("level", "TRACE").toUpperCase(Locale.ROOT).trim();
+        String levelStr = options.getOrDefault(LEVEL, "TRACE").toUpperCase(Locale.ROOT).trim();
         LogLevel threshold;
         try {
             threshold = LogLevel.valueOf(levelStr);
@@ -395,8 +419,8 @@ public class ConfigParserLog4j implements ConfigParser {
 
         // 2. Resolve Log4j2-style Actions
         // Log4j2 Defaults: onMatch=NEUTRAL (treated as pass), onMismatch=DENY (treated as fail)
-        String onMatch = options.getOrDefault("onMatch", "NEUTRAL").toUpperCase(Locale.ROOT).trim();
-        String onMismatch = options.getOrDefault("onMismatch", "DENY").toUpperCase(Locale.ROOT).trim();
+        String onMatch = options.getOrDefault(ON_MATCH, NEUTRAL).toUpperCase(Locale.ROOT).trim();
+        String onMismatch = options.getOrDefault(ON_MISMATCH, DENY).toUpperCase(Locale.ROOT).trim();
 
         // 3. Map every LogLevel to a pass/fail boolean
         LogLevel[] allLevels = LogLevel.values();
@@ -413,7 +437,7 @@ public class ConfigParserLog4j implements ConfigParser {
             // In a binary boolean filter:
             // ACCEPT/NEUTRAL = true (let the log through)
             // DENY = false (stop the log)
-            passMap[i] = !action.equals("DENY");
+            passMap[i] = !action.equals(DENY);
         }
 
         String name = String.format("LogLevelFilter[threshold=%s, match=%s, mismatch=%s]", threshold, onMatch, onMismatch);
@@ -423,11 +447,11 @@ public class ConfigParserLog4j implements ConfigParser {
 
     private static LogFilter parseMarkerFilter(Map<String, String> options) {
         String target = options.getOrDefault("marker", "");
-        String onMatch = options.getOrDefault("onMatch", "NEUTRAL").toUpperCase().trim();
-        String onMismatch = options.getOrDefault("onMismatch", "DENY").toUpperCase().trim();
+        String onMatch = options.getOrDefault(ON_MATCH, NEUTRAL).toUpperCase().trim();
+        String onMismatch = options.getOrDefault(ON_MISMATCH, DENY).toUpperCase().trim();
 
-        boolean matchPasses = !onMatch.equals("DENY");
-        boolean mismatchPasses = !onMismatch.equals("DENY");
+        boolean matchPasses = !onMatch.equals(DENY);
+        boolean mismatchPasses = !onMismatch.equals(DENY);
 
         Predicate<? super String> predicate;
 
@@ -457,11 +481,11 @@ public class ConfigParserLog4j implements ConfigParser {
         String regex = options.getOrDefault("regex", ".*");
         Pattern pattern = Pattern.compile(regex);
 
-        String onMatch = options.getOrDefault("onMatch", "NEUTRAL").toUpperCase().trim();
-        String onMismatch = options.getOrDefault("onMismatch", "DENY").toUpperCase().trim();
+        String onMatch = options.getOrDefault(ON_MATCH, NEUTRAL).toUpperCase().trim();
+        String onMismatch = options.getOrDefault(ON_MISMATCH, DENY).toUpperCase().trim();
 
-        boolean matchPasses = !onMatch.equals("DENY");
-        boolean mismatchPasses = !onMismatch.equals("DENY");
+        boolean matchPasses = !onMatch.equals(DENY);
+        boolean mismatchPasses = !onMismatch.equals(DENY);
 
         // Get the base predicate (uses .find() logic)
         Predicate<String> basePredicate = pattern.asPredicate();

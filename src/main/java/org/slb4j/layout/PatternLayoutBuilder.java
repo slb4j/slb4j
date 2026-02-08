@@ -13,6 +13,7 @@ import java.util.Map;
  */
 public class PatternLayoutBuilder extends LayoutBuilder {
 
+    private static final String TYPE = "type";
     private static final String CHARSET = "charset";
     private static final String PATTERN = "pattern";
     private static final String ALWAYS_WRITE_EXCEPTIONS = "alwaysWriteExceptions";
@@ -20,6 +21,7 @@ public class PatternLayoutBuilder extends LayoutBuilder {
     private static final String NO_CONSOLE_NO_ANSI = "noConsoleNoAnsi";
 
     private static final Map<String, LayoutAtribute> ATTRIBUTES = Map.of(
+            TYPE, new LayoutAtribute(TYPE, true, null, null),
             CHARSET, new LayoutAtribute(CHARSET, false, "UTF-8", Charset::forName),
             PATTERN, new LayoutAtribute(PATTERN, true, PatternLayout.DEFAULT_PATTERN_STRING, String::valueOf),
             ALWAYS_WRITE_EXCEPTIONS, new LayoutAtribute(ALWAYS_WRITE_EXCEPTIONS, true, "true", Boolean::parseBoolean),
