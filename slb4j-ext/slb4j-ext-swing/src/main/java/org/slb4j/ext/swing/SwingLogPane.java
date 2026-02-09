@@ -94,8 +94,8 @@ public final class SwingLogPane extends JPanel implements LogPane {
     private final TableRowSorter<LogTableModel> sorter;
     /** The text area for displaying log entry details. */
     private final JTextArea details;
-    /** The pattern used for formatting log entries. */
-    private final LogLayout pattern = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
+    /** The layout used for formatting log entries. */
+    private LogLayout logLayout = DEFAULT_LAYOUT;
     /** Buffer for formatting log entries. */
     @SuppressWarnings("StringBufferField")
     private final StringBuilder buffer = new StringBuilder(4096);
@@ -366,7 +366,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
 
         StringBuilder sb = new StringBuilder();
         try {
-            pattern.formatLogEntry(sb, entry.time(), entry.logger(), entry.level(), entry.marker(), entry.mdc(), entry.location(), entry.message(), entry.throwable(), ConsoleCode.empty());
+            logLayout.formatLogEntry(sb, entry.time(), entry.logger(), entry.level(), entry.marker(), entry.mdc(), entry.location(), entry.message(), entry.throwable(), ConsoleCode.empty());
         } catch (IOException e) {
             sb.append("Error formatting log entry: ").append(e.getMessage());
         }
@@ -440,7 +440,18 @@ public final class SwingLogPane extends JPanel implements LogPane {
      *
      * @return the {@code LogBuffer} instance used for storing and managing log entries.
      */
+    @Override
     public LogBuffer getLogBuffer() {
         return logBuffer;
+    }
+
+    @Override
+    public void setLogLayout(LogLayout logLayout) {
+        this.logLayout = logLayout;
+    }
+
+    @Override
+    public LogLayout getLogLayout() {
+        return logLayout;
     }
 }

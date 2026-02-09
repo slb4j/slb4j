@@ -3,6 +3,7 @@ Version 0.6 (in development)
 
 - When defining the configuration file location using environment variables or system settings,
   do not try to resolve the path as a resource.
+- Change the default layout for the detail view in both SwingLogPane and FxLogPane; make the layout configurable.
 
 Version 0.5
 -----------

@@ -148,7 +148,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
      * provided by the {@link PatternLayout}, typically configured to determine
      * how log messages are displayed or recorded.
      */
-    private static final LogLayout LAYOUT = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
+    private LogLayout logLayout = DEFAULT_LAYOUT;
 
     /**
      * A {@code StringBuilder} instance used as a buffer for accumulating
@@ -408,7 +408,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
     private String formatLogEntry(LogEntry entry) {
         try {
             StringBuilder sb = getStringBuilder();
-            LAYOUT.formatLogEntry(
+            logLayout.formatLogEntry(
                     sb,
                     entry.time(),
                     entry.logger(),
@@ -630,7 +630,18 @@ public final class FxLogPane extends BorderPane implements LogPane {
      *
      * @return the LogBuffer object
      */
+    @Override
     public LogBuffer getLogBuffer() {
         return logBuffer;
+    }
+
+    @Override
+    public LogLayout getLogLayout() {
+        return logLayout;
+    }
+
+    @Override
+    public void setLogLayout(LogLayout logLayout) {
+        this.logLayout = logLayout;
     }
 }
