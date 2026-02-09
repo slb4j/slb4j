@@ -2,10 +2,10 @@ Version 0.5
 -----------
 
 - Provide a mechanism for backend internal logging instead of simply writing to stderr
-- Log4J2 configuration parser
+- Log4J2 configuration parser:
   - support configuring the properties file using system property or environment variable
   - support shorthand definition in log4j2.properties ("rootLogger=DEBUG, STDOUT")
-  - supper apenderref
+  - support apenderref
   - support setting the level for backend status messages
   - fix Rolling File Appender configuration parsing
   - Refactor tests, stricter validation of parsing results
