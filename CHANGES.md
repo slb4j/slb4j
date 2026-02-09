@@ -1,3 +1,9 @@
+Version 0.6 (in development)
+-----------
+
+- When defining the configuration file location using environment variables or system settings,
+  do not try to resolve the path as a resource.
+
 Version 0.5
 -----------
 
