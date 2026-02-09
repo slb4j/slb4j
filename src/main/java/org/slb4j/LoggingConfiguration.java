@@ -25,8 +25,14 @@ import org.slb4j.handler.ConsoleHandler;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.Files;
+import java.nio.file.InvalidPathException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -57,18 +63,64 @@ public final class LoggingConfiguration {
     public static final String LOGGING_TYPE = "type";
 
     /**
+     * Represents different storage types for configuration files and provides methods to obtain an input stream
+     * for reading configuration data based on the specified file name.
+     */
+    private enum ConfigFileStorage {
+        /** Enum constant representing classpath storage. */
+        CLASSPATH {
+            @Override
+            public @Nullable InputStream getInputStream(String fileName) {
+                return ClassLoader.getSystemResourceAsStream(fileName);
+            }
+        },
+        /** Enum constant representing file system storage. */
+        FILE {
+            @Override
+            public @Nullable InputStream getInputStream(String fileName) {
+                try {
+                    Path p = Paths.get(fileName);
+                    if (Files.exists(p)) {
+                        return Files.newInputStream(p);
+                    }
+                } catch (InvalidPathException e) {
+                    SLB4J.logInternal(LogLevel.WARN, "Invalid file path: %s", fileName);
+                } catch (IOException e) {
+                    SLB4J.logInternal(LogLevel.WARN, "Failed to open configuration file %s: %s", fileName, e);
+                }
+                return null;
+            }
+        };
+
+        /**
+         * Provides an input stream for reading data from a specified file.
+         * <p>
+         * Implementations define how the input stream is obtained based on the file location.
+         *
+         * @param fileName the name of the file for which the input stream is to be obtained.
+         *                 Must not be null or empty.
+         * @return an InputStream to read data from the specified file, or null if the file
+         *         does not exist, cannot be read, or an error occurs while opening the stream.
+         */
+        public abstract @Nullable InputStream getInputStream(String fileName);
+    }
+
+    private record ConfigFileMeta(String fileName, ConfigFileStorage storage, Supplier<ConfigParser> parserSupplier) {
+    }
+
+    /**
      * A static mapping between configuration file paths and the corresponding suppliers
      * that provide instances of {@link ConfigParser}.
      *
      * This map is used for automatic lookup of configuration files. Entries are tried top to bottom.
      */
-    private static final Map<String, Supplier<ConfigParser>> CONFIG_PARSERS;
+    private static final List<ConfigFileMeta> CONFIG_PARSERS;
 
     /*
      * Configure the set and order of configuration files to check for loading.
      */
     static {
-        CONFIG_PARSERS = new LinkedHashMap<>();
+        CONFIG_PARSERS = new ArrayList<>();
 
         // 1. Get configuration path from System Property or Environment Variable
         String property = System.getProperty("log4j2.configurationFile");
@@ -82,18 +134,18 @@ public final class LoggingConfiguration {
                 String trimmed = path.trim();
                 // Only register if it's a property file to avoid errors on XML/JSON paths
                 if (trimmed.endsWith(".properties")) {
-                    CONFIG_PARSERS.put(trimmed, ConfigParserLog4j::new);
+                    CONFIG_PARSERS.add(new ConfigFileMeta(trimmed, ConfigFileStorage.FILE, ConfigParserLog4j::new));
                 }
             }
         }
 
         // 3. Default Classpath Lookups (Ordered by priority)
         // Log4j2-test always overrides log4j2 production files
-        CONFIG_PARSERS.putIfAbsent("log4j2-test.properties", ConfigParserLog4j::new);
-        CONFIG_PARSERS.putIfAbsent("log4j2.properties", ConfigParserLog4j::new);
+        CONFIG_PARSERS.add(new ConfigFileMeta("log4j2-test.properties", ConfigFileStorage.CLASSPATH, ConfigParserLog4j::new));
+        CONFIG_PARSERS.add(new ConfigFileMeta("log4j2.properties", ConfigFileStorage.CLASSPATH, ConfigParserLog4j::new));
 
         // 4. Legacy JUL Support
-        CONFIG_PARSERS.putIfAbsent("logging.properties", ConfigParserJul::new);
+        CONFIG_PARSERS.add(new ConfigFileMeta("logging.properties", ConfigFileStorage.CLASSPATH, ConfigParserJul::new));
     }
 
     // *** ConsoleHandler configuration ***
@@ -241,21 +293,46 @@ public final class LoggingConfiguration {
      *         if none could be loaded.
      */
     public static LoggingConfiguration load() {
-        return CONFIG_PARSERS.entrySet().stream().map(entry -> {
-                    String fileName = entry.getKey();
-                    try (InputStream in = ClassLoader.getSystemResourceAsStream(fileName)) {
-                        if (in != null) {
-                            Properties properties = new Properties();
-                            properties.load(in);
-                            return entry.getValue().get().parse(properties);
-                        }
-                    } catch (IOException e) {
-                        SLB4J.logInternal(LogLevel.WARN, "Failed to load %s: %s", fileName, e);
-                    }
-                    return null;
-                }).filter(Objects::nonNull)
-                .findFirst()
-                .orElseGet(LoggingConfiguration::defaultConfiguration);
+        return CONFIG_PARSERS.stream().map(cp -> {
+            SLB4J.logInternal(LogLevel.TRACE, "Trying to load %s", cp.fileName());
+            try (InputStream in = cp.storage().getInputStream(cp.fileName())) {
+                if (in != null) {
+                    Properties properties = new Properties();
+                    properties.load(in);
+                    return cp.parserSupplier().get().parse(properties);
+                }
+            } catch (IOException e) {
+                SLB4J.logInternal(LogLevel.WARN, "Failed to load %s: %s", cp.fileName(), e);
+            }
+            return null;
+        }).filter(Objects::nonNull)
+        .findFirst()
+        .orElseGet(LoggingConfiguration::defaultConfiguration);
+    }
+
+    /**
+     * Get InputStream from file name.
+     * <p>
+     * If {@code fileName} is a valid file path, it will be opened as a file.
+     * Otherwise, it will be treated as a resource path.
+     *
+     * @param fileName
+     * @return the file/resource contents as an InputStream, or {@code null}, if not found or the file could
+     * not be opened for reading
+     */
+    private static @Nullable InputStream getConfigStreamFromFileName(String fileName) {
+        try {
+            Path p = Paths.get(fileName);
+            if (Files.exists(p)) {
+                return Files.newInputStream(p);
+            }
+        } catch (InvalidPathException e) {
+            SLB4J.logInternal(LogLevel.DEBUG, "Invalid file path, trying as resource path: %s", fileName);
+        } catch (IOException e) {
+            SLB4J.logInternal(LogLevel.WARN, "Failed to open configuration file %s: %s", fileName, e);
+        }
+
+        return ClassLoader.getSystemResourceAsStream(fileName);
     }
 
     @Override
