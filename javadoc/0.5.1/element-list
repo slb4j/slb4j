@@ -1,0 +1,13 @@
+module:org.slb4j
+org.slb4j
+org.slb4j.config
+org.slb4j.dispatcher
+org.slb4j.filter
+org.slb4j.frontend.jcl
+org.slb4j.frontend.jul
+org.slb4j.frontend.log4j
+org.slb4j.frontend.slf4j
+org.slb4j.handler
+org.slb4j.layout
+org.slb4j.support
+org.slb4j.support.formatter
