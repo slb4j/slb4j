@@ -164,7 +164,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
      */
     public SwingLogPane(LogBuffer logBuffer, LogPaneTexts texts) {
         super(new BorderLayout());
-        this.logBuffer = Objects.requireNonNull(logBuffer);
+        this.logBuffer = logBuffer;
 
         tableModel = new LogTableModel(logBuffer);
         table = new JTable(tableModel);

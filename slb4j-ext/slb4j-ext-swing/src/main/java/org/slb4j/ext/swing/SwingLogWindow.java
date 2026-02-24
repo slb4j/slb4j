@@ -77,7 +77,7 @@ public final class SwingLogWindow extends JFrame implements LogWindow {
      */
     public SwingLogWindow(String title, LogBuffer logBuffer, LogPaneTexts texts) {
         super(title);
-        this.logBuffer = Objects.requireNonNull(logBuffer);
+        this.logBuffer = logBuffer;
 
         SwingLogPane logPane = new SwingLogPane(this.logBuffer, texts);
         setContentPane(logPane);
