@@ -1,7 +1,7 @@
 Version 0.6.0
 -------------
 
-- Reduce allocations by replacing enhanced for loops with indexed loops on hot paths
+- Reduce (bound lambda) allocations by replacing enhanced for loops with indexed loops on hot paths
 - Add SLB4J.getConfiguration(), SLB4J.setConfiguration()
 
 Version 0.5.1
