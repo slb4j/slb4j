@@ -21,7 +21,6 @@ import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * The LogFilter class is an implementation of the LogEntryFilter interface

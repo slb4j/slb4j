@@ -52,8 +52,8 @@ public final class CombinedFilter implements LogFilter {
 
     @Override
     public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
-        for (LogFilter filter : filters) {
-            if (!filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
+        for (int i = 0; i < filters.length; i++) {
+            if (!filters[i].test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
                 return false;
             }
         }
@@ -62,8 +62,8 @@ public final class CombinedFilter implements LogFilter {
 
     @Override
     public boolean isEnabled(String loggerName, LogLevel logLevel, @Nullable String marker) {
-        for (LogFilter filter : filters) {
-            if (!filter.isEnabled(loggerName, logLevel, marker)) {
+        for (int i = 0; i < filters.length; i++) {
+            if (!filters[i].isEnabled(loggerName, logLevel, marker)) {
                 return false;
             }
         }
@@ -72,8 +72,8 @@ public final class CombinedFilter implements LogFilter {
 
     @Override
     public boolean isLevelEnabled(LogLevel logLevel) {
-        for (LogFilter filter : filters) {
-            if (!filter.isLevelEnabled(logLevel)) {
+        for (int i = 0; i < filters.length; i++) {
+            if (!filters[i].isLevelEnabled(logLevel)) {
                 return false;
             }
         }
@@ -82,8 +82,8 @@ public final class CombinedFilter implements LogFilter {
 
     @Override
     public boolean isMarkerEnabled(@Nullable String marker) {
-        for (LogFilter filter : filters) {
-            if (!filter.isMarkerEnabled(marker)) {
+        for (int i = 0; i < filters.length; i++) {
+            if (!filters[i].isMarkerEnabled(marker)) {
                 return false;
             }
         }

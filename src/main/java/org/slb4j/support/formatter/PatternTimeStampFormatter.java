@@ -212,8 +212,8 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
 
     @Override
     protected void appendTo(Appendable app, int y, int m, int d, int hour, int minute, int second, int millis, int offsetSeconds) throws IOException {
-        for (Part part : compiledParts) {
-            part.append(app, y, m, d, hour, minute, second, millis, offsetSeconds);
+        for (int i = 0; i < compiledParts.length; i++) {
+            compiledParts[i].append(app, y, m, d, hour, minute, second, millis, offsetSeconds);
         }
     }
 

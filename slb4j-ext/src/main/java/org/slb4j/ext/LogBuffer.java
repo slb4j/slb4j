@@ -86,12 +86,13 @@ public class LogBuffer implements LogHandler, Externalizable {
             }
         }
 
-        private void addAll(Collection<? extends LogEntry> items) {
+        private void addAll(List<? extends LogEntry> items) {
             if (items.isEmpty() || capacity() == 0) {
                 return;
             }
 
-            for (LogEntry item : items) {
+            for (int i = 0; i < items.size(); i++) {
+                LogEntry item = items.get(i);
                 if (entries < capacity()) {
                     data[index(entries++)] = item;
                 } else {
@@ -545,8 +546,9 @@ public class LogBuffer implements LogHandler, Externalizable {
      * @throws IOException if an I/O error occurs while appending the LogEntries
      */
     public void appendTo(Appendable app) throws IOException {
-        for (LogEntry entry : toArray()) {
-            app.append(entry.toString()).append("\n");
+        LogEntry[] array = toArray();
+        for (int i = 0; i < array.length; i++) {
+            app.append(array[i].toString()).append("\n");
         }
     }
 

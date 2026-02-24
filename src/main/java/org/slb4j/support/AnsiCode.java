@@ -94,8 +94,8 @@ public final class AnsiCode {
         StringBuilder out = new StringBuilder();
         out.append(ESC_START);
         String delimiter = "";
-        for (int arg : args) {
-            out.append(delimiter).append(arg);
+        for (int i = 0; i < args.length; i++) {
+            out.append(delimiter).append(args[i]);
             delimiter = ";";
         }
         out.append(ESC_END);

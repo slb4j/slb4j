@@ -93,11 +93,11 @@ public final class UniversalDispatcher implements LogDispatcher {
      * should not be expected to process any further log entries.
      */
     public void shutdown() {
-        for (LogHandler handler : handlers) {
+        for (int i = 0; i < handlers.size(); i++) {
             try {
-                handler.shutdown();
+                handlers.get(i).shutdown();
             } catch (Exception e) {
-                SLB4J.logInternal(LogLevel.WARN, "Error shutting down log handler %s: %s", handler.name(), e);
+                SLB4J.logInternal(LogLevel.WARN, "Error shutting down log handler %s: %s", handlers.get(i).name(), e);
             }
         }
     }
@@ -179,7 +179,8 @@ public final class UniversalDispatcher implements LogDispatcher {
             && loggerFilter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             String message = null;
             Location loc =  null;
-            for (LogHandler handler : handlers) {
+            for (int i = 0; i < handlers.size(); i++) {
+                LogHandler handler = handlers.get(i);
                 if (handler.isEnabled(lvl)) {
                     if (loc == null && handler.isLocationNeeded()) {
                         loc = locationResolver.resolve();

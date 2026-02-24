@@ -1244,9 +1244,9 @@ public final class PatternLayout implements LogLayout {
      */
     @Override
     public String getHeader() {
-        StringBuilder sb = new StringBuilder();
-        for (LogPatternEntry entry : entries) {
-            sb.append(entry.getHeader());
+        StringBuilder sb = new StringBuilder(entries.length * 16);
+        for (int i = 0; i < entries.length; i++) {
+            sb.append(entries[i].getHeader());
         }
         return sb.toString();
     }
@@ -1281,8 +1281,8 @@ public final class PatternLayout implements LogLayout {
      * @throws IOException if an I/O error occurs while writing to the appendable
      */
     public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-        for (LogPatternEntry entry : entries) {
-            entry.format(app, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
+        for (int i = 0; i < entries.length; i++) {
+            entries[i].format(app, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
         }
     }
 
