@@ -15,6 +15,8 @@
  */
 package org.slb4j.handler;
 
+import org.jspecify.annotations.Nullable;
+
 import java.io.IOException;
 import java.io.Writer;
 import java.nio.channels.Channels;
@@ -22,6 +24,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 
 /**
  * A log handler that writes log entries to a file.
@@ -76,5 +79,15 @@ public final class FileHandler extends AbstractFileHandler {
      */
     public boolean isAppend() {
         return append;
+    }
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (!(o instanceof FileHandler other)) return false;
+        return append == other.append && Objects.equals(name(), other.name()) && Objects.equals(path, other.path) && Objects.equals(getFilter(), other.getFilter()) && Objects.equals(getLayout(), other.getLayout());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name(), path, append, getFilter(), getLayout());
     }
 }

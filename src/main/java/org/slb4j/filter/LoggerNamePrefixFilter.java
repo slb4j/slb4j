@@ -21,6 +21,7 @@ import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * The LogFilter class is an implementation of the LogEntryFilter interface
@@ -43,6 +44,21 @@ public final class LoggerNamePrefixFilter implements LogFilter {
         this.name = name;
         this.level = LogLevel.TRACE;
         this.levelMap = new LevelMap(level);
+    }
+
+    private LoggerNamePrefixFilter(String name, LogLevel level, LevelMap levelMap) {
+        this.name = name;
+        this.level = level;
+        this.levelMap = levelMap;
+    }
+
+    /**
+     * Creates a deep copy of this filter.
+     *
+     * @return a new {@code LoggerNamePrefixFilter} instance that is a deep copy of this one.
+     */
+    public LoggerNamePrefixFilter copy() {
+        return new LoggerNamePrefixFilter(name, level, levelMap.copy());
     }
 
     @Override
@@ -111,6 +127,17 @@ public final class LoggerNamePrefixFilter implements LogFilter {
      */
     public Map<String, LogLevel> getRules() {
         return levelMap.rules();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (!(o instanceof LoggerNamePrefixFilter other)) return false;
+        return level == other.level && Objects.equals(name, other.name) && Objects.equals(levelMap, other.levelMap);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, level, levelMap);
     }
 
     @Override

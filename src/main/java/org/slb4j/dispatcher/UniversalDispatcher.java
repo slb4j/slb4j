@@ -63,8 +63,8 @@ public final class UniversalDispatcher implements LogDispatcher {
         return SingletonHolder.INSTANCE;
     }
 
-    private LoggerNamePrefixFilter loggerFilter = new LoggerNamePrefixFilter("root");
-    private LogFilter filter = LogFilter.allPass();
+    private volatile LoggerNamePrefixFilter loggerFilter = new LoggerNamePrefixFilter("root");
+    private volatile LogFilter filter = LogFilter.allPass();
 
     /**
      * A thread-safe list of LogHandler instances.
@@ -132,6 +132,13 @@ public final class UniversalDispatcher implements LogDispatcher {
     @Override
     public void removeLogHandler(LogHandler handler) {
         handlers.remove(handler);
+    }
+
+    /**
+     * Removes all registered log handlers.
+     */
+    public void clearLogHandlers() {
+        handlers.clear();
     }
 
     @Override

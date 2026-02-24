@@ -424,6 +424,38 @@ public final class LoggingConfiguration {
     }
 
     /**
+     * Creates a copy of the provided logging configuration.
+     * <p>
+     * The new configuration will have its own copies of the logger filter, handlers map,
+     * and filters map. Note that the log handlers themselves are NOT copied, as they
+     * represent active resources (like open files or streams).
+     *
+     * @param other the logging configuration to copy; must not be null
+     * @return a new {@code LoggingConfiguration} instance that is a copy of the provided one
+     */
+    public static LoggingConfiguration copyOf(LoggingConfiguration other) {
+        LoggingConfiguration copy = new LoggingConfiguration();
+        copy.statusLevel = other.statusLevel;
+        copy.statusName = other.statusName;
+        copy.statusDest = other.statusDest;
+        copy.loggerFilter = other.loggerFilter.copy();
+        copy.handlers.putAll(other.handlers);
+        copy.filters.putAll(other.filters);
+        return copy;
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (!(o instanceof LoggingConfiguration other)) return false;
+        return statusLevel == other.statusLevel && Objects.equals(statusName, other.statusName) && Objects.equals(statusDest, other.statusDest) && Objects.equals(loggerFilter, other.loggerFilter) && Objects.equals(handlers, other.handlers) && Objects.equals(filters, other.filters);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(statusLevel, statusName, statusDest, loggerFilter, handlers, filters);
+    }
+
+    /**
      * Retrieves the current logging status level for the configuration, i.e., the level to set for backend internal
      * log messages.
      *

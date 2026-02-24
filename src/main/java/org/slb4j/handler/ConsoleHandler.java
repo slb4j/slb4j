@@ -32,6 +32,7 @@ import org.slb4j.support.IoStringBuilder;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.util.Objects;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
@@ -230,6 +231,17 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
         } finally {
             lock.unlock();
         }
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (!(o instanceof ConsoleHandler other)) return false;
+        return colored == other.colored && Objects.equals(name, other.name) && Objects.equals(out, other.out) && Objects.equals(filter, other.filter) && Objects.equals(layout, other.layout);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, out, colored, filter, layout);
     }
 
     @Override

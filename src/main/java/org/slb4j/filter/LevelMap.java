@@ -21,6 +21,7 @@ import org.slb4j.support.SharedString;
 import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -46,8 +47,21 @@ final class LevelMap {
      * @param rootLevel the {@code LogLevel} to be assigned to the root node of the map.
      */
     LevelMap(LogLevel rootLevel) {
-        root = new Node();
-        root.level = rootLevel;
+        this.root = new Node();
+        this.root.level = rootLevel;
+    }
+
+    private LevelMap(Node root) {
+        this.root = root;
+    }
+
+    /**
+     * Creates a deep copy of this {@code LevelMap}.
+     *
+     * @return a new {@code LevelMap} instance that is a deep copy of this one.
+     */
+    public LevelMap copy() {
+        return new LevelMap(root.copy());
     }
 
     /**
@@ -110,10 +124,35 @@ final class LevelMap {
      * identified by a {@link SharedString} key. Log levels can be dynamically assigned to nodes for
      * structured logging purposes.
      */
-    public static class Node {
+    public static final class Node {
         // We use SharedString as the key to allow lookups with your window-view
         final Map<SharedString, Node> children = new ConcurrentHashMap<>();
         volatile @Nullable LogLevel level = null;
+
+        /**
+         * Creates a deep copy of this node and all its children.
+         *
+         * @return a new {@code Node} instance that is a deep copy of this one.
+         */
+        public Node copy() {
+            Node newNode = new Node();
+            newNode.level = this.level;
+            for (Map.Entry<SharedString, Node> entry : children.entrySet()) {
+                newNode.children.put(entry.getKey(), entry.getValue().copy());
+            }
+            return newNode;
+        }
+
+        @Override
+        public boolean equals(@Nullable Object o) {
+            if (!(o instanceof Node other)) return false;
+            return Objects.equals(children, other.children) && level == other.level;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(children, level);
+        }
 
         @Override
         public String toString() {
@@ -220,6 +259,17 @@ final class LevelMap {
 
         assert level != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
         return level;
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (!(o instanceof LevelMap other)) return false;
+        return Objects.equals(root, other.root);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(root);
     }
 
     @Override

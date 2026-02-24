@@ -41,6 +41,8 @@ public final class SLB4J {
 
     private static final UniversalDispatcher DISPATCHER;
 
+    private static volatile LoggingConfiguration activeConfiguration;
+
     private static final Map<String, String> LOADED_PLUGINS = new ConcurrentHashMap<>();
 
     private static LogLevel statusLevel = LogLevel.WARN;
@@ -97,13 +99,7 @@ public final class SLB4J {
             config = LoggingConfiguration.defaultConfiguration();
         }
 
-        setStatusLevel(config.getStatusLevel());
-        setStatusName(config.getStatusName());
-        setStatusDest(config.getStatusDest());
-
-        config.getHandlers().values().forEach(DISPATCHER::addLogHandler);
-        DISPATCHER.setLoggerFilter(config.getLoggerFilter());
-        DISPATCHER.setFilter(config.getRootFilter());
+        setConfiguration(config);
 
         // === wire the logging frontends
         wireFrontends();
@@ -145,6 +141,33 @@ public final class SLB4J {
      */
     public static void init() {
         // nothing to do - initialization is done in the static initializer
+    }
+
+    /**
+     * Replaces the active configuration with the provided configuration.
+     *
+     * @param config the new logging configuration to be set; must not be null
+     */
+    public static void setConfiguration(LoggingConfiguration config) {
+        setStatusLevel(config.getStatusLevel());
+        setStatusName(config.getStatusName());
+        setStatusDest(config.getStatusDest());
+
+        DISPATCHER.clearLogHandlers();
+        config.getHandlers().values().forEach(DISPATCHER::addLogHandler);
+        DISPATCHER.setLoggerFilter(config.getLoggerFilter());
+        DISPATCHER.setFilter(config.getRootFilter());
+
+        activeConfiguration = LoggingConfiguration.copyOf(config);
+    }
+
+    /**
+     * Returns the active logging configuration.
+     *
+     * @return the active logging configuration
+     */
+    public static LoggingConfiguration getConfiguration() {
+        return LoggingConfiguration.copyOf(activeConfiguration);
     }
 
     /**

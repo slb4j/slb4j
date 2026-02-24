@@ -114,7 +114,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     public void setFlushLevel(LogLevel flushLevel) {
         lock.lock();
         try {
-            this.flushLevel = Objects.requireNonNull(flushLevel);
+            this.flushLevel = flushLevel;
         } finally {
             lock.unlock();
         }

@@ -111,4 +111,14 @@ public final class CombinedFilter implements LogFilter {
         newFilters[newFilters.length - 1] = other;
         return new CombinedFilter(newFilters);
     }
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (!(o instanceof  CombinedFilter other)) return false;
+        return Objects.equals(name, other.name) && Objects.deepEquals(filters, other.filters);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, Arrays.hashCode(filters));
+    }
 }

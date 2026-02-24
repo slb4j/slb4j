@@ -8,6 +8,7 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 
 import java.io.IOException;
+import java.util.Objects;
 
 /**
  * A simple layout that just outputs the log level and message with a newline.
@@ -35,6 +36,19 @@ public class SimpleLayout implements LogLayout {
     @Override
     public String getType() {
         return "SimpleLayout";
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        SimpleLayout that = (SimpleLayout) o;
+        return Objects.equals(getType(), that.getType());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getType());
     }
 
     @Override

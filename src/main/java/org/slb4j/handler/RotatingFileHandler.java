@@ -315,4 +315,14 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         }
     }
 
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (!(o instanceof RotatingFileHandler other)) return false;
+        return append == other.append && maxFileSize == other.maxFileSize && maxBackupIndex == other.maxBackupIndex && Objects.equals(name(), other.name()) && Objects.equals(path, other.path) && Objects.equals(filePattern, other.filePattern) && rotationTimeUnit == other.rotationTimeUnit && Objects.equals(getFilter(), other.getFilter()) && Objects.equals(getLayout(), other.getLayout());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name(), path, append, filePattern, maxFileSize, rotationTimeUnit, maxBackupIndex, getFilter(), getLayout());
+    }
 }

@@ -10,6 +10,7 @@ import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.util.Map;
+import java.util.Objects;
 
 /**
  * The JsonLayout class implements the {@link LogLayout} interface and formats log entries into a JSON format.
@@ -42,6 +43,19 @@ public final class JsonLayout implements LogLayout {
     @Override
     public String getType() {
         return "JsonLayout";
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        JsonLayout that = (JsonLayout) o;
+        return propertiesEnabled == that.propertiesEnabled && locationInfoEnabled == that.locationInfoEnabled && stacktraceEnabled == that.stacktraceEnabled && maxStringLength == that.maxStringLength && Objects.equals(truncatedStringSuffix, that.truncatedStringSuffix);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(propertiesEnabled, locationInfoEnabled, stacktraceEnabled, maxStringLength, truncatedStringSuffix);
     }
 
     @Override

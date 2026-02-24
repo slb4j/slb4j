@@ -176,4 +176,58 @@ class LoggingConfigurationTest {
         org.slb4j.handler.ConsoleHandler consoleHandler = (org.slb4j.handler.ConsoleHandler) handler;
         assertEquals("JsonLayout", consoleHandler.getLayout().getType());
     }
+
+    @Test
+    void testCopyOf() {
+        LoggingConfiguration config = new LoggingConfiguration();
+        config.setStatusLevel(LogLevel.DEBUG);
+        config.setStatusName("test-status");
+        config.setStatusDest("out");
+        config.getLoggerFilter().setLevel("com.example", LogLevel.TRACE);
+        config.setRootFilter(org.slb4j.filter.LogLevelFilter.pass(LogLevel.WARN));
+
+        LoggingConfiguration copy = LoggingConfiguration.copyOf(config);
+
+        assertEquals(config.getStatusLevel(), copy.getStatusLevel());
+        assertEquals(config.getStatusName(), copy.getStatusName());
+        assertEquals(config.getStatusDest(), copy.getStatusDest());
+        assertEquals(config.getLoggerFilter().getLevel("com.example"), copy.getLoggerFilter().getLevel("com.example"));
+        assertEquals(config.getRootFilter(), copy.getRootFilter());
+
+        // Verify deep copy of logger filter
+        copy.getLoggerFilter().setLevel("com.example", LogLevel.ERROR);
+        assertNotEquals(config.getLoggerFilter().getLevel("com.example"), copy.getLoggerFilter().getLevel("com.example"));
+        assertEquals(LogLevel.TRACE, config.getLoggerFilter().getLevel("com.example"));
+        assertEquals(LogLevel.ERROR, copy.getLoggerFilter().getLevel("com.example"));
+
+        // Verify handlers and filters maps are copied
+        config.addHandler("test-handler", new org.slb4j.handler.ConsoleHandler("test", System.err, false));
+        assertNull(copy.getHandler("test-handler"));
+    }
+
+    @Test
+    void testEqualsHashCode() {
+        LoggingConfiguration config1 = new LoggingConfiguration();
+        config1.setStatusLevel(LogLevel.DEBUG);
+        config1.setStatusName("test");
+        config1.setStatusDest("out");
+        config1.getLoggerFilter().setLevel("com.example", LogLevel.TRACE);
+        config1.setRootFilter(org.slb4j.filter.LogLevelFilter.pass(LogLevel.WARN));
+
+        LoggingConfiguration config2 = LoggingConfiguration.copyOf(config1);
+
+        assertEquals(config1, config2);
+        assertEquals(config1.hashCode(), config2.hashCode());
+
+        config2.setStatusLevel(LogLevel.ERROR);
+        assertNotEquals(config1, config2);
+
+        config2 = LoggingConfiguration.copyOf(config1);
+        config2.getLoggerFilter().setLevel("com.example", LogLevel.ERROR);
+        assertNotEquals(config1, config2);
+
+        config2 = LoggingConfiguration.copyOf(config1);
+        config2.addHandler("console", new org.slb4j.handler.ConsoleHandler("console", System.err, true));
+        assertNotEquals(config1, config2);
+    }
 }

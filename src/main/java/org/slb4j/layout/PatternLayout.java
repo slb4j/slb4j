@@ -28,6 +28,7 @@ import org.jspecify.annotations.Nullable;
 import java.io.IOException;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Objects;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -479,6 +480,10 @@ public final class PatternLayout implements LogLayout {
 
         @Override
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+            // DO NOT USE computeIfAbsent() HERE!
+            // Background: The lambda would need to bind abbreviationLength and useDotAbbreviation from
+            // the current context. Splitting into get() and put() makes sure that the allocation is only
+            // done the first time the logger name is encountered.
             String logger = loggerNames.get(loggerName); // lambda in computeIfAbsent causes memory allocation!
             if (logger == null) {
                 logger = abbreviate(loggerName, abbreviationLength, useDotAbbreviation).toString();
@@ -682,6 +687,10 @@ public final class PatternLayout implements LogLayout {
                 return;
             }
 
+            // DO NOT USE computeIfAbsent() HERE!
+            // Background: The lambda would need to bind abbreviationLength and useDotAbbreviation from
+            // the current context. Splitting into get() and put() makes sure that the allocation is only
+            // done the first time the class name is encountered.
             String className = classNames.get(locationClassName);
             if (className == null) {
                 className = abbreviate(locationClassName, abbreviationLength, useDotAbbreviation).toString();
@@ -1263,6 +1272,19 @@ public final class PatternLayout implements LogLayout {
             sb.append(entries[i].getFooter());
         }
         return sb.toString();
+    }
+
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        PatternLayout that = (PatternLayout) o;
+        return Objects.equals(getType(), that.getType()) && Objects.equals(getText(), that.getText());
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(getType(), getText());
     }
 
     /**
