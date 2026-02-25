@@ -46,6 +46,15 @@ public final class CombinedFilter implements LogFilter {
     }
 
     @Override
+    public CombinedFilter copy() {
+        LogFilter[] copy = new LogFilter[filters.length];
+        for (int i = 0; i < filters.length; i++) {
+            copy[i] = filters[i].copy();
+        }
+        return new CombinedFilter(copy);
+    }
+
+    @Override
     public String name() {
         return name;
     }

@@ -57,6 +57,7 @@ public final class LoggerNamePrefixFilter implements LogFilter {
      *
      * @return a new {@code LoggerNamePrefixFilter} instance that is a deep copy of this one.
      */
+    @Override
     public LoggerNamePrefixFilter copy() {
         return new LoggerNamePrefixFilter(name, level, levelMap.copy());
     }

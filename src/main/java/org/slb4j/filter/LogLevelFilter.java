@@ -112,6 +112,11 @@ public final class LogLevelFilter implements LogFilter {
     }
 
     @Override
+    public LogLevelFilter copy() {
+        return new LogLevelFilter(name, pass);
+    }
+
+    @Override
     public String name() {
         return name;
     }

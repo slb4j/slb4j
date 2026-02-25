@@ -8,6 +8,7 @@ import org.slb4j.LogLevel;
 import org.slb4j.LoggingConfiguration;
 import org.slb4j.SLB4J;
 import org.slb4j.filter.LogLevelFilter;
+import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.filter.MarkerFilter;
 import org.slb4j.filter.MessageTextFilter;
 import org.slb4j.handler.ConsoleHandler;
@@ -365,7 +366,7 @@ public class ConfigParserLog4j implements ConfigParser {
         // add filters
         filters.forEach((appenderIdentifier, filter) -> {
             if (ROOT_LOGGER.equals(appenderIdentifier)) {
-                configuration.setRootFilter(filter);
+                configuration.setRootFilter((LoggerNamePrefixFilter) filter);
                 return;
             }
             LogHandler handler = configuration.getHandlers().get(appenderIdentifier);
@@ -378,21 +379,19 @@ public class ConfigParserLog4j implements ConfigParser {
 
         // process logger entries
         if (!loggerConfig.isEmpty()) {
-            org.slb4j.filter.LoggerNamePrefixFilter loggerFilter = new org.slb4j.filter.LoggerNamePrefixFilter("loggers");
             loggerConfig.forEach((loggerIdentifier, options) -> {
                 String name = options.getOrDefault(NAME, loggerIdentifier);
                 String levelStr = options.get(LEVEL);
                 if (levelStr != null) {
                     try {
                         LogLevel level = LogLevel.valueOf(levelStr.toUpperCase(Locale.ROOT));
-                        loggerFilter.setLevel(name, level);
+                        configuration.getRootFilter().setLevel(name, level);
                     } catch (IllegalArgumentException e) {
                         SLB4J.logInternal(LogLevel.WARN, "Logger %s: Ignoring unknown level %s", name, levelStr);
                     }
                 }
             });
-            configuration.setLoggerFilter(loggerFilter);
-        }
+         }
 
         // process rootLogger level if filter was not set
         Map<String, String> rootOptions = appenderConfig.get(ROOT_LOGGER);
@@ -401,7 +400,7 @@ public class ConfigParserLog4j implements ConfigParser {
             if (levelStr != null) {
                 try {
                     LogLevel level = LogLevel.valueOf(levelStr.toUpperCase(Locale.ROOT));
-                    configuration.setRootFilter(LogLevelFilter.pass(level));
+                    configuration.setRootLevel(level);
                 } catch (IllegalArgumentException e) {
                     SLB4J.logInternal(LogLevel.WARN, "rootLogger: Ignoring unknown level %s", levelStr);
                 }

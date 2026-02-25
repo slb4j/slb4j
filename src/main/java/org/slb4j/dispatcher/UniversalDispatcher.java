@@ -25,6 +25,7 @@ import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.SLB4J;
 import org.slb4j.filter.LoggerNamePrefixFilter;
+import org.slb4j.support.Util;
 
 import java.util.List;
 import java.util.SequencedCollection;
@@ -63,8 +64,7 @@ public final class UniversalDispatcher implements LogDispatcher {
         return SingletonHolder.INSTANCE;
     }
 
-    private volatile LoggerNamePrefixFilter loggerFilter = new LoggerNamePrefixFilter("root");
-    private volatile LogFilter filter = LogFilter.allPass();
+    private volatile LogFilter logFilter = new LoggerNamePrefixFilter("root");
 
     /**
      * A thread-safe list of LogHandler instances.
@@ -109,7 +109,7 @@ public final class UniversalDispatcher implements LogDispatcher {
      * @return true if logging is enabled for the given log level, false otherwise
      */
     public boolean isLevelEnabled(LogLevel lvl) {
-        return filter.isLevelEnabled(lvl);
+        return logFilter.isLevelEnabled(lvl);
     }
 
     /**
@@ -121,7 +121,7 @@ public final class UniversalDispatcher implements LogDispatcher {
      * @return true if the logging configuration is enabled, false otherwise
      */
     public boolean isEnabled(String name, LogLevel logLevel, @Nullable String marker) {
-        return filter.isEnabled(name, logLevel, marker) && loggerFilter.isEnabled(name, logLevel, marker);
+        return logFilter.isEnabled(name, logLevel, marker);
     }
 
     @Override
@@ -134,32 +134,22 @@ public final class UniversalDispatcher implements LogDispatcher {
         handlers.remove(handler);
     }
 
+    @Override
+    public void setFilter(LogFilter filter) {
+        this.logFilter = filter;
+        SLB4J.logInternal(LogLevel.INFO, "Global dispatcher filter set to: {}", logFilter);
+    }
+
+    @Override
+    public LogFilter getFilter() {
+        return logFilter;
+    }
+
     /**
      * Removes all registered log handlers.
      */
     public void clearLogHandlers() {
         handlers.clear();
-    }
-
-    @Override
-    public void setFilter(LogFilter filter) {
-        this.filter = filter;
-    }
-
-    @Override
-    public LogFilter getFilter() {
-        return filter;
-    }
-
-    /**
-     * Sets the logger filter for the dispatcher, enabling log entries to be filtered
-     * based on the criteria defined by the provided {@code LoggerNamePrefixFilter}.
-     *
-     * @param loggerFilter the filter to be used for controlling which log entries
-     *                     are processed; must not be null
-     */
-    public void setLoggerFilter(LoggerNamePrefixFilter loggerFilter) {
-        this.loggerFilter = loggerFilter;
     }
 
     @Override
@@ -182,8 +172,7 @@ public final class UniversalDispatcher implements LogDispatcher {
      * @param t an optional {@code Throwable} associated with the log event; may be null
      */
     public void filterAndDispatch(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver locationResolver, Supplier<String> msg, @Nullable Throwable t) {
-        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)
-            && loggerFilter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
+        if (logFilter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             String message = null;
             Location loc =  null;
             for (int i = 0; i < handlers.size(); i++) {

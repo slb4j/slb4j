@@ -155,10 +155,12 @@ public final class SLB4J {
 
         DISPATCHER.clearLogHandlers();
         config.getHandlers().values().forEach(DISPATCHER::addLogHandler);
-        DISPATCHER.setLoggerFilter(config.getLoggerFilter());
+        DISPATCHER.setFilter(config.getRootFilter());
         DISPATCHER.setFilter(config.getRootFilter());
 
         activeConfiguration = LoggingConfiguration.copyOf(config);
+
+        SLB4J.logInternal(LogLevel.INFO, "Logging configuration updated: %s", config);
     }
 
     /**

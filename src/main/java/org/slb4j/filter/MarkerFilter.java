@@ -20,6 +20,7 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -47,6 +48,11 @@ public final class MarkerFilter implements LogFilter {
     }
 
     @Override
+    public MarkerFilter copy() {
+        return new MarkerFilter(name, predicate);
+    }
+
+    @Override
     public String name() {
         return name;
     }
@@ -64,5 +70,15 @@ public final class MarkerFilter implements LogFilter {
     @Override
     public boolean isMarkerEnabled(@Nullable String marker) {
         return predicate.test(marker == null ? "" : marker);
+    }
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (!(o instanceof MarkerFilter other)) return false;
+        return Objects.equals(name, other.name) && Objects.equals(predicate, other.predicate);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, predicate);
     }
 }

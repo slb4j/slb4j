@@ -130,10 +130,10 @@ class ConfigParserLog4jTest {
                         config -> {
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter, "Root filter should not be null when loggers are defined");
-                            assertInstanceOf(LogLevelFilter.class, rootFilter);
-                            assertEquals(LogLevelFilter.pass(LogLevel.ERROR), rootFilter, "Root filter show be pass(ERROR)");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter);
+                            assertEquals(LogLevel.ERROR, config.getRootLevel(), "Root level show be ERROR");
 
-                            LoggerNamePrefixFilter loggerFilter = config.getLoggerFilter();
+                            LoggerNamePrefixFilter loggerFilter = config.getRootFilter();
                             assertNotNull(loggerFilter, "Logger filter should not be null when loggers are defined");
                             assertEquals(LogLevel.DEBUG, loggerFilter.getLevel("com.foo"), "Level for 'com.foo' should be DEBUG");
                             assertEquals(LogLevel.ERROR, loggerFilter.getLevel("com.bar"), "Level for 'com.bar' should be ERROR");
@@ -179,7 +179,7 @@ class ConfigParserLog4jTest {
                         config -> {
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter, "Root filter should be present");
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO), "LogLevel INFO should be enabled in root filter");
                             assertFalse(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should not be enabled in root filter");
 
@@ -211,7 +211,7 @@ class ConfigParserLog4jTest {
                             assertEquals(PatternLayout.parseLog4jPattern("%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n").getText(), layout.getText(), "PatternLayout text should match expected");
 
                             LogFilter rootFilter = config.getRootFilter();
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should be enabled in root filter");
                         }
                 ),
@@ -235,7 +235,7 @@ class ConfigParserLog4jTest {
                             assertEquals("%d %p %C{1.} [%t] %m%n", ((PatternLayout) fh.getLayout()).getText(), "PatternLayout text should match expected");
 
                             LogFilter rootFilter = config.getRootFilter();
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO), "LogLevel INFO should be enabled in root filter");
                             assertFalse(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should not be enabled in root filter");
                         }
@@ -268,7 +268,7 @@ class ConfigParserLog4jTest {
                             assertEquals("%d %p %C{1.} [%t] %m%n", ((PatternLayout) rfh.getLayout()).getText(), "PatternLayout text should match expected");
 
                             LogFilter rootFilter = config.getRootFilter();
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO), "LogLevel INFO should be enabled in root filter");
                             assertFalse(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should not be enabled in root filter");
                         }
@@ -298,7 +298,7 @@ class ConfigParserLog4jTest {
 
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter, "Root filter should be present");
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should be enabled in root filter");
                         }
                 ),
@@ -348,7 +348,7 @@ class ConfigParserLog4jTest {
 
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter, "Root filter should be present");
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should be enabled in root filter");
                         }
                 ),
@@ -373,7 +373,7 @@ class ConfigParserLog4jTest {
 
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter, "Root filter should be present");
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should be enabled in root filter");
                         }
                 ),
@@ -427,7 +427,7 @@ class ConfigParserLog4jTest {
 
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter, "Root filter should be present");
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO), "LogLevel INFO should be enabled in root filter");
                         }
                 ),
@@ -448,7 +448,7 @@ class ConfigParserLog4jTest {
 
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter, "Root filter should be present");
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should be enabled in root filter");
                         }
                 ),
@@ -492,7 +492,7 @@ class ConfigParserLog4jTest {
 
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter, "Root filter should be present");
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should be enabled in root filter");
                         }
                 ),
@@ -511,7 +511,7 @@ class ConfigParserLog4jTest {
                             
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter, "Root filter should be present");
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should be enabled in root filter");
                         }
                 ),
@@ -545,7 +545,7 @@ class ConfigParserLog4jTest {
 
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter, "Root filter should be present");
-                            assertInstanceOf(LogLevelFilter.class, rootFilter, "Root filter should be LogLevelFilter");
+                            assertInstanceOf(LoggerNamePrefixFilter.class, rootFilter, "Root filter should be LoggerNamePrefixFilter");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO), "LogLevel INFO should be enabled in root filter");
                             assertFalse(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should not be enabled in root filter");
                         }

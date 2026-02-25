@@ -63,6 +63,31 @@ public final class LoggingConfiguration {
     public static final String LOGGING_TYPE = "type";
 
     /**
+     * Sets the root filter for the logging configuration.
+     * The root filter is a special filter applied to all loggers in the hierarchy.
+     *
+     * @param filter the {@link LoggerNamePrefixFilter} instance to set as the root filter;
+     *               determines the filtering behavior for log entries with no specific logger name;
+     *               must not be null.
+     */
+    public void setRootFilter(LoggerNamePrefixFilter filter) {
+        this.rootFilter = filter;
+        filters.put("", filter);
+    }
+
+    /**
+     * Retrieves the root log level of the logging configuration.
+     * The root log level determines the minimum severity of log messages
+     * that are processed by the root filter of the logging system.
+     *
+     * @return the {@link LogLevel} representing the current root log level
+     *         configured in the logging system.
+     */
+    public LogLevel getRootLevel() {
+        return rootFilter.getLevel();
+    }
+
+    /**
      * Represents different storage types for configuration files and provides methods to obtain an input stream
      * for reading configuration data based on the specified file name.
      */
@@ -253,15 +278,16 @@ public final class LoggingConfiguration {
     private LogLevel statusLevel = LogLevel.WARN;
     private String statusName = "";
     private String statusDest = "err";
-    private LoggerNamePrefixFilter loggerFilter = new LoggerNamePrefixFilter("logger filter");
-    private final LinkedHashMap<String, LogHandler> handlers = new LinkedHashMap<>();
+    private LoggerNamePrefixFilter rootFilter = new LoggerNamePrefixFilter("logger filter");
     private final LinkedHashMap<String, LogFilter> filters = new LinkedHashMap<>();
+    private final LinkedHashMap<String, LogHandler> handlers = new LinkedHashMap<>();
 
     /**
      * Default constructor.
      */
     public LoggingConfiguration() {
-        setRootFilter(LogLevelFilter.pass(LogLevel.ERROR));
+        rootFilter.setLevel(LogLevel.ERROR);
+        filters.put("", rootFilter);
     }
 
     /**
@@ -344,16 +370,6 @@ public final class LoggingConfiguration {
     }
 
     /**
-     * Retrieves the root logging filter from the current configuration.
-     * If no root filter is explicitly defined, a default filter allowing all log entries will be returned.
-     *
-     * @return the root {@link LogFilter} instance, or {@code null} if no root filter is available
-     */
-    public LogFilter getRootFilter() {
-        return filters.getOrDefault("", LogFilter.allPass());
-    }
-
-    /**
      * Retrieves the logger filter for the logging configuration.
      * The logger filter is responsible for controlling the logging behavior
      * based on logger name and defined log level rules.
@@ -361,8 +377,8 @@ public final class LoggingConfiguration {
      * @return the {@link LoggerNamePrefixFilter} instance associated with the configuration,
      *         or {@code null} if no logger filter has been set.
      */
-    public LoggerNamePrefixFilter getLoggerFilter() {
-        return this.loggerFilter;
+    public LoggerNamePrefixFilter getRootFilter() {
+        return this.rootFilter;
     }
 
     /**
@@ -370,21 +386,11 @@ public final class LoggingConfiguration {
      * The logger filter determines which log entries are allowed based on
      * the logger name prefixes and log levels.
      *
-     * @param loggerFilter the {@link LoggerNamePrefixFilter} instance to set as the logger filter;
+     * @param rootFilter the {@link LoggerNamePrefixFilter} instance to set as the logger filter;
      *                     can be customized to define filtering behavior, must not be null.
      */
-    public void setLoggerFilter(LoggerNamePrefixFilter loggerFilter) {
-        this.loggerFilter = loggerFilter;
-    }
-
-    /**
-     * Sets the root log filter for the logging configuration.
-     *
-     * @param filter the {@link LogFilter} to be set as the root filter; can be null to remove the root filter
-     * @return the previously set root {@link LogFilter}, or null if no filter was previously set
-     */
-    public @Nullable LogFilter setRootFilter(LogFilter filter) {
-        return filters.put("", filter);
+    public void setLoggerFilter(LoggerNamePrefixFilter rootFilter) {
+        this.rootFilter = rootFilter;
     }
 
     /**
@@ -418,9 +424,21 @@ public final class LoggingConfiguration {
      */
     public static LoggingConfiguration defaultConfiguration() {
         LoggingConfiguration configuration = new LoggingConfiguration();
-        configuration.setRootFilter(LogLevelFilter.pass(LogLevel.INFO));
+        configuration.setRootLevel(LogLevel.INFO);
         configuration.addHandler("console", new ConsoleHandler("console", System.out, true));
         return configuration;
+    }
+
+    /**
+     * Sets the root log level for the logging configuration. This determines the
+     * minimum log level that will be processed by the root filter of the logging
+     * system.
+     *
+     * @param logLevel the {@link LogLevel} to set as the root level; determines
+     *                 the threshold for which log messages are allowed
+     */
+    public void setRootLevel(LogLevel logLevel) {
+        rootFilter.setLevel(logLevel);
     }
 
     /**
@@ -438,21 +456,25 @@ public final class LoggingConfiguration {
         copy.statusLevel = other.statusLevel;
         copy.statusName = other.statusName;
         copy.statusDest = other.statusDest;
-        copy.loggerFilter = other.loggerFilter.copy();
+        copy.setRootFilter(other.rootFilter.copy());
+        for (Map.Entry<String, LogFilter> entry : other.filters.entrySet()) {
+            if (entry.getValue() != other.rootFilter) {
+                copy.filters.put(entry.getKey(), entry.getValue().copy());
+            }
+        }
         copy.handlers.putAll(other.handlers);
-        copy.filters.putAll(other.filters);
         return copy;
     }
 
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof LoggingConfiguration other)) return false;
-        return statusLevel == other.statusLevel && Objects.equals(statusName, other.statusName) && Objects.equals(statusDest, other.statusDest) && Objects.equals(loggerFilter, other.loggerFilter) && Objects.equals(handlers, other.handlers) && Objects.equals(filters, other.filters);
+        return statusLevel == other.statusLevel && Objects.equals(statusName, other.statusName) && Objects.equals(statusDest, other.statusDest) && Objects.equals(rootFilter, other.rootFilter) && Objects.equals(handlers, other.handlers) && Objects.equals(filters, other.filters);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(statusLevel, statusName, statusDest, loggerFilter, handlers, filters);
+        return Objects.hash(statusLevel, statusName, statusDest, rootFilter, handlers, filters);
     }
 
     /**

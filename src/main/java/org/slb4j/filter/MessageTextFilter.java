@@ -20,6 +20,7 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Objects;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -47,6 +48,11 @@ public final class MessageTextFilter implements LogFilter {
     }
 
     @Override
+    public MessageTextFilter copy() {
+        return new MessageTextFilter(name, textFilter);
+    }
+
+    @Override
     public String name() {
         return name;
     }
@@ -59,5 +65,15 @@ public final class MessageTextFilter implements LogFilter {
     @Override
     public boolean isEnabled(String loggerName, LogLevel logLevel, @Nullable String marker) {
         return true;
+    }
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (!(o instanceof MessageTextFilter other)) return false;
+        return Objects.equals(name, other.name) && Objects.equals(textFilter, other.textFilter);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(name, textFilter);
     }
 }

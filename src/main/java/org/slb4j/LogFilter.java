@@ -88,6 +88,13 @@ public interface LogFilter {
     }
 
     /**
+     * Creates a copy of this filter.
+     *
+     * @return a copy of this filter
+     */
+    LogFilter copy();
+
+    /**
      * Retrieves the name associated with this filter.
      *
      * @return the name of the filter as a String

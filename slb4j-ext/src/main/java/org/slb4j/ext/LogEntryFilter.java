@@ -20,6 +20,7 @@ import org.slb4j.LogFilter;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 
+import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
@@ -61,6 +62,11 @@ public final class LogEntryFilter implements LogFilter, Predicate<LogEntry> {
     }
 
     @Override
+    public LogEntryFilter copy() {
+        return new LogEntryFilter(filter.copy());
+    }
+
+    @Override
     public String name() {
         return "";
     }
@@ -68,5 +74,15 @@ public final class LogEntryFilter implements LogFilter, Predicate<LogEntry> {
     @Override
     public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
         return filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t);
+    }
+    @Override
+    public boolean equals(@Nullable Object o) {
+        if (!(o instanceof LogEntryFilter other)) return false;
+        return filter.equals(other.filter);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(filter);
     }
 }
