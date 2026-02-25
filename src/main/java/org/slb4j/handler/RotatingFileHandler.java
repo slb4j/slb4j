@@ -177,22 +177,11 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         }
     }
 
-    @Override
-    protected void doHandle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) throws IOException {
-        checkRotation(timestamp);
-        super.doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
-    }
-
-    private void checkRotation(long timestamp) throws IOException {
+    protected void checkRotation(long timestamp) throws IOException {
         boolean rotate = (channel != null && maxFileSize > 0 && channel.position() >= maxFileSize)
                 || (nextRotationTime != -1 && timestamp >= nextRotationTime);
-
         if (rotate) {
-            try {
-                rotate();
-            } catch (IOException e) {
-                SLB4J.logInternal(LogLevel.WARN, "Error during log rotation: %s", e);
-            }
+            rotate();
         }
     }
 

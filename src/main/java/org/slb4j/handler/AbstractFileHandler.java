@@ -29,6 +29,8 @@ import org.slb4j.support.IoStringBuilder;
 
 import java.io.IOException;
 import java.io.Writer;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.nio.file.StandardOpenOption;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -60,12 +62,25 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @see #setLayout(LogLayout) for modifying the log pattern.
      * @see #getLayout() for retrieving the current log pattern.
      */
-    private volatile LogLayout layout = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
+    private LogLayout layout = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
 
     /**
      * Represents the log filtering mechanism for the file handler.
      */
-    private volatile LogFilter filter = LogFilter.allPass();
+    private LogFilter filter = LogFilter.allPass();
+
+    private static final VarHandle LAYOUT_VH;
+    private static final VarHandle FILTER_VH;
+
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            LAYOUT_VH = l.findVarHandle(AbstractFileHandler.class, "layout", LogLayout.class);
+            FILTER_VH = l.findVarHandle(AbstractFileHandler.class, "filter", LogFilter.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     /**
      * The minimum log level at which a flush operation is triggered.
@@ -91,8 +106,8 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     }
 
     @Override
-    public boolean isLocationNeeded() {
-        return layout.isLocationNeeded();
+    public final boolean isLocationNeeded() {
+        return getLayout().isLocationNeeded();
     }
 
     /**
@@ -102,7 +117,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @param buffer the {@code IoStringBuilder} buffer to be released; can be null.
      *               If null, the method performs no operation.
      */
-    protected void releaseBuffer(@Nullable IoStringBuilder buffer) {
+    protected final void releaseBuffer(@Nullable IoStringBuilder buffer) {
         if (buffer != null) {
             buffer.reset(0);
         }
@@ -113,7 +128,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      *
      * @param flushLevel the minimum log level to trigger a flush
      */
-    public void setFlushLevel(LogLevel flushLevel) {
+    public final void setFlushLevel(LogLevel flushLevel) {
         lock.lock();
         try {
             this.flushLevel = flushLevel;
@@ -123,23 +138,13 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     }
 
     @Override
-    public void setFilter(LogFilter filter) {
-        lock.lock();
-        try {
-            this.filter = Objects.requireNonNull(filter);
-        } finally {
-            lock.unlock();
-        }
+    public final void setFilter(LogFilter filter) {
+        FILTER_VH.setRelease(this, filter);
     }
 
     @Override
-    public LogFilter getFilter() {
-        lock.lock();
-        try {
-            return filter;
-        } finally {
-            lock.unlock();
-        }
+    public final LogFilter getFilter() {
+        return (LogFilter) FILTER_VH.getAcquire(this);
     }
 
     /**
@@ -147,13 +152,14 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @param layout the log pattern string
      */
     @Override
-    public void setLayout(LogLayout layout) {
+    public final void setLayout(LogLayout layout) {
         lock.lock();
         try {
-            if (this.layout != layout) {
+            LogLayout oldLayout = (LogLayout) LAYOUT_VH.getAcquire(this);
+            if (oldLayout != layout) {
                 Writer writer = writer();
                 try {
-                    String footer = this.layout.getFooter();
+                    String footer = oldLayout.getFooter();
                     if (!footer.isEmpty()) {
                         writer.write(footer);
                     }
@@ -165,7 +171,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
                 } catch (IOException e) {
                     SLB4J.logInternal(LogLevel.WARN, "Error writing header/footer during pattern change: %s", e);
                 }
-                this.layout = layout;
+                LAYOUT_VH.setRelease(this, layout);
             }
         } finally {
             lock.unlock();
@@ -177,20 +183,15 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @return the log pattern string
      */
     @Override
-    public LogLayout getLayout() {
-        lock.lock();
-        try {
-            return layout;
-        } finally {
-            lock.unlock();
-        }
+    public final LogLayout getLayout() {
+        return (LogLayout) LAYOUT_VH.getAcquire(this);
     }
 
     /**
      * Gets the log level at which a flush is triggered.
      * @return the minimum log level to trigger a flush
      */
-    public LogLevel getFlushLevel() {
+    public final LogLevel getFlushLevel() {
         lock.lock();
         try {
             return flushLevel;
@@ -205,20 +206,9 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     }
 
     @Override
-    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
-        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
-            lock.lock();
-            try {
-                doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
-            } catch (IOException e) {
-                SLB4J.logInternal(LogLevel.WARN, "Error writing log entry: %s", e);
-            } finally {
-                try {
-                    releaseBuffer(buffer);
-                } finally {
-                    lock.unlock();
-                }
-            }
+    public final void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
+        if (getFilter().test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
+            doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
         }
     }
 
@@ -237,17 +227,45 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @param loc an optional location context providing code-related metadata (e.g., class name, method name, etc.), or null if not available
      * @param msg the message to be logged
      * @param t an optional throwable associated with the log entry, such as an exception, or null if not applicable
-     * @throws IOException if an error occurs while writing or flushing the log entry
      */
-    protected void doHandle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) throws IOException {
-        Writer writer = writer();
+    protected final void doHandle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
+        lock.lock();
+        try {
+            checkRotation(timestamp);
+            Writer writer = writer();
 
-        layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
-        buffer.writeAndReset(writer);
+            layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
 
-        if (lvl.ordinal() >= flushLevel.ordinal()) {
-            writer.flush();
+            if (lvl.ordinal() >= flushLevel.ordinal()) {
+                buffer.writeFlushAndReset(writer);
+            } else {
+                buffer.writeAndReset(writer);
+            }
+        } catch (IOException e) {
+            SLB4J.logInternal(LogLevel.WARN, "Error writing log entry: %s", e);
+        } finally {
+            try {
+                releaseBuffer(buffer);
+            } finally {
+                lock.unlock();
+            }
         }
+    }
+
+    /**
+     * Checks whether a log rotation should occur based on the given timestamp.
+     * This method is typically overridden in subclasses to implement log rotation
+     * logic, such as file rolling based on time or size constraints. If the
+     * current implementation does not specify a rotation policy, this method
+     * may be left empty.
+     *
+     * @param timestamp the timestamp of the current log event in milliseconds
+     *                  since the epoch; can be used to evaluate time-based
+     *                  rotation criteria
+     * @throws IOException if an I/O error occurs during rotation check
+     */
+    protected void checkRotation(long timestamp) throws IOException {
+        // nothing to do
     }
 
     /**
@@ -269,7 +287,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      *
      * @throws IOException if an I/O error occurs while writing to the {@code Writer}
      */
-    protected void writeLayoutHeader() throws IOException {
+    protected final void writeLayoutHeader() throws IOException {
         Writer writer = writer();
         String header = layout.getHeader();
         if (!header.isEmpty()) {
@@ -290,7 +308,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      *
      * @throws IOException if an I/O error occurs while writing to or flushing the {@code Writer}
      */
-    protected void writeLayoutFooter() throws IOException {
+    protected final void writeLayoutFooter() throws IOException {
         Writer writer = writer();
         String footer = layout.getFooter();
         if (!footer.isEmpty()) {
@@ -315,7 +333,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * The method is intended to be overridden in subclasses if additional custom cleanup
      * tasks are required during shutdown.
      */
-    protected void onShutDown() {
+    protected final void onShutDown() {
         try {
             try (Writer writer = writer()) {
                 writeLayoutFooter();
@@ -326,7 +344,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     }
 
     @Override
-    public void shutdown() {
+    public final void shutdown() {
         if (closed.compareAndSet(false, true)) {
             lock.lock();
             try {

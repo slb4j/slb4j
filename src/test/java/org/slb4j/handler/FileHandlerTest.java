@@ -16,8 +16,12 @@
 package org.slb4j.handler;
 
 import org.slb4j.Location;
+import org.slb4j.LogFilter;
 import org.slb4j.LogLevel;
+import org.slb4j.LogLayout;
+import org.slb4j.MDC;
 import org.slb4j.layout.PatternLayout;
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 
@@ -100,5 +104,40 @@ class FileHandlerTest {
             // This should trigger a flush.
         }
         assertEquals("infoerror", Files.readString(logFile));
+    }
+
+    @Test
+    void testVarHandleFields() throws IOException {
+        Path logFile = tempDir.resolve("test-vh.log");
+        try (FileHandler handler = new FileHandler("test", logFile, false)) {
+            LogLayout initialLayout = handler.getLayout();
+            assertNotNull(initialLayout);
+
+            LogLayout newLayout = PatternLayout.parseLog4jPattern("[%level] %msg%n");
+            handler.setLayout(newLayout);
+            assertSame(newLayout, handler.getLayout());
+
+            LogFilter initialFilter = handler.getFilter();
+            assertNotNull(initialFilter);
+
+            LogFilter newFilter = new LogFilter() {
+                @Override public LogFilter copy() { return this; }
+                @Override public String name() { return "testFilter"; }
+                @Override public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
+                    return lvl == LogLevel.ERROR;
+                }
+            };
+            handler.setFilter(newFilter);
+            assertSame(newFilter, handler.getFilter());
+
+            // Test that filter actually works
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "should be filtered", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.ERROR, null, null, LOC, "should be kept", null);
+        }
+
+        List<String> lines = Files.readAllLines(logFile);
+        assertEquals(1, lines.size());
+        assertTrue(lines.get(0).contains("should be kept"));
+        assertFalse(lines.get(0).contains("should be filtered"));
     }
 }
