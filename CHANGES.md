@@ -1,3 +1,10 @@
+Version 0.7.0 (in development)
+------------------------------
+
+- Refactor UniversalDispatcher to only use a single filter instance for both root level and pacjage level filtering.
+- Replace volatile fields with varhandles to avoid cache flushes.
+- IoStringBuilder: combine write(), flush(), and reset() in a single method.
+
 Version 0.6.0
 -------------
 
