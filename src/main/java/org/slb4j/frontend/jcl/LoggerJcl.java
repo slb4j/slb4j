@@ -67,7 +67,7 @@ public final class LoggerJcl implements Log {
     }
 
     @Override
-    public void debug(Object message, Throwable t) {
+    public void debug(Object message, @Nullable Throwable t) {
         dispatch(LogLevel.DEBUG, message, t);
     }
 
@@ -77,7 +77,7 @@ public final class LoggerJcl implements Log {
     }
 
     @Override
-    public void error(Object message, Throwable t) {
+    public void error(Object message, @Nullable Throwable t) {
         dispatch(LogLevel.ERROR, message, t);
     }
 
@@ -87,7 +87,7 @@ public final class LoggerJcl implements Log {
     }
 
     @Override
-    public void fatal(Object message, Throwable t) {
+    public void fatal(Object message, @Nullable Throwable t) {
         dispatch(LogLevel.ERROR, message, t);
     }
 
@@ -97,7 +97,7 @@ public final class LoggerJcl implements Log {
     }
 
     @Override
-    public void info(Object message, Throwable t) {
+    public void info(Object message, @Nullable Throwable t) {
         dispatch(LogLevel.INFO, message, t);
     }
 
@@ -138,7 +138,7 @@ public final class LoggerJcl implements Log {
     }
 
     @Override
-    public void trace(Object message, Throwable t) {
+    public void trace(Object message, @Nullable Throwable t) {
         dispatch(LogLevel.TRACE, message, t);
     }
 
@@ -148,7 +148,7 @@ public final class LoggerJcl implements Log {
     }
 
     @Override
-    public void warn(Object message, Throwable t) {
+    public void warn(Object message, @Nullable Throwable t) {
         dispatch(LogLevel.WARN, message, t);
     }
 

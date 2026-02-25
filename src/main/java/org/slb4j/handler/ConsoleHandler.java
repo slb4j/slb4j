@@ -32,6 +32,8 @@ import org.slb4j.support.IoStringBuilder;
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.PrintStream;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.Objects;
 import java.io.Writer;
 import java.nio.charset.StandardCharsets;
@@ -89,42 +91,29 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
     private final String name;
     private final PrintStream out;
     private final Writer writer;
-    private volatile boolean colored = true;
-    private volatile LogFilter filter = LogFilter.allPass();
-    private volatile LogLayout layout = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
+    private boolean colored = true;
+    private LogFilter filter = LogFilter.allPass();
+    private LogLayout layout = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
     private final IoStringBuilder buffer = new IoStringBuilder(BUFFER_SIZE);
+
+    private static final VarHandle LAYOUT_VH;
+    private static final VarHandle FILTER_VH;
+    private static final VarHandle COLORED_VH;
+
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            LAYOUT_VH = l.findVarHandle(ConsoleHandler.class, "layout", LogLayout.class);
+            FILTER_VH = l.findVarHandle(ConsoleHandler.class, "filter", LogFilter.class);
+            COLORED_VH = l.findVarHandle(ConsoleHandler.class, "colored", boolean.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     @Override
     public boolean isLocationNeeded() {
         return layout.isLocationNeeded();
-    }
-
-    /**
-     * Set the format pattern.
-     * @param layout the format pattern
-     */
-    @Override
-    public void setLayout(LogLayout layout) {
-        lock.lock();
-        try {
-            this.layout = layout;
-        } finally {
-            lock.unlock();
-        }
-    }
-
-    /**
-     * Get the format pattern.
-     * @return the format pattern
-     */
-    @Override
-    public LogLayout getLayout() {
-        lock.lock();
-        try {
-            return layout;
-        } finally {
-            lock.unlock();
-        }
     }
 
     /**
@@ -161,11 +150,16 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
 
     @Override
     public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
-        if (filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
+        LogFilter currentFilter = (LogFilter) FILTER_VH.getAcquire(this);
+
+        if (currentFilter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
+            LogLayout currentLayout = (LogLayout) LAYOUT_VH.getAcquire(this);
             ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
+
+            lock.lock();
             try {
-                lock.lock();
-                layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
+                // Formatting and Writing remain inside the lock because of the shared 'buffer'
+                currentLayout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
                 buffer.writeFlushAndReset(writer);
             } catch (IOException e) {
                 SLB4J.logInternal(LogLevel.WARN, "Error writing log entry: %s", e);
@@ -176,13 +170,31 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
     }
 
     /**
+     * Set the format pattern.
+     * @param layout the format pattern
+     */
+    @Override
+    public void setLayout(LogLayout layout) {
+        LAYOUT_VH.setRelease(this, layout);
+    }
+
+    /**
+     * Get the format pattern.
+     * @return the format pattern
+     */
+    @Override
+    public LogLayout getLayout() {
+        return (LogLayout) LAYOUT_VH.getAcquire(this);
+    }
+
+    /**
      * Enable/Disable colored output using ANSI codes.
      * @param colored true, if output use colors
      */
     public void setColored(boolean colored) {
         lock.lock();
         try {
-            this.colored = colored;
+            COLORED_VH.setRelease(this, colored);
             (colored ? COLOR_MAP_DEFAULT : COLOR_MAP_MONOCHROME)
                     .forEach((lvl, code) -> codesByLevelIdx[lvl.ordinal()] = code);
         } finally {
@@ -195,7 +207,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
      * @return true, if colored output is enabled
      */
     public boolean isColored() {
-        return colored;
+        return (boolean) COLORED_VH.getAcquire(this);
     }
 
     /**
@@ -205,12 +217,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
      */
     @Override
     public void setFilter(LogFilter filter) {
-        lock.lock();
-        try {
-            this.filter = filter;
-        } finally {
-            lock.unlock();
-        }
+        FILTER_VH.setRelease(this, filter);
     }
 
     /**
@@ -223,12 +230,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
      */
     @Override
     public LogFilter getFilter() {
-        lock.lock();
-        try {
-            return filter;
-        } finally {
-            lock.unlock();
-        }
+        return (LogFilter) FILTER_VH.getAcquire(this);
     }
 
     @Override
