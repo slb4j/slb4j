@@ -34,7 +34,6 @@ import java.util.stream.Stream;
  */
 public final class SLB4J {
 
-
     private SLB4J() { /* utility class */ }
 
     private static final StackWalker STACK_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
@@ -300,4 +299,52 @@ public final class SLB4J {
         }
     }
 
+    /**
+     * Retrieves the root logging level.
+     * <p>
+     * The root logging level determines the minimum severity of log entries
+     * that will be processed and displayed globally.
+     *
+     * @return the current root logging level as a {@link LogLevel} value.
+     */
+    public static LogLevel getRootLevel() {
+        return getDispatcher().getRootLevel();
+    }
+
+    /**
+     * Sets the global root logging level.
+     * <p>
+     * The root logging level determines the minimum severity of log entries
+     * that will be processed and displayed globally.
+     *
+     * @param level the root logging level to set.
+     */
+    public static void setRootLevel(LogLevel level) {
+        getDispatcher().setRootLevel(level);
+    }
+
+    /**
+     * Sets the log level for loggers that match the specified name prefix.
+     *
+     * This method delegates to the global {@link LogDispatcher} to apply the log level
+     * to the loggers whose names start with the given prefix.
+     *
+     * @param prefix the prefix of logger names for which the log level should be set.
+     *               Must not be null or empty.
+     * @param level  the log level to be assigned to the loggers matching the specified prefix.
+     *               Must be a valid {@link LogLevel} enumeration value.
+     */
+    public static void setLevel(String prefix, LogLevel level) {
+        getDispatcher().setLevel(prefix, level);
+    }
+
+    /**
+     * Retrieves the log level associated with the specified logger name prefix.
+     *
+     * @param prefix the prefix of logger names for which the log level is being retrieved; must not be null or empty.
+     * @return the {@link LogLevel} associated with the specified prefix, or null if no level is explicitly assigned to the prefix.
+     */
+    public static LogLevel getLevel(String prefix) {
+        return getDispatcher().getLevel(prefix);
+    }
 }

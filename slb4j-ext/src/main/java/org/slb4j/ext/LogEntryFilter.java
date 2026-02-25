@@ -58,7 +58,7 @@ public final class LogEntryFilter implements LogFilter, Predicate<LogEntry> {
 
     @Override
     public boolean test(LogEntry entry) {
-        return test(entry.time(), entry.logger(), entry.level(), entry.marker(), entry.mdc(), entry::message, entry.throwable());
+        return test(entry.time(), entry.logger(), entry.level(), entry.marker(), entry.mdc(), entry.message(), entry.throwable());
     }
 
     @Override
@@ -75,6 +75,7 @@ public final class LogEntryFilter implements LogFilter, Predicate<LogEntry> {
     public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
         return filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t);
     }
+
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof LogEntryFilter other)) return false;

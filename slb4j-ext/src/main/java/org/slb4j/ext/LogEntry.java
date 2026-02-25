@@ -85,7 +85,7 @@ public interface LogEntry {
      *
      * @return the log message as a string, or null if not available.
      */
-    @Nullable String message();
+    String message();
 
     /**
      * Retrieves the throwable associated with the log entry, if present.
@@ -119,7 +119,7 @@ public interface LogEntry {
             @Nullable String marker,
             @Nullable MDC mdc,
             @Nullable Location location,
-            @Nullable String message,
+            String message,
             @Nullable Throwable throwable
     ) {
         return new LogEntryRecord(

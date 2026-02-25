@@ -61,7 +61,7 @@ class LogLevelFilterTest {
         assertEquals(expected, filter.isEnabled("any.logger", level, "any.marker"),
                 () -> "isEnabled failed for threshold " + threshold + " and level " + level);
 
-        assertEquals(expected, filter.test(System.currentTimeMillis(), "any.logger", level, "any.marker", null, () -> "msg", null),
+        assertEquals(expected, filter.test(System.currentTimeMillis(), "any.logger", level, "any.marker", null, "msg", null),
                 () -> "test failed for threshold " + threshold + " and level " + level);
     }
 }

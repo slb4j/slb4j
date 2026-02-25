@@ -166,9 +166,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
             try {
                 lock.lock();
                 layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
-                buffer.writeTo(writer);
-                buffer.reset(0);
-                writer.flush();
+                buffer.writeFlushAndReset(writer);
             } catch (IOException e) {
                 SLB4J.logInternal(LogLevel.WARN, "Error writing log entry: %s", e);
             } finally {

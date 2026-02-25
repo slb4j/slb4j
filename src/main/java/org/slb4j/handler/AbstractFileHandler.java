@@ -241,7 +241,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
         Writer writer = writer();
 
         layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
-        buffer.writeTo(writer);
+        buffer.writeAndReset(writer);
 
         if (lvl.ordinal() >= flushLevel.ordinal()) {
             writer.flush();

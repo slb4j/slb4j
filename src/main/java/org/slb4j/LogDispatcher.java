@@ -15,6 +15,8 @@
  */
 package org.slb4j;
 
+import org.slb4j.filter.LoggerNamePrefixFilter;
+
 import java.util.SequencedCollection;
 
 /**
@@ -38,20 +40,54 @@ public interface LogDispatcher {
     void removeLogHandler(LogHandler handler);
 
     /**
-     * Sets the {@link LogFilter} for log entry events.
+     * Sets the {@link LoggerNamePrefixFilter} for log entry events.
      *
      * <p>Only entries that pass the filter will be dispatched to handlers.
      *
      * @param filter The filter to be set for log entry events.
      */
-    void setFilter(LogFilter filter);
+    void setFilter(LoggerNamePrefixFilter filter);
 
     /**
      * Get the {@link LogFilter}.
      *
      * @return the filter in use
      */
-    LogFilter getFilter();
+    LoggerNamePrefixFilter getFilter();
+
+    /**
+     * Retrieves the root logging level for log entries. The root level determines
+     * the minimum severity of log entries that will be processed by the dispatcher.
+     *
+     * @return the current root logging level
+     */
+    LogLevel getRootLevel();
+
+    /**
+     * Sets the root logging level for log entries. Log entries with a level
+     * lower than the specified root level will not be dispatched to handlers.
+     *
+     * @param level the root logging level to set. Must not be null.
+     */
+    void setRootLevel(LogLevel level);
+
+    /**
+     * Retrieves the log level associated with the specified logger name prefix.
+     *
+     * @param prefix The prefix of logger names for which the log level is being retrieved.
+     *               Must not be null or empty.
+     * @return The {@link LogLevel} associated with the specified prefix, or null if no level
+     *         is explicitly assigned to the prefix.
+     */
+    LogLevel getLevel(String prefix);
+
+    /**
+     * Sets the log level for log entries matching the specified name prefix.
+     *
+     * @param prefix The prefix of logger names for which the log level should be set.
+     * @param level The log level to be assigned to the loggers matching the specified prefix.
+     */
+    void setLevel(String prefix, LogLevel level);
 
     /**
      * Get the registered log entry handlers. Note that implementations usually hold weak references

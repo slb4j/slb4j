@@ -21,6 +21,7 @@ import javafx.stage.Stage;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.slb4j.LogFilter;
+import org.slb4j.LogLevel;
 import org.slb4j.SLB4J;
 import org.slb4j.ext.fx.FxLogPane;
 import org.slb4j.filter.LoggerNameFilter;
@@ -28,13 +29,16 @@ import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 
 public class Main extends Application {
 
     static {
         SLB4J.init();
-        SLB4J.getDispatcher().setFilter(LogFilter.allPass());
-        SLB4J.getDispatcher().setFilter(new LoggerNameFilter("root", logger -> logger.endsWith(".NativeTest")));
+        SLB4J.setLevel("JCL", LogLevel.INFO);
+        SLB4J.setLevel("JUL", LogLevel.INFO);
+        SLB4J.setLevel("LOG4J", LogLevel.INFO);
+        SLB4J.setLevel("SLF4J", LogLevel.INFO);
     }
 
     private static final int AVERAGE_SLEEP_MILLIS = 100;

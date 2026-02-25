@@ -198,10 +198,34 @@ public final class IoStringBuilder implements Appendable {
      *               be written
      * @throws IOException if an I/O error occurs while writing to the writer
      */
-    public void writeTo(Writer writer) throws IOException {
+    public void writeAndReset(Writer writer) throws IOException {
         buffer.flip();
         writer.append(buffer);
-        buffer.clear();
+        if (buffer.capacity() <= initialCapacity) {
+            buffer.clear();
+        } else {
+            buffer = CharBuffer.allocate(initialCapacity);
+        }
+    }
+
+    /**
+     * Writes the content of the internal buffer to the specified {@link Writer},
+     * flushes the writer, and resets the internal buffer for reuse.
+     * If the current buffer's capacity exceeds the initial capacity,
+     * a new buffer with the initial capacity is allocated.
+     *
+     * @param writer the {@link Writer} to which the contents of the buffer will be written
+     * @throws IOException if an I/O error occurs while writing to the writer or flushing it
+     */
+    public void writeFlushAndReset(Writer writer) throws IOException {
+        buffer.flip();
+        writer.append(buffer);
+        writer.flush();
+        if (buffer.capacity() <= initialCapacity) {
+            buffer.clear();
+        } else {
+            buffer = CharBuffer.allocate(initialCapacity);
+        }
     }
 
     /**
