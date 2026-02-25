@@ -154,11 +154,11 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
 
         if (currentFilter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             LogLayout currentLayout = (LogLayout) LAYOUT_VH.getAcquire(this);
-            ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
 
             lock.lock();
             try {
                 // Formatting and Writing remain inside the lock because of the shared 'buffer'
+                ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
                 currentLayout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
                 buffer.writeFlushAndReset(writer);
             } catch (IOException e) {
