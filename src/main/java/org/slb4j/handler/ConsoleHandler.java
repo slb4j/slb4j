@@ -236,7 +236,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof ConsoleHandler other)) return false;
-        return colored == other.colored && Objects.equals(name, other.name) && Objects.equals(out, other.out) && Objects.equals(filter, other.filter) && Objects.equals(layout, other.layout);
+        return colored == other.colored && name.equals(other.name) && out.equals(other.out) && filter.equals(other.filter) && layout.equals(other.layout);
     }
 
     @Override

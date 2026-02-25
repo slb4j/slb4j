@@ -50,7 +50,7 @@ public final class JsonLayout implements LogLayout {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         JsonLayout that = (JsonLayout) o;
-        return propertiesEnabled == that.propertiesEnabled && locationInfoEnabled == that.locationInfoEnabled && stacktraceEnabled == that.stacktraceEnabled && maxStringLength == that.maxStringLength && Objects.equals(truncatedStringSuffix, that.truncatedStringSuffix);
+        return propertiesEnabled == that.propertiesEnabled && locationInfoEnabled == that.locationInfoEnabled && stacktraceEnabled == that.stacktraceEnabled && maxStringLength == that.maxStringLength && truncatedStringSuffix.equals(that.truncatedStringSuffix);
     }
 
     @Override

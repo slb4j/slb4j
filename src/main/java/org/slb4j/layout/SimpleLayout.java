@@ -13,7 +13,7 @@ import java.util.Objects;
 /**
  * A simple layout that just outputs the log level and message with a newline.
  */
-public class SimpleLayout implements LogLayout {
+public final class SimpleLayout implements LogLayout {
 
     private static final class SingletonHolder {
         static final SimpleLayout INSTANCE = new SimpleLayout();
@@ -40,10 +40,8 @@ public class SimpleLayout implements LogLayout {
 
     @Override
     public boolean equals(@Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        SimpleLayout that = (SimpleLayout) o;
-        return Objects.equals(getType(), that.getType());
+        if (!(o instanceof SimpleLayout other)) return false;
+        return getType().equals(other.getType());
     }
 
     @Override

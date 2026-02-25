@@ -65,7 +65,7 @@ public final class LoggerNameFilter implements LogFilter {
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof LoggerNameFilter other)) return false;
-        return Objects.equals(name, other.name) && Objects.equals(predicate, other.predicate);
+        return name.equals(other.name) && predicate.equals(other.predicate);
     }
 
     @Override

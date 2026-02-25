@@ -123,7 +123,7 @@ public final class CombinedFilter implements LogFilter {
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof  CombinedFilter other)) return false;
-        return Objects.equals(name, other.name) && Objects.deepEquals(filters, other.filters);
+        return name.equals(other.name) && Objects.deepEquals(filters, other.filters);
     }
 
     @Override

@@ -83,12 +83,8 @@ public final class SharedString implements CharSequence {
 
     @Override
     public boolean equals(@Nullable Object obj) {
-        if (this == obj) {
-            return true;
-        }
-        if (!(obj instanceof SharedString anotherString)) {
-            return false;
-        }
+        if (!(obj instanceof SharedString anotherString)) return false;
+        if (this == obj) return true;
 
         int n = length();
         if (n == anotherString.length()) {

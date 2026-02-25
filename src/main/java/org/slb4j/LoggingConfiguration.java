@@ -469,7 +469,7 @@ public final class LoggingConfiguration {
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof LoggingConfiguration other)) return false;
-        return statusLevel == other.statusLevel && Objects.equals(statusName, other.statusName) && Objects.equals(statusDest, other.statusDest) && Objects.equals(rootFilter, other.rootFilter) && Objects.equals(handlers, other.handlers) && Objects.equals(filters, other.filters);
+        return statusLevel == other.statusLevel && statusName.equals(other.statusName) && statusDest.equals(other.statusDest) && rootFilter.equals(other.rootFilter) && handlers.equals(other.handlers) && filters.equals(other.filters);
     }
 
     @Override

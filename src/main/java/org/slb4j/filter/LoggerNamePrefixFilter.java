@@ -133,7 +133,7 @@ public final class LoggerNamePrefixFilter implements LogFilter {
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof LoggerNamePrefixFilter other)) return false;
-        return level == other.level && Objects.equals(name, other.name) && Objects.equals(levelMap, other.levelMap);
+        return level == other.level && name.equals(other.name) && levelMap.equals(other.levelMap);
     }
 
     @Override

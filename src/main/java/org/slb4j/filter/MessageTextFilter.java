@@ -69,7 +69,7 @@ public final class MessageTextFilter implements LogFilter {
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof MessageTextFilter other)) return false;
-        return Objects.equals(name, other.name) && Objects.equals(textFilter, other.textFilter);
+        return name.equals(other.name) && textFilter.equals(other.textFilter);
     }
 
     @Override

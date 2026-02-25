@@ -74,7 +74,7 @@ public final class MarkerFilter implements LogFilter {
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof MarkerFilter other)) return false;
-        return Objects.equals(name, other.name) && Objects.equals(predicate, other.predicate);
+        return name.equals(other.name) && predicate.equals(other.predicate);
     }
 
     @Override

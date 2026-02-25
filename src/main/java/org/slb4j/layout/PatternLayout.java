@@ -1276,10 +1276,8 @@ public final class PatternLayout implements LogLayout {
 
     @Override
     public boolean equals(@Nullable Object o) {
-        if (this == o) return true;
-        if (o == null || getClass() != o.getClass()) return false;
-        PatternLayout that = (PatternLayout) o;
-        return Objects.equals(getType(), that.getType()) && Objects.equals(getText(), that.getText());
+        if (!(o instanceof PatternLayout other)) return false;
+        return getType().equals(other.getType()) && getText().equals(other.getText());
     }
 
     @Override

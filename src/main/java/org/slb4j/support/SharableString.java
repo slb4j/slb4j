@@ -68,7 +68,8 @@ public final class SharableString implements CharSequence {
 
     @Override
     public boolean equals(@Nullable Object obj) {
-        return this == obj || (obj instanceof SharableString ss) && (ss.base.equals(base));
+        if (!(obj instanceof SharableString ss)) return false;
+        return ss.base.equals(base);
     }
 
     /**

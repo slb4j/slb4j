@@ -290,7 +290,7 @@ final class LevelMap {
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof LevelMap other)) return false;
-        return Objects.equals(root, other.root);
+        return root.equals(other.root);
     }
 
     @Override

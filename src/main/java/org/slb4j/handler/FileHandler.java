@@ -83,7 +83,7 @@ public final class FileHandler extends AbstractFileHandler {
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof FileHandler other)) return false;
-        return append == other.append && Objects.equals(name(), other.name()) && Objects.equals(path, other.path) && Objects.equals(getFilter(), other.getFilter()) && Objects.equals(getLayout(), other.getLayout());
+        return append == other.append && name().equals(other.name()) && path.equals(other.path) && getFilter().equals(other.getFilter()) && getLayout().equals(other.getLayout());
     }
 
     @Override

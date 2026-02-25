@@ -138,9 +138,8 @@ public final class LogLevelFilter implements LogFilter {
 
     @Override
     public boolean equals(@Nullable Object o) {
-        if (o == null || getClass() != o.getClass()) return false;
-        LogLevelFilter that = (LogLevelFilter) o;
-        return Objects.equals(name, that.name) && Objects.deepEquals(pass, that.pass);
+        if (!(o instanceof LogLevelFilter other)) return false;
+        return name.equals(other.name) && Objects.deepEquals(pass, other.pass);
     }
 
     @Override
