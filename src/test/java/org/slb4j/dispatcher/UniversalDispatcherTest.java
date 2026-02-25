@@ -23,6 +23,7 @@ import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.slb4j.LogFilter;
+import org.slb4j.filter.LoggerNamePrefixFilter;
 
 import java.util.SequencedCollection;
 
@@ -45,6 +46,38 @@ class UniversalDispatcherTest {
         handlers = dispatcher.getLogHandlers();
         assertFalse(handlers.contains(handler), "Handler should not be present after removal");
         assertEquals(0, handlers.size());
+    }
+
+    @Test
+    void testRootFilterVarHandle() {
+        UniversalDispatcher dispatcher = new UniversalDispatcher();
+        LoggerNamePrefixFilter initialFilter = dispatcher.getFilter();
+        assertNotNull(initialFilter);
+        assertEquals("root", initialFilter.name());
+
+        LoggerNamePrefixFilter newFilter = new LoggerNamePrefixFilter("newRoot");
+        dispatcher.setFilter(newFilter);
+        assertSame(newFilter, dispatcher.getFilter());
+
+        dispatcher.setRootLevel(LogLevel.DEBUG);
+        assertEquals(LogLevel.DEBUG, dispatcher.getRootLevel());
+        assertEquals(LogLevel.DEBUG, newFilter.getLevel());
+
+        dispatcher.setLevel("com.example", LogLevel.TRACE);
+        assertEquals(LogLevel.TRACE, dispatcher.getLevel("com.example"));
+        assertEquals(LogLevel.TRACE, newFilter.getLevel("com.example"));
+
+        // With root level DEBUG, TRACE is globally disabled
+        assertFalse(dispatcher.isLevelEnabled(LogLevel.TRACE));
+
+        // isEnabled checks both root level and logger specific level
+        // In LoggerNamePrefixFilter.java:
+        // return isLevelEnabled(logLevel) && logLevel.ordinal() >= getLevel(loggerName).ordinal();
+        // Since isLevelEnabled(TRACE) is false, isEnabled will be false even if logger level is TRACE.
+        assertFalse(dispatcher.isEnabled("com.example", LogLevel.TRACE, null));
+
+        assertTrue(dispatcher.isLevelEnabled(LogLevel.DEBUG));
+        assertTrue(dispatcher.isEnabled("com.example", LogLevel.DEBUG, null));
     }
 
     private static class TestLogHandler implements LogHandler {

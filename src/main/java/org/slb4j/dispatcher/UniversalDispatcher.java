@@ -25,6 +25,8 @@ import org.jspecify.annotations.Nullable;
 import org.slb4j.SLB4J;
 import org.slb4j.filter.LoggerNamePrefixFilter;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.List;
 import java.util.SequencedCollection;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -63,9 +65,20 @@ public final class UniversalDispatcher implements LogDispatcher {
     }
 
     /**
-     * The root filter.
+     * The root filter. DO NOT REMOVE!
      */
-    private volatile LoggerNamePrefixFilter rootFilter = new LoggerNamePrefixFilter("root");
+    private LoggerNamePrefixFilter rootFilter = new LoggerNamePrefixFilter("root");
+
+    private static final VarHandle ROOT_FILTER_VH;
+
+    static {
+        try {
+            MethodHandles.Lookup l = MethodHandles.lookup();
+            ROOT_FILTER_VH = l.findVarHandle(UniversalDispatcher.class, "rootFilter", LoggerNamePrefixFilter.class);
+        } catch (ReflectiveOperationException e) {
+            throw new ExceptionInInitializerError(e);
+        }
+    }
 
     /**
      * A thread-safe list of LogHandler instances.
@@ -110,7 +123,7 @@ public final class UniversalDispatcher implements LogDispatcher {
      * @return true if logging is enabled for the given log level, false otherwise
      */
     public boolean isLevelEnabled(LogLevel lvl) {
-        return rootFilter.isLevelEnabled(lvl);
+        return getFilter().isLevelEnabled(lvl);
     }
 
     /**
@@ -122,7 +135,7 @@ public final class UniversalDispatcher implements LogDispatcher {
      * @return true if the logging configuration is enabled, false otherwise
      */
     public boolean isEnabled(String name, LogLevel logLevel, @Nullable String marker) {
-        return rootFilter.isEnabled(name, logLevel, marker);
+        return getFilter().isEnabled(name, logLevel, marker);
     }
 
     @Override
@@ -137,33 +150,33 @@ public final class UniversalDispatcher implements LogDispatcher {
 
     @Override
     public void setFilter(LoggerNamePrefixFilter filter) {
-        this.rootFilter = filter;
-        SLB4J.logInternal(LogLevel.INFO, "Global dispatcher filter set to: {}", rootFilter);
+        ROOT_FILTER_VH.setRelease(this, filter);
+        SLB4J.logInternal(LogLevel.INFO, "Global dispatcher filter set to: {}", filter);
     }
 
     @Override
     public LoggerNamePrefixFilter getFilter() {
-        return rootFilter;
+        return (LoggerNamePrefixFilter) ROOT_FILTER_VH.getAcquire(this);
     }
 
     @Override
     public LogLevel getRootLevel() {
-        return rootFilter.getLevel();
+        return getFilter().getLevel();
     }
 
     @Override
     public void setRootLevel(LogLevel level) {
-        rootFilter.setLevel(level);
+        getFilter().setLevel(level);
     }
 
     @Override
     public void setLevel(String prefix, LogLevel level) {
-        rootFilter.setLevel(prefix, level);
+        getFilter().setLevel(prefix, level);
     }
 
     @Override
     public LogLevel getLevel(String prefix) {
-        return rootFilter.getLevel(prefix);
+        return getFilter().getLevel(prefix);
     }
 
     /**
@@ -193,7 +206,7 @@ public final class UniversalDispatcher implements LogDispatcher {
      * @param t an optional {@code Throwable} associated with the log event; may be null
      */
     public void filterAndDispatch(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver locationResolver, Supplier<String> msg, @Nullable Throwable t) {
-        if (rootFilter.isEnabled(loggerName, lvl, mrk)) {
+        if (getFilter().isEnabled(loggerName, lvl, mrk)) {
             String message = null;
             Location loc =  null;
             for (int i = 0; i < handlers.size(); i++) {
