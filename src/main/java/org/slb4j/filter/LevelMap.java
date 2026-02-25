@@ -20,6 +20,8 @@ import org.slb4j.support.SharableString;
 import org.slb4j.support.SharedString;
 import org.jspecify.annotations.Nullable;
 
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.VarHandle;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -48,7 +50,7 @@ final class LevelMap {
      */
     LevelMap(LogLevel rootLevel) {
         this.root = new Node();
-        this.root.level = rootLevel;
+        this.root.setLevel(rootLevel);
     }
 
     private LevelMap(Node root) {
@@ -86,7 +88,7 @@ final class LevelMap {
     public Map<String, LogLevel> rules() {
         Map<String, LogLevel> rules = new java.util.LinkedHashMap<>();
 
-        LogLevel rootLevel = root.level;
+        LogLevel rootLevel = root.getLevel();
         assert rootLevel != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
         rules.put("", rootLevel);
 
@@ -107,7 +109,7 @@ final class LevelMap {
             String loggerName = prefix.isEmpty() ? entry.getKey().toString() : prefix + "." + entry.getKey();
             Node childNode = entry.getValue();
 
-            LogLevel lvl = childNode.level; // store volatile variable locally
+            LogLevel lvl = childNode.getLevel();
             if (lvl != null) {
                 rules.put(loggerName, lvl);
             }
@@ -127,7 +129,18 @@ final class LevelMap {
     public static final class Node {
         // We use SharedString as the key to allow lookups with your window-view
         final Map<SharedString, Node> children = new ConcurrentHashMap<>();
-        volatile @Nullable LogLevel level = null;
+        @Nullable LogLevel level = null;
+
+        static final VarHandle LEVEL_VH;
+
+        static {
+            try {
+                MethodHandles.Lookup l = MethodHandles.lookup();
+                LEVEL_VH = l.findVarHandle(Node.class, "level", LogLevel.class);
+            } catch (ReflectiveOperationException e) {
+                throw new ExceptionInInitializerError(e);
+            }
+        }
 
         /**
          * Creates a deep copy of this node and all its children.
@@ -136,7 +149,7 @@ final class LevelMap {
          */
         public Node copy() {
             Node newNode = new Node();
-            newNode.level = this.level;
+            newNode.setLevel(getLevel());
             for (Map.Entry<SharedString, Node> entry : children.entrySet()) {
                 newNode.children.put(entry.getKey(), entry.getValue().copy());
             }
@@ -146,12 +159,16 @@ final class LevelMap {
         @Override
         public boolean equals(@Nullable Object o) {
             if (!(o instanceof Node other)) return false;
-            return Objects.equals(children, other.children) && level == other.level;
+            return getLevel() == other.getLevel() && children.equals(other.children);
+        }
+
+        private @Nullable LogLevel getLevel() {
+            return (LogLevel) LEVEL_VH.getAcquire(this);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(children, level);
+            return Objects.hash(children, getLevel());
         }
 
         @Override
@@ -168,7 +185,7 @@ final class LevelMap {
          * @return the same {@code StringBuilder} instance, appended with the string representation of the node
          */
         public StringBuilder appendTo(StringBuilder sb) {
-            LogLevel lvl = level; // store volatile field locally
+            LogLevel lvl = getLevel();
             sb.append(lvl == null ? "null" : lvl.name());
             if (!children.isEmpty()) {
                 for (Map.Entry<SharedString, Node> e : children.entrySet()) {
@@ -178,6 +195,10 @@ final class LevelMap {
                 }
             }
             return sb;
+        }
+
+        public void setLevel(@Nullable LogLevel level) {
+            Node.LEVEL_VH.setRelease(this, level);
         }
     }
 
@@ -193,7 +214,7 @@ final class LevelMap {
      */
     public void put(String loggerName, LogLevel level) {
         if (loggerName.isEmpty()) {
-            root.level = level;
+            root.setLevel(level);
             return;
         }
         if (loggerName.endsWith(".")) {
@@ -211,7 +232,8 @@ final class LevelMap {
             current = current.children.computeIfAbsent(segment, k -> new Node());
             start = dot + 1;
         }
-        current.children.computeIfAbsent(name.subSequence(start, name.length()), k -> new Node()).level = level;
+        Node child = current.children.computeIfAbsent(name.subSequence(start, name.length()), k -> new Node());
+        Node.LEVEL_VH.setRelease(child, level);
     }
 
     /**
@@ -226,7 +248,7 @@ final class LevelMap {
      */
     public LogLevel level(String className) {
         Node current = root;
-        LogLevel level = root.level;
+        LogLevel level = root.getLevel();
 
         assert level != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
 
@@ -244,8 +266,9 @@ final class LevelMap {
                 return level;
             }
 
-            if (current.level != null) {
-                level = current.level;
+            LogLevel currentLevel = current.getLevel();
+            if (currentLevel != null) {
+                level = currentLevel;
             }
             start = dot + 1;
         }
@@ -253,8 +276,11 @@ final class LevelMap {
         // Final segment check
         SharedString lastSegment = name.subSequence(start, className.length());
         current = current.children.get(lastSegment);
-        if (current != null && current.level != null) {
-            level = current.level;
+        if (current != null) {
+            LogLevel lastLevel = current.getLevel();
+            if (lastLevel != null) {
+                level = lastLevel;
+            }
         }
 
         assert level != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
