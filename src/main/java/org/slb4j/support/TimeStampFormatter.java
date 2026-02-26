@@ -47,7 +47,7 @@ public interface TimeStampFormatter {
      * A preconfigured instance of {@code ISO8601TimeStampFormatter} for formatting timestamps
      * without date.
      */
-    TimeStampFormatter TIME_FORMATTER = new TimeOnlyTimeStampFormatter('.', true, ZoneOffset.UTC);
+    TimeStampFormatter TIME_FORMATTER = new TimeOnlyTimeStampFormatter('.', ZoneOffset.UTC);
 
     /**
      * Appends a formatted representation of the given timestamp to the provided {@code Appendable}.

@@ -99,8 +99,8 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
             case "yyyy-MM-dd HH:mm:ss.SSSX" -> new ISO8601TimeStampFormatter(' ', '.', true, zoneId);
             case "yyyy-MM-dd HH:mm:ss,SSSX" -> TimeStampFormatter.DEFAULT_FORMATTER;
             case "yyyy-MM-ddTHH:mm:ss,SSSX", "yyyy-MM-dd'T'HH:mm:ss,SSSX" -> new ISO8601TimeStampFormatter('T', ',', true, zoneId);
-            case "HH:mm:ss.SSS" -> new TimeOnlyTimeStampFormatter('.', false, zoneId);
-            case "HH:mm:ss,SSS" -> new TimeOnlyTimeStampFormatter(',', false, zoneId);
+            case "HH:mm:ss.SSS" -> new TimeOnlyTimeStampFormatter('.', zoneId);
+            case "HH:mm:ss,SSS" -> new TimeOnlyTimeStampFormatter(',', zoneId);
             default -> parseCustomFormat(pattern, zoneId, locale);
         };
     }
