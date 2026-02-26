@@ -15,7 +15,6 @@
  */
 package org.slb4j.frontend.log4j;
 
-import org.apache.logging.log4j.message.ReusableMessage;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
@@ -30,7 +29,6 @@ import org.jspecify.annotations.Nullable;
 import org.slb4j.support.StackWalkerLocationResolver;
 
 import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * LoggerLog4j is an implementation of the Log4J AbstractLogger class that forwards all logging
@@ -169,17 +167,9 @@ public final class LoggerLog4j extends AbstractLogger {
     @Override
     public void logMessage(String fqcn, Level level, @Nullable Marker marker, Message message, @Nullable Throwable t) {
         LogLevel lvl = translateLog4jLevel(level);
-
         if (DISPATCHER.isLevelEnabled(lvl)) {
             String mrk = marker == null ? null : marker.getName();
-            Supplier<String> msg;
-            if (message instanceof ReusableMessage rm) {
-                // for reusable messages, do eager evaluation
-                msg = rm.getFormattedMessage()::toString;
-            } else {
-                msg = message::getFormattedMessage;
-            }
-            DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, lvl, mrk, MDC_INSTANCE, LOCATION_RESOLVER, msg, t);
+            DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, lvl, mrk, MDC_INSTANCE, LOCATION_RESOLVER, message::getFormattedMessage, t);
         }
     }
 
