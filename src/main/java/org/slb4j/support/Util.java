@@ -171,4 +171,40 @@ public final class Util {
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
         return loader.getResource(classResource) != null;
     }
+
+    /**
+     * Splits the given string into an array of substrings based on the specified delimiter character.
+     * If the string is empty, an empty string array is returned.
+     *
+     * @param s the string to be split; must not be null
+     * @param c the character used as the delimiter for splitting
+     * @return an array of substrings obtained by splitting the input string on the specified delimiter
+     */
+    public static String[] splitOnChar(String s, char c) {
+        if (s.isEmpty()) {
+            return EMPTY_STRING_ARRAY;
+        }
+
+        int count = 1;
+        int len = s.length();
+        for (int i = 0; i < len; i++) {
+            if (s.charAt(i) == c) {
+                count++;
+            }
+        }
+
+        String[] result = new String[count];
+        int start = 0;
+        int index = 0;
+
+        for (int i = 0; i < len; i++) {
+            if (s.charAt(i) == c) {
+                result[index++] = s.substring(start, i);
+                start = i + 1;
+            }
+        }
+        result[index] = s.substring(start);
+
+        return result;
+    }
 }
