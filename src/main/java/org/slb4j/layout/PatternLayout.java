@@ -204,9 +204,6 @@ public final class PatternLayout implements LogLayout {
             this.locationNeeded = locationNeeded;
         }
 
-        private static final CharSequence SPACES = "                                      ";
-        private static final int N_SPACES = SPACES.length();
-
         @Override
         public String toString() {
             if (minWidth == 0 && maxWidth == 0) {
@@ -233,15 +230,19 @@ public final class PatternLayout implements LogLayout {
          * @param n the number of spaces to append
          */
         private static void appendSpaces(Appendable app, int n) throws IOException {
-            switch (n) {
-                case 0 -> { /* nothing to do */}
-                case 1 -> app.append(' ');
-                default -> {
-                    while (n > 0) {
-                        int count = Math.min(n, N_SPACES);
-                        app.append(SPACES, 0, count);
-                        n -= count;
-                    }
+            while (true) {
+                switch (n) {
+                    case 0 -> {return;}
+                    case 1 -> {app.append(' '); return;}
+                    case 2 -> {app.append("  "); return;}
+                    case 3 -> {app.append("   "); return;}
+                    case 4 -> {app.append("    "); return;}
+                    case 5 -> {app.append("     "); return;}
+                    case 6 -> {app.append("      "); return;}
+                    case 7 -> {app.append("       "); return;}
+                    case 8 -> {app.append("        "); return;}
+                    case 9 -> {app.append("         "); return;}
+                    default -> {app.append("          "); n -= 10;}
                 }
             }
         }
