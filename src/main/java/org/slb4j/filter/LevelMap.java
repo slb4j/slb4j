@@ -16,8 +16,6 @@
 package org.slb4j.filter;
 
 import org.slb4j.LogLevel;
-import org.slb4j.support.SharableString;
-import org.slb4j.support.SharedString;
 import org.jspecify.annotations.Nullable;
 
 import java.lang.invoke.MethodHandles;
@@ -40,6 +38,8 @@ final class LevelMap {
 
     // The root level handles the "empty" or "root" logger
     private final Node root;
+
+    private static final Map<String, String[]> loggerNameCache = new ConcurrentHashMap<>();
 
     /**
      * Constructs a new instance of {@code LevelMap} with the specified root log level.
@@ -105,8 +105,8 @@ final class LevelMap {
      * @param node   the current node being traversed
      */
     private static void traverseAndCollectRules(Map<String, LogLevel> rules, String prefix, Node node) {
-        for (Map.Entry<SharedString, Node> entry : node.children.entrySet()) {
-            String loggerName = prefix.isEmpty() ? entry.getKey().toString() : prefix + "." + entry.getKey();
+        for (Map.Entry<String, Node> entry : node.children.entrySet()) {
+            String loggerName = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
             Node childNode = entry.getValue();
 
             LogLevel lvl = childNode.getLevel();
@@ -123,12 +123,11 @@ final class LevelMap {
      * between keys and associated log levels. Each node may have child nodes and an optional log level.
      * <p>
      * This class is designed to model a tree structure where each node can house multiple children
-     * identified by a {@link SharedString} key. Log levels can be dynamically assigned to nodes for
+     * identified by a {@link String} key. Log levels can be dynamically assigned to nodes for
      * structured logging purposes.
      */
     public static final class Node {
-        // We use SharedString as the key to allow lookups with your window-view
-        final Map<SharedString, Node> children = new ConcurrentHashMap<>();
+        final Map<String, Node> children = new ConcurrentHashMap<>();
         @Nullable LogLevel level = null;
 
         static final VarHandle LEVEL_VH;
@@ -150,7 +149,7 @@ final class LevelMap {
         public Node copy() {
             Node newNode = new Node();
             newNode.setLevel(getLevel());
-            for (Map.Entry<SharedString, Node> entry : children.entrySet()) {
+            for (Map.Entry<String, Node> entry : children.entrySet()) {
                 newNode.children.put(entry.getKey(), entry.getValue().copy());
             }
             return newNode;
@@ -162,13 +161,13 @@ final class LevelMap {
             return getLevel() == other.getLevel() && children.equals(other.children);
         }
 
-        private @Nullable LogLevel getLevel() {
-            return (LogLevel) LEVEL_VH.getAcquire(this);
-        }
-
         @Override
         public int hashCode() {
             return Objects.hash(children, getLevel());
+        }
+
+        private @Nullable LogLevel getLevel() {
+            return (LogLevel) LEVEL_VH.getAcquire(this);
         }
 
         @Override
@@ -188,7 +187,7 @@ final class LevelMap {
             LogLevel lvl = getLevel();
             sb.append(lvl == null ? "null" : lvl.name());
             if (!children.isEmpty()) {
-                for (Map.Entry<SharedString, Node> e : children.entrySet()) {
+                for (Map.Entry<String, Node> e : children.entrySet()) {
                     sb.append(" , {").append(e.getKey()).append(" -> ");
                     e.getValue().appendTo(sb);
                     sb.append("}");
@@ -222,18 +221,11 @@ final class LevelMap {
         }
 
         Node current = root;
-        int start = 0;
-        int dot;
-
-        // Populate using SharedString segments
-        SharableString name = new SharableString(loggerName);
-        while ((dot = name.indexOf('.', start)) != -1) {
-            SharedString segment = name.subSequence(start, dot);
+        String[] segments = getSegments(loggerName);
+        for (String segment : segments) {
             current = current.children.computeIfAbsent(segment, k -> new Node());
-            start = dot + 1;
         }
-        Node child = current.children.computeIfAbsent(name.subSequence(start, name.length()), k -> new Node());
-        Node.LEVEL_VH.setRelease(child, level);
+        Node.LEVEL_VH.setRelease(current, level);
     }
 
     /**
@@ -252,17 +244,12 @@ final class LevelMap {
 
         assert level != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
 
-        int start = 0;
-        int dot;
-
-        SharableString name = new SharableString(className);
-        while ((dot = name.indexOf('.', start)) != -1) {
-            // No new underlying char[] is created here!
-            SharedString segment = name.subSequence(start, dot);
+        String[] parts = getSegments(className);
+        for (int i = 0; i < parts.length; i++) {
+            String segment = parts[i];
 
             current = current.children.get(segment);
             if (current == null) {
-                assert level != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
                 return level;
             }
 
@@ -270,27 +257,19 @@ final class LevelMap {
             if (currentLevel != null) {
                 level = currentLevel;
             }
-            start = dot + 1;
         }
 
-        // Final segment check
-        SharedString lastSegment = name.subSequence(start, className.length());
-        current = current.children.get(lastSegment);
-        if (current != null) {
-            LogLevel lastLevel = current.getLevel();
-            if (lastLevel != null) {
-                level = lastLevel;
-            }
-        }
-
-        assert level != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
         return level;
+    }
+
+    private static String[] getSegments(String className) {
+        return loggerNameCache.computeIfAbsent(className, n -> n.split("\\."));
     }
 
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof LevelMap other)) return false;
-        return root.equals(other.root);
+        return Objects.equals(root, other.root);
     }
 
     @Override
