@@ -11,7 +11,7 @@ import java.util.Locale;
 /**
  * Base class for high-performance timestamp formatters.
  */
-public abstract sealed class AbstractTimeStampFormatter implements TimeStampFormatter permits ISO8601TimeStampFormatter, PatternTimeStampFormatter {
+public abstract sealed class AbstractTimeStampFormatter implements TimeStampFormatter permits ISO8601TimeStampFormatter, PatternTimeStampFormatter, TimeOnlyTimeStampFormatter {
 
     /**
      * Represents a part of a formatted timestamp.

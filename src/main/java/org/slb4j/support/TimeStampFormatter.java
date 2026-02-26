@@ -2,6 +2,7 @@ package org.slb4j.support;
 
 import org.slb4j.support.formatter.ISO8601TimeStampFormatter;
 import org.slb4j.support.formatter.MillisTimeStampFormatter;
+import org.slb4j.support.formatter.TimeOnlyTimeStampFormatter;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -42,6 +43,11 @@ public interface TimeStampFormatter {
      * timestamps by directly representing the epoch milliseconds as a string.
      */
     TimeStampFormatter MILLIS_FORMATTER_LOCAL_ZONE = new MillisTimeStampFormatter();
+    /**
+     * A preconfigured instance of {@code ISO8601TimeStampFormatter} for formatting timestamps
+     * without date.
+     */
+    TimeStampFormatter TIME_FORMATTER = new TimeOnlyTimeStampFormatter('.', true, ZoneOffset.UTC);
 
     /**
      * Appends a formatted representation of the given timestamp to the provided {@code Appendable}.
