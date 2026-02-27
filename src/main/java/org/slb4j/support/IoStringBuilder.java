@@ -38,6 +38,7 @@ public final class IoStringBuilder implements Appendable {
     private static final int MIN_CAPACITY = 16;
 
     private final int initialCapacity;
+
     /**
      * The buffer that provides the underlying character storage for this {@code IoStringBuilder}.
      */
@@ -161,7 +162,7 @@ public final class IoStringBuilder implements Appendable {
         ensureCapacity(len);
         switch (len) {
             case 0 -> { return this; }
-            case 1 -> { append(csq.charAt(start)); return this; }
+            case 1 -> { buffer.put(csq.charAt(start)); return this; }
         }
 
         switch (csq) {
@@ -198,14 +199,9 @@ public final class IoStringBuilder implements Appendable {
      *               be written
      * @throws IOException if an I/O error occurs while writing to the writer
      */
-    public void writeAndReset(Writer writer) throws IOException {
+    public void write(Writer writer) throws IOException {
         buffer.flip();
         writer.append(buffer);
-        if (buffer.capacity() <= initialCapacity) {
-            buffer.clear();
-        } else {
-            buffer = CharBuffer.allocate(initialCapacity);
-        }
     }
 
     /**
@@ -217,15 +213,10 @@ public final class IoStringBuilder implements Appendable {
      * @param writer the {@link Writer} to which the contents of the buffer will be written
      * @throws IOException if an I/O error occurs while writing to the writer or flushing it
      */
-    public void writeFlushAndReset(Writer writer) throws IOException {
+    public void writeAndFlush(Writer writer) throws IOException {
         buffer.flip();
         writer.append(buffer);
         writer.flush();
-        if (buffer.capacity() <= initialCapacity) {
-            buffer.clear();
-        } else {
-            buffer = CharBuffer.allocate(initialCapacity);
-        }
     }
 
     /**
@@ -264,7 +255,11 @@ public final class IoStringBuilder implements Appendable {
      * The internal buffer will retain its current capacity.
      */
     public void reset() {
-        buffer.clear();
+        if (buffer.capacity() <= initialCapacity) {
+            buffer.clear();
+        } else {
+            buffer = CharBuffer.allocate(initialCapacity);
+        }
     }
 
     /**
