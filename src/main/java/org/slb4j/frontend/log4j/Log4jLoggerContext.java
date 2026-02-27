@@ -15,6 +15,8 @@
  */
 package org.slb4j.frontend.log4j;
 
+import org.apache.logging.log4j.message.MessageFactory;
+import org.apache.logging.log4j.message.ReusableMessageFactory;
 import org.apache.logging.log4j.spi.ExtendedLogger;
 import org.apache.logging.log4j.spi.LoggerContext;
 import org.jspecify.annotations.Nullable;
@@ -48,8 +50,8 @@ public final class Log4jLoggerContext implements LoggerContext {
     }
 
     @Override
-    public ExtendedLogger getLogger(String name, org.apache.logging.log4j.message.@Nullable MessageFactory messageFactory) {
-        return getLogger(name);
+    public ExtendedLogger getLogger(String name, @Nullable MessageFactory messageFactory) {
+        return loggers.computeIfAbsent(name, n -> new LoggerLog4j(n, messageFactory == null ? ReusableMessageFactory.INSTANCE : messageFactory));
     }
 
     @Override

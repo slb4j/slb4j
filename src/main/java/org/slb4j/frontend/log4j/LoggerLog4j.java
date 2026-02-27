@@ -15,6 +15,8 @@
  */
 package org.slb4j.frontend.log4j;
 
+import org.apache.logging.log4j.message.MessageFactory;
+import org.apache.logging.log4j.message.ReusableMessageFactory;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
@@ -62,7 +64,17 @@ public final class LoggerLog4j extends AbstractLogger {
      * @param name the name of the logger to be associated with this instance
      */
     public LoggerLog4j(String name) {
-        super(name);
+        this(name, ReusableMessageFactory.INSTANCE);
+    }
+
+    /**
+     * Constructs a new LoggerLog4j instance with the specified logger name and message factory.
+     *
+     * @param name the name of the logger to be associated with this instance
+     * @param messageFactory the message factory to be used by this logger
+     */
+    public LoggerLog4j(String name, MessageFactory messageFactory) {
+        super(name, messageFactory);
     }
 
     /**
