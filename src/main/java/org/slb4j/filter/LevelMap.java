@@ -17,6 +17,7 @@ package org.slb4j.filter;
 
 import org.slb4j.LogLevel;
 import org.jspecify.annotations.Nullable;
+import org.slb4j.support.Util;
 
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
@@ -263,7 +264,7 @@ final class LevelMap {
     }
 
     private static String[] getSegments(String className) {
-        return loggerNameCache.computeIfAbsent(className, n -> n.split("\\."));
+        return loggerNameCache.computeIfAbsent(className, Util::splitOnDot);
     }
 
     @Override

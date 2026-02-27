@@ -129,7 +129,7 @@ public final class PatternLayout implements LogLayout {
          * @param consoleCodes a {@link ConsoleCode} defining console-specific format codes
          * @throws IOException if an I/O error occurs while appending to the {@link Appendable} instance
          */
-        void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException;
+        void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException;
 
         /**
          * Determines whether the location information (e.g., source file, line number)
@@ -308,7 +308,7 @@ public final class PatternLayout implements LogLayout {
         public DefaultPatternEntry() { /* nothing to do */}
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             timeStampFormatter.appendTo(timestamp, app);
             app.append(" [");
             app.append(Thread.currentThread().getName());
@@ -344,7 +344,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             app.append(literal);
         }
     }
@@ -392,7 +392,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             String name = useJulNames ? translateToJulLevelName(lvl) : lvl.name();
             appendFormatted(app, name, false);
         }
@@ -480,7 +480,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             // DO NOT USE computeIfAbsent() HERE!
             // Background: The lambda would need to bind abbreviationLength and useDotAbbreviation from
             // the current context. Splitting into get() and put() makes sure that the allocation is only
@@ -525,7 +525,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, Thread.currentThread().getName(), false);
         }
     }
@@ -561,7 +561,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             if (mdc == null) {
                 return;
             }
@@ -614,7 +614,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, mrk, false);
         }
     }
@@ -642,7 +642,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, msg, false);
         }
     }
@@ -681,7 +681,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             String locationClassName = location == null ? null : location.getClassName();
 
             if (locationClassName == null) {
@@ -730,7 +730,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, location != null ? location.getMethodName() : null, false);
         }
     }
@@ -759,7 +759,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, location != null ? Integer.toString(location.getLineNumber()) : null, false);
         }
     }
@@ -787,7 +787,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, location != null ? location.getFileName() : null, false);
         }
     }
@@ -818,7 +818,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             if (location != null) {
                 StringBuilder sb = new StringBuilder();
                 String className = location.getClassName();
@@ -873,7 +873,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             if (t != null) {
                 Util.appendStackTrace(app, t);
                 app.append(NEWLINE);
@@ -907,7 +907,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             app.append(consoleCodes.start());
         }
     }
@@ -937,7 +937,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             app.append(consoleCodes.end());
         }
     }
@@ -996,7 +996,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             formatter.appendTo(timestamp, app);
         }
     }
@@ -1020,7 +1020,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             app.append(NEWLINE);
         }
     }
@@ -1045,7 +1045,7 @@ public final class PatternLayout implements LogLayout {
         }
 
         @Override
-        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             app.append('"');
             formatter.appendTo(timestamp, app);
             app.append("\",\"");
@@ -1057,7 +1057,7 @@ public final class PatternLayout implements LogLayout {
             app.append("\"\n");
         }
 
-        private static void appendCsvEscaped(Appendable app, @Nullable String msg) throws IOException {
+        private static void appendCsvEscaped(Appendable app, @Nullable CharSequence msg) throws IOException {
             if (msg == null) {
                 app.append("null");
                 return;
@@ -1065,7 +1065,7 @@ public final class PatternLayout implements LogLayout {
 
             int start = 0;
             int end;
-            while ((end = msg.indexOf('"', start)) != -1) {
+            while ((end = Util.indexOf(msg, '"', start)) != -1) {
                 app.append(msg, start, end);
                 app.append("\"\"");
                 start = end + 1;
@@ -1301,7 +1301,7 @@ public final class PatternLayout implements LogLayout {
      * @param consoleCodes the color codes for the log level (start and end)
      * @throws IOException if an I/O error occurs while writing to the appendable
      */
-    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
         for (int i = 0; i < entries.length; i++) {
             entries[i].format(app, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
         }

@@ -13,59 +13,54 @@ class UtilTest {
      * Test that a string with multiple occurrences of the split character is split correctly.
      */
     @Test
-    void testSplitOnCharWithMultipleOccurrences() {
-        String input = "a,b,c";
-        char delimiter = ',';
+    void testSplitOnDotWithMultipleOccurrences() {
+        String input = "a.b.c";
         String[] expected = {"a", "b", "c"};
 
-        assertArrayEquals(expected, Util.splitOnChar(input, delimiter));
+        assertArrayEquals(expected, Util.splitOnDot(input));
     }
 
     /**
      * Test that a string without the split character returns the original string wrapped in an array.
      */
     @Test
-    void testSplitOnCharWithoutDelimiter() {
+    void testSplitOnDotWithoutDelimiter() {
         String input = "abc";
-        char delimiter = ',';
         String[] expected = {"abc"};
 
-        assertArrayEquals(expected, Util.splitOnChar(input, delimiter));
+        assertArrayEquals(expected, Util.splitOnDot(input));
     }
 
     /**
      * Test that an empty string returns an empty array.
      */
     @Test
-    void testSplitOnCharWithEmptyString() {
+    void testSplitOnDotWithEmptyString() {
         String input = "";
-        char delimiter = ',';
         String[] expected = Util.EMPTY_STRING_ARRAY;
 
-        assertArrayEquals(expected, Util.splitOnChar(input, delimiter));
+        assertArrayEquals(expected, Util.splitOnDot(input));
     }
 
     /**
      * Test a string containing leading and trailing delimiters.
      */
     @Test
-    void testSplitOnCharWithLeadingAndTrailingDelimiters() {
-        String input = ",a,b,c,";
-        char delimiter = ',';
+    void testSplitOnDotWithLeadingAndTrailingDelimiters() {
+        String input = ".a.b.c.";
         String[] expected = {"", "a", "b", "c", ""};
 
-        assertArrayEquals(expected, Util.splitOnChar(input, delimiter));
+        assertArrayEquals(expected, Util.splitOnDot(input));
     }
 
     /**
      * Test a string containing only delimiters.
      */
     @Test
-    void testSplitOnCharWithOnlyDelimiters() {
-        String input = ",,,";
-        char delimiter = ',';
+    void testSplitOnDotWithOnlyDelimiters() {
+        String input = "...";
         String[] expected = {"", "", "", ""};
 
-        assertArrayEquals(expected, Util.splitOnChar(input, delimiter));
+        assertArrayEquals(expected, Util.splitOnDot(input));
     }
 }

@@ -7,6 +7,7 @@ import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.MDC;
 import org.slb4j.support.TimeStampFormatter;
+import org.slb4j.support.Util;
 
 import java.io.IOException;
 
@@ -24,6 +25,8 @@ import java.io.IOException;
  * This class assumes a fixed CSV structure and does not include fields like marker, MDC, location, or throwable details.
  */
 public final class CsvLayout implements LogLayout {
+
+    private static final String DELIMITER_WITH_QUOTES = "\",\"";
 
     private static final class SingletonHolder {
         static final CsvLayout INSTANCE = new CsvLayout();
@@ -53,14 +56,14 @@ public final class CsvLayout implements LogLayout {
     }
 
     @Override
-    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
         app.append('"');
         timeStampFormatter.appendTo(timestamp, app);
-        app.append("\",\"");
+        app.append(DELIMITER_WITH_QUOTES);
         app.append(lvl.name());
-        app.append("\",\"");
+        app.append(DELIMITER_WITH_QUOTES);
         appendCsvEscaped(app, loggerName);
-        app.append("\",\"");
+        app.append(DELIMITER_WITH_QUOTES);
         appendCsvEscaped(app, msg);
         app.append("\"\n");
     }
@@ -73,7 +76,7 @@ public final class CsvLayout implements LogLayout {
      * @param msg the input string to be CSV-escaped; may be null
      * @throws IOException if an I/O error occurs while appending to the appendable
      */
-    private static void appendCsvEscaped(Appendable app, @Nullable String msg) throws IOException {
+    private static void appendCsvEscaped(Appendable app, @Nullable CharSequence msg) throws IOException {
         if (msg == null) {
             app.append("null");
             return;
@@ -81,7 +84,7 @@ public final class CsvLayout implements LogLayout {
 
         int start = 0;
         int end;
-        while ((end = msg.indexOf('"', start)) != -1) {
+        while ((end = Util.indexOf(msg, '"', start)) != -1) {
             app.append(msg, start, end);
             app.append("\"\"");
             start = end + 1;

@@ -57,7 +57,6 @@ import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.Locale;
-import java.util.Objects;
 
 /**
  * SwingLogPane is a custom Swing component that provides a log viewer with filtering
@@ -204,7 +203,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
                 filter = filter.andThen(new LoggerNameFilter("loggerName", name -> name.toLowerCase(Locale.ROOT).contains(loggerText)));
             }
             if (!messageText.isEmpty()) {
-                filter = filter.andThen(new MessageTextFilter("messageContent", text -> text.contains(messageText)));
+                filter = filter.andThen(new MessageTextFilter("messageContent", text -> text.toString().contains(messageText)));
             }
 
             final LogFilter finalFilter = filter;

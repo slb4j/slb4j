@@ -46,6 +46,7 @@ module org.slb4j {
     requires static org.apache.commons.logging;
     requires static org.apache.logging.log4j;
     requires static org.slf4j;
+    requires java.desktop;
 
     provides org.slf4j.spi.SLF4JServiceProvider with LoggingServiceProviderSlf4j;
     provides org.apache.logging.log4j.spi.Provider with ProviderLog4j;

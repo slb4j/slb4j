@@ -72,7 +72,7 @@ public final class LogEntryFilter implements LogFilter, Predicate<LogEntry> {
     }
 
     @Override
-    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
+    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, CharSequence msg, @Nullable Throwable t) {
         return filter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t);
     }
 

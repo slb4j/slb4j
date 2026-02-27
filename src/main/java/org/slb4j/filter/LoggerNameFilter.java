@@ -22,7 +22,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * The LoggerNameFilter filters log entries based on their logger name and a user-defined filter.
@@ -54,7 +53,7 @@ public final class LoggerNameFilter implements LogFilter {
     }
 
     @Override
-    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
+    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, CharSequence msg, @Nullable Throwable t) {
         return predicate.test(loggerName);
     }
 

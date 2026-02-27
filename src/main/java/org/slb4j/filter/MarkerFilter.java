@@ -22,7 +22,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * The DefaultLogEntryFilter class is an implementation of the LogEntryFilter interface
@@ -58,7 +57,7 @@ public final class MarkerFilter implements LogFilter {
     }
 
     @Override
-    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
+    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, CharSequence msg, @Nullable Throwable t) {
         return predicate.test(mrk == null ? "" : mrk);
     }
 

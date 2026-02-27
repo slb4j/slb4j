@@ -73,7 +73,7 @@ public final class JulHandler extends Handler {
      * @return the formatted message if formatting is successful, or the raw pattern if
      *         no parameters are provided or an error occurs during formatting
      */
-    public static Supplier<String> formatJulMessage(LogRecord logRecord) {
+    public static Supplier<CharSequence> formatJulMessage(LogRecord logRecord) {
         return () -> FORMATTER.formatMessage(logRecord);
     }
 
@@ -90,7 +90,7 @@ public final class JulHandler extends Handler {
         )) {
             LogLevel lvl = translateJulLevel(logRecord.getLevel());
             if (DISPATCHER.isLevelEnabled(lvl)) {
-                Supplier<String> msg = formatJulMessage(logRecord);
+                Supplier<CharSequence> msg = formatJulMessage(logRecord);
                 Throwable t = logRecord.getThrown();
                 DISPATCHER.filterAndDispatch(logRecord.getMillis(), loggerName, lvl, null, null, LOCATION_RESOLVER, msg, t);
             }

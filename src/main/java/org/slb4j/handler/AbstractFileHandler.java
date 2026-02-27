@@ -32,7 +32,6 @@ import java.io.Writer;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.file.StandardOpenOption;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -206,7 +205,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     }
 
     @Override
-    public final void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
+    public final void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, CharSequence msg, @Nullable Throwable t) {
         if (getFilter().test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             doHandle(timestamp, loggerName, lvl, mrk, mdc, loc, msg, t);
         }
@@ -228,7 +227,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @param msg the message to be logged
      * @param t an optional throwable associated with the log entry, such as an exception, or null if not applicable
      */
-    protected final void doHandle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
+    protected final void doHandle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, CharSequence msg, @Nullable Throwable t) {
         lock.lock();
         try {
             checkRotation(timestamp);

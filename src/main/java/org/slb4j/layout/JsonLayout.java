@@ -59,7 +59,7 @@ public final class JsonLayout implements LogLayout {
     }
 
     @Override
-    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable String msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
         app.append("\"thread\":\"").append(Thread.currentThread().getName());
         app.append("\",\"level\":\"").append(lvl.name());
         app.append("\",\"loggerName\":\"");
@@ -144,7 +144,7 @@ public final class JsonLayout implements LogLayout {
      * @param s the input string to be JSON-escaped; may be null
      * @throws IOException if an I/O error occurs while appending to the appendable
      */
-    private void appendJsonEscaped(Appendable app, @Nullable String s) throws IOException {
+    private void appendJsonEscaped(Appendable app, @Nullable CharSequence s) throws IOException {
         if (s == null) {
             app.append("null");
             return;

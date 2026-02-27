@@ -87,7 +87,7 @@ class FiltersTest {
             "hello, goodbye, false"
     })
     void testMessageTextFilter(String search, String message, boolean expected) {
-        MessageTextFilter filter = new MessageTextFilter("test", msg -> msg.contains(search));
+        MessageTextFilter filter = new MessageTextFilter("test", msg -> msg.toString().contains(search));
 
         assertTrue(filter.isEnabled("logger", LogLevel.INFO, "")); // Message filter doesn't affect isEnabled usually
         assertEquals(expected, filter.test(System.currentTimeMillis(), "logger", LogLevel.INFO, "", null, message, null));

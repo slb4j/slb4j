@@ -15,7 +15,6 @@
  */
 package org.slb4j;
 
-import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.jspecify.annotations.Nullable;
 
 /**
@@ -52,7 +51,7 @@ public interface LogHandler {
      * @param msg        the message of the log entry
      * @param t          the throwable associated with the log entry, or {@code null} if none
      */
-    void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t);
+    void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, CharSequence msg, @Nullable Throwable t);
 
     /**
      * Sets the filter to be used for determining which log entries should be processed.

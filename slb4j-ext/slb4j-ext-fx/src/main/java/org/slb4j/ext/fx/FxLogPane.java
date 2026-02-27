@@ -483,7 +483,6 @@ public final class FxLogPane extends BorderPane implements LogPane {
             LogEntry logEntry = items.get(j);
             String message = logEntry.message();
             if ((i != 0 || current == null) // skip the current entry if selected
-                    && message != null
                     && message.toLowerCase(Locale.ROOT).contains(lowercaseText)) {
                 selectLogEntry(logEntry);
                 break;
@@ -511,7 +510,7 @@ public final class FxLogPane extends BorderPane implements LogPane {
 
         String messageContent = tfMessageContent.getText();
         if (!messageContent.isEmpty()) {
-            filter = filter.andThen(new MessageTextFilter("messageContent", text -> text.contains(messageContent)));
+            filter = filter.andThen(new MessageTextFilter("messageContent", text -> text.toString().contains(messageContent)));
         }
 
         entries.setPredicate(LogEntryFilter.forFilter(filter));

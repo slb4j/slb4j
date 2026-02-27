@@ -106,7 +106,7 @@ public final class LoggerSlf4j extends AbstractLogger {
      * @return the formatted message if arguments are provided, or the raw message pattern
      *         if no arguments are given
      */
-    public static Supplier<String> formatSlf4jMessage(String messagePattern, @Nullable Object @Nullable [] arguments) {
+    public static Supplier<CharSequence> formatSlf4jMessage(String messagePattern, @Nullable Object @Nullable [] arguments) {
         if (arguments != null && arguments.length > 0) {
             return () -> {
                 try {
@@ -129,7 +129,7 @@ public final class LoggerSlf4j extends AbstractLogger {
     protected void handleNormalizedLoggingCall(Level level, @Nullable Marker marker, String messagePattern, @Nullable Object @Nullable [] arguments, @Nullable Throwable throwable) {
         LogLevel lvl = translateSlf4jLevel(level);
         if (DISPATCHER.isLevelEnabled(lvl)) {
-            Supplier<String> msg = formatSlf4jMessage(messagePattern, arguments);
+            Supplier<CharSequence> msg = formatSlf4jMessage(messagePattern, arguments);
             DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, lvl, Objects.toString(marker, ""), MDC_INSTANCE, LOCATION_RESOLVER, msg, throwable);
         }
     }

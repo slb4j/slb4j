@@ -22,7 +22,6 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Objects;
 import java.util.function.Predicate;
-import java.util.function.Supplier;
 
 /**
  * The DefaultLogEntryFilter class is an implementation of the LogEntryFilter interface
@@ -34,7 +33,7 @@ import java.util.function.Supplier;
 public final class MessageTextFilter implements LogFilter {
 
     private final String name;
-    private final Predicate<? super String> textFilter;
+    private final Predicate<? super CharSequence> textFilter;
 
     /**
      * Constructs a new DefaultLogEntryFilter with the specified log level and filter.
@@ -42,7 +41,7 @@ public final class MessageTextFilter implements LogFilter {
      * @param name  the name of this filter
      * @param textFilter the filter to set for the message content
      */
-    public MessageTextFilter(String name, Predicate<? super String> textFilter) {
+    public MessageTextFilter(String name, Predicate<? super CharSequence> textFilter) {
         this.name = name;
         this.textFilter = textFilter;
     }
@@ -58,7 +57,7 @@ public final class MessageTextFilter implements LogFilter {
     }
 
     @Override
-    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
+    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, CharSequence msg, @Nullable Throwable t) {
         return textFilter.test(msg);
     }
 

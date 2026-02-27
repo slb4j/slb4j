@@ -149,7 +149,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
     }
 
     @Override
-    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, String msg, @Nullable Throwable t) {
+    public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, CharSequence msg, @Nullable Throwable t) {
         LogFilter currentFilter = (LogFilter) FILTER_VH.getAcquire(this);
 
         if (currentFilter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {

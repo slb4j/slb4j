@@ -61,7 +61,7 @@ public final class LoggerJcl implements Log {
      */
     private void dispatch(LogLevel level, @Nullable Object message, @Nullable Throwable t) {
         if (DISPATCHER.isLevelEnabled(level)) {
-            Supplier<String> msg = (message == null ? "null" : message)::toString;
+            Supplier<CharSequence> msg = (message == null ? "null" : message)::toString;
             DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, level, null, null, LOCATION_RESOLVER, msg, t);
         }
     }

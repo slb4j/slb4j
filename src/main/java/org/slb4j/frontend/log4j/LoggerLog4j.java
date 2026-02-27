@@ -26,6 +26,7 @@ import org.apache.logging.log4j.message.Message;
 import org.apache.logging.log4j.spi.AbstractLogger;
 import org.apache.logging.log4j.spi.StandardLevel;
 import org.jspecify.annotations.Nullable;
+import org.slb4j.support.ResourcePool;
 import org.slb4j.support.StackWalkerLocationResolver;
 
 import java.util.Map;
@@ -37,6 +38,11 @@ import java.util.Map;
 public final class LoggerLog4j extends AbstractLogger {
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
     private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(LoggerLog4j.class, "org.apache.logging");
+
+    /**
+     * A pool of formatters to use for formatting log messages.
+     */
+    private static final ResourcePool<Log4JMessageFormatter> FORMATTERS = ResourcePool.newThreadBasedPool(Log4JMessageFormatter::new, Log4JMessageFormatter::cleanup);
 
     private static final MDC MDC_INSTANCE = new MDC() {
         @Override
@@ -169,7 +175,11 @@ public final class LoggerLog4j extends AbstractLogger {
         LogLevel lvl = translateLog4jLevel(level);
         if (DISPATCHER.isLevelEnabled(lvl)) {
             String mrk = marker == null ? null : marker.getName();
-            DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, lvl, mrk, MDC_INSTANCE, LOCATION_RESOLVER, message::getFormattedMessage, t);
+            try (var formatterLease = FORMATTERS.acquire()) {
+                Log4JMessageFormatter formatter = formatterLease.get();
+                formatter.setMessage(message);
+                DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, lvl, mrk, MDC_INSTANCE, LOCATION_RESOLVER, formatter, t);
+            }
         }
     }
 

@@ -514,9 +514,9 @@ public class ConfigParserLog4j implements ConfigParser {
         boolean mismatchPasses = !onMismatch.equals(DENY);
 
         // Get the base predicate (uses .find() logic)
-        Predicate<String> basePredicate = pattern.asPredicate();
+        Predicate<CharSequence> basePredicate = s -> pattern.matcher(s).find();
 
-        Predicate<? super String> textFilter;
+        Predicate<? super CharSequence> textFilter;
 
         if (matchPasses && mismatchPasses) {
             textFilter = s -> true;

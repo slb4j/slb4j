@@ -123,7 +123,7 @@ class FileHandlerTest {
             LogFilter newFilter = new LogFilter() {
                 @Override public LogFilter copy() { return this; }
                 @Override public String name() { return "testFilter"; }
-                @Override public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, String msg, @Nullable Throwable t) {
+                @Override public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, CharSequence msg, @Nullable Throwable t) {
                     return lvl == LogLevel.ERROR;
                 }
             };

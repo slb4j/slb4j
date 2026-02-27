@@ -177,10 +177,9 @@ public final class Util {
      * If the string is empty, an empty string array is returned.
      *
      * @param s the string to be split; must not be null
-     * @param c the character used as the delimiter for splitting
      * @return an array of substrings obtained by splitting the input string on the specified delimiter
      */
-    public static String[] splitOnChar(String s, char c) {
+    public static String[] splitOnDot(String s) {
         if (s.isEmpty()) {
             return EMPTY_STRING_ARRAY;
         }
@@ -188,7 +187,7 @@ public final class Util {
         int count = 1;
         int len = s.length();
         for (int i = 0; i < len; i++) {
-            if (s.charAt(i) == c) {
+            if (s.charAt(i) == '.') {
                 count++;
             }
         }
@@ -196,9 +195,8 @@ public final class Util {
         String[] result = new String[count];
         int start = 0;
         int index = 0;
-
         for (int i = 0; i < len; i++) {
-            if (s.charAt(i) == c) {
+            if (s.charAt(i) == '.') {
                 result[index++] = s.substring(start, i);
                 start = i + 1;
             }
