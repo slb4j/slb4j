@@ -15,6 +15,7 @@
  */
 package org.slb4j.ext.fx.samples;
 
+import org.slb4j.SLB4J;
 import org.slb4j.ext.fx.FxLogPane;
 import javafx.application.Application;
 import javafx.scene.Scene;
@@ -43,13 +44,13 @@ public class FxLogPaneSample extends Application {
     private final SecureRandom random = new SecureRandom();
     private final AtomicInteger n = new AtomicInteger();
 
-
     /**
      * The main entry point for the application.
      *
      * @param args the command line arguments
      */
     public static void main(String[] args) {
+        SLB4J.setRootLevel(org.slb4j.LogLevel.TRACE);
         launch(args);
     }
 
