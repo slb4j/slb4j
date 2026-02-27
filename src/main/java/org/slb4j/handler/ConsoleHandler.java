@@ -28,6 +28,7 @@ import org.slb4j.layout.PatternLayout;
 import org.slb4j.support.AnsiCode;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.support.IoStringBuilder;
+import org.slb4j.support.ResourcePool;
 
 import java.io.IOException;
 import java.io.OutputStreamWriter;
@@ -77,7 +78,12 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
             LogLevel.ERROR, ConsoleCode.empty()
     );
 
-    private final Lock lock = new ReentrantLock();
+    private static final ResourcePool<IoStringBuilder> BUFFERS = ResourcePool.newThreadBasedPool(
+            () -> new IoStringBuilder(BUFFER_SIZE),
+            IoStringBuilder::reset
+    );
+
+    private final Object lock = new Object();
 
     private final ConsoleCode[] codesByLevelIdx = new ConsoleCode[LogLevel.values().length];
 
@@ -94,7 +100,6 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
     private boolean colored = true;
     private LogFilter filter = LogFilter.allPass();
     private LogLayout layout = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
-    private final IoStringBuilder buffer = new IoStringBuilder(BUFFER_SIZE);
 
     private static final VarHandle LAYOUT_VH;
     private static final VarHandle FILTER_VH;
@@ -155,16 +160,17 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
         if (currentFilter.test(timestamp, loggerName, lvl, mrk, mdc, msg, t)) {
             LogLayout currentLayout = (LogLayout) LAYOUT_VH.getAcquire(this);
 
-            lock.lock();
-            try {
+            try (var lease = BUFFERS.acquire()) {
+                var buffer = lease.get();
                 // Formatting and Writing remain inside the lock because of the shared 'buffer'
                 ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
                 currentLayout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
-                buffer.writeFlushAndReset(writer);
+
+                synchronized (lock) {
+                    buffer.writeAndFlush(writer);
+                }
             } catch (IOException e) {
                 SLB4J.logInternal(LogLevel.WARN, "Error writing log entry: %s", e);
-            } finally {
-                lock.unlock();
             }
         }
     }
@@ -192,13 +198,10 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
      * @param colored true, if output use colors
      */
     public void setColored(boolean colored) {
-        lock.lock();
-        try {
+        synchronized (lock) {
             COLORED_VH.setRelease(this, colored);
             (colored ? COLOR_MAP_DEFAULT : COLOR_MAP_MONOCHROME)
                     .forEach((lvl, code) -> codesByLevelIdx[lvl.ordinal()] = code);
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -246,16 +249,12 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
 
     @Override
     public void shutdown() {
-        try {
-            lock.lock();
+        synchronized (lock) {
             String footer = layout.getFooter();
             if (!footer.isEmpty()) {
                 out.print(footer);
-                out.flush();
             }
-            buffer.reset(0);
-        } finally {
-            lock.unlock();
+            out.flush();
         }
     }
 }

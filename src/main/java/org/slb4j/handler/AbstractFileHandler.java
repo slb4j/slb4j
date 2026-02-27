@@ -26,6 +26,7 @@ import org.slb4j.MDC;
 import org.slb4j.SLB4J;
 import org.slb4j.layout.PatternLayout;
 import org.slb4j.support.IoStringBuilder;
+import org.slb4j.support.ResourcePool;
 
 import java.io.IOException;
 import java.io.Writer;
@@ -33,7 +34,6 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.VarHandle;
 import java.nio.file.StandardOpenOption;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * A log handler that writes log entries to a file.
@@ -51,10 +51,13 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     private final AtomicBoolean closed = new AtomicBoolean(false);
 
     /** The lock for thread-safe access. */
-    protected final ReentrantLock lock = new ReentrantLock();
+    protected final Object lock = new Object();
 
     /** The internal buffer. */
-    protected final IoStringBuilder buffer;
+    private static final ResourcePool<IoStringBuilder> BUFFERS = ResourcePool.newThreadBasedPool(
+            () -> new IoStringBuilder(BUFFER_SIZE),
+            IoStringBuilder::reset
+    );
 
     /**
      * The log pattern used by the handler to format log messages.      *
@@ -96,7 +99,6 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      */
     protected AbstractFileHandler(String name) throws IOException {
         this.name = name;
-        this.buffer = new IoStringBuilder(BUFFER_SIZE);
     }
 
     @Override
@@ -128,11 +130,8 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @param flushLevel the minimum log level to trigger a flush
      */
     public final void setFlushLevel(LogLevel flushLevel) {
-        lock.lock();
-        try {
+        synchronized (lock) {
             this.flushLevel = flushLevel;
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -152,8 +151,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      */
     @Override
     public final void setLayout(LogLayout layout) {
-        lock.lock();
-        try {
+        synchronized (lock) {
             LogLayout oldLayout = (LogLayout) LAYOUT_VH.getAcquire(this);
             if (oldLayout != layout) {
                 Writer writer = writer();
@@ -172,8 +170,6 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
                 }
                 LAYOUT_VH.setRelease(this, layout);
             }
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -191,11 +187,8 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @return the minimum log level to trigger a flush
      */
     public final LogLevel getFlushLevel() {
-        lock.lock();
-        try {
+        synchronized (lock) {
             return flushLevel;
-        } finally {
-            lock.unlock();
         }
     }
 
@@ -228,26 +221,23 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @param t an optional throwable associated with the log entry, such as an exception, or null if not applicable
      */
     protected final void doHandle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, CharSequence msg, @Nullable Throwable t) {
-        lock.lock();
         try {
-            checkRotation(timestamp);
-            Writer writer = writer();
+            try (var lease = BUFFERS.acquire()) {
+                var buffer = lease.get();
+                layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
 
-            layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
+                synchronized (lock) {
+                    checkRotation(timestamp);
+                    Writer writer = writer();
+                    buffer.write(writer);
 
-            if (lvl.ordinal() >= flushLevel.ordinal()) {
-                buffer.writeFlushAndReset(writer);
-            } else {
-                buffer.writeAndReset(writer);
+                    if (lvl.ordinal() >= flushLevel.ordinal()) {
+                        writer.flush();
+                    }
+                }
             }
         } catch (IOException e) {
             SLB4J.logInternal(LogLevel.WARN, "Error writing log entry: %s", e);
-        } finally {
-            try {
-                releaseBuffer(buffer);
-            } finally {
-                lock.unlock();
-            }
         }
     }
 
@@ -345,16 +335,13 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     @Override
     public final void shutdown() {
         if (closed.compareAndSet(false, true)) {
-            lock.lock();
-            try {
+            synchronized (lock) {
                 try {
                     onShutDown();
-                    buffer.reset();
+                    writer().close();
                 } catch (Exception e) {
                     SLB4J.logInternal(LogLevel.WARN, "Error shutting down handler '%s': %s", name(), e);
                 }
-            } finally {
-                lock.unlock();
             }
         }
     }
