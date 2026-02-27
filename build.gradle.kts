@@ -38,7 +38,7 @@ java {
 /////////////////////////////////////////////////////////////////////////////
 
 object Meta {
-    const val VERSION = "0.7.0-beta2-SNAPSHOT"
+    const val VERSION = "0.7.0-beta2"
     const val DESCRIPTION = "Simple Logging Backend for Java"
     const val INCEPTION_YEAR = "2026"
     const val GROUP = "org.slb4j"
