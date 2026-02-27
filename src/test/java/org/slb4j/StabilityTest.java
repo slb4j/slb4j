@@ -98,7 +98,6 @@ class StabilityTest {
         Map<String, List<Integer>> threadMessages = new HashMap<>();
         Pattern pattern = Pattern.compile("^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) TID: (Thread-\\d+) SEQ: (\\d+)$");
 
-        long lastGlobalTs = -1;
         int totalMessages = 0;
         int outOfOrderGlobal = 0;
 
@@ -110,7 +109,6 @@ class StabilityTest {
                     if (!matcher.find()) {
                         fail("Corrupted line in " + file.getFileName() + ": " + line);
                     }
-                    String tsStr = matcher.group(1);
                     String threadName = matcher.group(2);
                     int seq = Integer.parseInt(matcher.group(3));
 
