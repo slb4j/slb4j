@@ -7,9 +7,10 @@ import org.slb4j.SLB4J;
 import org.slb4j.filter.LogLevelFilter;
 import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.handler.ConsoleHandler;
+import org.slb4j.handler.FileHandler;
+import org.slb4j.handler.RotatingFileHandler;
 
 import java.io.PrintStream;
-import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -124,8 +125,8 @@ public class ConfigParserJul implements ConfigParser {
 
     private static LogHandler buildFileHandler(String name, Properties props) {
         String prefix = "java.util.logging.FileHandler.";
-        String pattern = props.getProperty(prefix + "pattern");
-        if (pattern == null || pattern.isBlank()) {
+        String fileNamePattern = props.getProperty(prefix + "pattern");
+        if (fileNamePattern == null || fileNamePattern.isBlank()) {
             // No pattern set — JUL would use a default in user home; here we ignore
             SLB4J.logInternal(LogLevel.WARN, "JUL: FileHandler.pattern not set — skipping file handler creation");
             return null;
@@ -135,10 +136,9 @@ public class ConfigParserJul implements ConfigParser {
         int count = (int) parseLong(props.getProperty(prefix + "count"), 1L);
         boolean append = Boolean.parseBoolean(props.getProperty(prefix + "append", "false"));
 
-        Path path = Path.of(pattern);
         try {
             if (limit > 0 || count > 1) {
-                org.slb4j.handler.RotatingFileHandler rfh = new org.slb4j.handler.RotatingFileHandler(name, path, append);
+                RotatingFileHandler rfh = new RotatingFileHandler(name, "", fileNamePattern, append, RotatingFileHandler.IndexStrategy.USE_MAX);
                 if (limit > 0) {
                     rfh.setMaxFileSize(limit);
                 }
@@ -149,10 +149,10 @@ public class ConfigParserJul implements ConfigParser {
                 // No direct time-based rotation in JUL default props; keep size-based only
                 return rfh;
             } else {
-                return new org.slb4j.handler.FileHandler(name, path, append);
+                return new FileHandler(name, fileNamePattern, append);
             }
         } catch (java.io.IOException e) {
-            SLB4J.logInternal(LogLevel.WARN, "JUL: Failed creating FileHandler for %s: %s", pattern, e);
+            SLB4J.logInternal(LogLevel.WARN, "JUL: Failed creating FileHandler for %s: %s", fileNamePattern, e);
             return null;
         }
     }

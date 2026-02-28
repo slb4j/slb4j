@@ -261,7 +261,7 @@ class ConfigParserLog4jTest {
                             RotatingFileHandler rfh = (RotatingFileHandler) handler;
                             assertEquals("RollingFile", rfh.name(), "Handler name should be RollingFile");
                             assertEquals(Path.of("build/rolling.log").toAbsolutePath(), rfh.getPath().toAbsolutePath(), "File path should match expected");
-                            assertEquals("build/rolling-%d{MM-dd-yy-HH-mm-ss}-%i.log.gz", rfh.getFilePattern(), "File pattern should match expected");
+                            assertEquals("build/rolling-%d{MM-dd-yy-HH-mm-ss}-%i.log.gz", rfh.getFileNamePattern(), "File pattern should match expected");
                             assertEquals(100L * 1024 * 1024, rfh.getMaxFileSize(), "Max file size should match expected");
                             assertEquals(5, rfh.getMaxBackupIndex(), "Max backup index should match expected");
                             assertInstanceOf(PatternLayout.class, rfh.getLayout(), "RotatingFileHandler layout should be PatternLayout");
@@ -538,7 +538,7 @@ class ConfigParserLog4jTest {
                             RotatingFileHandler rfh = (RotatingFileHandler) handler;
                             assertEquals("RollingFile", rfh.name(), "Handler name should be RollingFile");
                             assertEquals(Path.of("build/rolling.log").toAbsolutePath(), rfh.getPath().toAbsolutePath(), "File path should match expected");
-                            assertEquals("build/rolling-%d{MM-dd-yy-HH-mm-ss}-%i.log.gz", rfh.getFilePattern(), "File pattern should match expected");
+                            assertEquals("build/rolling-%d{MM-dd-yy-HH-mm-ss}-%i.log.gz", rfh.getFileNamePattern(), "File pattern should match expected");
                             assertEquals(100L * 1024 * 1024, rfh.getMaxFileSize(), "Max file size should match expected");
                             assertEquals(5, rfh.getMaxBackupIndex(), "Max backup index should match expected");
                             assertInstanceOf(PatternLayout.class, rfh.getLayout(), "RotatingFileHandler layout should be PatternLayout");

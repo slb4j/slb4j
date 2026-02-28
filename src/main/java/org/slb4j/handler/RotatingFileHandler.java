@@ -16,9 +16,7 @@
 package org.slb4j.handler;
 
 import org.jspecify.annotations.Nullable;
-import org.slb4j.Location;
 import org.slb4j.LogLevel;
-import org.slb4j.MDC;
 import org.slb4j.SLB4J;
 
 import java.io.IOException;
@@ -26,11 +24,22 @@ import java.io.Writer;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Objects;
+import java.util.function.IntFunction;
+import java.util.function.Supplier;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * A log handler that writes log entries to a file.
@@ -38,9 +47,24 @@ import java.util.Objects;
  */
 public final class RotatingFileHandler extends AbstractFileHandler {
 
-    private final Path path;
+    public enum IndexStrategy {
+        USE_MAX,
+        USE_MIN
+    }
+
+    private static final Pattern BACKUP_INDEX_PATTERN = Pattern.compile("%i(?:\\{(\\d+)\\})?");
+    private static final Pattern BACKUP_DATE_PATTERN = Pattern.compile("%d(?:\\{([^}]+)\\})?");
+
+    private final boolean isFileNameProvided;
+    private final IndexStrategy indexStrategy;
+    private final String fileName;
+    private final String fileNamePattern;
+    private final IntFunction<String> indexFormatter;
+    private final Supplier<String> dateSupplier;
     private final boolean append;
-    private @Nullable String filePattern;
+
+    private int backupIndex = 1;
+    private Path logFile;
 
     private Writer writer;
     private @Nullable FileChannel channel;
@@ -54,34 +78,102 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     /**
      * Constructs a new FileHandler.
      *
-     * @param name   the name of the handler
-     * @param path   the path to the log file
-     * @param append if true, then bytes will be written to the end of the file rather than the beginning
+     * @param name            the name of the handler
+     * @param fileName        the fileName (including path) to the log file as a string
+     * @param fileNamePattern the file name pattern
+     * @param append          if true, then bytes will be written to the end of the file rather than the beginning
+     * @param indexStrategy
      * @throws IOException if the file cannot be opened
      */
-    public RotatingFileHandler(String name, Path path, boolean append) throws IOException {
+    public RotatingFileHandler(String name, String fileName, String fileNamePattern, boolean append, IndexStrategy indexStrategy) throws IOException {
         super(name);
-        this.path = path;
+
+        if (fileName.isEmpty() && fileNamePattern.isEmpty()) {
+            throw new IllegalStateException("At least one of fileName and fileNamePattern must not be empty.");
+        }
+
+        this.indexFormatter = getIndexFormatter(fileNamePattern);
+        this.dateSupplier = getDateSupplier(fileNamePattern);
+        this.isFileNameProvided = !fileName.isEmpty();
+        this.indexStrategy = indexStrategy;
+        this.fileName = fileName.isEmpty() ? getFileName(fileNamePattern, 1) : fileName;
+        this.fileNamePattern = fileNamePattern.isEmpty() ? fileName + ".%i" : fileNamePattern;
         this.append = append;
         this.rotationTimeUnit = java.time.temporal.ChronoUnit.DAYS;
+
+        if (isFileNameProvided) {
+            this.logFile = Paths.get(this.fileName);
+        } else {
+            this.backupIndex = 1;
+            this.logFile = Paths.get(getFileName(fileNamePattern, backupIndex));
+        }
+
+        Files.createDirectories(Objects.requireNonNull(logFile.getParent(), "FileHandler path must specify a valid directory"));
+
         this.writer = openFile();
     }
 
-    private Writer nextFile() throws IOException {
+    /**
+     * Parses the formatter format %i token.
+     * Example: "app-%i{3}.log" returns 3.
+     * Example: "app-%i.log" returns 0 (no padding).
+     */
+    private IntFunction<String> getIndexFormatter(String pattern) {
+        // Regex explanation:
+        // %i       : matches the literal %i
+        // (?:      : starts a non-capturing group
+        //   \{     : matches a literal {
+        //   (\d+)  : capturing group 1: matches one or more digits
+        //   \}     : matches a literal }
+        // )?       : makes the entire {digits} block optional
+        Matcher matcher = BACKUP_INDEX_PATTERN.matcher(pattern);
+
+        if (matcher.find()) {
+            String widthString = matcher.group(1);
+            if (widthString != null) {
+                String fmt = "%0" + Integer.parseInt(widthString) + "d";
+                return fmt::formatted;
+            }
+        }
+
+        // Default Log4j2 behavior: no leading zeros
+        return Integer::toString;
+    }
+
+    private Supplier<String> getDateSupplier(String pattern) {
+        DateTimeFormatter dateTimeFormatter = DateTimeFormatter.ISO_LOCAL_DATE;
+        try {
+            Matcher matcher = BACKUP_DATE_PATTERN.matcher(pattern);
+            if (matcher.find()) {
+                String formatString = matcher.group(1);
+                if (formatString != null) {
+                    DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(formatString);
+                    return () -> LocalDateTime.now().format(dateFormatter);
+                }
+            }
+        } catch (Exception e) {
+            SLB4J.logInternal(LogLevel.WARN, "Failed to parse date format string, using ISO_LOCAL_DATE: %s", e);
+        }
+
+        // Default Log4j2 behavior: no leading zeros
+        return () -> LocalDateTime.now().format(dateTimeFormatter);
+    }
+
+    private final String getFileName(String pattern, int backupIndex) {
+        String fn = BACKUP_INDEX_PATTERN.matcher(pattern).replaceFirst(indexFormatter.apply(backupIndex));
+        fn = BACKUP_DATE_PATTERN.matcher(fn).replaceFirst(dateSupplier.get());
+        return fn;
+    }
+
+    private void closeFile() throws IOException {
         synchronized (lock) {
             writer.close();
-            return openFile();
         }
     }
 
     private Writer openFile() throws IOException {
         synchronized (lock) {
-            Path parent = path.getParent();
-            if (parent != null) {
-                Files.createDirectories(parent);
-            }
-
-            this.channel = FileChannel.open(path, append ? OPTIONS_APPEND : OPTIONS_CREATE);
+            this.channel = FileChannel.open(logFile, append ? OPTIONS_APPEND : OPTIONS_CREATE);
             this.writer = Channels.newWriter(channel, StandardCharsets.UTF_8);
 
             writeLayoutHeader();
@@ -100,25 +192,13 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     /**
-     * Sets the file pattern for archived log files.
-     * The pattern can contain {@code %i} for an integer index.
+     * Gets the file name pattern for archived log files.
      *
-     * @param filePattern the file pattern
+     * @return the file name pattern
      */
-    public void setFilePattern(@Nullable String filePattern) {
+    public @Nullable String getFileNamePattern() {
         synchronized (lock) {
-            this.filePattern = filePattern;
-        }
-    }
-
-    /**
-     * Gets the file pattern for archived log files.
-     *
-     * @return the file pattern
-     */
-    public @Nullable String getFilePattern() {
-        synchronized (lock) {
-            return filePattern;
+            return fileNamePattern;
         }
     }
 
@@ -156,68 +236,186 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         }
     }
 
-    protected void checkRotation(long timestamp) throws IOException {
-        boolean rotate = (channel != null && maxFileSize > 0 && channel.position() >= maxFileSize)
-                || (nextRotationTime != -1 && timestamp >= nextRotationTime);
-        if (rotate) {
-            rotate();
+    @Override
+    protected void checkRotation(long timestamp, int charsToWrite) throws IOException {
+        if (channel == null) {
+            return;
+        }
+
+        if (isTimeRotation(timestamp) || isSizeRotation(charsToWrite)) {
+            try {
+                closeFile();
+                rotate();
+            } catch (IOException e) {
+                SLB4J.logInternal(LogLevel.WARN, "Rotation failed: {0}", e);
+            } finally {
+                openFile();
+            }
         }
     }
 
-    private void rotate() throws IOException {
+    private boolean isSizeRotation(int charsToWrite) throws IOException {
+        long position = channel == null ? 0 : channel.position();
+        return maxFileSize > 0 && position != 0 && position + charsToWrite >= maxFileSize;
+    }
+
+    private boolean isTimeRotation(long timestamp) {
+        return nextRotationTime != -1 && timestamp >= nextRotationTime;
+    }
+
+    private final void rotate() throws IOException {
         synchronized (lock) {
-            writer.close();
+            Path currentPath = logFile;
+            Path parent = currentPath.getParent();
+            if (parent == null) return;
 
-            if (filePattern != null && !filePattern.isEmpty()) {
-                rotateWithPattern();
+            if (maxBackupIndex <= 0) {
+                if (isFileNameProvided) {
+                    if (append) {
+                        Files.write(currentPath, new byte[0], java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
+                    }
+                } else {
+                    Files.write(currentPath, new byte[0], java.nio.file.StandardOpenOption.TRUNCATE_EXISTING);
+                }
+                return;
+            }
+
+            if (indexStrategy == IndexStrategy.USE_MAX) {
+                handleMaxStrategy(parent);
             } else {
-                rotateWithIndex();
+                handleMinStrategy(parent);
             }
-
-            nextFile();
         }
     }
 
-    private void rotateWithPattern() throws IOException {
-        String targetName = Objects.requireNonNullElse(filePattern, path.getFileName()).toString();
-        if (targetName.contains("%i")) {
-            // Find the first available index
-            int index = 1;
-            Path targetPath;
-            do {
-                targetPath = path.resolveSibling(targetName.replace("%i", String.valueOf(index)));
-                index++;
-            } while (Files.exists(targetPath));
-            Files.move(path, targetPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+    private void handleMaxStrategy(Path folder) throws IOException {
+        List<LogFileEntry> existingLogs = fetchExistingLogs(folder, dateSupplier.get());
+        existingLogs.sort(Comparator.comparingInt(e -> e.index));
+
+        if (!isFileNameProvided) {
+            // Pattern-Only mode: writing directly to indexed files.
+            // We are currently writing to the file with the highest index (if any exist).
+            // Rotation means moving to the next index.
+            int nextIndex = 1;
+            if (!existingLogs.isEmpty()) {
+                nextIndex = existingLogs.get(existingLogs.size() - 1).index + 1;
+            }
+            this.backupIndex = nextIndex;
+            this.logFile = folder.resolve(getFileName(fileNamePattern, backupIndex));
+
+            // Purge if we exceed maxBackupIndex. 
+            // The total number of files we want to keep is maxBackupIndex + 1.
+            // existingLogs contains files already on disk (including the one we just finished writing).
+            if (existingLogs.size() >= maxBackupIndex + 1) {
+                int toDelete = existingLogs.size() - maxBackupIndex;
+                for (int i = 0; i < toDelete; i++) {
+                    Files.deleteIfExists(existingLogs.get(i).path);
+                }
+            }
         } else {
-            // No index in pattern, just use it (and hope it doesn't collide or user knows what they are doing)
-            // Log4J usually uses date patterns here.
-            Path targetPath = path.resolveSibling(targetName);
-            Files.move(path, targetPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            // Fixed-File mode: writing to a fixed fileName, rotating to indexed files.
+            // Purge oldest if we reached maxBackupIndex.
+            if (existingLogs.size() >= maxBackupIndex) {
+                int toDelete = existingLogs.size() - maxBackupIndex + 1;
+                for (int i = 0; i < toDelete; i++) {
+                    Files.deleteIfExists(existingLogs.get(i).path);
+                }
+            }
+
+            // Determine next index: highest + 1
+            int nextIndex = 1;
+            if (!existingLogs.isEmpty()) {
+                nextIndex = existingLogs.get(existingLogs.size() - 1).index + 1;
+            }
+
+            Path targetPath = folder.resolve(getFileName(fileNamePattern, nextIndex));
+            executeRotation(targetPath);
         }
     }
 
-    private void rotateWithIndex() throws IOException {
-        // Rename existing backup files
+    private void handleMinStrategy(Path folder) throws IOException {
+        // 1. Delete the absolute oldest (maxBackupIndex)
+        Path maxFile = folder.resolve(getFileName(fileNamePattern, maxBackupIndex));
+        Files.deleteIfExists(maxFile);
+
+        // 2. Shift UP: 2->3, 1->2
         for (int i = maxBackupIndex - 1; i >= 1; i--) {
-            Path src = getBackupPath(i);
-            Path dest = getBackupPath(i + 1);
-            if (Files.exists(src)) {
-                Files.move(src, dest, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            Path source = folder.resolve(getFileName(fileNamePattern, i));
+            if (Files.exists(source)) {
+                Path target = folder.resolve(getFileName(fileNamePattern, i + 1));
+                Files.move(source, target, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
             }
         }
 
-        // Rename current file to .1
-        if (Files.exists(path)) {
-            Files.move(path, getBackupPath(1), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        // 3. Active file always goes to index 1
+        Path targetPath = folder.resolve(getFileName(fileNamePattern, 1));
+        executeRotation(targetPath);
+    }
+
+    private void executeRotation(Path archivePath) throws IOException {
+        if (isFileNameProvided) {
+            Path activePath = Paths.get(this.fileName);
+            if (Files.exists(activePath)) {
+                // Standard Log4j2: Rename active to the next available index
+                Files.move(activePath, archivePath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+            }
+            // Always reset logFile to the fixed name
+            this.logFile = activePath;
+        } else {
+            // Pattern-only: Handled inside handleMax/Min to avoid double-stepping
+            this.logFile = archivePath;
         }
     }
 
-    private Path getBackupPath(int index) {
-        Path fileName = path.getFileName();
-        assert fileName != null : "This should not have happened, path should always have a file name here - please report an issue";
-        String newFileName = fileName + "." + index;
-        return path.resolveSibling(newFileName);
+    private List<LogFileEntry> fetchExistingLogs(Path folder, String dateStr) throws IOException {
+        List<LogFileEntry> existingLogs = new ArrayList<>();
+        // Resolve the pattern's date part so we only match files for "today"
+        String dateResolvedPattern = resolveDate(fileNamePattern, dateStr);
+
+        // Create a regex where %i is a capturing group for digits.
+        // We only use the filename part for matching against DirectoryStream entries.
+        Path patternPath = Paths.get(dateResolvedPattern);
+        String patternFileName = patternPath.getFileName().toString();
+
+        Matcher matcher = BACKUP_INDEX_PATTERN.matcher(patternFileName);
+        if (!matcher.find()) {
+            return existingLogs;
+        }
+
+        String prefix = patternFileName.substring(0, matcher.start());
+        String suffix = patternFileName.substring(matcher.end());
+        String regex = Pattern.quote(prefix) + "(\\d+)" + Pattern.quote(suffix);
+        Pattern indexMatcher = Pattern.compile(regex);
+
+        if (!Files.exists(folder)) {
+            return existingLogs;
+        }
+
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(folder)) {
+            for (Path entry : stream) {
+                Matcher entryMatcher = indexMatcher.matcher(entry.getFileName().toString());
+                if (entryMatcher.matches()) {
+                    int index = Integer.parseInt(entryMatcher.group(1));
+                    existingLogs.add(new LogFileEntry(entry, index));
+                }
+            }
+        }
+        return existingLogs;
+    }
+
+    private String resolveDate(String pattern, String dateStr) {
+        Matcher matcher = BACKUP_DATE_PATTERN.matcher(pattern);
+        if (matcher.find()) {
+            return matcher.replaceFirst(Pattern.quote(dateStr));
+        }
+        return pattern;
+    }
+
+    // Helper class to keep Path and Index paired together
+    private static class LogFileEntry {
+        Path path;
+        int index;
+        LogFileEntry(Path path, int index) { this.path = path; this.index = index; }
     }
 
     @Override
@@ -230,7 +428,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @return the path to the log file
      */
     public Path getPath() {
-        return path;
+        return logFile;
     }
 
     /**
@@ -272,13 +470,42 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     }
 
     @Override
-    public boolean equals(@Nullable Object o) {
-        if (!(o instanceof RotatingFileHandler other)) return false;
-        return append == other.append && maxFileSize == other.maxFileSize && maxBackupIndex == other.maxBackupIndex && name().equals(other.name()) && path.equals(other.path) && filePattern.equals(other.filePattern) && rotationTimeUnit == other.rotationTimeUnit && getFilter().equals(other.getFilter()) && getLayout().equals(other.getLayout());
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        RotatingFileHandler that = (RotatingFileHandler) o;
+        return isFileNameProvided == that.isFileNameProvided 
+                && append == that.append 
+                && backupIndex == that.backupIndex 
+                && nextRotationTime == that.nextRotationTime 
+                && maxFileSize == that.maxFileSize 
+                && maxBackupIndex == that.maxBackupIndex  
+                && rotationTimeUnit == that.rotationTimeUnit
+                && Objects.equals(fileName, that.fileName) 
+                && Objects.equals(fileNamePattern, that.fileNamePattern) 
+                && Objects.equals(indexFormatter, that.indexFormatter) 
+                && Objects.equals(dateSupplier, that.dateSupplier) 
+                && Objects.equals(logFile, that.logFile)
+                && Objects.equals(writer, that.writer)
+                && Objects.equals(channel, that.channel);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name(), path, append, filePattern, maxFileSize, rotationTimeUnit, maxBackupIndex, getFilter(), getLayout());
+        return Objects.hash(
+                isFileNameProvided,
+                fileName,
+                fileNamePattern,
+                indexFormatter,
+                dateSupplier,
+                append,
+                backupIndex,
+                logFile,
+                writer,
+                channel,
+                nextRotationTime,
+                maxFileSize,
+                rotationTimeUnit,
+                maxBackupIndex
+        );
     }
 }

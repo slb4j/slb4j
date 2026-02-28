@@ -32,7 +32,7 @@ class StabilityTest {
     void testStabilityAndCorrectness() throws Exception {
         Path logFile = tempDir.resolve("stability.log");
         // Using a small buffer and small file size to stress the system
-        try (RotatingFileHandler handler = new RotatingFileHandler("stability", logFile, false)) {
+        try (RotatingFileHandler handler = new RotatingFileHandler("stability", logFile.toString(), "", false, RotatingFileHandler.IndexStrategy.USE_MAX)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} TID: %t SEQ: %m%n"));
             handler.setMaxFileSize(MAX_FILE_SIZE);
             handler.setMaxBackupIndex(MAX_BACKUP_INDEX);
@@ -80,8 +80,8 @@ class StabilityTest {
         }
 
         // Verification phase
+        // Files order: stability.log is newest, stability.log.1 is oldest
         List<Path> logFiles = new ArrayList<>();
-        logFiles.add(logFile);
         for (int i = 1; i <= MAX_BACKUP_INDEX; i++) {
             Path backup = tempDir.resolve("stability.log." + i);
             if (Files.exists(backup)) {
@@ -90,10 +90,7 @@ class StabilityTest {
                 break;
             }
         }
-
-        // Files are rotated: stability.log is newest, stability.log.1 is older, stability.log.n is oldest.
-        // We want to read from oldest to newest.
-        Collections.reverse(logFiles);
+        logFiles.add(logFile);
 
         Map<String, List<Integer>> threadMessages = new HashMap<>();
         Pattern pattern = Pattern.compile("^(\\d{4}-\\d{2}-\\d{2} \\d{2}:\\d{2}:\\d{2}\\.\\d{3}) TID: (Thread-\\d+) SEQ: (\\d+)$");

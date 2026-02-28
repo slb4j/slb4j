@@ -62,7 +62,7 @@ class LoggingConfigurationTest {
 
         assertEquals(logFile.toAbsolutePath(), fileHandler.getPath().toAbsolutePath());
         assertFalse(fileHandler.isAppend());
-        assertEquals("test-%i.log", fileHandler.getFilePattern());
+        assertEquals("test-%i.log", fileHandler.getFileNamePattern());
         assertEquals(1024L, fileHandler.getMaxFileSize());
         assertNotNull(fileHandler.getRotationTimeUnit());
         assertEquals(5, fileHandler.getMaxBackupIndex());
@@ -93,7 +93,7 @@ class LoggingConfigurationTest {
     void testFileHandlerExplicit(@TempDir Path tempDir) throws IOException {
         Path logFile = tempDir.resolve("explicit.log");
         LoggingConfiguration config = LoggingConfiguration.defaultConfiguration();
-        config.addHandler("file", new org.slb4j.handler.FileHandler("file", logFile, true));
+        config.addHandler("file", new org.slb4j.handler.FileHandler("file", logFile.toString(), true));
         LogHandler handler = config.getHandler("file");
         assertNotNull(handler);
         assertInstanceOf(org.slb4j.handler.FileHandler.class, handler);

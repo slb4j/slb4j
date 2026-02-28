@@ -227,7 +227,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
                 layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
 
                 synchronized (lock) {
-                    checkRotation(timestamp);
+                    checkRotation(timestamp, buffer.length());
                     Writer writer = writer();
                     buffer.write(writer);
 
@@ -251,9 +251,10 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
      * @param timestamp the timestamp of the current log event in milliseconds
      *                  since the epoch; can be used to evaluate time-based
      *                  rotation criteria
+     * @param charsToWrite the number of characters to be written to the log file in the following call
      * @throws IOException if an I/O error occurs during rotation check
      */
-    protected void checkRotation(long timestamp) throws IOException {
+    protected void checkRotation(long timestamp, int charsToWrite) throws IOException {
         // nothing to do
     }
 

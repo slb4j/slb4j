@@ -24,6 +24,7 @@ import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Objects;
 
 /**
@@ -40,14 +41,14 @@ public final class FileHandler extends AbstractFileHandler {
     /**
      * Constructs a new FileHandler.
      *
-     * @param name   the name of the handler
-     * @param path   the path to the log file
-     * @param append if true, then bytes will be written to the end of the file rather than the beginning
+     * @param name     the name of the handler
+     * @param fileName the file name of the log file including its path as a string
+     * @param append   if true, then bytes will be written to the end of the file rather than the beginning
      * @throws IOException if the file cannot be opened
      */
-    public FileHandler(String name, Path path, boolean append) throws IOException {
+    public FileHandler(String name, String fileName, boolean append) throws IOException {
         super(name);
-        this.path = path;
+        this.path = Paths.get(fileName);
         this.append = append;
 
         Path parent = path.getParent();

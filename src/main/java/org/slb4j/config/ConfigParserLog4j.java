@@ -12,6 +12,7 @@ import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.filter.MarkerFilter;
 import org.slb4j.filter.MessageTextFilter;
 import org.slb4j.handler.ConsoleHandler;
+import org.slb4j.handler.RotatingFileHandler;
 import org.slb4j.layout.LayoutBuilder;
 import org.slb4j.layout.Layouts;
 import org.slb4j.support.Util;
@@ -296,52 +297,44 @@ public class ConfigParserLog4j implements ConfigParser {
                     handler = new ConsoleHandler(appenderName, out, true);
                 }
                 case "File", "RollingFile" -> {
-                    String fileName = options.get("fileName");
-                    if (fileName == null) {
-                        SLB4J.logInternal(LogLevel.WARN, "Appender %s: Missing fileName for File/RollingFile appender", appenderName);
-                    } else {
-                        boolean append = Boolean.parseBoolean(options.getOrDefault("append", "true"));
-                        java.nio.file.Path path = java.nio.file.Path.of(fileName);
+                    String fileName = options.getOrDefault("fileName", "");
+                    String fileNamePattern = options.getOrDefault("filePattern", "");
+                    boolean append = Boolean.parseBoolean(options.getOrDefault("append", "true"));
 
-                        try {
-                            Map<String, Map<String, String>> appenderEntries = entryConfig.getOrDefault(appenderIdentifier, Map.of());
-                            Map<String, String> policies = appenderEntries.getOrDefault(POLICIES, Map.of());
-                            String size = policies.get("size.size");
-                            if (size == null) {
-                                // check for appender.NAME.policies.size.size in compound entry config
-                                size = compoundEntryConfig.getOrDefault(appenderIdentifier, Map.of())
-                                        .getOrDefault(POLICIES, Map.of())
-                                        .getOrDefault("size", Map.of())
-                                        .get("size");
-                            }
-
-                            if ("RollingFile".equals(type) || compoundEntryConfig.containsKey(appenderIdentifier) || appenderEntries.containsKey(POLICIES) || size != null) {
-                                org.slb4j.handler.RotatingFileHandler rfh = new org.slb4j.handler.RotatingFileHandler(appenderName, path, append);
-                                if (size != null) {
-                                    rfh.setMaxFileSize(Util.parseSize(size));
-                                }
-                                String filePattern = options.get("filePattern");
-                                if (filePattern != null) {
-                                    rfh.setFilePattern(filePattern);
-                                }
-                                Map<String, String> strategy = appenderEntries.getOrDefault(STRATEGY, Map.of());
-                                String max = strategy.get("max");
-                                if (max == null) {
-                                    max = compoundEntryConfig.getOrDefault(appenderIdentifier, Map.of())
-                                            .getOrDefault(STRATEGY, Map.of())
-                                            .getOrDefault("max", Map.of())
-                                            .get("max");
-                                }
-                                if (max != null) {
-                                    rfh.setMaxBackupIndex(Integer.parseInt(max));
-                                }
-                                handler = rfh;
-                            } else {
-                                handler = new org.slb4j.handler.FileHandler(appenderName, path, append);
-                            }
-                        } catch (java.io.IOException e) {
-                            SLB4J.logInternal(LogLevel.WARN, "Appender %s: Failed to create file handler for %s: %s", appenderName, fileName, e);
+                    try {
+                        Map<String, Map<String, String>> appenderEntries = entryConfig.getOrDefault(appenderIdentifier, Map.of());
+                        Map<String, String> policies = appenderEntries.getOrDefault(POLICIES, Map.of());
+                        String size = policies.get("size.size");
+                        if (size == null) {
+                            // check for appender.NAME.policies.size.size in compound entry config
+                            size = compoundEntryConfig.getOrDefault(appenderIdentifier, Map.of())
+                                    .getOrDefault(POLICIES, Map.of())
+                                    .getOrDefault("size", Map.of())
+                                    .get("size");
                         }
+
+                        if ("RollingFile".equals(type) || compoundEntryConfig.containsKey(appenderIdentifier) || appenderEntries.containsKey(POLICIES) || size != null) {
+                            org.slb4j.handler.RotatingFileHandler rfh = new org.slb4j.handler.RotatingFileHandler(appenderName, fileName, fileNamePattern, append, RotatingFileHandler.IndexStrategy.USE_MAX);
+                            if (size != null) {
+                                rfh.setMaxFileSize(Util.parseSize(size));
+                            }
+                            Map<String, String> strategy = appenderEntries.getOrDefault(STRATEGY, Map.of());
+                            String max = strategy.get("max");
+                            if (max == null) {
+                                max = compoundEntryConfig.getOrDefault(appenderIdentifier, Map.of())
+                                        .getOrDefault(STRATEGY, Map.of())
+                                        .getOrDefault("max", Map.of())
+                                        .get("max");
+                            }
+                            if (max != null) {
+                                rfh.setMaxBackupIndex(Integer.parseInt(max));
+                            }
+                            handler = rfh;
+                        } else {
+                            handler = new org.slb4j.handler.FileHandler(appenderName, fileName, append);
+                        }
+                    } catch (java.io.IOException e) {
+                        SLB4J.logInternal(LogLevel.WARN, "Appender %s: Failed to create file handler for %s: %s", appenderName, fileName, e);
                     }
                 }
                 default ->

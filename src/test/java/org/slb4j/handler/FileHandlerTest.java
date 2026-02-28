@@ -42,7 +42,7 @@ class FileHandlerTest {
     @Test
     void testBasicLogging() throws IOException {
         Path logFile = tempDir.resolve("test.log");
-        try (FileHandler handler = new FileHandler("test", logFile, false)) {
+        try (FileHandler handler = new FileHandler("test", logFile.toString(), false)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Hello, World!", null);
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Second line", null);
@@ -60,7 +60,7 @@ class FileHandlerTest {
         Path logFile = tempDir.resolve("test-append.log");
         Files.writeString(logFile, "Initial content\n");
 
-        try (FileHandler handler = new FileHandler("test", logFile, true)) {
+        try (FileHandler handler = new FileHandler("test", logFile.toString(), true)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Second line", null);
         }
@@ -76,7 +76,7 @@ class FileHandlerTest {
         Path logFile = tempDir.resolve("test-replace.log");
         Files.writeString(logFile, "Initial content\n");
 
-        try (FileHandler handler = new FileHandler("test", logFile, false)) {
+        try (FileHandler handler = new FileHandler("test", logFile.toString(), false)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
             handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "New content", null);
         }
@@ -91,7 +91,7 @@ class FileHandlerTest {
         Path logFile = tempDir.resolve("test-flush.log");
 
         // 1. Test flush on high level
-        try (FileHandler handler = new FileHandler("test", logFile, false)) {
+        try (FileHandler handler = new FileHandler("test", logFile.toString(), false)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg"));
             handler.setFlushLevel(LogLevel.ERROR);
 
@@ -109,7 +109,7 @@ class FileHandlerTest {
     @Test
     void testVarHandleFields() throws IOException {
         Path logFile = tempDir.resolve("test-vh.log");
-        try (FileHandler handler = new FileHandler("test", logFile, false)) {
+        try (FileHandler handler = new FileHandler("test", logFile.toString(), false)) {
             LogLayout initialLayout = handler.getLayout();
             assertNotNull(initialLayout);
 
