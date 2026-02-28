@@ -84,25 +84,25 @@ public interface ResourcePool<T> {
  * @param <T> the type of resource managed by the pool
  */
 final class ThreadResourcePool<T> implements ResourcePool<T> {
-    private final ThreadLocal<LeaseImpl> threadLocalLease;
+    private final ThreadLocal<LeaseImpl<T>> threadLocalLease;
 
     ThreadResourcePool(Supplier<T> factory, Consumer<T> releaser) {
         // We store the wrapper itself in the ThreadLocal
         this.threadLocalLease = ThreadLocal.withInitial(() ->
-                new LeaseImpl(factory.get(), releaser)
+                new LeaseImpl<>(factory.get(), releaser)
         );
     }
 
     @Override
     public Lease<T> acquire() {
-        LeaseImpl lease = threadLocalLease.get();
+        LeaseImpl<T> lease = threadLocalLease.get();
         if (lease.leased) {throw new IllegalStateException("resource already leased");}
         lease.leased = true;
         return lease;
     }
 
     // Inner class is instantiated only ONCE per thread
-    private final class LeaseImpl implements Lease<T> {
+    private static final class LeaseImpl<T> implements Lease<T> {
         private final T resource;
         private final Consumer<T> releaser;
         private boolean leased = false;
