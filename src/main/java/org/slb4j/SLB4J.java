@@ -286,7 +286,7 @@ public final class SLB4J {
 
                 PrintStream dest = switch (statusDest.toLowerCase()) {
                     case "out", "system_out" -> System.out;
-                    case "err", "system_err" -> System.out;
+                    case "err", "system_err" -> System.err;
                     default -> {
                         System.err.println("Setting status logger output to a file is not supported, using SYSTEM_ERR instead.");
                         yield System.err;
