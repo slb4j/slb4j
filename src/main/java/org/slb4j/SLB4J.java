@@ -36,7 +36,7 @@ public final class SLB4J {
 
     private SLB4J() { /* utility class */ }
 
-    private static final StackWalker STACK_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
+    private static final StackWalker STACK_WALKER = StackWalker.getInstance();
 
     private static final UniversalDispatcher DISPATCHER;
 
@@ -279,8 +279,13 @@ public final class SLB4J {
                     sb.append(" ").append(statusName);
                 }
 
-                Class<?> caller = STACK_WALKER.getCallerClass();
-                sb.append(" [").append(level).append("] ").append(caller.getName());
+                String caller = STACK_WALKER.walk(s -> s
+                        .skip(1) // Skip SLB4J.logInternal
+                        .findFirst()
+                        .map(java.lang.StackWalker.StackFrame::getClassName)
+                        .orElse("unknown")
+                );
+                sb.append(" [").append(level).append("] ").append(caller);
 
                 sb.append(" - ").append(String.format(msg, args));
 

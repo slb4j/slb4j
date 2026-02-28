@@ -17,10 +17,10 @@ package org.slb4j.support;
 
 import org.slb4j.Location;
 import org.slb4j.LocationResolver;
-import org.jspecify.annotations.Nullable;
 
 import java.lang.StackWalker.StackFrame;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 import java.util.stream.Stream;
 
 /**
@@ -31,9 +31,8 @@ import java.util.stream.Stream;
  */
 public final class StackWalkerLocationResolver implements LocationResolver {
 
-    private static final StackWalker STACK_WALKER = StackWalker.getInstance(StackWalker.Option.RETAIN_CLASS_REFERENCE);
-
-    private final Class<?> loggerClass;
+    private static final StackWalker STACK_WALKER = StackWalker.getInstance();
+    private final String loggerClassName;
     private final String infraPackage;
 
     /**
@@ -48,7 +47,7 @@ public final class StackWalkerLocationResolver implements LocationResolver {
      *                      the relevant stack frame
      */
     public StackWalkerLocationResolver(Class<?> loggerClass, String infraPackage) {
-        this.loggerClass = loggerClass;
+        this.loggerClassName = loggerClass.getName();
         this.infraPackage = infraPackage;
     }
 
@@ -71,7 +70,7 @@ public final class StackWalkerLocationResolver implements LocationResolver {
             iterator.next();
 
             // 2. Skip frames until we hit the logger instance
-            while (loggerClass != iterator.next().getDeclaringClass()) {
+            while (!loggerClassName.equals(iterator.next().getClassName())) {
                 // nothing to do
             }
 
@@ -90,12 +89,12 @@ public final class StackWalkerLocationResolver implements LocationResolver {
 
     private record StackFrameLocation(StackFrame frame) implements Location {
         @Override
-        public @Nullable String getClassName() {
+        public String getClassName() {
             return frame.getClassName();
         }
 
         @Override
-        public @Nullable String getMethodName() {
+        public String getMethodName() {
             return frame.getMethodName();
         }
 
@@ -105,8 +104,8 @@ public final class StackWalkerLocationResolver implements LocationResolver {
         }
 
         @Override
-        public @Nullable String getFileName() {
-            return frame.getFileName();
+        public String getFileName() {
+            return Objects.requireNonNullElse(frame.getFileName(), "<unknown>");
         }
     }
 }
