@@ -67,7 +67,7 @@ public final class PatternLayout implements LogLayout {
      * 2026-01-11 15:19:09.573 INFO  com.example.Application - Message from SLF4J
      * </pre>
      */
-    public static final PatternLayout LAYOUT_INSTANCE_DEFAULT = parseLog4jPattern("%highlight{" + DEFAULT_PATTERN_STRING.replaceFirst("%n$", "%ex%n") +"}");
+    public static final PatternLayout LAYOUT_INSTANCE_DEFAULT = parseLog4jPattern("%highlight{" + DEFAULT_PATTERN_STRING.replaceFirst("%n$", "%ex}%n"));
 
     /**
      * A compact log pattern used to format log entries in a concise and structured manner.
