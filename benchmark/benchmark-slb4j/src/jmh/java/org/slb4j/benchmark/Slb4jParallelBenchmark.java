@@ -54,7 +54,7 @@ public class Slb4jParallelBenchmark extends ParallelLoggingBenchmark {
         } else {
             // use pattern without highlighting
             LogLayout pattern = PatternLayout.parseLog4jPattern(DEFAULT_PATTERN_STRING);
-            FileHandler fileHandler = new FileHandler("file", tempFile, false);
+            FileHandler fileHandler = new FileHandler("file", tempFile.toString(), false);
             fileHandler.setLayout(pattern);
             dispatcher.addLogHandler(fileHandler);
         }
