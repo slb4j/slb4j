@@ -46,14 +46,14 @@ public class Slb4jParallelBenchmark extends ParallelLoggingBenchmark {
         UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
         dispatcher.getLogHandlers().forEach(dispatcher::removeLogHandler);
 
+        // use pattern without highlighting
+        LogLayout pattern = PatternLayout.LAYOUT_INSTANCE_DEFAULT.uncolored();
+
         if ("CONSOLE".equals(category)) {
-            LogLayout pattern = PatternLayout.LAYOUT_INSTANCE_DEFAULT;
             ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, true);
             consoleHandler.setLayout(pattern);
             dispatcher.addLogHandler(consoleHandler);
         } else {
-            // use pattern without highlighting
-            LogLayout pattern = PatternLayout.parseLog4jPattern(DEFAULT_PATTERN_STRING);
             FileHandler fileHandler = new FileHandler("file", tempFile.toString(), false);
             fileHandler.setLayout(pattern);
             dispatcher.addLogHandler(fileHandler);

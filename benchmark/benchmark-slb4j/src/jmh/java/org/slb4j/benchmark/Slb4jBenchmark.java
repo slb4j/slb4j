@@ -54,9 +54,9 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
         tempFile = Files.createTempFile("slb4j-bench", ".log");
 
         LogLayout pattern = switch (format) {
-            case "COMPACT" -> PatternLayout.LAYOUT_INSTANCE_COMPACT;
-            case "DETAILED" -> PatternLayout.LAYOUT_INSTANCE_DETAILED;
-            default -> PatternLayout.LAYOUT_INSTANCE_DEFAULT;
+            case "COMPACT" -> PatternLayout.LAYOUT_INSTANCE_COMPACT.uncolored();
+            case "DETAILED" -> PatternLayout.LAYOUT_INSTANCE_DETAILED.uncolored();
+            default -> PatternLayout.LAYOUT_INSTANCE_DEFAULT.uncolored();
         };
 
         UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
