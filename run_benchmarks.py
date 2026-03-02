@@ -14,6 +14,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+import re
 import os
 import subprocess
 import json
@@ -381,9 +382,9 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None):
             benchmark_class = SEQUENTIAL_BACKENDS_MAP[backend]
             effective_frontends = args.frontends if args.frontends else ["jul", "jcl", "slf4j", "log4j"]
             
-            # Filter out jcl for non-CONSTANT message types
-            if run["exclude"] and ".*jcl.*" in run["exclude"]:
-                effective_frontends = [f for f in effective_frontends if f != "jcl"]
+            # Filter out incompatible frontends for the current message types
+            if run["exclude"]:
+                effective_frontends = [f for f in effective_frontends if not re.search(run["exclude"], f)]
             
             if not effective_frontends:
                 if args.dryrun:
