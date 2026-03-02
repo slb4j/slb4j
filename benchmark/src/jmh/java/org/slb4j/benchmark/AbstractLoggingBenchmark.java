@@ -41,7 +41,8 @@ import java.io.IOException;
 @OutputTimeUnit(TimeUnit.SECONDS)
 public abstract class AbstractLoggingBenchmark {
 
-    public String outputToFile = "false";
+    @Param({"false", "true"})
+    public String outputToFile;
 
     @Param({"CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"})
     public String messageType;
