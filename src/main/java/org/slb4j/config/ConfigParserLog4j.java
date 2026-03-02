@@ -58,6 +58,9 @@ public class ConfigParserLog4j implements ConfigParser {
     private static final String NAME = "name";
     private static final String DEST = "dest";
     private static final String MAX_ENTRIES = "maxEntries";
+    private static final String FILE_INDEX = "fileIndex";
+    private static final String MIN = "min";
+    private static final String MAX = "max";
 
     /**
      * Default constructor.
@@ -314,12 +317,28 @@ public class ConfigParserLog4j implements ConfigParser {
                         }
 
                         if ("RollingFile".equals(type) || compoundEntryConfig.containsKey(appenderIdentifier) || appenderEntries.containsKey(POLICIES) || size != null) {
-                            org.slb4j.handler.RotatingFileHandler rfh = new org.slb4j.handler.RotatingFileHandler(appenderName, fileName, fileNamePattern, append, RotatingFileHandler.IndexStrategy.USE_MAX);
+                            Map<String, String> strategy = appenderEntries.getOrDefault(STRATEGY, Map.of());
+                            String fileIndex = strategy.get(FILE_INDEX);
+                            if (fileIndex == null) {
+                                fileIndex = compoundEntryConfig.getOrDefault(appenderIdentifier, Map.of())
+                                        .getOrDefault(STRATEGY, Map.of())
+                                        .getOrDefault(FILE_INDEX, Map.of())
+                                        .get(FILE_INDEX);
+                            }
+                            RotatingFileHandler.IndexStrategy indexStrategy = RotatingFileHandler.IndexStrategy.USE_MAX;
+                            if (MIN.equalsIgnoreCase(fileIndex)) {
+                                indexStrategy = RotatingFileHandler.IndexStrategy.USE_MIN;
+                            } else if (MAX.equalsIgnoreCase(fileIndex)) {
+                                indexStrategy = RotatingFileHandler.IndexStrategy.USE_MAX;
+                            } else if (fileIndex != null) {
+                                SLB4J.logInternal(LogLevel.WARN, "Appender %s: Unknown fileIndex '%s', using 'max'", appenderName, fileIndex);
+                            }
+
+                            org.slb4j.handler.RotatingFileHandler rfh = new org.slb4j.handler.RotatingFileHandler(appenderName, fileName, fileNamePattern, append, indexStrategy);
                             if (size != null) {
                                 rfh.setMaxFileSize(Util.parseSize(size));
                             }
-                            Map<String, String> strategy = appenderEntries.getOrDefault(STRATEGY, Map.of());
-                            String max = strategy.get("max");
+                            String max = strategy.get(MAX);
                             if (max == null) {
                                 max = compoundEntryConfig.getOrDefault(appenderIdentifier, Map.of())
                                         .getOrDefault(STRATEGY, Map.of())

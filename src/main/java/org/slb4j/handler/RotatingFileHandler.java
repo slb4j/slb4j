@@ -469,6 +469,14 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         }
     }
 
+    /**
+     * Gets the index strategy used for rotation.
+     * @return the index strategy
+     */
+    public IndexStrategy getIndexStrategy() {
+        return indexStrategy;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;
@@ -479,6 +487,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
                 && nextRotationTime == that.nextRotationTime 
                 && maxFileSize == that.maxFileSize 
                 && maxBackupIndex == that.maxBackupIndex  
+                && indexStrategy == that.indexStrategy
                 && rotationTimeUnit == that.rotationTimeUnit
                 && Objects.equals(fileName, that.fileName) 
                 && Objects.equals(fileNamePattern, that.fileNamePattern) 
@@ -493,6 +502,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
     public int hashCode() {
         return Objects.hash(
                 isFileNameProvided,
+                indexStrategy,
                 fileName,
                 fileNamePattern,
                 indexFormatter,

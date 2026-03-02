@@ -70,6 +70,40 @@ class LoggingConfigurationTest {
     }
 
     @Test
+    void testFileIndexStrategyMin(@TempDir Path tempDir) throws IOException {
+        Path logFile = tempDir.resolve("test-min.log");
+        String propertyText = """
+                appender.file.type=RollingFile
+                appender.file.fileName=%s
+                appender.file.strategy.fileIndex=min
+                """.formatted(Util.pathToNormalizedString(logFile));
+        Properties props = new Properties();
+        props.load(new StringReader(propertyText));
+
+        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
+        RotatingFileHandler fileHandler = (RotatingFileHandler) config.getHandler("file");
+
+        assertEquals(RotatingFileHandler.IndexStrategy.USE_MIN, fileHandler.getIndexStrategy());
+    }
+
+    @Test
+    void testFileIndexStrategyMax(@TempDir Path tempDir) throws IOException {
+        Path logFile = tempDir.resolve("test-max.log");
+        String propertyText = """
+                appender.file.type=RollingFile
+                appender.file.fileName=%s
+                appender.file.strategy.fileIndex=max
+                """.formatted(Util.pathToNormalizedString(logFile));
+        Properties props = new Properties();
+        props.load(new StringReader(propertyText));
+
+        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
+        RotatingFileHandler fileHandler = (RotatingFileHandler) config.getHandler("file");
+
+        assertEquals(RotatingFileHandler.IndexStrategy.USE_MAX, fileHandler.getIndexStrategy());
+    }
+
+    @Test
     void testSimpleFileHandlerConfiguration(@TempDir Path tempDir) throws IOException {
         Path logFile = tempDir.resolve("simple.log");
         String propertyText = """
