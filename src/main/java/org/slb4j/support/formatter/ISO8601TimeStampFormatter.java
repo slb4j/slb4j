@@ -16,8 +16,10 @@
 package org.slb4j.support.formatter;
 
 import org.jspecify.annotations.Nullable;
+import org.slb4j.support.IoStringBuilder;
 
 import java.io.IOException;
+import java.nio.CharBuffer;
 import java.time.ZoneId;
 
 /**
@@ -75,6 +77,35 @@ public final class ISO8601TimeStampFormatter extends AbstractTimeStampFormatter 
         app.append(DIGIT_TENS[q1]).append(DIGIT_ONES[q1]);
         if (includeOffset) {
             appendOffset(app, offsetSeconds);
+        }
+    }
+
+    @Override
+    protected void appendTo(IoStringBuilder buf, int y, int M, int d, int H, int m, int s, int S, int offsetSeconds) throws IOException {
+        buf.ensureCapacity(23);
+
+        int q = y / 100;
+        buf.put(DIGIT_TENS[q]).put(DIGIT_ONES[q]);
+        q = y % 100;
+        buf.put(DIGIT_TENS[q]).put(DIGIT_ONES[q]);
+        buf.put('-');
+        buf.put(DIGIT_TENS[M]).put(DIGIT_ONES[M]);
+        buf.put('-');
+        buf.put(DIGIT_TENS[d]).put(DIGIT_ONES[d]);
+        buf.put(dateTimeSeparator);
+        buf.put(DIGIT_TENS[H]).put(DIGIT_ONES[H]);
+        buf.put(':');
+        buf.put(DIGIT_TENS[m]).put(DIGIT_ONES[m]);
+        buf.put(':');
+        buf.put(DIGIT_TENS[s]).put(DIGIT_ONES[s]);
+        buf.put(millisSeparator);
+        int q1 = S / 100;
+        buf.put(DIGIT_ONES[q1]);
+        q1 = S % 100;
+        buf.put(DIGIT_TENS[q1]).put(DIGIT_ONES[q1]);
+
+        if (includeOffset) {
+            appendOffset(buf, offsetSeconds);
         }
     }
 }

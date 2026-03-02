@@ -76,7 +76,7 @@ public final class IoStringBuilder implements Appendable {
      *               able to accommodate. Must be a non-negative value.
      * @throws IllegalArgumentException if {@code needed} is negative
      */
-    private void ensureCapacity(int needed) {
+    public void ensureCapacity(int needed) {
         if (buffer.remaining() < needed) {
             int newCapacity = Math.max(buffer.capacity() * 2, buffer.position() + needed);
             CharBuffer newBuffer = CharBuffer.allocate(newCapacity);
@@ -144,6 +144,19 @@ public final class IoStringBuilder implements Appendable {
         return this;
     }
 
+    /**
+     * Adds the specified character to this {@code IoStringBuilder}.
+     * <p>
+     * <strong>Note:</strong> This method does not ensure that the buffer is large enough.
+     *
+     * @param c the character to be added
+     * @return this {@code IoStringBuilder} instance, allowing for method chaining
+     */
+    public IoStringBuilder put(char c) {
+        buffer.put(c);
+        return this;
+    }
+
     @Override
     public IoStringBuilder append(@Nullable CharSequence csq) {
         if (csq == null) {
@@ -158,26 +171,30 @@ public final class IoStringBuilder implements Appendable {
             csq = "null";
         }
 
-        int len = end - start;
-        ensureCapacity(len);
-        switch (len) {
-            case 0 -> { return this; }
-            case 1 -> { buffer.put(csq.charAt(start)); return this; }
+        int length = end - start;
+        ensureCapacity(length);
+        switch (length) {
+            case 0 -> {return this;}
+            case 1 -> {
+                buffer.put(csq.charAt(start));
+                return this;
+            }
+            case 2 -> {
+                buffer.put(csq.charAt(start)).put(csq.charAt(start + 1));
+                return this;
+            }
         }
 
         switch (csq) {
             case CharBuffer cb -> {
                 // Optimized path for other NIO buffers
                 int pos = buffer.position();
-                int length = end - start;
                 buffer.put(pos, cb, start, length);
                 buffer.position(pos + length);
             }
-
-            case String s -> buffer.append(s, start, end);
+            case String s -> buffer.put(s, start, end);
             case StringBuilder s -> buffer.append(s, start, end);
             case StringBuffer s -> buffer.append(s, start, end);
-
             default -> {
                 // Guaranteed zero-allocation fallback
                 // reason for manual copy: some implementations of append call String.valueOf(csq) internally

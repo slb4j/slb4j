@@ -1,5 +1,6 @@
 package org.slb4j.support.formatter;
 
+import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.TimeStampFormatter;
 import org.slb4j.support.TimeZoneOffsetProvider;
 
@@ -103,8 +104,11 @@ public abstract sealed class AbstractTimeStampFormatter implements TimeStampForm
         int hour = secsOfDay / 3600;
         int minute = (secsOfDay % 3600) / 60;
         int second = secsOfDay % 60;
-        
-        appendTo(app, y, m, d, hour, minute, second, millis, offset);
+
+        switch (app) {
+            case IoStringBuilder buf -> appendTo(buf, y, m, d, hour, minute, second, millis, offset);
+            default -> appendTo(app, y, m, d, hour, minute, second, millis, offset);
+        }
     }
 
     /**
@@ -122,6 +126,24 @@ public abstract sealed class AbstractTimeStampFormatter implements TimeStampForm
      * @throws IOException if an I/O error occurs
      */
     protected abstract void appendTo(Appendable app, int y, int m, int d, int hour, int minute, int second, int millis, int offsetSeconds) throws IOException;
+
+    /**
+     * Formats the timestamp components into the given {@link IoStringBuilder}.
+     *
+     * @param buf           the buffer to write to
+     * @param y             the year
+     * @param m             the month (1-12)
+     * @param d             the day of month (1-31)
+     * @param hour          the hour (0-23)
+     * @param minute        the minute (0-59)
+     * @param second        the second (0-59)
+     * @param millis        the milliseconds (0-999)
+     * @param offsetSeconds the timezone offset in seconds
+     * @throws IOException if an I/O error occurs
+     */
+    protected void appendTo(IoStringBuilder buf, int y, int m, int d, int hour, int minute, int second, int millis, int offsetSeconds) throws IOException {
+        appendTo((Appendable) buf, y, m, d, hour, minute, second, millis, offsetSeconds);
+    }
 
     /**
      * Returns the day of week for the given date using Zeller's congruence.
