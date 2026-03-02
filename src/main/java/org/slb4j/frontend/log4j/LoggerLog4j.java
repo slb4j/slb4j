@@ -165,7 +165,7 @@ public final class LoggerLog4j extends AbstractLogger {
 
     @Override
     public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4, @Nullable Object p5, @Nullable Object p6) {
-        return false;
+        return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
