@@ -40,8 +40,6 @@ import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.time.ZoneId;
 import java.util.Map;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * The ConsoleHandler class is an implementation of the LogEntryHandler interface.
@@ -162,7 +160,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
 
             try (var lease = BUFFERS.acquire()) {
                 var buffer = lease.get();
-                // Formatting and Writing remain inside the lock because of the shared 'buffer'
+                // Formatting and Writing are done using the thread local buffer and can be done outside the synchronized block
                 ConsoleCode consoleCodes = codesByLevelIdx[lvl.ordinal()];
                 currentLayout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
 
