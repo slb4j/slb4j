@@ -173,30 +173,19 @@ public final class IoStringBuilder implements Appendable {
 
         int length = end - start;
         ensureCapacity(length);
-        switch (length) {
-            case 0 -> {return this;}
-            case 1 -> {
-                buffer.put(csq.charAt(start));
-                return this;
-            }
-            case 2 -> {
-                buffer.put(csq.charAt(start)).put(csq.charAt(start + 1));
-                return this;
-            }
-        }
-
         switch (csq) {
+            // Optimized path for other NIO buffers
             case CharBuffer cb -> {
-                // Optimized path for other NIO buffers
                 int pos = buffer.position();
                 buffer.put(pos, cb, start, length);
                 buffer.position(pos + length);
             }
-            case String s -> buffer.put(s, start, end);
+            // HeapCharBuffer has non-allocating fastpath implementations for the next three
+            case String s -> buffer.append(s, start, end);
             case StringBuilder s -> buffer.append(s, start, end);
             case StringBuffer s -> buffer.append(s, start, end);
+            // zero-allocation fallback
             default -> {
-                // Guaranteed zero-allocation fallback
                 // reason for manual copy: some implementations of append call String.valueOf(csq) internally
                 for (int i = start; i < end; i++) {
                     buffer.put(csq.charAt(i));
