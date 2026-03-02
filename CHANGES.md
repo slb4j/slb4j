@@ -6,7 +6,7 @@ Version 0.7.0 (in development)
 - Reduce lock contention for file based loggers.
 - Refactor UniversalDispatcher to only use a single filter instance for both root level and pacjage level filtering.
 - Replace volatile fields with varhandles to avoid cache flushes.
-- IoStringBuilder: combine write(), flush(), and reset() in a single method.
+- implement Log4J2 compatible file index strategies `min`and `max` in RotatingFileHandler
 
 Version 0.6.0
 -------------
