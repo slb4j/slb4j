@@ -20,6 +20,7 @@ import org.apache.logging.log4j.message.ReusableMessageFactory;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
+import org.slb4j.SLB4J;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.Marker;
@@ -187,8 +188,17 @@ public final class LoggerLog4j extends AbstractLogger {
         LogLevel lvl = translateLog4jLevel(level);
         if (DISPATCHER.isLevelEnabled(lvl)) {
             String mrk = marker == null ? null : marker.getName();
-            try (var formatterLease = FORMATTERS.acquire()) {
-                Log4JMessageFormatter formatter = formatterLease.get();
+            ResourcePool.Lease<Log4JMessageFormatter> lease = FORMATTERS.tryAcquire();
+            if (lease != null) {
+                try (var formatterLease = lease) {
+                    Log4JMessageFormatter formatter = formatterLease.get();
+                    formatter.setMessage(message);
+                    DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, lvl, mrk, MDC_INSTANCE, LOCATION_RESOLVER, formatter, t);
+                }
+            } else {
+                // re-entrant logging call
+                SLB4J.logInternal(LogLevel.DEBUG, "reentrant logging call detected, using temporary formatter!");
+                Log4JMessageFormatter formatter = new Log4JMessageFormatter();
                 formatter.setMessage(message);
                 DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, lvl, mrk, MDC_INSTANCE, LOCATION_RESOLVER, formatter, t);
             }

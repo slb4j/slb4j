@@ -1,5 +1,6 @@
 package org.slb4j.support;
 
+import org.jspecify.annotations.Nullable;
 import org.slb4j.LogLevel;
 import org.slb4j.SLB4J;
 
@@ -75,6 +76,20 @@ public interface ResourcePool<T> {
      * a resource from this pool and has not yet released it.
      */
     Lease<T> acquire();
+
+    /**
+     * Attempts to acquire a resource from the pool without blocking.
+     * <p>
+     * If a resource is available, this method returns a {@link Lease} providing
+     * access to the resource. If no resources are available, it returns {@code null}.
+     * <p>
+     * The returned {@link Lease}, if not {@code null}, must be closed after use
+     * to ensure proper resource management.
+     *
+     * @return a {@link Lease} containing the resource if one is available, or {@code null}
+     *         if no resources are currently available
+     */
+    @Nullable Lease<T> tryAcquire();
 }
 
 /**
@@ -84,13 +99,16 @@ public interface ResourcePool<T> {
  * @param <T> the type of resource managed by the pool
  */
 final class ThreadResourcePool<T> implements ResourcePool<T> {
+    private final Supplier<T> factory;
+    private final Consumer<T> releaser;
     private final ThreadLocal<LeaseImpl<T>> threadLocalLease;
 
     ThreadResourcePool(Supplier<T> factory, Consumer<T> releaser) {
+        this.factory = factory;
+        this.releaser = releaser;
+
         // We store the wrapper itself in the ThreadLocal
-        this.threadLocalLease = ThreadLocal.withInitial(() ->
-                new LeaseImpl<>(factory.get(), releaser)
-        );
+        this.threadLocalLease = ThreadLocal.withInitial(() -> new LeaseImpl<>(factory.get(), releaser));
     }
 
     @Override
@@ -99,6 +117,18 @@ final class ThreadResourcePool<T> implements ResourcePool<T> {
         if (lease.leased) {throw new IllegalStateException("resource already leased");}
         lease.leased = true;
         return lease;
+    }
+
+    @Override
+    public @Nullable Lease<T> tryAcquire() {
+        LeaseImpl<T> lease = threadLocalLease.get();
+
+        if (lease.leased) {
+            lease.leased = true;
+            return lease;
+        } else {
+            return  null;
+        }
     }
 
     // Inner class is instantiated only ONCE per thread

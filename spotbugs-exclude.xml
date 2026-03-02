@@ -73,4 +73,9 @@
             <Class name="org.slb4j.dispatcher.UniversalDispatcher"/>
         </Or>
     </Match>
+
+    <Match>
+        <Bug pattern="LG_LOST_LOGGER_DUE_TO_WEAK_REFERENCE"/>
+        <Class name="org.slb4j.ReentrantLoggingTest"/>
+    </Match>
 </FindBugsFilter>
