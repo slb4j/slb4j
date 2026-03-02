@@ -179,6 +179,9 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
      */
     @Override
     public void setLayout(LogLayout layout) {
+        if (!isColored() && layout instanceof PatternLayout pl) {
+            layout = pl.uncolored();
+        }
         LAYOUT_VH.setRelease(this, layout);
     }
 
