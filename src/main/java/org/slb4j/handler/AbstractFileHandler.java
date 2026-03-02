@@ -224,7 +224,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
         try {
             try (var lease = BUFFERS.acquire()) {
                 var buffer = lease.get();
-                layout.formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
+                getLayout().formatLogEntry(buffer, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, org.slb4j.ConsoleCode.empty());
 
                 synchronized (lock) {
                     checkRotation(timestamp, buffer.length());
