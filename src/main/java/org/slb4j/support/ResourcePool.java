@@ -124,10 +124,10 @@ final class ThreadResourcePool<T> implements ResourcePool<T> {
         LeaseImpl<T> lease = threadLocalLease.get();
 
         if (lease.leased) {
+            return  null;
+        } else {
             lease.leased = true;
             return lease;
-        } else {
-            return  null;
         }
     }
 
