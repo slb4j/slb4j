@@ -47,8 +47,31 @@ import java.util.regex.Pattern;
  */
 public final class RotatingFileHandler extends AbstractFileHandler {
 
+    /**
+     * Enum representing the index strategy used for log file rotation.
+     *
+     * This strategy determines how backup files are indexed during
+     * rotation in the {@code RotatingFileHandler}. The values correspond to
+     * the min and max index strategies supported by Log4j2.
+     *
+     * - {@code USE_MAX}: Use the highest available index (e.g., rotate
+     *   to the maximum index position allowed by the configuration).
+     * - {@code USE_MIN}: Use the lowest available index (e.g., rotate
+     *   by overwriting the oldest backup file first).
+     */
     public enum IndexStrategy {
+        /**
+         * The latest archive file has the highest index. Existing archives are
+         * never remained, but old file are removed once the maximum number of
+         * archive files is exceeded.
+         */
         USE_MAX,
+        /**
+         * The oldest archive file has the lowest index. Existing archives are
+         * never removed, but old files are overwritten when the maximum number
+         * of archive files is exceeded. Existing archive files are renamed
+         * (shifted up) when rotation occurs.
+         */
         USE_MIN
     }
 
@@ -82,7 +105,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
      * @param fileName        the fileName (including path) to the log file as a string
      * @param fileNamePattern the file name pattern
      * @param append          if true, then bytes will be written to the end of the file rather than the beginning
-     * @param indexStrategy
+     * @param indexStrategy   the index strategy
      * @throws IOException if the file cannot be opened
      */
     public RotatingFileHandler(String name, String fileName, String fileNamePattern, boolean append, IndexStrategy indexStrategy) throws IOException {
@@ -375,7 +398,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         // Create a regex where %i is a capturing group for digits.
         // We only use the filename part for matching against DirectoryStream entries.
         Path patternPath = Paths.get(dateResolvedPattern);
-        String patternFileName = patternPath.getFileName().toString();
+        String patternFileName = String.valueOf(patternPath.getFileName());
 
         Matcher matcher = BACKUP_INDEX_PATTERN.matcher(patternFileName);
         if (!matcher.find()) {
@@ -393,7 +416,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
 
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(folder)) {
             for (Path entry : stream) {
-                Matcher entryMatcher = indexMatcher.matcher(entry.getFileName().toString());
+                Matcher entryMatcher = indexMatcher.matcher(String.valueOf(entry.getFileName()));
                 if (entryMatcher.matches()) {
                     int index = Integer.parseInt(entryMatcher.group(1));
                     existingLogs.add(new LogFileEntry(entry, index));
