@@ -16,10 +16,9 @@ SLB4J is a **Simple Logging Backend for Java** that comes as a single JAR withou
 - Java Util Logging pattern syntax (when logging.properties is used)
 - Console and log file logging
 - log file rotation
-- filtering based on level, logger name and package name
+- filtering based on level, logger and/or package name
+- GUI components for monitoring logs at runtime (JavaFX and Swing components)
 - **Requires Java 21+**
-
-There is also an extension package that provides UI elements for live monitoring an application's log messages.
 
 ## Supported Logging APIs
 
@@ -48,7 +47,7 @@ SLB4J supports the following logging APIs:
 
 ```kotlin
 dependencies {
-    implementation("org.slb4j:slb4j:0.5.1")
+    implementation("org.slb4j:slb4j:0.7.0")
 }
 ```
 
@@ -56,11 +55,11 @@ dependencies {
 
 ```groovy
 dependencies {
-    implementation 'org.slb4j:slb4j:0.5.1'
+    implementation 'org.slb4j:slb4j:0.7.0'
 }
 ```
 
-### (Only) if the main application uses JUL Logging: initialize the Library
+### If the main application uses JUL Logging: initialize the Library
 
 **Note:** This is only necessary if the main application is using JUL logging since JUL does not look up the backend
 implementation using SPI (Service Provider Infrastructure). If your main application uses one of the other 
@@ -137,6 +136,7 @@ correctly.
     - Location support
     - Locale support
   - layouts: PatternLayout, SimpleLayout, CsvLayout, XmlLayout, JsonLayout, YamlLayout
+  - log rotation (size or time based)
   
 - **Java Util Logging compatibility**
   - automaticially load and apply logging.properties
@@ -157,17 +157,12 @@ correctly.
 ### Later
 
 - Read back JSON logs for later analysis
+- Support Log4J2 XML configuration files (extension package)
 
 ### Not Planned
 
 #### Async logging
 
 The file handlers already are quite performant (generally on par with Log4J and Logback or slightly faster). I have
-experimented with two different async implementations but am undecided if it's worth implementing as quite some
-overhead is added and will only benefit when really large amounts of messages are logged (on my system: > 500,000
-messages per second).
-
-If it is acceptable to lose some trace and debug level messages in case of a sudden system outage, you can
-configure SLB4J to only flush messages with level INFO or higher. Messages below that level will then be buffered
-and written out once the buffer is full or a higher-priority message triggers a flush. This can drastically
-improve performance without using async logging.
+experimented with two different async implementations and gains were marginal or non-existent. I might re-evaluate
+this again later.
