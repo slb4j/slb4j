@@ -8,3 +8,4 @@
 /slb4j-autoloader/src/main/java/module-info.java
 /slb4j-autoloader/build.gradle.kts
 /native/slb4j-native-test/*.log
+/benchmark/**/benchmark.out
