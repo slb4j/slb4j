@@ -53,7 +53,7 @@ public interface ResourcePool<T> {
      * @param releaser a {@code Consumer} that handles the cleanup or release of the resource
      * @return a {@code ResourcePool} instance for managing thread-local resources
      */
-    public static <T> ResourcePool<T> newThreadBasedPool(Supplier<T> factory, Consumer<T> releaser) {
+    static <T> ResourcePool<T> newThreadBasedPool(Supplier<T> factory, Consumer<T> releaser) {
         return new ThreadResourcePool<>(factory, releaser);
     }
 
@@ -164,7 +164,7 @@ final class ThreadResourcePool<T> implements ResourcePool<T> {
         LeaseImpl<T> lease = threadLocalLease.get();
 
         if (lease.leased) {
-            return  null;
+            return null;
         } else {
             lease.leased = true;
             return lease;
