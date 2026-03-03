@@ -7,6 +7,11 @@ Version 0.7.0 (in development)
 - Refactor UniversalDispatcher to only use a single filter instance for both root level and pacjage level filtering.
 - Replace volatile fields with varhandles to avoid cache flushes.
 - implement Log4J2 compatible file index strategies `min`and `max` in RotatingFileHandler
+- refactored RotatingFileHandler to fix possible race conditions and be more lenient when I/O errors occurr
+- refactored checking log rotation conditions to check the size before writing the next entry
+- fix re-entrant logging calls from the same thread
+- fix default highlight pattern to reset color before the line break
+- small fixes and performance improvements
 
 Version 0.6.0
 -------------
