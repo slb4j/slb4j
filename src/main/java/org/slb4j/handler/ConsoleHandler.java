@@ -76,7 +76,7 @@ public final class ConsoleHandler implements LogHandler, LayoutConfigurable {
             LogLevel.ERROR, ConsoleCode.empty()
     );
 
-    private static final ResourcePool<IoStringBuilder> BUFFERS = ResourcePool.newThreadBasedPool(
+    private static final ResourcePool<IoStringBuilder> BUFFERS = ResourcePool.newThreadBasedResourcePool(
             () -> new IoStringBuilder(BUFFER_SIZE),
             IoStringBuilder::reset
     );

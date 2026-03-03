@@ -54,7 +54,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     protected final Object lock = new Object();
 
     /** The internal buffer. */
-    private static final ResourcePool<IoStringBuilder> BUFFERS = ResourcePool.newThreadBasedPool(
+    private static final ResourcePool<IoStringBuilder> BUFFERS = ResourcePool.newThreadBasedResourcePool(
             () -> new IoStringBuilder(BUFFER_SIZE),
             IoStringBuilder::reset
     );

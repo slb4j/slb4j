@@ -28,7 +28,7 @@ class ResourcePoolTest {
             lastReleased.set(r);
         };
 
-        ResourcePool<Object> pool = ResourcePool.newThreadBasedPool(factory, releaser);
+        ResourcePool<Object> pool = ResourcePool.newThreadBasedResourcePool(factory, releaser);
 
         // first lease
         Object r1;
@@ -52,7 +52,7 @@ class ResourcePoolTest {
 
     @Test
     void nonReentrantAcquireSameThread() {
-        ResourcePool<Object> pool = ResourcePool.newThreadBasedPool(Object::new, r -> {});
+        ResourcePool<Object> pool = ResourcePool.newThreadBasedResourcePool(Object::new, r -> {});
 
         ResourcePool.Lease<Object> lease = pool.acquire();
         // cannot acquire again in same thread until closed
@@ -69,7 +69,7 @@ class ResourcePoolTest {
 
     @Test
     void doubleCloseThrows() {
-        ResourcePool<Object> pool = ResourcePool.newThreadBasedPool(Object::new, r -> {});
+        ResourcePool<Object> pool = ResourcePool.newThreadBasedResourcePool(Object::new, r -> {});
 
         ResourcePool.Lease<Object> lease = pool.acquire();
         lease.close();
@@ -83,7 +83,7 @@ class ResourcePoolTest {
             released.incrementAndGet();
             throw new RuntimeException("boom");
         };
-        ResourcePool<Object> pool = ResourcePool.newThreadBasedPool(Object::new, badReleaser);
+        ResourcePool<Object> pool = ResourcePool.newThreadBasedResourcePool(Object::new, badReleaser);
 
         // close must not propagate exception
         ResourcePool.Lease<Object> lease1 = pool.acquire();
@@ -105,7 +105,7 @@ class ResourcePoolTest {
         CountDownLatch acquired = new CountDownLatch(2);
         CountDownLatch finished = new CountDownLatch(2);
 
-        ResourcePool<Object> pool = ResourcePool.newThreadBasedPool(() -> {
+        ResourcePool<Object> pool = ResourcePool.newThreadBasedResourcePool(() -> {
             created.incrementAndGet();
             return new Object();
         }, r -> {});
@@ -145,7 +145,7 @@ class ResourcePoolTest {
 
     @Test
     void threadResourcePoolTryAcquire() {
-        ResourcePool<Object> pool = ResourcePool.newThreadBasedPool(Object::new, r -> {});
+        ResourcePool<Object> pool = ResourcePool.newThreadBasedResourcePool(Object::new, r -> {});
 
         try (ResourcePool.Lease<Object> lease1 = pool.tryAcquire()) {
             assertNotNull(lease1, "tryAcquire should succeed when no lease is held");

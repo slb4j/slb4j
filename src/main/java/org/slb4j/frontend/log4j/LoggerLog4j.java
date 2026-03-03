@@ -45,7 +45,7 @@ public final class LoggerLog4j extends AbstractLogger {
     /**
      * A pool of formatters to use for formatting log messages.
      */
-    private static final ResourcePool<Log4JMessageFormatter> FORMATTERS = ResourcePool.newThreadBasedPool(Log4JMessageFormatter::new, Log4JMessageFormatter::cleanup);
+    private static final ResourcePool<Log4JMessageFormatter> FORMATTERS = ResourcePool.newThreadBasedResourcePool(Log4JMessageFormatter::new, Log4JMessageFormatter::cleanup);
 
     private static final MDC MDC_INSTANCE = new MDC() {
         @Override
