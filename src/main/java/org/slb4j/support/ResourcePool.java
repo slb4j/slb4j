@@ -93,20 +93,60 @@ public interface ResourcePool<T> {
 }
 
 /**
+ * Implementation of the {@link ResourcePool.Lease} interface for managing the lifecycle of a resource.
+ *
+ * @param <T> the type of the resource being leased
+ */
+class LeaseImpl<T> implements ResourcePool.Lease<T> {
+    final T resource;
+    final Consumer<T> releaser;
+    boolean leased = false;
+
+    /**
+     * Constructs a new {@code LeaseImpl} instance for managing the lifecycle of a resource.
+     *
+     * @param resource the resource being leased
+     * @param releaser a {@link Consumer} to handle releasing the resource when the lease ends
+     */
+    LeaseImpl(T resource, Consumer<T> releaser) {
+        this.resource = resource;
+        this.releaser = releaser;
+    }
+
+    @Override
+    public T get() {
+        return resource;
+    }
+
+    @Override
+    public void close() {
+        if (!leased) {throw new IllegalStateException("resource not leased");}
+        try {
+            releaser.accept(resource);
+        } catch (RuntimeException e) {
+            SLB4J.logInternal(LogLevel.WARN, "Failed to release resource, exception ignored: {}", e.getMessage(), e);
+        } finally {
+            leased = false;
+        }
+    }
+
+    LeaseImpl<T> acquire() {
+        if (leased) {throw new IllegalStateException("resource already leased");}
+        leased = true;
+        return this;
+    }
+}
+
+/**
  * Implementation of a thread-local resource pool that provides a unique resource per thread.
  * Each thread has exclusive access to its resource, which is managed via the {@link Lease} interface.
  *
  * @param <T> the type of resource managed by the pool
  */
 final class ThreadResourcePool<T> implements ResourcePool<T> {
-    private final Supplier<T> factory;
-    private final Consumer<T> releaser;
     private final ThreadLocal<LeaseImpl<T>> threadLocalLease;
 
     ThreadResourcePool(Supplier<T> factory, Consumer<T> releaser) {
-        this.factory = factory;
-        this.releaser = releaser;
-
         // We store the wrapper itself in the ThreadLocal
         this.threadLocalLease = ThreadLocal.withInitial(() -> new LeaseImpl<>(factory.get(), releaser));
     }
@@ -128,35 +168,6 @@ final class ThreadResourcePool<T> implements ResourcePool<T> {
         } else {
             lease.leased = true;
             return lease;
-        }
-    }
-
-    // Inner class is instantiated only ONCE per thread
-    private static final class LeaseImpl<T> implements Lease<T> {
-        private final T resource;
-        private final Consumer<T> releaser;
-        private boolean leased = false;
-
-        LeaseImpl(T resource, Consumer<T> releaser) {
-            this.resource = resource;
-            this.releaser = releaser;
-        }
-
-        @Override
-        public T get() {
-            return resource;
-        }
-
-        @Override
-        public void close() {
-            if (!leased) {throw new IllegalStateException("resource not leased");}
-            try {
-                releaser.accept(resource);
-            } catch (RuntimeException e) {
-                SLB4J.logInternal(LogLevel.WARN, "Failed to release resource, exception ignored: {}", e.getMessage(), e);
-            } finally {
-                leased = false;
-            }
         }
     }
 }
