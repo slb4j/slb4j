@@ -1,5 +1,10 @@
-Version 0.7.0 (in development)
-------------------------------
+Version 0.7.1
+-------------
+
+- fix: combining an allpass/nonepass filter with another filter should not create a combined filter.
+
+Version 0.7.0
+-------------
 
 - Implemented garbage free logging when using Log4J2 API; Improve performance for parametrized logging
   statements using Log4J2 API.
