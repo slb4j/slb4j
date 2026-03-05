@@ -146,4 +146,12 @@ public final class LogLevelFilter implements LogFilter {
     public int hashCode() {
         return Objects.hash(name, Arrays.hashCode(pass));
     }
+
+    @Override
+    public LogFilter andThen(LogFilter other) {
+        if (this.equals(LogFilter.allPass())) return other;
+        if (this.equals(LogFilter.nonePass())) return this;
+
+        return LogFilter.super.andThen(other);
+    }
 }
