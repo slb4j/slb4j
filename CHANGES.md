@@ -1,4 +1,9 @@
-Version 0.7.1
+Version 0.7.2
+-------------
+
+- fix: UniversalDispatcher.fiterAndDispatch() reported wrong parameter names in exception messages.
+
+- Version 0.7.1
 -------------
 
 - fix: combining an allpass/nonepass filter with another filter should not create a combined filter.
