@@ -28,6 +28,7 @@ public class YamlConfigPlugin implements Plugin {
      * Constructs a new {@code YamlConfigPlugin}.
      */
     public YamlConfigPlugin() {
+        // nothing to do
     }
 
     @Override
@@ -37,6 +38,6 @@ public class YamlConfigPlugin implements Plugin {
 
     @Override
     public void init() {
-        LoggingConfiguration.registerFormat("yaml", YamlConfigParser::new);
+        LoggingConfiguration.registerFormat("yaml", ConfigParserLog4jYaml::new);
     }
 }

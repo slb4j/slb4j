@@ -17,7 +17,7 @@ package org.slb4j;
 
 import org.junit.jupiter.api.Disabled;
 import org.slb4j.config.ConfigParserJul;
-import org.slb4j.config.ConfigParserLog4j;
+import org.slb4j.config.ConfigParserLog4jProperties;
 import org.slb4j.support.Util;
 import org.slb4j.handler.RotatingFileHandler;
 import org.junit.jupiter.api.Test;
@@ -49,7 +49,7 @@ class LoggingConfigurationTest {
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 
-        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
+        LoggingConfiguration config = new ConfigParserLog4jProperties().parse(props);
 
         LogHandler handler = config.getHandlers().values().stream()
                 .filter(h -> "file".equals(h.name()))
@@ -80,7 +80,7 @@ class LoggingConfigurationTest {
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 
-        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
+        LoggingConfiguration config = new ConfigParserLog4jProperties().parse(props);
         RotatingFileHandler fileHandler = (RotatingFileHandler) config.getHandler("file");
 
         assertEquals(RotatingFileHandler.IndexStrategy.USE_MIN, fileHandler.getIndexStrategy());
@@ -97,7 +97,7 @@ class LoggingConfigurationTest {
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 
-        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
+        LoggingConfiguration config = new ConfigParserLog4jProperties().parse(props);
         RotatingFileHandler fileHandler = (RotatingFileHandler) config.getHandler("file");
 
         assertEquals(RotatingFileHandler.IndexStrategy.USE_MAX, fileHandler.getIndexStrategy());
@@ -114,7 +114,7 @@ class LoggingConfigurationTest {
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 
-        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
+        LoggingConfiguration config = new ConfigParserLog4jProperties().parse(props);
 
         // RotatingFileHandler is used for "File" type in parseLog4j if it's successfully configured
         LogHandler handler = config.getHandler("file");
@@ -202,7 +202,7 @@ class LoggingConfigurationTest {
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 
-        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
+        LoggingConfiguration config = new ConfigParserLog4jProperties().parse(props);
 
         LogHandler handler = config.getHandler("console");
         assertNotNull(handler);

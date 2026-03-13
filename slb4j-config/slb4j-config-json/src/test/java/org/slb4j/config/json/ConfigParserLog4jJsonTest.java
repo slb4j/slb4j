@@ -25,13 +25,13 @@ import java.io.InputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class JsonConfigParserTest {
+class ConfigParserLog4jJsonTest {
 
     @Test
-    public void testParse() throws Exception {
+    void testParse() throws Exception {
         try (InputStream in = getClass().getResourceAsStream("/log4j2-test-json.json")) {
             assertNotNull(in);
-            JsonConfigParser parser = new JsonConfigParser();
+            ConfigParserLog4jJson parser = new ConfigParserLog4jJson();
             LoggingConfiguration config = parser.parse(in);
 
             assertNotNull(config);

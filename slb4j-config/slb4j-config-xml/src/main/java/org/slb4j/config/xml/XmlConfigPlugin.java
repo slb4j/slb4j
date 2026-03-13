@@ -28,6 +28,7 @@ public class XmlConfigPlugin implements Plugin {
      * Constructs a new {@code XmlConfigPlugin}.
      */
     public XmlConfigPlugin() {
+        // nothing to do
     }
 
     @Override
@@ -37,6 +38,6 @@ public class XmlConfigPlugin implements Plugin {
 
     @Override
     public void init() {
-        LoggingConfiguration.registerFormat("xml", XmlConfigParser::new);
+        LoggingConfiguration.registerFormat("xml", ConfigParserLog4jXml::new);
     }
 }

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.slb4j.config.xml;
+package org.slb4j.config.yaml;
 
 import org.junit.jupiter.api.Test;
 import org.slb4j.LogLevel;
@@ -25,13 +25,13 @@ import java.io.InputStream;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class XmlConfigParserTest {
+class ConfigParserLog4jYamlTest {
 
     @Test
-    public void testParse() throws Exception {
-        try (InputStream in = getClass().getResourceAsStream("/log4j2-test-xml.xml")) {
+    void testParse() throws Exception {
+        try (InputStream in = getClass().getResourceAsStream("/log4j2-test-yaml.yaml")) {
             assertNotNull(in);
-            XmlConfigParser parser = new XmlConfigParser();
+            ConfigParserLog4jYaml parser = new ConfigParserLog4jYaml();
             LoggingConfiguration config = parser.parse(in);
 
             assertNotNull(config);

@@ -18,8 +18,7 @@ package org.slb4j;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.config.ConfigParser;
 import org.slb4j.config.ConfigParserJul;
-import org.slb4j.config.ConfigParserLog4j;
-import org.slb4j.filter.LogLevelFilter;
+import org.slb4j.config.ConfigParserLog4jProperties;
 import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.handler.ConsoleHandler;
 
@@ -29,13 +28,11 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.SequencedCollection;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
@@ -158,15 +155,15 @@ public final class LoggingConfiguration {
                 String trimmed = path.trim();
                 // Only register if it's a property file to avoid errors on XML/JSON paths
                 if (trimmed.endsWith(".properties")) {
-                    CONFIG_PARSERS.add(new ConfigFileMeta(trimmed, ConfigFileStorage.FILE, ConfigParserLog4j::new));
+                    CONFIG_PARSERS.add(new ConfigFileMeta(trimmed, ConfigFileStorage.FILE, ConfigParserLog4jProperties::new));
                 }
             }
         }
 
         // 3. Default Classpath Lookups (Ordered by priority)
         // Log4j2-test always overrides log4j2 production files
-        CONFIG_PARSERS.add(new ConfigFileMeta("log4j2-test.properties", ConfigFileStorage.CLASSPATH, ConfigParserLog4j::new));
-        CONFIG_PARSERS.add(new ConfigFileMeta("log4j2.properties", ConfigFileStorage.CLASSPATH, ConfigParserLog4j::new));
+        CONFIG_PARSERS.add(new ConfigFileMeta("log4j2-test.properties", ConfigFileStorage.CLASSPATH, ConfigParserLog4jProperties::new));
+        CONFIG_PARSERS.add(new ConfigFileMeta("log4j2.properties", ConfigFileStorage.CLASSPATH, ConfigParserLog4jProperties::new));
 
         // 4. Legacy JUL Support
         CONFIG_PARSERS.add(new ConfigFileMeta("logging.properties", ConfigFileStorage.CLASSPATH, ConfigParserJul::new));
@@ -445,6 +442,7 @@ public final class LoggingConfiguration {
      *
      * @return a {@code LoggingConfiguration} instance with default filters and handlers applied
      */
+    @SuppressWarnings("java:S106")
     public static LoggingConfiguration defaultConfiguration() {
         LoggingConfiguration configuration = new LoggingConfiguration();
         configuration.setRootLevel(LogLevel.INFO);

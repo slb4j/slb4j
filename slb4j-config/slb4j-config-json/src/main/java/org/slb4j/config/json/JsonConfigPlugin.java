@@ -28,6 +28,7 @@ public class JsonConfigPlugin implements Plugin {
      * Constructs a new {@code JsonConfigPlugin}.
      */
     public JsonConfigPlugin() {
+        // nothing to do
     }
 
     @Override
@@ -37,6 +38,6 @@ public class JsonConfigPlugin implements Plugin {
 
     @Override
     public void init() {
-        LoggingConfiguration.registerFormat("json", JsonConfigParser::new);
+        LoggingConfiguration.registerFormat("json", ConfigParserLog4jJson::new);
     }
 }

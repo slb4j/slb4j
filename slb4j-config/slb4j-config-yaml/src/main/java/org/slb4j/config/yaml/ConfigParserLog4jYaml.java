@@ -21,9 +21,10 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import org.slb4j.LoggingConfiguration;
 import org.slb4j.config.ConfigParser;
-import org.slb4j.config.ConfigParserLog4j;
+import org.slb4j.config.ConfigParserLog4jProperties;
 import org.slb4j.config.support.Log4j2TreeFlattener;
 
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -35,33 +36,30 @@ import java.util.Properties;
 /**
  * YAML configuration parser for SLB4J.
  */
-public class YamlConfigParser implements ConfigParser {
+public class ConfigParserLog4jYaml implements ConfigParser {
 
     /**
-     * Constructs a new {@code YamlConfigParser}.
+     * Constructs a new {@code ConfigParserLog4jYaml}.
      */
-    public YamlConfigParser() {
+    public ConfigParserLog4jYaml() {
+        // nothing to do
     }
 
     private final ObjectMapper mapper = new YAMLMapper();
 
     @Override
-    public LoggingConfiguration parse(InputStream in) {
-        try {
-            JsonNode root = mapper.readTree(in);
-            // Log4j2 YAML usually has a root "Configuration" object
-            JsonNode config = root.get("Configuration");
-            if (config == null) {
-                config = root;
-            }
-
-            Log4j2TreeFlattener flattener = new Log4j2TreeFlattener();
-            Properties properties = flattener.flatten(new JacksonNode(config, "Configuration"));
-
-            return new ConfigParserLog4j().parse(properties);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse YAML configuration", e);
+    public LoggingConfiguration parse(InputStream in) throws IOException {
+        JsonNode root = mapper.readTree(in);
+        // Log4j2 YAML usually has a root "Configuration" object
+        JsonNode config = root.get("Configuration");
+        if (config == null) {
+            config = root;
         }
+
+        Log4j2TreeFlattener flattener = new Log4j2TreeFlattener();
+        Properties properties = flattener.flatten(new JacksonNode(config, "Configuration"));
+
+        return new ConfigParserLog4jProperties().parse(properties);
     }
 
     private static class JacksonNode implements Log4j2TreeFlattener.Node {

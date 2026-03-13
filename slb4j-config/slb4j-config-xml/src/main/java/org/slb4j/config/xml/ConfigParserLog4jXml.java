@@ -18,15 +18,19 @@ package org.slb4j.config.xml;
 
 import org.slb4j.LoggingConfiguration;
 import org.slb4j.config.ConfigParser;
-import org.slb4j.config.ConfigParserLog4j;
+import org.slb4j.config.ConfigParserLog4jProperties;
 import org.slb4j.config.support.Log4j2TreeFlattener;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
+import javax.xml.XMLConstants;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -37,18 +41,20 @@ import java.util.Properties;
 /**
  * XML configuration parser for SLB4J.
  */
-public class XmlConfigParser implements ConfigParser {
+public class ConfigParserLog4jXml implements ConfigParser {
 
     /**
-     * Constructs a new {@code XmlConfigParser}.
+     * Constructs a new {@code ConfigParserLog4jXml}.
      */
-    public XmlConfigParser() {
+    public ConfigParserLog4jXml() {
+        // nothing to do
     }
 
     @Override
-    public LoggingConfiguration parse(InputStream in) {
+    public LoggingConfiguration parse(InputStream in) throws IOException {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
             factory.setNamespaceAware(false);
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(in);
@@ -57,9 +63,11 @@ public class XmlConfigParser implements ConfigParser {
             Log4j2TreeFlattener flattener = new Log4j2TreeFlattener();
             Properties properties = flattener.flatten(new DomNode(rootElement));
 
-            return new ConfigParserLog4j().parse(properties);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to parse XML configuration", e);
+            return new ConfigParserLog4jProperties().parse(properties);
+        } catch (ParserConfigurationException e) {
+            throw new IllegalStateException("Could not enable secured XML processing", e);
+        } catch (SAXException e) {
+            throw new IOException("The XML configuration file is not valid: " + e.getMessage(), e);
         }
     }
 
@@ -92,8 +100,8 @@ public class XmlConfigParser implements ConfigParser {
             NodeList nl = element.getChildNodes();
             for (int i = 0; i < nl.getLength(); i++) {
                 org.w3c.dom.Node node = nl.item(i);
-                if (node instanceof Element) {
-                    children.add(new DomNode((Element) node));
+                if (node instanceof Element el) {
+                    children.add(new DomNode(el));
                 }
             }
             return children;
