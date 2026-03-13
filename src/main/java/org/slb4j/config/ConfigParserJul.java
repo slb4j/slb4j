@@ -10,6 +10,8 @@ import org.slb4j.handler.ConsoleHandler;
 import org.slb4j.handler.FileHandler;
 import org.slb4j.handler.RotatingFileHandler;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.List;
@@ -30,6 +32,13 @@ public class ConfigParserJul implements ConfigParser {
      */
     public ConfigParserJul() {
         // nothing to do
+    }
+
+    @Override
+    public LoggingConfiguration parse(InputStream in) throws IOException {
+        Properties props = new Properties();
+        props.load(in);
+        return parse(props);
     }
 
     /**

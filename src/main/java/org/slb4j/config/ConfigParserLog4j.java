@@ -17,6 +17,8 @@ import org.slb4j.layout.LayoutBuilder;
 import org.slb4j.layout.Layouts;
 import org.slb4j.support.Util;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -104,6 +106,13 @@ public class ConfigParserLog4j implements ConfigParser {
                     ")$"
     );
 
+    @Override
+    public LoggingConfiguration parse(InputStream in) throws IOException {
+        Properties props = new Properties();
+        props.load(in);
+        return parse(props);
+    }
+
     /**
      * Parses the given {@code Properties} object to construct a {@link LoggingConfiguration}
      * based on log4j-like configuration definitions. This method processes appenders, filters,
@@ -116,7 +125,7 @@ public class ConfigParserLog4j implements ConfigParser {
      *         provided {@code properties}.
      */
     @Override
-        public LoggingConfiguration parse(Properties properties) {
+    public LoggingConfiguration parse(Properties properties) {
         // collect all definitions
         LogLevel[] statusLevel = {LogLevel.WARN}; // level for internal backend logging
         String[] statusName = {""};
