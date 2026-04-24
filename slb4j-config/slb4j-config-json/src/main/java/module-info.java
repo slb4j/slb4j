@@ -26,7 +26,7 @@ module org.slb4j.config.json {
     requires transitive org.slb4j;
     requires transitive org.slb4j.config;
     requires org.jspecify;
-    requires com.fasterxml.jackson.databind;
+    requires tools.jackson.databind;
 
     exports org.slb4j.config.json;
 

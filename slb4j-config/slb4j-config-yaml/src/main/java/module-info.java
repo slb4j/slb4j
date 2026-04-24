@@ -26,8 +26,8 @@ module org.slb4j.config.yaml {
     requires transitive org.slb4j;
     requires transitive org.slb4j.config;
     requires org.jspecify;
-    requires com.fasterxml.jackson.databind;
-    requires com.fasterxml.jackson.dataformat.yaml;
+    requires tools.jackson.databind;
+    requires tools.jackson.dataformat.yaml;
 
     exports org.slb4j.config.yaml;
 

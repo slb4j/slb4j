@@ -5,6 +5,7 @@ Version 0.8.0 (in development)
 - add configuration parsers for JSON, XML, and YAML config files; implemented in new modules slb4j-config-* to avoid 
   adding unneeded dependencies for projects that use properties files for configuration
 - add JUL configuration parser
+- migrate to Jackson 3
 - update plugins and dependencies
 
 Version 0.7.2

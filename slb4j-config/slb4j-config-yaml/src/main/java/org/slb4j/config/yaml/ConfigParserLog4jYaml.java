@@ -16,9 +16,9 @@
 
 package org.slb4j.config.yaml;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.ObjectMapper;
+import tools.jackson.dataformat.yaml.YAMLMapper;
 import org.slb4j.LoggingConfiguration;
 import org.slb4j.config.ConfigParser;
 import org.slb4j.config.ConfigParserLog4jProperties;
@@ -28,7 +28,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -79,11 +78,9 @@ public class ConfigParserLog4jYaml implements ConfigParser {
         @Override
         public Map<String, String> getAttributes() {
             Map<String, String> attributes = new HashMap<>();
-            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
+            for (Map.Entry<String, JsonNode> field : node.properties()) {
                 if (field.getValue().isValueNode()) {
-                    attributes.put(field.getKey(), field.getValue().asText());
+                    attributes.put(field.getKey(), field.getValue().asString());
                 }
             }
             return attributes;
@@ -92,9 +89,7 @@ public class ConfigParserLog4jYaml implements ConfigParser {
         @Override
         public List<Log4j2TreeFlattener.Node> getChildren() {
             List<Log4j2TreeFlattener.Node> children = new ArrayList<>();
-            Iterator<Map.Entry<String, JsonNode>> fields = node.fields();
-            while (fields.hasNext()) {
-                Map.Entry<String, JsonNode> field = fields.next();
+            for (Map.Entry<String, JsonNode> field : node.properties()) {
                 JsonNode value = field.getValue();
                 if (value.isObject()) {
                     children.add(new JacksonNode(value, field.getKey()));
@@ -111,7 +106,7 @@ public class ConfigParserLog4jYaml implements ConfigParser {
 
         @Override
         public String getTextValue() {
-             return node.isValueNode() ? node.asText() : null;
+             return node.isValueNode() ? node.asString() : null;
         }
     }
 }
