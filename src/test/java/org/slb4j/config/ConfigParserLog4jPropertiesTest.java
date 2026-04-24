@@ -31,7 +31,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-class ConfigParserLog4jTest {
+class ConfigParserLog4jPropertiesTest {
 
     record TestCase(String name, String properties, Consumer<LoggingConfiguration> validate) {
         @Override
@@ -46,7 +46,7 @@ class ConfigParserLog4jTest {
         Properties props = new Properties();
         props.load(new ByteArrayInputStream(testCase.properties().getBytes(StandardCharsets.UTF_8)));
 
-        LoggingConfiguration result = new ConfigParserLog4j().parse(props);
+        LoggingConfiguration result = new ConfigParserLog4jProperties().parse(props);
 
         assertNotNull(result, "Result should not be null for " + testCase.name());
 

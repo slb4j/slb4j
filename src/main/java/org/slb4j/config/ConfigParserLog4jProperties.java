@@ -17,6 +17,8 @@ import org.slb4j.layout.LayoutBuilder;
 import org.slb4j.layout.Layouts;
 import org.slb4j.support.Util;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintStream;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -31,12 +33,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * The ConfigParserLog4j class provides methods to parse Log4j configuration details
+ * The ConfigParserLog4jProperties class provides methods to parse Log4j configuration details
  * from property definitions.
  * <p>
  * This implementation uses the Log4J2 properties syntax.
  */
-public class ConfigParserLog4j implements ConfigParser {
+public class ConfigParserLog4jProperties implements ConfigParser {
 
     private static final String THRESHOLD_FILTER = "ThresholdFilter";
     private static final String MARKER_FILTER = "MarkerFilter";
@@ -65,7 +67,7 @@ public class ConfigParserLog4j implements ConfigParser {
     /**
      * Default constructor.
      */
-    public ConfigParserLog4j() {
+    public ConfigParserLog4jProperties() {
         // nothing to do
     }
 
@@ -104,6 +106,13 @@ public class ConfigParserLog4j implements ConfigParser {
                     ")$"
     );
 
+    @Override
+    public LoggingConfiguration parse(InputStream in) throws IOException {
+        Properties props = new Properties();
+        props.load(in);
+        return parse(props);
+    }
+
     /**
      * Parses the given {@code Properties} object to construct a {@link LoggingConfiguration}
      * based on log4j-like configuration definitions. This method processes appenders, filters,
@@ -115,8 +124,9 @@ public class ConfigParserLog4j implements ConfigParser {
      * @return a fully configured {@link LoggingConfiguration} object constructed from the
      *         provided {@code properties}.
      */
+    @SuppressWarnings("java:S106")
     @Override
-        public LoggingConfiguration parse(Properties properties) {
+    public LoggingConfiguration parse(Properties properties) {
         // collect all definitions
         LogLevel[] statusLevel = {LogLevel.WARN}; // level for internal backend logging
         String[] statusName = {""};
@@ -247,7 +257,7 @@ public class ConfigParserLog4j implements ConfigParser {
         // create layouts and filters and extract handler options
         Map<String, Map<String, Map<String, String>>> handlerOptions = new HashMap<>();
         Map<String, LogLayout> layouts = new HashMap<>();
-        entryConfig.forEach((appenderName, entryDefs) -> {
+        entryConfig.forEach((appenderName, entryDefs) ->
             entryDefs.forEach((entryName, options) -> {
                 switch (entryName) {
                     case "" -> {
@@ -270,8 +280,8 @@ public class ConfigParserLog4j implements ConfigParser {
                     }
                     default -> SLB4J.logInternal(LogLevel.WARN, "Ignoring unknown entry %s in appender definition for appender %s!", entryName, appenderName);
                 }
-            });
-        });
+            })
+        );
 
         LoggingConfiguration configuration = new LoggingConfiguration();
         configuration.setStatusLevel(statusLevel[0]);

@@ -89,6 +89,9 @@ public final class SLB4J {
         // === register the dispatcher
         DISPATCHER = UniversalDispatcher.getInstance();
 
+        // === load plugins
+        loadPlugins();
+
         // === configure logging
         LoggingConfiguration config = null;
         try {
@@ -102,9 +105,6 @@ public final class SLB4J {
 
         // === wire the logging frontends
         wireFrontends();
-
-        // === load plugins
-        loadPlugins();
     }
 
     private static void loadPlugins() {

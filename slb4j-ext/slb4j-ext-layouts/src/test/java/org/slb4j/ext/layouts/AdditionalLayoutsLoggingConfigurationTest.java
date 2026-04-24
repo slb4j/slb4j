@@ -15,7 +15,6 @@
  */
 package org.slb4j.ext.layouts;
 
-import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slb4j.ConsoleCode;
@@ -25,7 +24,7 @@ import org.slb4j.LogLayout;
 import org.slb4j.LogLevel;
 import org.slb4j.LoggingConfiguration;
 import org.slb4j.SLB4J;
-import org.slb4j.config.ConfigParserLog4j;
+import org.slb4j.config.ConfigParserLog4jProperties;
 import org.slb4j.layout.Layouts;
 import org.slb4j.support.Util;
 
@@ -56,7 +55,7 @@ class AdditionalLayoutsLoggingConfigurationTest {
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 
-        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
+        LoggingConfiguration config = new ConfigParserLog4jProperties().parse(props);
 
         LogHandler handler = config.getHandler("console");
         assertNotNull(handler);
@@ -106,7 +105,7 @@ class AdditionalLayoutsLoggingConfigurationTest {
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 
-        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
+        LoggingConfiguration config = new ConfigParserLog4jProperties().parse(props);
 
         LogHandler handler = config.getHandler("console");
         assertNotNull(handler);
@@ -148,7 +147,7 @@ class AdditionalLayoutsLoggingConfigurationTest {
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 
-        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
+        LoggingConfiguration config = new ConfigParserLog4jProperties().parse(props);
 
         LogHandler handler = config.getHandler("console");
         assertNotNull(handler);
@@ -168,7 +167,7 @@ class AdditionalLayoutsLoggingConfigurationTest {
         Properties props = new Properties();
         props.load(new StringReader(propertyText));
 
-        LoggingConfiguration config = new ConfigParserLog4j().parse(props);
+        LoggingConfiguration config = new ConfigParserLog4jProperties().parse(props);
         LogHandler handler = config.getHandler("file");
         assertNotNull(handler);
 

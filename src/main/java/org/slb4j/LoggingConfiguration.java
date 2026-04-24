@@ -18,8 +18,7 @@ package org.slb4j;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.config.ConfigParser;
 import org.slb4j.config.ConfigParserJul;
-import org.slb4j.config.ConfigParserLog4j;
-import org.slb4j.filter.LogLevelFilter;
+import org.slb4j.config.ConfigParserLog4jProperties;
 import org.slb4j.filter.LoggerNamePrefixFilter;
 import org.slb4j.handler.ConsoleHandler;
 
@@ -29,14 +28,13 @@ import java.nio.file.Files;
 import java.nio.file.InvalidPathException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.SequencedCollection;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Supplier;
 
 /**
@@ -139,14 +137,12 @@ public final class LoggingConfiguration {
      *
      * This map is used for automatic lookup of configuration files. Entries are tried top to bottom.
      */
-    private static final List<ConfigFileMeta> CONFIG_PARSERS;
+    private static final List<ConfigFileMeta> CONFIG_PARSERS = new CopyOnWriteArrayList<>();
 
     /*
      * Configure the set and order of configuration files to check for loading.
      */
     static {
-        CONFIG_PARSERS = new ArrayList<>();
-
         // 1. Get configuration path from System Property or Environment Variable
         String property = System.getProperty("log4j2.configurationFile");
         if (property == null) {
@@ -159,18 +155,44 @@ public final class LoggingConfiguration {
                 String trimmed = path.trim();
                 // Only register if it's a property file to avoid errors on XML/JSON paths
                 if (trimmed.endsWith(".properties")) {
-                    CONFIG_PARSERS.add(new ConfigFileMeta(trimmed, ConfigFileStorage.FILE, ConfigParserLog4j::new));
+                    CONFIG_PARSERS.add(new ConfigFileMeta(trimmed, ConfigFileStorage.FILE, ConfigParserLog4jProperties::new));
                 }
             }
         }
 
         // 3. Default Classpath Lookups (Ordered by priority)
         // Log4j2-test always overrides log4j2 production files
-        CONFIG_PARSERS.add(new ConfigFileMeta("log4j2-test.properties", ConfigFileStorage.CLASSPATH, ConfigParserLog4j::new));
-        CONFIG_PARSERS.add(new ConfigFileMeta("log4j2.properties", ConfigFileStorage.CLASSPATH, ConfigParserLog4j::new));
+        CONFIG_PARSERS.add(new ConfigFileMeta("log4j2-test.properties", ConfigFileStorage.CLASSPATH, ConfigParserLog4jProperties::new));
+        CONFIG_PARSERS.add(new ConfigFileMeta("log4j2.properties", ConfigFileStorage.CLASSPATH, ConfigParserLog4jProperties::new));
 
         // 4. Legacy JUL Support
         CONFIG_PARSERS.add(new ConfigFileMeta("logging.properties", ConfigFileStorage.CLASSPATH, ConfigParserJul::new));
+    }
+
+    /**
+     * Registers a new configuration format.
+     *
+     * @param extension      the file extension (e.g., "xml", "json", "yaml")
+     * @param parserSupplier a supplier for the parser that can handle this format
+     */
+    public static void registerFormat(String extension, Supplier<ConfigParser> parserSupplier) {
+        // Register for system property if it matches extension
+        String property = System.getProperty("log4j2.configurationFile");
+        if (property == null) {
+            property = System.getenv("LOG4J_CONFIGURATION_FILE");
+        }
+        if (property != null) {
+            for (String path : property.split(",")) {
+                String trimmed = path.trim();
+                if (trimmed.endsWith("." + extension)) {
+                    CONFIG_PARSERS.add(0, new ConfigFileMeta(trimmed, ConfigFileStorage.FILE, parserSupplier));
+                }
+            }
+        }
+
+        // Add default lookups with high priority
+        CONFIG_PARSERS.add(0, new ConfigFileMeta("log4j2." + extension, ConfigFileStorage.CLASSPATH, parserSupplier));
+        CONFIG_PARSERS.add(0, new ConfigFileMeta("log4j2-test." + extension, ConfigFileStorage.CLASSPATH, parserSupplier));
     }
 
     // *** ConsoleHandler configuration ***
@@ -323,9 +345,7 @@ public final class LoggingConfiguration {
             SLB4J.logInternal(LogLevel.TRACE, "Trying to load %s", cp.fileName());
             try (InputStream in = cp.storage().getInputStream(cp.fileName())) {
                 if (in != null) {
-                    Properties properties = new Properties();
-                    properties.load(in);
-                    return cp.parserSupplier().get().parse(properties);
+                    return cp.parserSupplier().get().parse(in);
                 }
             } catch (IOException e) {
                 SLB4J.logInternal(LogLevel.WARN, "Failed to load %s: %s", cp.fileName(), e);
@@ -422,6 +442,7 @@ public final class LoggingConfiguration {
      *
      * @return a {@code LoggingConfiguration} instance with default filters and handlers applied
      */
+    @SuppressWarnings("java:S106")
     public static LoggingConfiguration defaultConfiguration() {
         LoggingConfiguration configuration = new LoggingConfiguration();
         configuration.setRootLevel(LogLevel.INFO);

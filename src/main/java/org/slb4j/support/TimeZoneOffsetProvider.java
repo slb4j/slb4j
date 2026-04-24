@@ -28,8 +28,16 @@ import java.util.List;
  * spans a limited time range to minimize resource consumption while covering typical use cases.
  */
 public class TimeZoneOffsetProvider {
+    // Cache one year in each direction so a typical running process can serve
+    // near-past / near-future timestamps without Instant allocations.
+    private static final long PRECOMPUTE_WINDOW_MS = 366L * 24 * 60 * 60 * 1000;
+
     private final ZoneId zoneId;
     private final OffsetInterval[] intervals;
+    @SuppressWarnings("java:S3077")
+    // Safe here: this is a copy-on-write snapshot reference. Writers synchronize and
+    // publish a freshly allocated array; readers only iterate over immutable snapshots.
+    private volatile OffsetInterval[] outOfWindowIntervals = new OffsetInterval[0];
     private final int startupIdx;
 
     private record OffsetInterval(long start, long end, int offset) {
@@ -48,7 +56,7 @@ public class TimeZoneOffsetProvider {
         this.intervals = precomputeIntervals(zoneId);
 
         // Find the index valid at the moment the app starts
-        int foundIdx = 0;
+        int foundIdx = -1;
         long now = System.currentTimeMillis();
         for (int i = 0; i < intervals.length; i++) {
             if (intervals[i].contains(now)) {
@@ -71,57 +79,119 @@ public class TimeZoneOffsetProvider {
      * @return the total time offset, in seconds, for the given timestamp.
      */
     public int getOffset(long timestamp) {
-        OffsetInterval startup = intervals[startupIdx];
-        if (timestamp >= startup.start && timestamp < startup.end) {
-            return startup.offset;
-        }
-
-        // Directional search: search only the half of the array where the timestamp could be
-        int start;
-        int end;
-        if (timestamp < startup.start) {
-            start = 0;
-            end = startupIdx;
-        } else {
-            start = startupIdx + 1;
-            end = intervals.length;
-        }
-
-        for (int i = start; i < end; i++) {
-            if (intervals[i].contains(timestamp)) {
-                return intervals[i].offset;
+        // Fast path: most log timestamps are close to "now", so reuse the startup interval.
+        if (startupIdx >= 0) {
+            OffsetInterval startup = intervals[startupIdx];
+            if (timestamp >= startup.start && timestamp < startup.end) {
+                return startup.offset;
             }
         }
 
-        // Fallback using temporary instant
-        return zoneId.getRules().getOffset(Instant.ofEpochMilli(timestamp)).getTotalSeconds();
+        if (startupIdx >= 0) {
+            // Directional search: search only the half of the array where the timestamp could be
+            OffsetInterval startup = intervals[startupIdx];
+            int start;
+            int end;
+            if (timestamp < startup.start) {
+                start = 0;
+                end = startupIdx;
+            } else {
+                start = startupIdx + 1;
+                end = intervals.length;
+            }
+
+            for (int i = start; i < end; i++) {
+                if (intervals[i].contains(timestamp)) {
+                    return intervals[i].offset;
+                }
+            }
+        } else {
+            // Defensive fallback: if startup time is outside the cached window,
+            // scan all precomputed intervals before using zone rules.
+            for (OffsetInterval interval : intervals) {
+                if (interval.contains(timestamp)) {
+                    return interval.offset;
+                }
+            }
+        }
+
+        // Check lazily discovered out-of-window intervals before consulting ZoneRules.
+        OffsetInterval[] dynamic = outOfWindowIntervals;
+        for (OffsetInterval interval : dynamic) {
+            if (interval.contains(timestamp)) {
+                return interval.offset;
+            }
+        }
+
+        return resolveAndCacheOutOfWindowInterval(timestamp);
     }
 
     private static OffsetInterval[] precomputeIntervals(ZoneId zoneId) {
         List<OffsetInterval> list = new ArrayList<>();
         long now = System.currentTimeMillis();
-        // One year look-ahead
-        long endLimit = now + (366L * 24 * 60 * 60 * 1000);
+        // Keep cached intervals bounded to avoid applying "current" offset to far-past timestamps.
+        long startLimit = now - PRECOMPUTE_WINDOW_MS;
+        long endLimit = now + PRECOMPUTE_WINDOW_MS;
 
         var rules = zoneId.getRules();
-        Instant currentInstant = Instant.ofEpochMilli(now);
-        long intervalStart = Long.MIN_VALUE;
+        Instant currentInstant = Instant.ofEpochMilli(startLimit);
+        int currentOffset = rules.getOffset(currentInstant).getTotalSeconds();
+        long intervalStart = startLimit;
 
-        while (currentInstant.toEpochMilli() < endLimit) {
+        while (intervalStart < endLimit) {
             ZoneOffsetTransition transition = rules.nextTransition(currentInstant);
             if (transition == null) {
-                list.add(new OffsetInterval(intervalStart, Long.MAX_VALUE,
-                        rules.getOffset(currentInstant).getTotalSeconds()));
+                // Fixed-offset zone (or no more transitions in range): close remaining window.
+                list.add(new OffsetInterval(intervalStart, endLimit, currentOffset));
                 break;
             }
 
             long transitionMs = transition.getInstant().toEpochMilli();
+            if (transitionMs >= endLimit) {
+                // Next transition lies outside cache window.
+                list.add(new OffsetInterval(intervalStart, endLimit, currentOffset));
+                break;
+            }
+
             list.add(new OffsetInterval(intervalStart, transitionMs,
-                    rules.getOffset(currentInstant).getTotalSeconds()));
+                    currentOffset));
 
             intervalStart = transitionMs;
             currentInstant = transition.getInstant().plusMillis(1);
+            currentOffset = rules.getOffset(currentInstant).getTotalSeconds();
         }
         return list.toArray(OffsetInterval[]::new);
+    }
+
+    private int resolveAndCacheOutOfWindowInterval(long timestamp) {
+        synchronized (this) {
+            // Another thread may already have cached the interval while we were waiting.
+            for (OffsetInterval interval : outOfWindowIntervals) {
+                if (interval.contains(timestamp)) {
+                    return interval.offset;
+                }
+            }
+
+            Instant instant = Instant.ofEpochMilli(timestamp);
+            var rules = zoneId.getRules();
+            int offset = rules.getOffset(instant).getTotalSeconds();
+
+            ZoneOffsetTransition previous = rules.previousTransition(instant.plusMillis(1));
+            long start = previous == null ? Long.MIN_VALUE : previous.getInstant().toEpochMilli();
+
+            ZoneOffsetTransition next = rules.nextTransition(instant);
+            long end = next == null ? Long.MAX_VALUE : next.getInstant().toEpochMilli();
+
+            OffsetInterval discovered = new OffsetInterval(start, end, offset);
+            outOfWindowIntervals = append(outOfWindowIntervals, discovered);
+            return offset;
+        }
+    }
+
+    private static OffsetInterval[] append(OffsetInterval[] source, OffsetInterval value) {
+        OffsetInterval[] result = new OffsetInterval[source.length + 1];
+        System.arraycopy(source, 0, result, 0, source.length);
+        result[source.length] = value;
+        return result;
     }
 }

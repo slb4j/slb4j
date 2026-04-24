@@ -1,9 +1,19 @@
+Version 0.8.0 (in development)
+-------------
+
+- fix DST not being taken into account when the current timestamp is before/after the DST transition when program starts
+- add configuration parsers for JSON, XML, and YAML config files; implemented in new modules slb4j-config-* to avoid 
+  adding unneeded dependencies for projects that use properties files for configuration
+- add JUL configuration parser
+- migrate to Jackson 3
+- update plugins and dependencies
+
 Version 0.7.2
 -------------
 
 - fix: UniversalDispatcher.fiterAndDispatch() reported wrong parameter names in exception messages.
 
-- Version 0.7.1
+Version 0.7.1
 -------------
 
 - fix: combining an allpass/nonepass filter with another filter should not create a combined filter.
