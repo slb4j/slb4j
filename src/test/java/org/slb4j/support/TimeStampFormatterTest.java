@@ -18,7 +18,6 @@ package org.slb4j.support;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slb4j.support.formatter.PatternTimeStampFormatter;
-import org.slb4j.support.formatter.AbstractTimeStampFormatter;
 
 import java.time.Instant;
 import java.time.ZoneId;
