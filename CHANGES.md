@@ -1,3 +1,12 @@
+Version 0.8.0 (in development)
+-------------
+
+- fix DST not being taken into account when the current timestamp is before/after the DST transition when program starts
+- add configuration parsers for JSON, XML, and YAML config files; implemented in new modules slb4j-config-* to avoid 
+  adding unneeded dependencies for projects that use properties files for configuration
+- add JUL configuration parser
+- update plugins and dependencies
+
 Version 0.7.2
 -------------
 
