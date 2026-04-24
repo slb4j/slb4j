@@ -29,6 +29,7 @@ class TimeZoneOffsetProviderTest {
 
     @Test
     void testOffsetForZoneWithDstUsesCorrectPastOffset() {
+        // DST-enabled zone where winter/summer offsets differ.
         ZoneId zoneId = ZoneId.of("Europe/Berlin");
         ZoneRules rules = zoneId.getRules();
         TimeZoneOffsetProvider provider = new TimeZoneOffsetProvider(zoneId);
@@ -37,6 +38,7 @@ class TimeZoneOffsetProviderTest {
         int currentOffsetSeconds = rules.getOffset(now).getTotalSeconds();
 
         Instant probeWithDifferentOffset = null;
+        // Find a recent timestamp that is in the opposite DST state from "now".
         for (int month = 1; month <= 24; month++) {
             Instant probe = now.minus(month * 30L, ChronoUnit.DAYS);
             if (rules.getOffset(probe).getTotalSeconds() != currentOffsetSeconds) {
@@ -50,12 +52,14 @@ class TimeZoneOffsetProviderTest {
         int expected = rules.getOffset(probeWithDifferentOffset).getTotalSeconds();
         int actual = provider.getOffset(probeWithDifferentOffset.toEpochMilli());
 
+        // Provider must match zone rules for the probed timestamp, not for "now".
         assertEquals(expected, actual,
                 "Provider must use the timestamp-specific offset in DST zones");
     }
 
     @Test
     void testOffsetForZoneWithoutDstMatchesRules() {
+        // Control case: constant-offset zone must always match.
         ZoneId zoneId = ZoneId.of("UTC");
         ZoneRules rules = zoneId.getRules();
         TimeZoneOffsetProvider provider = new TimeZoneOffsetProvider(zoneId);
