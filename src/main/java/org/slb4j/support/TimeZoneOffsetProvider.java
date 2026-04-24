@@ -34,6 +34,10 @@ public class TimeZoneOffsetProvider {
 
     private final ZoneId zoneId;
     private final OffsetInterval[] intervals;
+    @SuppressWarnings("java:S3077")
+    // Safe here: this is a copy-on-write snapshot reference. Writers synchronize and
+    // publish a freshly allocated array; readers only iterate over immutable snapshots.
+    private volatile OffsetInterval[] outOfWindowIntervals = new OffsetInterval[0];
     private final int startupIdx;
 
     private record OffsetInterval(long start, long end, int offset) {
@@ -111,8 +115,15 @@ public class TimeZoneOffsetProvider {
             }
         }
 
-        // Out-of-window timestamps are resolved directly from ZoneRules.
-        return zoneId.getRules().getOffset(Instant.ofEpochMilli(timestamp)).getTotalSeconds();
+        // Check lazily discovered out-of-window intervals before consulting ZoneRules.
+        OffsetInterval[] dynamic = outOfWindowIntervals;
+        for (OffsetInterval interval : dynamic) {
+            if (interval.contains(timestamp)) {
+                return interval.offset;
+            }
+        }
+
+        return resolveAndCacheOutOfWindowInterval(timestamp);
     }
 
     private static OffsetInterval[] precomputeIntervals(ZoneId zoneId) {
@@ -150,5 +161,37 @@ public class TimeZoneOffsetProvider {
             currentOffset = rules.getOffset(currentInstant).getTotalSeconds();
         }
         return list.toArray(OffsetInterval[]::new);
+    }
+
+    private int resolveAndCacheOutOfWindowInterval(long timestamp) {
+        synchronized (this) {
+            // Another thread may already have cached the interval while we were waiting.
+            for (OffsetInterval interval : outOfWindowIntervals) {
+                if (interval.contains(timestamp)) {
+                    return interval.offset;
+                }
+            }
+
+            Instant instant = Instant.ofEpochMilli(timestamp);
+            var rules = zoneId.getRules();
+            int offset = rules.getOffset(instant).getTotalSeconds();
+
+            ZoneOffsetTransition previous = rules.previousTransition(instant.plusMillis(1));
+            long start = previous == null ? Long.MIN_VALUE : previous.getInstant().toEpochMilli();
+
+            ZoneOffsetTransition next = rules.nextTransition(instant);
+            long end = next == null ? Long.MAX_VALUE : next.getInstant().toEpochMilli();
+
+            OffsetInterval discovered = new OffsetInterval(start, end, offset);
+            outOfWindowIntervals = append(outOfWindowIntervals, discovered);
+            return offset;
+        }
+    }
+
+    private static OffsetInterval[] append(OffsetInterval[] source, OffsetInterval value) {
+        OffsetInterval[] result = new OffsetInterval[source.length + 1];
+        System.arraycopy(source, 0, result, 0, source.length);
+        result[source.length] = value;
+        return result;
     }
 }

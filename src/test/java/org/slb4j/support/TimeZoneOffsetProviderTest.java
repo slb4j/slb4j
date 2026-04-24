@@ -17,13 +17,15 @@ package org.slb4j.support;
 
 import org.junit.jupiter.api.Test;
 
+import java.lang.reflect.Field;
 import java.time.Instant;
 import java.time.ZoneId;
-import java.time.zone.ZoneRules;
 import java.time.temporal.ChronoUnit;
+import java.time.zone.ZoneRules;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class TimeZoneOffsetProviderTest {
 
@@ -78,5 +80,69 @@ class TimeZoneOffsetProviderTest {
             assertEquals(expected, actual,
                     "Offset mismatch for timestamp " + timestamp + " in zone without DST");
         }
+    }
+
+    @Test
+    void testRepeatedOutOfWindowPastLookupsAreCorrectAndCached() throws ReflectiveOperationException {
+        ZoneId zoneId = ZoneId.of("Europe/Berlin");
+        ZoneRules rules = zoneId.getRules();
+        TimeZoneOffsetProvider provider = new TimeZoneOffsetProvider(zoneId);
+
+        Instant farPast = Instant.now().minus(10L * 365, ChronoUnit.DAYS);
+        long timestamp = farPast.toEpochMilli();
+        int expected = rules.getOffset(farPast).getTotalSeconds();
+
+        int initialCacheSize = getOutOfWindowCacheSize(provider);
+
+        int firstActual = provider.getOffset(timestamp);
+        assertEquals(expected, firstActual, "First far-past lookup must match ZoneRules");
+
+        int cacheSizeAfterFirstLookup = getOutOfWindowCacheSize(provider);
+        assertTrue(cacheSizeAfterFirstLookup >= initialCacheSize + 1,
+                "First out-of-window lookup should add a cached interval");
+
+        for (int i = 0; i < 10; i++) {
+            int actual = provider.getOffset(timestamp);
+            assertEquals(expected, actual, "Repeated far-past lookup must stay correct");
+        }
+
+        int cacheSizeAfterRepeats = getOutOfWindowCacheSize(provider);
+        assertEquals(cacheSizeAfterFirstLookup, cacheSizeAfterRepeats,
+                "Repeated lookup in the same interval should not grow cache");
+    }
+
+    @Test
+    void testRepeatedOutOfWindowFutureLookupsAreCorrectAndCached() throws ReflectiveOperationException {
+        ZoneId zoneId = ZoneId.of("Europe/Berlin");
+        ZoneRules rules = zoneId.getRules();
+        TimeZoneOffsetProvider provider = new TimeZoneOffsetProvider(zoneId);
+
+        Instant farFuture = Instant.now().plus(10L * 365, ChronoUnit.DAYS);
+        long timestamp = farFuture.toEpochMilli();
+        int expected = rules.getOffset(farFuture).getTotalSeconds();
+
+        int initialCacheSize = getOutOfWindowCacheSize(provider);
+
+        int firstActual = provider.getOffset(timestamp);
+        assertEquals(expected, firstActual, "First far-future lookup must match ZoneRules");
+
+        int cacheSizeAfterFirstLookup = getOutOfWindowCacheSize(provider);
+        assertTrue(cacheSizeAfterFirstLookup >= initialCacheSize + 1,
+                "First out-of-window lookup should add a cached interval");
+
+        for (int i = 0; i < 10; i++) {
+            int actual = provider.getOffset(timestamp);
+            assertEquals(expected, actual, "Repeated far-future lookup must stay correct");
+        }
+
+        int cacheSizeAfterRepeats = getOutOfWindowCacheSize(provider);
+        assertEquals(cacheSizeAfterFirstLookup, cacheSizeAfterRepeats,
+                "Repeated lookup in the same interval should not grow cache");
+    }
+
+    private static int getOutOfWindowCacheSize(TimeZoneOffsetProvider provider) throws ReflectiveOperationException {
+        Field field = TimeZoneOffsetProvider.class.getDeclaredField("outOfWindowIntervals");
+        field.setAccessible(true);
+        return ((Object[]) field.get(provider)).length;
     }
 }
