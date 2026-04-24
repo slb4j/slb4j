@@ -28,6 +28,8 @@ import java.util.List;
  * spans a limited time range to minimize resource consumption while covering typical use cases.
  */
 public class TimeZoneOffsetProvider {
+    // Cache one year in each direction so a typical running process can serve
+    // near-past / near-future timestamps without Instant allocations.
     private static final long PRECOMPUTE_WINDOW_MS = 366L * 24 * 60 * 60 * 1000;
 
     private final ZoneId zoneId;
@@ -73,6 +75,7 @@ public class TimeZoneOffsetProvider {
      * @return the total time offset, in seconds, for the given timestamp.
      */
     public int getOffset(long timestamp) {
+        // Fast path: most log timestamps are close to "now", so reuse the startup interval.
         if (startupIdx >= 0) {
             OffsetInterval startup = intervals[startupIdx];
             if (timestamp >= startup.start && timestamp < startup.end) {
@@ -99,6 +102,8 @@ public class TimeZoneOffsetProvider {
                 }
             }
         } else {
+            // Defensive fallback: if startup time is outside the cached window,
+            // scan all precomputed intervals before using zone rules.
             for (OffsetInterval interval : intervals) {
                 if (interval.contains(timestamp)) {
                     return interval.offset;
@@ -106,13 +111,14 @@ public class TimeZoneOffsetProvider {
             }
         }
 
-        // Fallback using temporary instant
+        // Out-of-window timestamps are resolved directly from ZoneRules.
         return zoneId.getRules().getOffset(Instant.ofEpochMilli(timestamp)).getTotalSeconds();
     }
 
     private static OffsetInterval[] precomputeIntervals(ZoneId zoneId) {
         List<OffsetInterval> list = new ArrayList<>();
         long now = System.currentTimeMillis();
+        // Keep cached intervals bounded to avoid applying "current" offset to far-past timestamps.
         long startLimit = now - PRECOMPUTE_WINDOW_MS;
         long endLimit = now + PRECOMPUTE_WINDOW_MS;
 
@@ -124,12 +130,14 @@ public class TimeZoneOffsetProvider {
         while (intervalStart < endLimit) {
             ZoneOffsetTransition transition = rules.nextTransition(currentInstant);
             if (transition == null) {
+                // Fixed-offset zone (or no more transitions in range): close remaining window.
                 list.add(new OffsetInterval(intervalStart, endLimit, currentOffset));
                 break;
             }
 
             long transitionMs = transition.getInstant().toEpochMilli();
             if (transitionMs >= endLimit) {
+                // Next transition lies outside cache window.
                 list.add(new OffsetInterval(intervalStart, endLimit, currentOffset));
                 break;
             }
