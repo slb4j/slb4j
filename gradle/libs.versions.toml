@@ -1,7 +1,7 @@
 [plugins]
 cabe = { id = "com.dua3.cabe", version = "4.2.0" }
 graalvm = { id = "org.graalvm.buildtools.native", version = "1.1.0" }
-jdkprovider = { id = "com.dua3.gradle.jdkprovider", version = "0.5.2" }
+jdkprovider = { id = "com.dua3.gradle.jdkprovider", version = "0.6.0" }
 jmh = { id = "me.champeau.jmh", version = "0.7.3" }
 jreleaser = { id = "org.jreleaser", version = "1.23.0" }
 spotbugs = { id = "com.github.spotbugs", version = "6.5.1" }
