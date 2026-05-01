@@ -30,6 +30,7 @@ import javafx.stage.Stage;
 public class FxLogWindow extends Stage implements LogWindow {
 
     private final LogBuffer logBuffer;
+    private final FxLogPane logPane;
 
     /**
      * Create a new FxLogWindow instance with a new {@link LogBuffer} using the default capacity;
@@ -69,7 +70,7 @@ public class FxLogWindow extends Stage implements LogWindow {
      */
     public FxLogWindow(String title, LogBuffer logBuffer, LogPaneTexts texts) {
         this.logBuffer = logBuffer;
-        FxLogPane logPane = new FxLogPane(this.logBuffer, texts);
+        this.logPane = new FxLogPane(this.logBuffer, texts);
         Scene scene = new Scene(logPane);
         setScene(scene);
         setTitle(title);
@@ -83,12 +84,18 @@ public class FxLogWindow extends Stage implements LogWindow {
         setY(primaryScreenBounds.getMaxY() - height);
     }
 
-    /**
-     * Retrieves the LogBuffer associated with this FxLogWindow.
-     *
-     * @return the LogBuffer instance used by this FxLogWindow
-     */
+    @Override
     public LogBuffer getLogBuffer() {
         return logBuffer;
+    }
+
+    @Override
+    public FxLogPane getLogPane() {
+        return logPane;
+    }
+
+    @Override
+    public void setDarkMode(boolean darkMode) {
+        logPane.setDarkMode(darkMode);
     }
 }

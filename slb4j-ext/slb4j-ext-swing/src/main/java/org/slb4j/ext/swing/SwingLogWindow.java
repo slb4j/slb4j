@@ -23,7 +23,6 @@ import javax.swing.JFrame;
 import javax.swing.WindowConstants;
 import java.awt.Dimension;
 import java.awt.Toolkit;
-import java.util.Objects;
 
 /**
  * The SwingLogWindow class represents a Swing JFrame that displays log entries in a table view.
@@ -32,6 +31,8 @@ public final class SwingLogWindow extends JFrame implements LogWindow {
 
     /** The LogBuffer instance used to store and manage log entries for the SwingLogWindow. */
     private final LogBuffer logBuffer;
+    /** The SwingLogPane instance in this SwingLogWindow. */
+    private final SwingLogPane logPane;
 
     /**
      * Create a new SwingLogWindow instance with a new {@link LogBuffer} using the default capacity.
@@ -78,8 +79,7 @@ public final class SwingLogWindow extends JFrame implements LogWindow {
     public SwingLogWindow(String title, LogBuffer logBuffer, LogPaneTexts texts) {
         super(title);
         this.logBuffer = logBuffer;
-
-        SwingLogPane logPane = new SwingLogPane(this.logBuffer, texts);
+        this.logPane = new SwingLogPane(this.logBuffer, texts);
         setContentPane(logPane);
 
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
@@ -91,20 +91,17 @@ public final class SwingLogWindow extends JFrame implements LogWindow {
         setDefaultCloseOperation(WindowConstants.DISPOSE_ON_CLOSE);
     }
 
-    /**
-     * Retrieves the LogBuffer associated with this SwingLogWindow.
-     *
-     * @return the LogBuffer instance used by this SwingLogWindow
-     */
+    @Override
     public LogBuffer getLogBuffer() {
         return logBuffer;
     }
 
-    /**
-     * Sets the dark mode for the log window.
-     *
-     * @param darkMode true to enable dark mode, false to disable it
-     */
+    @Override
+    public SwingLogPane getLogPane() {
+        return logPane;
+    }
+
+    @Override
     public void setDarkMode(boolean darkMode) {
         if (getContentPane() instanceof SwingLogPane pane) {
             pane.setDarkMode(darkMode);

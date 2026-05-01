@@ -25,4 +25,19 @@ public interface LogWindow {
      * @return the LogBuffer instance used by this LogWindow
      */
     LogBuffer getLogBuffer();
+
+    /**
+     * Retrieves the LogPane instance used by this LogWindow.
+     *
+     * @return the LogPane instance associated with this LogWindow
+     */
+    LogPane getLogPane();
+
+    /**
+     * Sets the dark mode display setting for the log window.
+     *
+     * @param darkMode a boolean value indicating whether dark mode should be enabled.
+     *                 If true, dark mode is enabled; if false, dark mode is disabled.
+     */
+    void setDarkMode(boolean darkMode);
 }
