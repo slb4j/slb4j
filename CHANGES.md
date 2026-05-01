@@ -1,4 +1,10 @@
-Version 0.8.0 (in development)
+Version 0.8.1
+-------------
+
+- update dependencies, plugins
+- add setDarkode(), getLogPane() to LogWindow and the implementing classes
+
+Version 0.8.0
 -------------
 
 - fix DST not being taken into account when the current timestamp is before/after the DST transition when program starts
