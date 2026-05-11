@@ -152,10 +152,22 @@ public final class LoggingConfiguration {
         // 2. Log4j2 supports "Composite Configurations" via comma-separated paths
         if (property != null) {
             for (String path : property.split(",")) {
+                boolean checkFilesystem = true;
+                boolean checkClasspath = true;
                 String trimmed = path.trim();
+                if (trimmed.startsWith("file:")) {
+                    trimmed = trimmed.substring(5);
+                    checkClasspath = false;
+                }
+                if (trimmed.startsWith("classpath:")) {
+                    trimmed = trimmed.substring(10);
+                    checkFilesystem = false;
+                }
+
                 // Only register if it's a property file to avoid errors on XML/JSON paths
                 if (trimmed.endsWith(".properties")) {
-                    CONFIG_PARSERS.add(new ConfigFileMeta(trimmed, ConfigFileStorage.FILE, ConfigParserLog4jProperties::new));
+                    if (checkFilesystem) CONFIG_PARSERS.add(new ConfigFileMeta(trimmed, ConfigFileStorage.FILE, ConfigParserLog4jProperties::new));
+                    if (checkClasspath) CONFIG_PARSERS.add(new ConfigFileMeta(trimmed, ConfigFileStorage.FILE, ConfigParserLog4jProperties::new));
                 }
             }
         }
