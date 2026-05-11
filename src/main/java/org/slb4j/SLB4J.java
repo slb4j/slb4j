@@ -96,11 +96,13 @@ public final class SLB4J {
         LoggingConfiguration config = null;
         try {
             config = LoggingConfiguration.load();
+            SLB4J.logInternal(LogLevel.DEBUG, "Loaded logging configuration");
         } catch (RuntimeException e) {
             SLB4J.logInternal(LogLevel.WARN, "Failed to load logging configuration, using default configuration: %s", e);
             config = LoggingConfiguration.defaultConfiguration();
         }
 
+        SLB4J.logInternal(LogLevel.TRACE, "applying logging configuration: %s", config);
         setConfiguration(config);
 
         // === wire the logging frontends
@@ -119,6 +121,8 @@ public final class SLB4J {
     }
 
     private static void wireFrontends() {
+        SLB4J.logInternal(LogLevel.TRACE, "Wiring frontends");
+
         // === JCL, LOG4J, and SLF4J
 
         // handled by SPI / in JCL: SPI-like mechanism
@@ -139,7 +143,7 @@ public final class SLB4J {
      * static initializer is triggered.
      */
     public static void init() {
-        // nothing to do - initialization is done in the static initializer
+        SLB4J.logInternal(LogLevel.TRACE, "SLB4J initialized");
     }
 
     /**
@@ -159,7 +163,8 @@ public final class SLB4J {
 
         activeConfiguration = LoggingConfiguration.copyOf(config);
 
-        SLB4J.logInternal(LogLevel.INFO, "Logging configuration updated: %s", config);
+        SLB4J.logInternal(LogLevel.INFO, "Logging configuration updated");
+        SLB4J.logInternal(LogLevel.DEBUG, "Active logging configuration: %s", activeConfiguration);
     }
 
     /**
