@@ -3,8 +3,8 @@ cabe = { id = "com.dua3.cabe", version = "4.2.0" }
 graalvm = { id = "org.graalvm.buildtools.native", version = "1.1.0" }
 jdkprovider = { id = "com.dua3.gradle.jdkprovider", version = "0.6.0" }
 jmh = { id = "me.champeau.jmh", version = "0.7.3" }
-jreleaser = { id = "org.jreleaser", version = "1.23.0" }
-spotbugs = { id = "com.github.spotbugs", version = "6.5.1" }
+jreleaser = { id = "org.jreleaser", version = "1.24.0" }
+spotbugs = { id = "com.github.spotbugs", version = "6.5.4" }
 versions = { id = "com.github.ben-manes.versions", version = "0.54.0" }
 
 [versions]
@@ -13,7 +13,7 @@ jmh = "1.37"
 jackson = "3.1.2"
 jspecify = "1.0.0"
 junit-bom = "6.0.3"
-log4j = "2.25.4"
+log4j = "2.26.0"
 logback = "1.5.25"
 slf4j = "2.0.17"
 
