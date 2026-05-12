@@ -24,6 +24,7 @@ import java.io.IOException;
 import java.io.PrintStream;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,6 +33,7 @@ import java.util.stream.Stream;
 /**
  * Utility class for logging operations.
  */
+@SuppressWarnings("java:S106") // Writing to System.err is intentional
 public final class SLB4J {
 
     private SLB4J() { /* utility class */ }
@@ -44,11 +46,37 @@ public final class SLB4J {
 
     private static final Map<String, String> LOADED_PLUGINS = new ConcurrentHashMap<>();
 
-    private static LogLevel statusLevel = LogLevel.WARN;
-    private static String statusName = "";
+    private static final LogLevel INITIAL_STATUS_LEVEL;
+
+    private static LogLevel statusLevel;
+    private static String statusName = "SLB4J";
     private static String statusDest = "err";
 
     static {
+        // initialize the status logger level
+        INITIAL_STATUS_LEVEL = Optional.ofNullable(System.getProperty("slb4j.statusLoggerLevel", System.getProperty("SLB4J_STATUS_LOGGER_LEVEL")))
+                .map(lvl -> {
+                    try {
+                        return LogLevel.valueOf(lvl);
+                    } catch (Exception e) {
+                        System.err.println("Invalid slb4j.statusLoggerLevel value: " + lvl);
+                        return null;
+                    }
+                })
+                        .or( () -> Optional.ofNullable(System.getProperty("log4j2.statusLoggerLevel", System.getProperty("LOG4J_STATUS_LOGGER_LEVEL")))
+                        .map(log4jLevel -> switch (log4jLevel) {
+                                    case "TRACE" -> LogLevel.TRACE;
+                                    case "DEBUG" -> LogLevel.DEBUG;
+                                    case "INFO" -> LogLevel.INFO;
+                                    case "WARN" -> LogLevel.WARN;
+                                    case "ERROR", "FATAL" -> LogLevel.ERROR;
+                                    case null -> null;
+                                    default -> { System.err.println("Invalid log4j2.statusLoggerLevel value: " + log4jLevel); yield null; }
+                                })
+                        ).orElse(null);
+
+        statusLevel = INITIAL_STATUS_LEVEL != null ? INITIAL_STATUS_LEVEL : LogLevel.WARN;
+
         // === check classpath pollution
         record ClassInfo(String framework, String className, String type, String description) {}
 
@@ -210,6 +238,10 @@ public final class SLB4J {
      * @param level the logging level to be set. Must be a value from the {@code LogLevel} enumeration.
      */
     public static void setStatusLevel(LogLevel level) {
+        if (INITIAL_STATUS_LEVEL != null) {
+            SLB4J.logInternal(LogLevel.WARN, "status level set in environment, ignoring provided status level: %s", level);
+            return;
+        }
         statusLevel = level;
     }
 
