@@ -31,6 +31,7 @@ import java.nio.file.Paths;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.SequencedCollection;
@@ -167,7 +168,7 @@ public final class LoggingConfiguration {
                 // Only register if it's a property file to avoid errors on XML/JSON paths
                 if (trimmed.endsWith(".properties")) {
                     if (checkFilesystem) CONFIG_PARSERS.add(new ConfigFileMeta(trimmed, ConfigFileStorage.FILE, ConfigParserLog4jProperties::new));
-                    if (checkClasspath) CONFIG_PARSERS.add(new ConfigFileMeta(trimmed, ConfigFileStorage.FILE, ConfigParserLog4jProperties::new));
+                    if (checkClasspath) CONFIG_PARSERS.add(new ConfigFileMeta(trimmed, ConfigFileStorage.CLASSPATH, ConfigParserLog4jProperties::new));
                 }
             }
         }
@@ -354,7 +355,7 @@ public final class LoggingConfiguration {
      */
     public static LoggingConfiguration load() {
         return CONFIG_PARSERS.stream().map(cp -> {
-            SLB4J.logInternal(LogLevel.TRACE, "Trying to load %s", cp.fileName());
+            SLB4J.logInternal(LogLevel.TRACE, "Trying to load %s from %s", cp.fileName(), cp.storage().name().toLowerCase(Locale.ROOT));
             try (InputStream in = cp.storage().getInputStream(cp.fileName())) {
                 if (in != null) {
                     return cp.parserSupplier().get().parse(in);
