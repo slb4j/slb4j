@@ -151,7 +151,7 @@ public final class UniversalDispatcher implements LogDispatcher {
     @Override
     public void setFilter(LoggerNamePrefixFilter filter) {
         ROOT_FILTER_VH.setRelease(this, filter);
-        SLB4J.logInternal(LogLevel.INFO, "Global dispatcher filter set to: {}", filter);
+        SLB4J.logInternal(LogLevel.INFO, "Global dispatcher filter set to: %s", filter);
     }
 
     @Override

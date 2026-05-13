@@ -270,7 +270,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
                 closeFile();
                 rotate();
             } catch (IOException e) {
-                SLB4J.logInternal(LogLevel.WARN, "Rotation failed: {0}", e);
+                SLB4J.logInternal(LogLevel.WARN, "Rotation failed", e);
             } finally {
                 openFile();
             }

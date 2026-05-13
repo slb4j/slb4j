@@ -124,7 +124,7 @@ class LeaseImpl<T> implements ResourcePool.Lease<T> {
         try {
             releaser.accept(resource);
         } catch (RuntimeException e) {
-            SLB4J.logInternal(LogLevel.WARN, "Failed to release resource, exception ignored: {}", e.getMessage(), e);
+            SLB4J.logInternal(LogLevel.WARN, "Failed to release resource, exception ignored: %s", e);
         } finally {
             leased = false;
         }
