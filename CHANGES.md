@@ -1,3 +1,11 @@
+Version 0.9.0
+-------------
+
+- improved status logger configuration
+- support `file:` and `classpath:` prefixes for log configuration properties file
+- fix configuration files not being loaded from jar resources
+- improved logging
+
 Version 0.8.1
 -------------
 
