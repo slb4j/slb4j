@@ -43,7 +43,7 @@ public final class LoggerNamePrefixFilter implements LogFilter {
     public LoggerNamePrefixFilter(String name) {
         this.name = name;
         this.level = LogLevel.TRACE;
-        this.levelMap = new LevelMap(level);
+        this.levelMap = new LevelMap();
     }
 
     private LoggerNamePrefixFilter(String name, LogLevel level, LevelMap levelMap) {
@@ -96,12 +96,35 @@ public final class LoggerNamePrefixFilter implements LogFilter {
     }
 
     /**
-     * Retrieves the log level associated with the specified logger name.
+     * Retrieves the effective log level for the specified logger name.
+     * <p>
+     * <strong>Note:</strong> This method takes into account both the global log level and
+     * the configured log level for the specified logger:
+     * <ul>
+     * <li>If no level was configured for the logger or one of it's ancestor nodes, the global log level is returned.
+     * <li>Otherwise, the more severe level of the global and the configured level is returned.
+     * </ul>
+     *
+     * @param loggerName the name of the logger whose log level is to be retrieved
+     * @return the effective log level for the specified logger.
+     */
+    public LogLevel getLevel(String loggerName) {
+        return switch (this.level) {
+            case ERROR -> LogLevel.ERROR;
+            default -> {
+                LogLevel mapped = levelMap.level(loggerName);
+                yield mapped == null ? this.level : LogLevel.max(this.level, mapped);
+            }
+        };
+    }
+
+    /**
+     * Retrieves the configured log level for the specified logger name.
      *
      * @param loggerName the name of the logger whose log level is to be retrieved
      * @return the log level assigned to the specified logger.
      */
-    public LogLevel getLevel(String loggerName) {
+    public @Nullable LogLevel getConfiguredLevel(String loggerName) {
         return levelMap.level(loggerName);
     }
 

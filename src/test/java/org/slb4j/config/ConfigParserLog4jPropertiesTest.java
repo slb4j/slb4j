@@ -135,8 +135,10 @@ class ConfigParserLog4jPropertiesTest {
 
                             LoggerNamePrefixFilter loggerFilter = config.getRootFilter();
                             assertNotNull(loggerFilter, "Logger filter should not be null when loggers are defined");
-                            assertEquals(LogLevel.DEBUG, loggerFilter.getLevel("com.foo"), "Level for 'com.foo' should be DEBUG");
-                            assertEquals(LogLevel.ERROR, loggerFilter.getLevel("com.bar"), "Level for 'com.bar' should be ERROR");
+                            assertEquals(LogLevel.DEBUG, loggerFilter.getConfiguredLevel("com.foo"), "Level for 'com.foo' should be DEBUG");
+                            assertEquals(LogLevel.ERROR, loggerFilter.getConfiguredLevel("com.bar"), "Level for 'com.bar' should be ERROR");
+                            assertEquals(LogLevel.ERROR, loggerFilter.getLevel("com.foo"), "Effective level for 'com.foo' should be ERROR");
+                            assertEquals(LogLevel.ERROR, loggerFilter.getLevel("com.bar"), "Effective level for 'com.bar' should be ERROR");
                         }
                 ),
                 new TestCase("Appender with compound filter (manual combine)", """

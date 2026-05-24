@@ -38,5 +38,27 @@ public enum LogLevel {
     /**
      * ERROR log level.
      */
-    ERROR
+    ERROR;
+
+    /**
+     * Compares two log levels and returns the higher (more severe) level.
+     *
+     * @param level1 the first log level to compare
+     * @param level2 the second log level to compare
+     * @return the more severe of the two log levels
+     */
+    public static LogLevel max(LogLevel level1, LogLevel level2) {
+        return level1.ordinal() > level2.ordinal() ? level1 : level2;
+    }
+
+    /**
+     * Compares two log levels and returns the lower (less severe) level.
+     *
+     * @param level1 the first log level to compare
+     * @param level2 the second log level to compare
+     * @return the less severe of the two log levels
+     */
+    public static LogLevel min(LogLevel level1, LogLevel level2) {
+        return level1.ordinal() < level2.ordinal() ? level1 : level2;
+    }
 }

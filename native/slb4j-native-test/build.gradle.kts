@@ -15,8 +15,8 @@
  */
 plugins {
     application
-    alias(libs.plugins.jdkprovider)
-    alias(libs.plugins.graalvm)
+    alias(libs.plugins.jdkprovider.plugin)
+    alias(libs.plugins.graalvm.plugin)
 }
 
 jdk {

@@ -83,7 +83,7 @@ class ReentrantLoggingTest {
         
         logger.info("Outer log message: {}", reentrant);
         
-        assertEquals(2, messages.size(), "Should have 2 messages, but got: " + messages);
+        assertEquals(2, messages.size(), "Should have 2 messages, but got: " + messages.size());
         assertEquals("Inner log message", messages.get(0));
         assertTrue(messages.get(1).contains("Outer log message: ReentrantObject"));
     }
@@ -95,7 +95,7 @@ class ReentrantLoggingTest {
         
         logger.atInfo().log(() -> "Outer log message: " + reentrant);
         
-        assertEquals(2, messages.size(), "Should have 2 messages, but got: " + messages);
+        assertEquals(2, messages.size(), "Should have 2 messages, but got: " + messages.size());
         assertEquals("Inner log message", messages.get(0));
         assertTrue(messages.get(1).contains("Outer log message: ReentrantObject"));
     }
@@ -111,7 +111,7 @@ class ReentrantLoggingTest {
         
         logger.info("Outer log message: " + reentrant);
         
-        assertEquals(2, messages.size(), "Should have 2 messages, but got: " + messages);
+        assertEquals(2, messages.size(), "Should have 2 messages, but got: " + messages.size());
         assertEquals("Inner log message", messages.get(0));
         assertTrue(messages.get(1).contains("Outer log message: ReentrantObject"));
     }
@@ -127,7 +127,7 @@ class ReentrantLoggingTest {
         
         logger.info(() -> "Outer log message: " + reentrant);
         
-        assertEquals(2, messages.size(), "Should have 2 messages, but got: " + messages);
+        assertEquals(2, messages.size(), "Should have 2 messages, but got: " + messages.size());
         assertEquals("Inner log message", messages.get(0));
         assertTrue(messages.get(1).contains("Outer log message: ReentrantObject"));
     }
@@ -139,7 +139,7 @@ class ReentrantLoggingTest {
         
         logger.info("Outer log message: " + reentrant);
         
-        assertEquals(2, messages.size(), "Should have 2 messages, but got: " + messages);
+        assertEquals(2, messages.size(), "Should have 2 messages, but got: " + messages.size());
         assertEquals("Inner log message", messages.get(0));
         assertTrue(messages.get(1).contains("Outer log message: ReentrantObject"));
     }

@@ -17,7 +17,7 @@ plugins {
     id("java-library")
     id("maven-publish")
     id("signing")
-    alias(libs.plugins.cabe)
+    alias(libs.plugins.cabe.plugin)
 }
 
 java {

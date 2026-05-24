@@ -49,9 +49,8 @@ final class LevelMap {
      *
      * @param rootLevel the {@code LogLevel} to be assigned to the root node of the map.
      */
-    LevelMap(LogLevel rootLevel) {
+    LevelMap() {
         this.root = new Node();
-        this.root.setLevel(rootLevel);
     }
 
     private LevelMap(Node root) {
@@ -72,8 +71,18 @@ final class LevelMap {
      *
      * @return the root {@code Node} of the {@code LevelMap}.
      */
-    public Node getRoot() {
+    Node getRoot() {
         return root;
+    }
+
+    /**
+     * Updates the root node of the hierarchical structure to use the specified log level.
+     * This method is typically used to set the default log level for all loggers in the hierarchy.
+     *
+     * @param level the {@code LogLevel} to assign to the root node; can be {@code null} to clear the level
+     */
+    public void setRootLevel(@Nullable LogLevel level) {
+        root.setLevel(level);
     }
 
     /**
@@ -208,14 +217,13 @@ final class LevelMap {
      * intermediate nodes as necessary within the logger hierarchy.
      *
      * @param loggerName the hierarchical name of the logger for which the log level is being set;
-     *                   must not end with a '.' character
+     *                   must not end with a '.' character, must not be blank
      * @param level      the {@code LogLevel} to associate with the specified logger name
      * @throws IllegalArgumentException if the {@code loggerName} ends with a '.' character
      */
     public void put(String loggerName, LogLevel level) {
-        if (loggerName.isEmpty()) {
-            root.setLevel(level);
-            return;
+        if (loggerName.isBlank()) {
+            throw new IllegalArgumentException("loggerName must not be blank");
         }
         if (loggerName.endsWith(".")) {
             throw new IllegalArgumentException("loggerName must not end with '.'");
@@ -239,11 +247,9 @@ final class LevelMap {
      * @return the {@link LogLevel} associated with the class name or its nearest ancestor;
      *         defaults to the root level if no specific level is found
      */
-    public LogLevel level(String className) {
+    public @Nullable LogLevel level(String className) {
         Node current = root;
         LogLevel level = root.getLevel();
-
-        assert level != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
 
         String[] parts = getSegments(className);
         for (int i = 0; i < parts.length; i++) {

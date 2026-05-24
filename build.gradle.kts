@@ -20,11 +20,11 @@ plugins {
     id("java-library")
     id("maven-publish")
     id("signing")
-    alias(libs.plugins.jdkprovider)
-    alias(libs.plugins.cabe)
-    alias(libs.plugins.spotbugs)
-    alias(libs.plugins.versions)
-    alias(libs.plugins.jreleaser)
+    alias(libs.plugins.jdkprovider.plugin)
+    alias(libs.plugins.cabe.plugin)
+    alias(libs.plugins.spotbugs.plugin)
+    alias(libs.plugins.versions.plugin)
+    alias(libs.plugins.jreleaser.plugin)
     jacoco
 }
 

@@ -1,6 +1,6 @@
 plugins {
     id("java")
-    alias(libs.plugins.jmh)
+    alias(libs.plugins.jmh.plugin)
 }
 
 description = "Benchmark for SLB4J"

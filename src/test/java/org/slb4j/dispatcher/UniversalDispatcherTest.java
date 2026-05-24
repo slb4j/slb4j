@@ -64,18 +64,22 @@ class UniversalDispatcherTest {
         assertEquals(LogLevel.DEBUG, newFilter.getLevel());
 
         dispatcher.setLevel("com.example", LogLevel.TRACE);
-        assertEquals(LogLevel.TRACE, dispatcher.getLevel("com.example"));
-        assertEquals(LogLevel.TRACE, newFilter.getLevel("com.example"));
-
+        assertEquals(LogLevel.DEBUG, dispatcher.getLevel("com.example"));     // because global level is DEBUG
+        assertEquals(LogLevel.DEBUG, newFilter.getLevel("com.example")); // because global level is DEBUG
         // With root level DEBUG, TRACE is globally disabled
         assertFalse(dispatcher.isLevelEnabled(LogLevel.TRACE));
-
         // isEnabled checks both root level and logger specific level
-        // In LoggerNamePrefixFilter.java:
-        // return isLevelEnabled(logLevel) && logLevel.ordinal() >= getLevel(loggerName).ordinal();
-        // Since isLevelEnabled(TRACE) is false, isEnabled will be false even if logger level is TRACE.
         assertFalse(dispatcher.isEnabled("com.example", LogLevel.TRACE, null));
+        assertTrue(dispatcher.isLevelEnabled(LogLevel.DEBUG));
+        assertTrue(dispatcher.isEnabled("com.example", LogLevel.DEBUG, null));
 
+        dispatcher.setRootLevel(LogLevel.TRACE);
+        assertEquals(LogLevel.TRACE, dispatcher.getLevel("com.example"));     // should now return the configured level
+        assertEquals(LogLevel.TRACE, newFilter.getLevel("com.example")); // should now return the configured level
+        // root level was reset to TRACE
+        assertTrue(dispatcher.isLevelEnabled(LogLevel.TRACE));
+        // isEnabled checks both root level and logger specific level
+        assertTrue(dispatcher.isEnabled("com.example", LogLevel.TRACE, null));
         assertTrue(dispatcher.isLevelEnabled(LogLevel.DEBUG));
         assertTrue(dispatcher.isEnabled("com.example", LogLevel.DEBUG, null));
     }
