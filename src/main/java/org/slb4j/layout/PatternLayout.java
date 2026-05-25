@@ -26,6 +26,7 @@ import org.slb4j.support.Util;
 import org.jspecify.annotations.Nullable;
 
 import java.io.IOException;
+import java.time.DateTimeException;
 import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -33,6 +34,8 @@ import java.util.Objects;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Optional;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -1467,42 +1470,24 @@ public final class PatternLayout implements LogLayout {
                 case "Cstart" -> entries.add(new ColorStartEntry(minWidth, maxWidth, leftAlign));
                 case "Cend" -> entries.add(new ColorEndEntry(minWidth, maxWidth, leftAlign));
                 case "d" -> {
-                    ZoneId zoneId = null;
-                    Locale locale = null;
-                    String optionsOrPattern = options != null ? options : "";
+                    ZoneId[] zoneId = {null};
+                    Locale[] locale = {null};
+                    String[] optionsOrPattern = {options != null ? options : ""};
 
                     // Log4j %d{pattern}{timezone}{locale}
                     // If options is a timezone, then it's %d{timezone} (empty pattern)
-                    if (!optionsOrPattern.isEmpty() && isTimeZone(optionsOrPattern)) {
-                        try {
-                            zoneId = ZoneId.of(optionsOrPattern);
-                            optionsOrPattern = "";
-                        } catch (Exception ignored) {
-                        }
-                    }
+                    toZoneId(optionsOrPattern[0]).ifPresentOrElse(z -> {
+                        zoneId[0] = z;
+                        optionsOrPattern[0] = "";
+                    }, () -> toZoneId(secondBlock)
+                            .ifPresentOrElse(z -> zoneId[0] = z, () -> toZoneId(thirdBlock)
+                                    .ifPresent(z -> zoneId[0] = z)));
 
-                    if (secondBlock != null) {
-                        if (isTimeZone(secondBlock)) {
-                            try {
-                                zoneId = ZoneId.of(secondBlock);
-                            } catch (Exception ignored) {
-                            }
-                        } else if (!secondBlock.isEmpty()) {
-                            locale = Locale.forLanguageTag(secondBlock.replace('_', '-'));
-                        }
-                    }
+                    toLocale(thirdBlock).ifPresentOrElse( loc -> locale[0] = loc,
+                            () -> toLocale(secondBlock)
+                                    .ifPresent(loc -> locale[0] = loc));
 
-                    if (thirdBlock != null) {
-                        if (isTimeZone(thirdBlock)) {
-                            try {
-                                zoneId = ZoneId.of(thirdBlock);
-                            } catch (Exception ignored) {
-                            }
-                        } else if (!thirdBlock.isEmpty()) {
-                            locale = Locale.forLanguageTag(thirdBlock.replace('_', '-'));
-                        }
-                    }
-                    entries.add(new DateEntry(optionsOrPattern, zoneId, locale));
+                    entries.add(new DateEntry(optionsOrPattern[0], zoneId[0], locale[0]));
                 }
                 case "%%", "%" -> entries.add(new LiteralEntry("%"));
                 case "%n", "n" -> entries.add(new NewlineEntry());
@@ -1517,11 +1502,18 @@ public final class PatternLayout implements LogLayout {
         return entries;
     }
 
-    private static boolean isTimeZone(String s) {
-        if (s.isEmpty()) return false;
-        if (s.equals("Z") || s.startsWith("UTC") || s.startsWith("GMT") || s.startsWith("UT")) return true;
-        if (s.contains("/") || s.contains("+") || s.contains("-")) return true;
-            return ZoneId.getAvailableZoneIds().contains(s);
+    private static Optional<ZoneId> toZoneId(@Nullable String s) {
+        if (s == null || s.isBlank()) return Optional.empty();
+        try {
+            return Optional.of(ZoneId.of(s));
+        } catch (DateTimeException ignored) {
+            return Optional.empty();
+        }
+    }
+
+    private static Optional<Locale> toLocale(@Nullable String s) {
+        if (s == null || s.isBlank()) return Optional.empty();
+        return Optional.of(Locale.forLanguageTag(s.replace('_', '-')));
     }
 
     private static List<LogPatternEntry> parseLiterals(String literal) {
