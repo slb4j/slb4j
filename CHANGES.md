@@ -1,3 +1,10 @@
+Version 0.10.0
+--------------
+
+- update dependencies and plugins
+- improve level and filter handling
+- fix optional locale argument not being applied to custom layout patterns in some cases
+
 Version 0.9.0
 -------------
 
