@@ -45,9 +45,7 @@ public final class PatternLayout implements LogLayout {
 
     private static final String NEWLINE = System.lineSeparator();
 
-    private static final ZoneId ZONE_ID = ZoneId.systemDefault();
-
-    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)?})?(\\{([^}]+)?})?(\\{([^}]+)?})?|%%|%(?![a-zA-Z])");
+    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)})?(\\{([^}]+)})?(\\{([^}]+)})?|%%|%(?![a-zA-Z])");
 
     private static final Pattern LOGGER_PRECISION_PATTERN = Pattern.compile("^(\\d+)(\\.)?$");
 
@@ -312,7 +310,7 @@ public final class PatternLayout implements LogLayout {
      * </pre>
      */
     public static final class DefaultPatternEntry implements LogPatternEntry {
-        private TimeStampFormatter timeStampFormatter = PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, Locale.getDefault());
+        private TimeStampFormatter timeStampFormatter = PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZoneId.systemDefault(), Locale.getDefault());
         private LevelEntry levelEntry = new LevelEntry(5, 5, true);
         private LoggerEntry loggerEntry = new LoggerEntry(0, 0, false, 36, false);
 
@@ -963,8 +961,18 @@ public final class PatternLayout implements LogLayout {
      */
     public static final class DateEntry implements LogPatternEntry {
         private final String datePattern;
-        private final Locale locale;
+        private final @Nullable ZoneId zoneId;
+        private final @Nullable Locale locale;
         private final TimeStampFormatter formatter;
+
+
+        private final Locale effectiveLocale() {
+            return Objects.requireNonNullElseGet(locale, Locale::getDefault);
+        }
+
+        private final ZoneId effectiveZoneId() {
+            return Objects.requireNonNullElseGet(zoneId, ZoneId::systemDefault);
+        }
 
         /**
          * Constructs a {@code DateEntry} instance with the specified date-time pattern.
@@ -975,7 +983,7 @@ public final class PatternLayout implements LogLayout {
          *                If the pattern is empty, "HH:mm:ss" will be used as the default.
          */
         public DateEntry(String pattern) {
-            this(pattern, Locale.getDefault());
+            this(pattern, null);
         }
 
         /**
@@ -984,15 +992,27 @@ public final class PatternLayout implements LogLayout {
          * @param pattern the pattern to be used for formatting date-time values.
          * @param locale  the locale to be used for formatting.
          */
-        public DateEntry(String pattern, Locale locale) {
+        public DateEntry(String pattern, @Nullable Locale locale) {
+            this(pattern, null, locale);
+        }
+
+        /**
+         * Constructs a {@code DateEntry} instance with the specified date-time pattern, zone ID and locale.
+         *
+         * @param pattern the pattern to be used for formatting date-time values.
+         * @param zoneId  the zone ID to be used for formatting.
+         * @param locale  the locale to be used for formatting.
+         */
+        public DateEntry(String pattern, @Nullable ZoneId zoneId, @Nullable Locale locale) {
             this.datePattern = pattern;
+            this.zoneId = zoneId;
             this.locale = locale;
             this.formatter = (switch (pattern) {
-                case "ISO8601" -> PatternTimeStampFormatter.parse("yyyy-MM-dd'T'HH:mm:ss,SSS", ZONE_ID, locale);
-                case "HH:mm:ss,SSS" -> PatternTimeStampFormatter.parse("HH:mm:ss,SSS", ZONE_ID, locale);
-                case "yyyy-MM-dd HH:mm:ss,SSS" -> PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, locale);
-                case "yyyy-MM-dd HH:mm:ss" -> PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss", ZONE_ID, locale);
-                default -> PatternTimeStampFormatter.parse(pattern.isEmpty() ? "HH:mm:ss" : pattern, ZONE_ID, locale);
+                case "ISO8601" -> PatternTimeStampFormatter.parse("yyyy-MM-dd'T'HH:mm:ss,SSS", effectiveZoneId(), effectiveLocale());
+                case "HH:mm:ss,SSS" -> PatternTimeStampFormatter.parse("HH:mm:ss,SSS", effectiveZoneId(), effectiveLocale());
+                case "yyyy-MM-dd HH:mm:ss,SSS" -> PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", effectiveZoneId(), effectiveLocale());
+                case "yyyy-MM-dd HH:mm:ss" -> PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss", effectiveZoneId(), effectiveLocale());
+                default -> PatternTimeStampFormatter.parse(pattern.isEmpty() ? "HH:mm:ss" : pattern, effectiveZoneId(), effectiveLocale());
             });
         }
 
@@ -1003,7 +1023,10 @@ public final class PatternLayout implements LogLayout {
             if (!datePattern.isEmpty()) {
                 sb.append("{").append(datePattern).append("}");
             }
-            if (!locale.equals(Locale.getDefault())) {
+            if (zoneId != null) {
+                sb.append("{").append(zoneId.getId()).append("}");
+            }
+            if (locale != null) {
                 sb.append("{").append(locale.toLanguageTag()).append("}");
             }
             return sb.toString();
@@ -1043,7 +1066,7 @@ public final class PatternLayout implements LogLayout {
      * Represents a log format entry in CSV output.
      */
     public static final class CsvEntry implements LogPatternEntry {
-        TimeStampFormatter formatter = PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZONE_ID, Locale.getDefault());
+        TimeStampFormatter formatter = PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZoneId.systemDefault(), Locale.getDefault());
 
         /**
          * Constructs a new instance of the NewlineEntry class which represents a log format entry
@@ -1444,15 +1467,42 @@ public final class PatternLayout implements LogLayout {
                 case "Cstart" -> entries.add(new ColorStartEntry(minWidth, maxWidth, leftAlign));
                 case "Cend" -> entries.add(new ColorEndEntry(minWidth, maxWidth, leftAlign));
                 case "d" -> {
-                    Locale locale = Locale.getDefault();
-                    String localeStr = thirdBlock;
-                    if (localeStr == null && secondBlock != null && !isTimeZone(secondBlock)) {
-                        localeStr = secondBlock;
+                    ZoneId zoneId = null;
+                    Locale locale = null;
+                    String optionsOrPattern = options != null ? options : "";
+
+                    // Log4j %d{pattern}{timezone}{locale}
+                    // If options is a timezone, then it's %d{timezone} (empty pattern)
+                    if (!optionsOrPattern.isEmpty() && isTimeZone(optionsOrPattern)) {
+                        try {
+                            zoneId = ZoneId.of(optionsOrPattern);
+                            optionsOrPattern = "";
+                        } catch (Exception ignored) {
+                        }
                     }
-                    if (localeStr != null) {
-                        locale = Locale.forLanguageTag(localeStr.replace('_', '-'));
+
+                    if (secondBlock != null) {
+                        if (isTimeZone(secondBlock)) {
+                            try {
+                                zoneId = ZoneId.of(secondBlock);
+                            } catch (Exception ignored) {
+                            }
+                        } else if (!secondBlock.isEmpty()) {
+                            locale = Locale.forLanguageTag(secondBlock.replace('_', '-'));
+                        }
                     }
-                    entries.add(new DateEntry(options != null ? options : "", locale));
+
+                    if (thirdBlock != null) {
+                        if (isTimeZone(thirdBlock)) {
+                            try {
+                                zoneId = ZoneId.of(thirdBlock);
+                            } catch (Exception ignored) {
+                            }
+                        } else if (!thirdBlock.isEmpty()) {
+                            locale = Locale.forLanguageTag(thirdBlock.replace('_', '-'));
+                        }
+                    }
+                    entries.add(new DateEntry(optionsOrPattern, zoneId, locale));
                 }
                 case "%%", "%" -> entries.add(new LiteralEntry("%"));
                 case "%n", "n" -> entries.add(new NewlineEntry());
@@ -1471,7 +1521,7 @@ public final class PatternLayout implements LogLayout {
         if (s.isEmpty()) return false;
         if (s.equals("Z") || s.startsWith("UTC") || s.startsWith("GMT") || s.startsWith("UT")) return true;
         if (s.contains("/") || s.contains("+") || s.contains("-")) return true;
-        return ZoneId.getAvailableZoneIds().contains(s);
+            return ZoneId.getAvailableZoneIds().contains(s);
     }
 
     private static List<LogPatternEntry> parseLiterals(String literal) {
