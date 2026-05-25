@@ -207,8 +207,9 @@ class LogPatternLog4jCompatibilityTest {
             "[%d{EEEE, MMMM dd, yyyy - hh:mm a}] %-5p: %m%n",
             "%d{dd-MMM hh:mm:ss a} %-5p %c{1} - %m%n",
             // patterns with locale
-            "%d{dd-MMMM-yyyy}{de-DE} %p %m%n",
-            "%d{EEEE, dd. MMMM yyyy}{de-DE} %p %m%n",
+// XXX - fails because unsupported by Log4J2: "%d{dd-MMMM-yyyy}{de-DE} %p %m%n",
+// XXX - fails because unsupported by Log4J2: "%d{EEEE, dd. MMMM yyyy}{de-DE} %p %m%n",
+            "%d{dd-MMMM-yyyy}{GMT} %p %m%n",
             "%d{dd-MMMM-yyyy}{GMT}{de-DE} %p %m%n"
     })
     void testPatternCompatibility(String pattern) {
