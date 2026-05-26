@@ -342,12 +342,12 @@ public final class FxLogPane extends BorderPane implements LogPane {
                 tfLoggerName,
                 new Label(texts.labelFilterLogMessage()),
                 tfMessageContent,
-                new Separator(Orientation.HORIZONTAL),
+                new Separator(Orientation.VERTICAL),
                 new Label(texts.labelSearchText()),
                 tfSearchText,
                 btnSearchUp,
                 btnSearchDown,
-                new Separator(Orientation.HORIZONTAL),
+                new Separator(Orientation.VERTICAL),
                 btnClear
         );
 
