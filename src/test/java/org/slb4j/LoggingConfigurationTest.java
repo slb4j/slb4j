@@ -231,8 +231,8 @@ class LoggingConfigurationTest {
         // Verify deep copy of logger filter
         copy.getRootFilter().setLevel("com.example", LogLevel.ERROR);
         assertNotEquals(config.getRootFilter().getLevel("com.example"), copy.getRootFilter().getLevel("com.example"));
-        assertEquals(LogLevel.TRACE, config.getRootFilter().getConfiguredLevel("com.example"));
-        assertEquals(LogLevel.ERROR, copy.getRootFilter().getConfiguredLevel("com.example"));
+        assertEquals(LogLevel.TRACE, config.getRootFilter().getLevel("com.example"));
+        assertEquals(LogLevel.ERROR, copy.getRootFilter().getLevel("com.example"));
 
         // Verify handlers and filters maps are copied
         config.addHandler("test-handler", new org.slb4j.handler.ConsoleHandler("test", System.err, false));

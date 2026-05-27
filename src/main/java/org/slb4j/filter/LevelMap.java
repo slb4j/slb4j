@@ -19,8 +19,6 @@ import org.slb4j.LogLevel;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.support.Util;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
 import java.util.Map;
 import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
@@ -35,7 +33,10 @@ import java.util.concurrent.ConcurrentHashMap;
  * This allows for retrieval of the most specific log level associated with a given logger name.
  */
 final class LevelMap {
-    public static final String ROOT_LEVEL_SHOULD_NEVER_BE_NULL = "internal error! Root level should never be null.";
+    public static final String ROOT_LEVEL_NOT_INITIALIZED = "internal error! Root level should alwazs be initialized.";
+
+    // The minimum log level that is configured for anz node
+    private int minLevel;
 
     // The root level handles the "empty" or "root" logger
     private final Node root;
@@ -47,14 +48,39 @@ final class LevelMap {
      * This initializes the root node of the map with the given {@code rootLevel}.
      * The class is used to manage log levels hierarchically across various loggers.
      *
-     * @param rootLevel the {@code LogLevel} to be assigned to the root node of the map.
+     * @param rootLevel the level to be assigned to the root node of the map.
      */
-    LevelMap() {
-        this.root = new Node();
+    LevelMap(int rootLevel) {
+        this(new Node(rootLevel));
     }
 
+    /**
+     * Private constructor for the {@code LevelMap} class.
+     * Initializes the hierarchical structure with the specified root node.
+     * This constructor enforces that the root node must have a non-null level.
+     *
+     * @param root the root {@code Node} of the hierarchical structure;
+     *             must have a non-null log level
+     * @throws AssertionError if the root node's level is {@code null}
+     */
     private LevelMap(Node root) {
         this.root = root;
+        this.minLevel = root.level;
+    }
+
+    /**
+     * Updates the minimum log level based on the change in log levels.
+     *
+     * @param oldLevel the previous log level before the change, which may be {@code null} if no prior level exists
+     * @param newLevel the new log level after the change, which cannot be {@code null}
+     */
+    private void levelChanged(int oldLevel, int newLevel) {
+        if (newLevel >= 0 && newLevel < minLevel) {
+            minLevel = newLevel;
+        } else if (newLevel > minLevel && oldLevel >= 0 && oldLevel == minLevel) {
+            minLevel = rules().values().stream().mapToInt(Integer::intValue).min().orElse(minLevel);
+        }
+        assert minLevel == rules().values().stream().mapToInt(Integer::intValue).min().orElse(-1);
     }
 
     /**
@@ -81,8 +107,19 @@ final class LevelMap {
      *
      * @param level the {@code LogLevel} to assign to the root node; can be {@code null} to clear the level
      */
-    public void setRootLevel(@Nullable LogLevel level) {
+    public void setRootLevel(int level) {
+        int oldLevel = root.level;
         root.setLevel(level);
+        levelChanged(oldLevel, level);
+    }
+
+    /**
+     * Retrieves the log level of the root node in the hierarchical structure managed by this instance of {@code LevelMap}.
+     *
+     * @return the {@code LogLevel} of the root node, or {@code null} if the root node does not have a defined level.
+     */
+    public int getRootLevel() {
+        return root.getLevel();
     }
 
     /**
@@ -95,11 +132,11 @@ final class LevelMap {
      * @return a map containing logger name to log level mappings, where the keys are logger
      *         names and the values are their corresponding {@code LogLevel}.
      */
-    public Map<String, LogLevel> rules() {
-        Map<String, LogLevel> rules = new java.util.LinkedHashMap<>();
+    public Map<String, Integer> rules() {
+        Map<String, Integer> rules = new java.util.LinkedHashMap<>();
 
-        LogLevel rootLevel = root.getLevel();
-        assert rootLevel != null : ROOT_LEVEL_SHOULD_NEVER_BE_NULL;
+        int rootLevel = root.getLevel();
+        assert rootLevel >= 0 : ROOT_LEVEL_NOT_INITIALIZED;
         rules.put("", rootLevel);
 
         // traverse the complete tree and add all rules to the map
@@ -114,18 +151,22 @@ final class LevelMap {
      * @param prefix the accumulated logger name prefix up to this node
      * @param node   the current node being traversed
      */
-    private static void traverseAndCollectRules(Map<String, LogLevel> rules, String prefix, Node node) {
+    private static void traverseAndCollectRules(Map<String, Integer> rules, String prefix, Node node) {
         for (Map.Entry<String, Node> entry : node.children.entrySet()) {
             String loggerName = prefix.isEmpty() ? entry.getKey() : prefix + "." + entry.getKey();
             Node childNode = entry.getValue();
 
-            LogLevel lvl = childNode.getLevel();
-            if (lvl != null) {
+            int lvl = childNode.getLevel();
+            if (lvl >= 0) {
                 rules.put(loggerName, lvl);
             }
 
             traverseAndCollectRules(rules, loggerName, childNode);
         }
+    }
+
+    public int getMinLevel() {
+        return minLevel;
     }
 
     /**
@@ -138,17 +179,10 @@ final class LevelMap {
      */
     public static final class Node {
         final Map<String, Node> children = new ConcurrentHashMap<>();
-        @Nullable LogLevel level = null;
+        volatile int level = -1;
 
-        static final VarHandle LEVEL_VH;
-
-        static {
-            try {
-                MethodHandles.Lookup l = MethodHandles.lookup();
-                LEVEL_VH = l.findVarHandle(Node.class, "level", LogLevel.class);
-            } catch (ReflectiveOperationException e) {
-                throw new ExceptionInInitializerError(e);
-            }
+        private Node(int level) {
+            this.level = level;
         }
 
         /**
@@ -157,8 +191,7 @@ final class LevelMap {
          * @return a new {@code Node} instance that is a deep copy of this one.
          */
         public Node copy() {
-            Node newNode = new Node();
-            newNode.setLevel(getLevel());
+            Node newNode = new Node(getLevel());
             for (Map.Entry<String, Node> entry : children.entrySet()) {
                 newNode.children.put(entry.getKey(), entry.getValue().copy());
             }
@@ -176,8 +209,8 @@ final class LevelMap {
             return Objects.hash(children, getLevel());
         }
 
-        private @Nullable LogLevel getLevel() {
-            return (LogLevel) LEVEL_VH.getAcquire(this);
+        private int getLevel() {
+            return level;
         }
 
         @Override
@@ -194,8 +227,8 @@ final class LevelMap {
          * @return the same {@code StringBuilder} instance, appended with the string representation of the node
          */
         public StringBuilder appendTo(StringBuilder sb) {
-            LogLevel lvl = getLevel();
-            sb.append(lvl == null ? "null" : lvl.name());
+            int lvl = getLevel();
+            sb.append(lvl);
             if (!children.isEmpty()) {
                 for (Map.Entry<String, Node> e : children.entrySet()) {
                     sb.append(" , {").append(e.getKey()).append(" -> ");
@@ -206,8 +239,8 @@ final class LevelMap {
             return sb;
         }
 
-        public void setLevel(@Nullable LogLevel level) {
-            Node.LEVEL_VH.setRelease(this, level);
+        public void setLevel(int level) {
+            this.level = level;
         }
     }
 
@@ -221,7 +254,7 @@ final class LevelMap {
      * @param level      the {@code LogLevel} to associate with the specified logger name
      * @throws IllegalArgumentException if the {@code loggerName} ends with a '.' character
      */
-    public void put(String loggerName, LogLevel level) {
+    public void put(String loggerName, int level) {
         if (loggerName.isBlank()) {
             throw new IllegalArgumentException("loggerName must not be blank");
         }
@@ -232,11 +265,18 @@ final class LevelMap {
         Node current = root;
         String[] segments = getSegments(loggerName);
         for (String segment : segments) {
-            current = current.children.computeIfAbsent(segment, k -> new Node());
+            current = current.children.computeIfAbsent(segment, k -> new Node(-1));
         }
-        Node.LEVEL_VH.setRelease(current, level);
+        int oldLevel = current.level;
+
+        current.level = level;
+
+        levelChanged(oldLevel, level);
     }
 
+    public boolean isEnabled(String loggerName, int level) {
+        return level >= minLevel && level >= level(loggerName);
+    }
     /**
      * Retrieves the {@link LogLevel} associated with the specified class name by traversing
      * the hierarchical structure. If no specific log level is found for the given class name,
@@ -247,9 +287,9 @@ final class LevelMap {
      * @return the {@link LogLevel} associated with the class name or its nearest ancestor;
      *         defaults to the root level if no specific level is found
      */
-    public @Nullable LogLevel level(String className) {
+    public int level(String className) {
         Node current = root;
-        LogLevel level = root.getLevel();
+        int level = root.getLevel();
 
         String[] parts = getSegments(className);
         for (int i = 0; i < parts.length; i++) {
@@ -260,8 +300,8 @@ final class LevelMap {
                 return level;
             }
 
-            LogLevel currentLevel = current.getLevel();
-            if (currentLevel != null) {
+            int currentLevel = current.getLevel();
+            if (currentLevel >= 0) {
                 level = currentLevel;
             }
         }

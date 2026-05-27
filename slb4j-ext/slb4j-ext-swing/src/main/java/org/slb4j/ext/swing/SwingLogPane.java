@@ -427,6 +427,7 @@ public final class SwingLogPane extends JPanel implements LogPane {
     private static LogBuffer createBuffer(int bufferSize) {
         LogBuffer buffer = new LogBuffer("Log Buffer", bufferSize);
         LoggerNamePrefixFilter filter = new LoggerNamePrefixFilter("filter");
+        filter.setRootLevel(LogLevel.TRACE);
         filter.setLevel("javafx", LogLevel.INFO);
         buffer.setFilter(filter);
         SLB4J.getDispatcher().addLogHandler(buffer);

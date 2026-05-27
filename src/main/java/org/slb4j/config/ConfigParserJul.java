@@ -64,9 +64,9 @@ public class ConfigParserJul implements ConfigParser {
         // Root level: key ".level"
         String rootLevel = props.getProperty(".level");
         if (rootLevel != null) {
-            nameFilter.setLevel(mapJulLevel(rootLevel));
+            nameFilter.setRootLevel(mapJulLevel(rootLevel));
         } else {
-            nameFilter.setLevel(LogLevel.INFO); // JUL default
+            nameFilter.setRootLevel(LogLevel.INFO); // JUL default
         }
 
         // Per-logger levels: keys like "com.example.level=FINE"

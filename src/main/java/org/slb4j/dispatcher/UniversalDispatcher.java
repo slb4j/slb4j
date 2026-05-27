@@ -161,12 +161,12 @@ public final class UniversalDispatcher implements LogDispatcher {
 
     @Override
     public LogLevel getRootLevel() {
-        return getFilter().getLevel();
+        return getFilter().getRootLevel();
     }
 
     @Override
     public void setRootLevel(LogLevel level) {
-        getFilter().setLevel(level);
+        getFilter().setRootLevel(level);
     }
 
     @Override

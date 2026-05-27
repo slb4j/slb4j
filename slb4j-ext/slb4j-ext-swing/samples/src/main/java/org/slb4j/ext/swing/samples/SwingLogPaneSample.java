@@ -15,6 +15,9 @@
  */
 package org.slb4j.ext.swing.samples;
 
+import org.slb4j.LogDispatcher;
+import org.slb4j.LogLevel;
+import org.slb4j.SLB4J;
 import org.slb4j.ext.swing.SwingLogPane;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -66,6 +69,12 @@ public class SwingLogPaneSample {
 
     @SuppressWarnings("BusyWait")
     private void startLoggingThreads() {
+        LogDispatcher dispatcher = SLB4J.getDispatcher();
+        dispatcher.setLevel("SLF4J", LogLevel.TRACE);
+        dispatcher.setLevel("LOG4J", LogLevel.TRACE);
+        dispatcher.setLevel("JCL", LogLevel.TRACE);
+        dispatcher.setLevel("JUL", LogLevel.TRACE);
+
         // start threads
         final int numberOfImplementations = 4;
         for (final int implementation : IntStream.range(0, numberOfImplementations).toArray()) {

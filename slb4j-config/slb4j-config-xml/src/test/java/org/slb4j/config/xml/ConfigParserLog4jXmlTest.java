@@ -40,9 +40,7 @@ class ConfigParserLog4jXmlTest {
             assertNotNull(config.getHandler("STDOUT").getFilter());
 
             // the configured level is DEBUG
-            assertEquals(LogLevel.DEBUG, config.getRootFilter().getConfiguredLevel("org.slb4j.test"));
-            // the global level was set to INFO, the effective level is the more severe of the configured DEBUG and global level
-            assertEquals(LogLevel.INFO, config.getRootFilter().getLevel("org.slb4j.test"));
+            assertEquals(LogLevel.DEBUG, config.getRootFilter().getLevel("org.slb4j.test"));
         }
     }
 }

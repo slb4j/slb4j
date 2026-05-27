@@ -15,6 +15,8 @@
  */
 package org.slb4j.ext.fx.samples;
 
+import org.slb4j.LogDispatcher;
+import org.slb4j.LogLevel;
 import org.slb4j.SLB4J;
 import org.slb4j.ext.fx.FxLogPane;
 import javafx.application.Application;
@@ -50,7 +52,6 @@ public class FxLogPaneSample extends Application {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        SLB4J.setRootLevel(org.slb4j.LogLevel.TRACE);
         launch(args);
     }
 
@@ -75,6 +76,12 @@ public class FxLogPaneSample extends Application {
 
     @SuppressWarnings("BusyWait")
     private void startLoggingThreads() {
+        LogDispatcher dispatcher = SLB4J.getDispatcher();
+        dispatcher.setLevel("SLF4J", LogLevel.TRACE);
+        dispatcher.setLevel("LOG4J", LogLevel.TRACE);
+        dispatcher.setLevel("JCL", LogLevel.TRACE);
+        dispatcher.setLevel("JUL", LogLevel.TRACE);
+
         // start threads
         final int numberOfImplementations = 4;
         for (final int implementation : IntStream.range(0, numberOfImplementations).toArray()) {

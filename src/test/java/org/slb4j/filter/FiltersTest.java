@@ -45,9 +45,8 @@ class FiltersTest {
     @Test
     void testLoggerNamePrefixFilter() {
         LoggerNamePrefixFilter filter = new LoggerNamePrefixFilter("test");
-        filter.setLevel(LogLevel.TRACE); // Set global to TRACE to test specific levels
         filter.setLevel("com.dua3", LogLevel.DEBUG);
-        filter.setLevel("slb4j", LogLevel.TRACE);
+        filter.setLevel("org.slb4j", LogLevel.TRACE);
         filter.setLevel("org.apache", LogLevel.WARN);
 
         // Global level check
@@ -62,7 +61,7 @@ class FiltersTest {
         assertTrue(filter.isEnabled("org.apache.log4j.Logger", LogLevel.WARN, ""));
         assertFalse(filter.isEnabled("org.apache.log4j.Logger", LogLevel.INFO, ""));
 
-        assertTrue(filter.isEnabled("other.package.Class", LogLevel.TRACE, ""));
+        assertFalse(filter.isEnabled("other.package.Class", LogLevel.WARN, ""));
     }
 
     @ParameterizedTest

@@ -83,7 +83,7 @@ public final class LoggingConfiguration {
      *         configured in the logging system.
      */
     public LogLevel getRootLevel() {
-        return rootFilter.getLevel();
+        return rootFilter.getRootLevel();
     }
 
     /**
@@ -321,7 +321,7 @@ public final class LoggingConfiguration {
      * Default constructor.
      */
     public LoggingConfiguration() {
-        rootFilter.setLevel(LogLevel.ERROR);
+        rootFilter.setRootLevel(LogLevel.ERROR);
         filters.put("", rootFilter);
     }
 
@@ -472,7 +472,7 @@ public final class LoggingConfiguration {
      *                 the threshold for which log messages are allowed
      */
     public void setRootLevel(LogLevel logLevel) {
-        rootFilter.setLevel(logLevel);
+        rootFilter.setRootLevel(logLevel);
     }
 
     /**

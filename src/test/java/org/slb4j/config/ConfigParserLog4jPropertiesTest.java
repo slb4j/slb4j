@@ -135,9 +135,7 @@ class ConfigParserLog4jPropertiesTest {
 
                             LoggerNamePrefixFilter loggerFilter = config.getRootFilter();
                             assertNotNull(loggerFilter, "Logger filter should not be null when loggers are defined");
-                            assertEquals(LogLevel.DEBUG, loggerFilter.getConfiguredLevel("com.foo"), "Level for 'com.foo' should be DEBUG");
-                            assertEquals(LogLevel.ERROR, loggerFilter.getConfiguredLevel("com.bar"), "Level for 'com.bar' should be ERROR");
-                            assertEquals(LogLevel.ERROR, loggerFilter.getLevel("com.foo"), "Effective level for 'com.foo' should be ERROR");
+                            assertEquals(LogLevel.DEBUG, loggerFilter.getLevel("com.foo"), "Effective level for 'com.foo' should be ERROR");
                             assertEquals(LogLevel.ERROR, loggerFilter.getLevel("com.bar"), "Effective level for 'com.bar' should be ERROR");
                         }
                 ),
@@ -326,7 +324,7 @@ class ConfigParserLog4jPropertiesTest {
                             LogFilter rootFilter = config.getRootFilter();
                             assertNotNull(rootFilter, "Root filter should be present");
                             assertTrue(rootFilter.isLevelEnabled(LogLevel.INFO), "LogLevel INFO should be enabled in root filter");
-                            assertFalse(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should not be enabled in root filter");
+                            assertTrue(rootFilter.isLevelEnabled(LogLevel.DEBUG), "LogLevel DEBUG should not be enabled in root filter");
                         }
                 ),
                 new TestCase("Baeldung - 6. Syntax of the log4j2.properties", """

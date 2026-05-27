@@ -61,14 +61,9 @@ class UniversalDispatcherTest {
 
         dispatcher.setRootLevel(LogLevel.DEBUG);
         assertEquals(LogLevel.DEBUG, dispatcher.getRootLevel());
-        assertEquals(LogLevel.DEBUG, newFilter.getLevel());
+        assertEquals(LogLevel.DEBUG, newFilter.getRootLevel());
 
-        dispatcher.setLevel("com.example", LogLevel.TRACE);
-        assertEquals(LogLevel.DEBUG, dispatcher.getLevel("com.example"));     // because global level is DEBUG
-        assertEquals(LogLevel.DEBUG, newFilter.getLevel("com.example")); // because global level is DEBUG
-        // With root level DEBUG, TRACE is globally disabled
         assertFalse(dispatcher.isLevelEnabled(LogLevel.TRACE));
-        // isEnabled checks both root level and logger specific level
         assertFalse(dispatcher.isEnabled("com.example", LogLevel.TRACE, null));
         assertTrue(dispatcher.isLevelEnabled(LogLevel.DEBUG));
         assertTrue(dispatcher.isEnabled("com.example", LogLevel.DEBUG, null));

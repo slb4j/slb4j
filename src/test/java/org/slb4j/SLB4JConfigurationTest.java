@@ -38,7 +38,6 @@ class SLB4JConfigurationTest {
         
         // Custom filter to verify it's applied to the dispatcher
         LoggerNamePrefixFilter newFilter = new LoggerNamePrefixFilter("new");
-        newFilter.setLevel(LogLevel.ERROR);
         newFilter.setLevel("new.logger", LogLevel.ERROR);
         newConfig.setLoggerFilter(newFilter);
 

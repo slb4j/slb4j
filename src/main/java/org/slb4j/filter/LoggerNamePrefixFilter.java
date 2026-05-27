@@ -22,6 +22,7 @@ import org.jspecify.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 /**
  * The LogFilter class is an implementation of the LogEntryFilter interface
@@ -30,25 +31,23 @@ import java.util.Objects;
 public final class LoggerNamePrefixFilter implements LogFilter {
 
     private final String name;
-    private LogLevel level;
     private final LevelMap levelMap;
 
     /**
      * Constructs a LogFilter instance with the specified name.
-     * The initial global log level is set to {@code LogLevel.INFO}.
+     * <p>
+     * The root node is initialized to {@code LogLevel.ERROR}.
      * A level map is also initialized with the global log level.
      *
      * @param name the name of the log filter
      */
     public LoggerNamePrefixFilter(String name) {
         this.name = name;
-        this.level = LogLevel.TRACE;
-        this.levelMap = new LevelMap();
+        this.levelMap = new LevelMap(LogLevel.ERROR.ordinal());
     }
 
-    private LoggerNamePrefixFilter(String name, LogLevel level, LevelMap levelMap) {
+    private LoggerNamePrefixFilter(String name, LevelMap levelMap) {
         this.name = name;
-        this.level = level;
         this.levelMap = levelMap;
     }
 
@@ -59,7 +58,7 @@ public final class LoggerNamePrefixFilter implements LogFilter {
      */
     @Override
     public LoggerNamePrefixFilter copy() {
-        return new LoggerNamePrefixFilter(name, level, levelMap.copy());
+        return new LoggerNamePrefixFilter(name, levelMap.copy());
     }
 
     @Override
@@ -68,21 +67,29 @@ public final class LoggerNamePrefixFilter implements LogFilter {
     }
 
     /**
-     * Sets the global log level of the filter.
+     * Sets the log level of the root node.
      *
-     * @param level the global log level to set
+     * @param level the level to set
      */
-    public void setLevel(LogLevel level) {
-        this.level = level;
+    public void setRootLevel(LogLevel level) {
+        levelMap.setRootLevel(level.ordinal());
     }
 
     /**
-     * Retrieves the global log level of the filter.
+     * Retrieves the level configured for the root node.
      *
-     * @return The global log level of the filter.
+     * @return The level configured for the root node.
      */
-    public LogLevel getLevel() {
-        return level;
+    public LogLevel getRootLevel() {
+        return toLogLevel(levelMap.getRootLevel());
+    }
+
+    private static final LogLevel toLogLevel(int level) {
+        return LogLevel.values()[level];
+    }
+
+    private static final @Nullable LogLevel toLogLevelOrNull(int level) {
+        return level < 0 ? null : LogLevel.values()[level];
     }
 
     /**
@@ -92,55 +99,32 @@ public final class LoggerNamePrefixFilter implements LogFilter {
      * @param level the log level to assign
      */
     public void setLevel(String loggerName, LogLevel level) {
-        levelMap.put(loggerName, level);
+        levelMap.put(loggerName, level.ordinal());
     }
 
     /**
      * Retrieves the effective log level for the specified logger name.
-     * <p>
-     * <strong>Note:</strong> This method takes into account both the global log level and
-     * the configured log level for the specified logger:
-     * <ul>
-     * <li>If no level was configured for the logger or one of it's ancestor nodes, the global log level is returned.
-     * <li>Otherwise, the more severe level of the global and the configured level is returned.
-     * </ul>
      *
      * @param loggerName the name of the logger whose log level is to be retrieved
      * @return the effective log level for the specified logger.
      */
     public LogLevel getLevel(String loggerName) {
-        return switch (this.level) {
-            case ERROR -> LogLevel.ERROR;
-            default -> {
-                LogLevel mapped = levelMap.level(loggerName);
-                yield mapped == null ? this.level : LogLevel.max(this.level, mapped);
-            }
-        };
-    }
-
-    /**
-     * Retrieves the configured log level for the specified logger name.
-     *
-     * @param loggerName the name of the logger whose log level is to be retrieved
-     * @return the log level assigned to the specified logger.
-     */
-    public @Nullable LogLevel getConfiguredLevel(String loggerName) {
-        return levelMap.level(loggerName);
+        return toLogLevel(levelMap.level(loggerName));
     }
 
     @Override
     public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, CharSequence msg, @Nullable Throwable t) {
-        return (lvl.ordinal() >= level.ordinal() && lvl.ordinal() >= getLevel(loggerName).ordinal());
+        return levelMap.isEnabled(loggerName, lvl.ordinal());
     }
 
     @Override
     public boolean isEnabled(String loggerName, LogLevel logLevel, @Nullable String marker) {
-        return isLevelEnabled(logLevel) && logLevel.ordinal() >= getLevel(loggerName).ordinal();
+        return levelMap.isEnabled(loggerName, logLevel.ordinal());
     }
 
     @Override
     public boolean isLevelEnabled(LogLevel logLevel) {
-        return (logLevel.ordinal() >= level.ordinal());
+        return (logLevel.ordinal() >= levelMap.getMinLevel());
     }
 
     /**
@@ -150,25 +134,28 @@ public final class LoggerNamePrefixFilter implements LogFilter {
      * @return a map containing logger names or prefixes as keys and their corresponding log levels as values.
      */
     public Map<String, LogLevel> getRules() {
-        return levelMap.rules();
+        return levelMap.rules().entrySet().stream()
+                .collect(Collectors.toMap(
+                        Map.Entry::getKey,
+                        entry -> toLogLevelOrNull(entry.getValue())
+                ));
     }
 
     @Override
     public boolean equals(@Nullable Object o) {
         if (!(o instanceof LoggerNamePrefixFilter other)) return false;
-        return level == other.level && name.equals(other.name) && levelMap.equals(other.levelMap);
+        return name.equals(other.name) && levelMap.equals(other.levelMap);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, level, levelMap);
+        return Objects.hash(name, levelMap);
     }
 
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
         sb.append("LogFilter[name=").append(name)
-                .append(", level=").append(level)
                 .append(", {");
         levelMap.getRoot().appendTo(sb);
         sb.append('}');
