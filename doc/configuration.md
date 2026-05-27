@@ -6,8 +6,8 @@ This document describes the Log4J 2 configuration properties that SLB4J aims to 
 
 | Property Key                               | Description                                                                            | SLB4J Support       |
 |--------------------------------------------|----------------------------------------------------------------------------------------|---------------------|
-| `status`                                   | The level of internal Log4j events that should be logged to the console.               | No                  |
-| `dest`                                     | Either "err" for stderr, "out" for stdout, a file path, or a URL.                      | No                  |
+| `status`                                   | The level of internal Log4j events that should be logged to the console.               | Yes                 |
+| `dest`                                     | Either "err" for stderr, "out" for stdout, a file path, or a URL.                      | Yes (partial)       |
 | `shutdownHook`                             | Specifies whether or not Log4j should automatically shut down when the JVM shuts down. | No                  |
 | `shutdownTimeout`                          | Specifies how many milliseconds the shutdown hook should wait before terminating.      | No                  |
 | `monitorInterval`                          | The interval in seconds to check for configuration changes.                            | No                  |
@@ -30,19 +30,34 @@ This document describes the Log4J 2 configuration properties that SLB4J aims to 
 | `appender.<name>.strategy.max`             | The maximum number of backup files to keep.                                            | Yes                 |
 | `appender.<name>.layout.type`              | The type of layout (e.g., PatternLayout, JSONLayout).                                  | Yes (PatternLayout) |
 | `appender.<name>.layout.pattern`           | The log pattern for PatternLayout.                                                     | Yes                 |
-| `appender.<name>.filter.<type>.type`       | The type of filter (e.g., ThresholdFilter, MarkerFilter).                              | No                  |
-| `appender.<name>.filter.<type>.onMatch`    | Action to take on match (ACCEPT, DENY, NEUTRAL).                                       | No                  |
-| `appender.<name>.filter.<type>.onMismatch` | Action to take on mismatch (ACCEPT, DENY, NEUTRAL).                                    | No                  |
-| `appender.<name>.filter.<type>.level`      | The level to match for a ThresholdFilter.                                              | No                  |
+| `appender.<name>.filter.<name>.type`       | The type of filter (e.g., ThresholdFilter, MarkerFilter, RegexFilter).                 | Yes                 |
+| `appender.<name>.filter.<name>.onMatch`    | Action to take on match (ACCEPT, DENY, NEUTRAL).                                       | Yes                 |
+| `appender.<name>.filter.<name>.onMismatch` | Action to take on mismatch (ACCEPT, DENY, NEUTRAL).                                    | Yes                 |
+| `appender.<name>.filter.<name>.level`      | The level to match for a ThresholdFilter.                                              | Yes                 |
+| `appender.<name>.filter.<name>.marker`     | The marker to match for a MarkerFilter.                                                | Yes                 |
+| `appender.<name>.filter.<name>.regex`      | The regex to match for a RegexFilter.                                                  | Yes                 |
 | `logger.<name>.name`                       | The name (package/class) of the logger.                                                | No                  |
-| `logger.<name>.level`                      | The logging level for the specified logger.                                            | No                  |
+| `logger.<name>.level`                      | The logging level for the specified logger.                                            | Yes                 |
 | `logger.<name>.appenderRef.<ref>.ref`      | Reference to an appender by name.                                                      | No                  |
 | `logger.<name>.additivity`                 | Whether to propagate log events to parent loggers.                                     | No                  |
-| `rootLogger.level`                         | The logging level for the root logger.                                                 | No                  |
+| `rootLogger.level`                         | The logging level for the root logger.                                                 | Yes                 |
 | `rootLogger.appenderRef.<ref>.ref`         | Reference to an appender for the root logger.                                          | No                  |
-| `filter.<name>.level`                      | The threshold level for a filter.                                                      | Yes                 |
+| `filter.<name>.type`                       | The type of filter (e.g., ThresholdFilter, MarkerFilter, RegexFilter).                 | Yes                 |
+| `filter.<name>.level`                      | The threshold level for a ThresholdFilter.                                             | Yes                 |
+| `filter.<name>.onMatch`                    | Action to take on match (ACCEPT, DENY, NEUTRAL).                                       | Yes                 |
+| `filter.<name>.onMismatch`                 | Action to take on mismatch (ACCEPT, DENY, NEUTRAL).                                    | Yes                 |
+| `filter.<name>.marker`                     | The marker to match for a MarkerFilter.                                                | Yes                 |
+| `filter.<name>.regex`                      | The regex to match for a RegexFilter.                                                  | Yes                 |
 
 ## Property Explanations
+
+### Internal Backend Logging
+
+SLB4J can log its own internal status messages (e.g., configuration errors).
+
+* **`status`**: Sets the level of SLB4J's internal status messages. Possible values: `trace`, `debug`, `info`, `warn`, `error`, `fatal`.
+* **`statusConfig.name`**: An optional name for the configuration used in status messages.
+* **`statusConfig.dest`**: Specifies the output destination for status messages. Values: `out` (stdout), `err` (stderr).
 
 ### Global Properties
 
@@ -109,9 +124,20 @@ The root logger is the parent of all other loggers.
 
 ### Filters
 
-Filters can be applied at various levels (global, appender, logger).
+Filters can be applied at various levels (global, appender, logger). Global filters are applied to the root logger.
 
-* **`filter.<type>.type`**: The type of filter, e.g., `ThresholdFilter`.
-* **`filter.<type>.level`**: For `ThresholdFilter`, the level to match.
-* **`filter.<type>.onMatch`**: What to do if the filter matches. Values: `ACCEPT`, `DENY`, `NEUTRAL`.
-* **`filter.<type>.onMismatch`**: What to do if the filter does not match. Values: `ACCEPT`, `DENY`, `NEUTRAL`.
+* **`filter.<name>.type`**: The type of filter, e.g., `ThresholdFilter`, `MarkerFilter`, or `RegexFilter`.
+* **`filter.<name>.onMatch`**: What to do if the filter matches. Values: `ACCEPT`, `DENY`, `NEUTRAL`.
+* **`filter.<name>.onMismatch`**: What to do if the filter does not match. Values: `ACCEPT`, `DENY`, `NEUTRAL`.
+
+#### ThresholdFilter
+
+* **`filter.<name>.level`**: The level to match.
+
+#### MarkerFilter
+
+* **`filter.<name>.marker`**: The marker name to match.
+
+#### RegexFilter
+
+* **`filter.<name>.regex`**: The regular expression to match against the log message.
