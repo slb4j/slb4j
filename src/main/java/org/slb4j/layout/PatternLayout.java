@@ -20,6 +20,7 @@ import org.slb4j.LogLayout;
 import org.slb4j.Location;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
+import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.formatter.PatternTimeStampFormatter;
 import org.slb4j.support.TimeStampFormatter;
 import org.slb4j.support.Util;
@@ -47,6 +48,8 @@ import java.util.regex.Pattern;
 public final class PatternLayout implements LogLayout {
 
     private static final String NEWLINE = System.lineSeparator();
+
+    private static final int MINIMUM_BUFFER_CAPACITY = 256;
 
     private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)})?(\\{([^}]+)})?(\\{([^}]+)})?|%%|%(?![a-zA-Z])");
 
@@ -1342,6 +1345,13 @@ public final class PatternLayout implements LogLayout {
      * @throws IOException if an I/O error occurs while writing to the appendable
      */
     public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+        switch (app) {
+            case IoStringBuilder iosb -> iosb.ensureCapacity(MINIMUM_BUFFER_CAPACITY);
+            case StringBuilder sb -> sb.ensureCapacity(MINIMUM_BUFFER_CAPACITY);
+            case StringBuffer sb -> sb.ensureCapacity(MINIMUM_BUFFER_CAPACITY);
+            default -> { /* do nothing */ }
+        }
+
         for (int i = 0; i < entries.length; i++) {
             entries[i].format(app, timestamp, loggerName, lvl, mrk, mdc, loc, msg, t, consoleCodes);
         }

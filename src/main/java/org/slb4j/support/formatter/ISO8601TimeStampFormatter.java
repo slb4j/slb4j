@@ -82,8 +82,6 @@ public final class ISO8601TimeStampFormatter extends AbstractTimeStampFormatter 
 
     @Override
     protected void appendTo(IoStringBuilder buf, int y, int M, int d, int H, int m, int s, int S, int offsetSeconds) throws IOException {
-        buf.ensureCapacity(23);
-
         int q = y / 100;
         buf.put(DIGIT_TENS[q]).put(DIGIT_ONES[q]);
         q = y % 100;
