@@ -101,8 +101,8 @@ class LogPatternLog4jCompatibilityTest {
         Configuration config = context.getConfiguration();
 
         org.apache.logging.log4j.core.layout.PatternLayout log4jLayout = org.apache.logging.log4j.core.layout.PatternLayout.newBuilder()
-                .withPattern(pattern)
-                .withConfiguration(config)
+                .setPattern(pattern)
+                .setConfiguration(config)
                 .build();
 
         LogLayout slb4jPattern = PatternLayout.parseLog4jPattern(pattern);
