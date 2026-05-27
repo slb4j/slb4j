@@ -329,7 +329,15 @@ final class LevelMap {
     }
 
     private static String[] getSegments(String className) {
-        return loggerNameCache.computeIfAbsent(className, Util::splitOnDot);
+        // do not use computeIfAbsent here, this is a hot path!
+        String[] strings = loggerNameCache.get(className);
+        if (strings != null) {
+            return strings;
+        }
+
+        strings = Util.splitOnDot(className);
+        loggerNameCache.put(className, strings);
+        return strings;
     }
 
     @Override
