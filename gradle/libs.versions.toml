@@ -1,6 +1,6 @@
 [plugins]
-cabe-plugin = { id = "com.dua3.cabe", version = "4.3.0-rc" }
-graalvm-plugin = { id = "org.graalvm.buildtools.native", version = "1.1.0" }
+cabe-plugin = { id = "com.dua3.cabe", version = "4.3.0" }
+graalvm-plugin = { id = "org.graalvm.buildtools.native", version = "1.1.1" }
 jdkprovider-plugin = { id = "com.dua3.gradle.jdkprovider", version = "0.7.0" }
 jmh-plugin = { id = "me.champeau.jmh", version = "0.7.3" }
 jreleaser-plugin = { id = "org.jreleaser", version = "1.24.0" }
