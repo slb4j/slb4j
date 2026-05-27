@@ -78,9 +78,28 @@ final class LevelMap {
         if (newLevel >= 0 && newLevel < minLevel) {
             minLevel = newLevel;
         } else if (newLevel > minLevel && oldLevel >= 0 && oldLevel == minLevel) {
-            minLevel = rules().values().stream().mapToInt(Integer::intValue).min().orElse(minLevel);
+            minLevel = calculateMinLevel(root);
         }
         assert minLevel == rules().values().stream().mapToInt(Integer::intValue).min().orElse(-1);
+    }
+
+    /**
+     * Recursively calculates the minimum log level from the given node and its children.
+     * The method traverses the hierarchical structure of nodes and determines the smallest
+     * level among the provided node and all its descendants.
+     *
+     * @param node the {@code Node} from which to start the calculation; must not be {@code null}.
+     * @return the minimum log level found, or {@code Integer.MAX_VALUE} if the node has no children.
+     */
+    private int calculateMinLevel(Node node) {
+        int level = node.getLevel() >= 0 ? node.getLevel() : Integer.MAX_VALUE;
+        for (Node child : node.children.values()) {
+            int childLevel = calculateMinLevel(child);
+            if (childLevel >= 0 && childLevel < level) {
+                level = childLevel;
+            }
+        }
+        return level;
     }
 
     /**
