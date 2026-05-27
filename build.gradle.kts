@@ -38,7 +38,7 @@ java {
 /////////////////////////////////////////////////////////////////////////////
 
 object Meta {
-    const val VERSION = "0.10.1-SNAPSHOT"
+    const val VERSION = "0.11.0"
     const val DESCRIPTION = "Simple Logging Backend for Java"
     const val INCEPTION_YEAR = "2026"
     const val GROUP = "org.slb4j"
@@ -258,6 +258,11 @@ allprojects {
                 }
             }
         }
+    }
+
+    tasks.withType<JavaCompile> {
+        options.compilerArgs.add("-Xlint:unchecked")
+        options.compilerArgs.add("-Xlint:deprecation")
     }
 
     // SpotBugs for non-BOM projects

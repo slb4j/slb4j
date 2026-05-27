@@ -1,3 +1,11 @@
+Version 0.11.0
+--------------
+
+- update dependencies and plugins
+- fix separator layout in FxLogPane
+- fix exception in SwingLogPane
+- add -Xlint:unchecked, -Xlint:deprecation compiler flags
+
 Version 0.10.0
 --------------
 
