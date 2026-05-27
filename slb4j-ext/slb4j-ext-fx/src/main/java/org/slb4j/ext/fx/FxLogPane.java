@@ -353,13 +353,14 @@ public final class FxLogPane extends BorderPane implements LogPane {
 
         // define table columns
         tableView.setEditable(false);
-        //noinspection unchecked
-        tableView.getColumns().setAll(
+        @SuppressWarnings("unchecked")
+        TableColumn<@Nullable LogEntry, ?>[] columns = new TableColumn[]{
                 createColumn(texts.headerTimeColumn(), new PatternLayout.DateEntry("HH:mm:ss,SSS"), true, "88:88:88,888"),
                 createColumn(texts.headerLevelColumn(), new PatternLayout.LevelEntry(0, 0, false), true, Arrays.stream(LogLevel.values()).map(Object::toString).toArray(String[]::new)),
                 createColumn(texts.headerLoggerColumn(), new PatternLayout.LoggerEntry(0, 0, true, 0, false), false, "X".repeat(40)),
                 createColumn(texts.headerMessageColumn(), new PatternLayout.MessageEntry(0, 0, false), false)
-        );
+        };
+        tableView.getColumns().setAll(columns);
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);
 
         // disable autoscroll if the selection is not empty, enable when selection is cleared while scrolled to bottom
