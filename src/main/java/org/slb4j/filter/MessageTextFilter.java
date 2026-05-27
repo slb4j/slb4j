@@ -24,11 +24,8 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 /**
- * The DefaultLogEntryFilter class is an implementation of the LogEntryFilter interface
- * that filters log entries based on their log level and a user-defined filter.
- *
- * <p>DefaultLogEntryFilter provides methods to set and retrieve the log level and filter,
- * as well as a test method to determine if a LogEntry should be included or excluded.
+ * The MessageTextFilter class is an implementation of the LogFilter interface
+ * that filters log entries based on their message content.
  */
 public final class MessageTextFilter implements LogFilter {
 
@@ -36,10 +33,10 @@ public final class MessageTextFilter implements LogFilter {
     private final Predicate<? super CharSequence> textFilter;
 
     /**
-     * Constructs a new DefaultLogEntryFilter with the specified log level and filter.
+     * Constructs a new MessageTextFilter with the specified name and predicate.
      *
      * @param name  the name of this filter
-     * @param textFilter the filter to set for the message content
+     * @param textFilter the predicate to test the message content against
      */
     public MessageTextFilter(String name, Predicate<? super CharSequence> textFilter) {
         this.name = name;

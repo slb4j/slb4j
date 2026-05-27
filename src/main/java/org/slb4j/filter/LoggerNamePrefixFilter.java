@@ -25,8 +25,8 @@ import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
- * The LogFilter class is an implementation of the LogEntryFilter interface
- * that filters log entries based on their name and log levels defined on package/class levels.
+ * The LoggerNamePrefixFilter class is an implementation of the {@link LogFilter} interface
+ * that filters log entries based on their logger name and log levels defined on package/class levels.
  */
 public final class LoggerNamePrefixFilter implements LogFilter {
 
@@ -34,7 +34,7 @@ public final class LoggerNamePrefixFilter implements LogFilter {
     private final LevelMap levelMap;
 
     /**
-     * Constructs a LogFilter instance with the specified name.
+     * Constructs a LoggerNamePrefixFilter instance with the specified name.
      * <p>
      * The root node is initialized to {@code LogLevel.ERROR}.
      * A level map is also initialized with the global log level.

@@ -24,11 +24,11 @@ import java.util.Arrays;
 import java.util.Objects;
 
 /**
- * The DefaultLogEntryFilter class is an implementation of the LogEntryFilter interface
- * that filters log entries based on their log level and a user-defined filter.
+ * The LogLevelFilter class is an implementation of the LogFilter interface
+ * that filters log entries based on their log level.
  *
- * <p>DefaultLogEntryFilter provides methods to set and retrieve the log level and filter,
- * as well as a test method to determine if a LogEntry should be included or excluded.
+ * <p>LogLevelFilter provides static factory methods to create filters for common scenarios,
+ * such as allowing all levels, no levels, or levels above a certain threshold.
  */
 public final class LogLevelFilter implements LogFilter {
 
@@ -41,9 +41,9 @@ public final class LogLevelFilter implements LogFilter {
      *
      * @param name the name of the filter
      * @param pass an array of boolean values indicating whether each log level should pass the filter.
-     *             The array must have a length equal to the number of LogLevel values.
+     *             The array must have a length equal to the number of {@link LogLevel} values.
      *             Each index corresponds to a specific log level in the order they are declared
-     *             in the LogLevel enum.
+     *             in the {@link LogLevel} enum.
      */
     public LogLevelFilter(String name, boolean[] pass) {
         this.name = name;

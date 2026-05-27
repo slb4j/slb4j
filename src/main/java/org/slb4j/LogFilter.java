@@ -20,25 +20,25 @@ import org.jspecify.annotations.Nullable;
 import org.slb4j.filter.LogLevelFilter;
 
 /**
- * The LogEntryFilter interface represents a filter used to determine if a LogEntry should be included or excluded.
+ * The LogFilter interface represents a filter used to determine if a log entry should be included or excluded.
  *
- * <p>The LogEntryFilter interface is a functional interface and can therefore be used as the assignment target for a lambda expression or method reference.
+ * <p>The LogFilter interface is a functional interface and can therefore be used as the assignment target for a lambda expression or method reference.
  */
 public interface LogFilter {
 
     /**
-     * Returns a LogEntryFilter that allows all log entries to pass through.
+     * Returns a LogFilter that allows all log entries to pass through.
      *
-     * @return a LogEntryFilter that allows all log entries to pass through
+     * @return a LogFilter that allows all log entries to pass through
      */
     static LogFilter allPass() {
         return LogFilterConstants.ALL_PASS_FILTER;
     }
 
     /**
-     * Returns a LogEntryFilter that allows no log entries to pass through.
+     * Returns a LogFilter that allows no log entries to pass through.
      *
-     * @return a LogEntryFilter that allows no log entries to pass through
+     * @return a LogFilter that allows no log entries to pass through
      */
     static LogFilter nonePass() {return LogFilterConstants.NONE_PASS_FILTER;}
 
