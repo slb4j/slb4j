@@ -36,7 +36,7 @@ final class LevelMap {
     public static final String ROOT_LEVEL_NOT_INITIALIZED = "internal error! Root level should alwazs be initialized.";
 
     // The minimum log level that is configured for anz node
-    private int minLevel;
+    private volatile int minLevel;
 
     // The root level handles the "empty" or "root" logger
     private final Node root;
@@ -75,12 +75,16 @@ final class LevelMap {
      * @param newLevel the new log level after the change, which cannot be {@code null}
      */
     private void levelChanged(int oldLevel, int newLevel) {
-        if (newLevel >= 0 && newLevel < minLevel) {
-            minLevel = newLevel;
-        } else if (newLevel > minLevel && oldLevel >= 0 && oldLevel == minLevel) {
-            minLevel = calculateMinLevel(root);
+        if (newLevel != oldLevel) {
+            synchronized (root) {
+                if (newLevel >= 0 && newLevel < minLevel) {
+                    minLevel = newLevel;
+                    assert minLevel == calculateMinLevel(root);
+                } else if (newLevel > minLevel && oldLevel == minLevel) {
+                    minLevel = calculateMinLevel(root);
+                }
+            }
         }
-        assert minLevel == rules().values().stream().mapToInt(Integer::intValue).min().orElse(-1);
     }
 
     /**
