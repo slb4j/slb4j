@@ -1,3 +1,16 @@
+Version 0.12.1
+--------------
+
+- fix race condition when setting logger levels 13 minutes ago
+
+Version 0.12.0
+--------------
+
+- enable Gradle dependency locking
+- minor fixes and i,provements
+- use numerical values for log levels in LevelMap
+- rename Dispatcher.setLevel(LogLevel) to Dispatcher.setRootLevel(LogLevel)
+
 Version 0.11.0
 --------------
 
