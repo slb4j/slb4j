@@ -65,7 +65,7 @@ final class LevelMap {
      */
     private LevelMap(Node root) {
         this.root = root;
-        this.minLevel = root.level;
+        this.minLevel = calculateMinLevel(root);
     }
 
     /**
