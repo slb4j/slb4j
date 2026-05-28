@@ -55,6 +55,10 @@ object Meta {
 allprojects {
     group = Meta.GROUP
     version = Meta.VERSION
+
+    dependencyLocking {
+        lockAllConfigurations()
+    }
 }
 
 group = Meta.GROUP
