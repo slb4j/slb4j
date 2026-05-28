@@ -58,6 +58,9 @@ allprojects {
 
     dependencyLocking {
         lockAllConfigurations()
+        ignoredDependencies.add("org.osgi:*")
+        ignoredDependencies.add("biz.aQute.bnd:*")
+        ignoredDependencies.add("com.google.errorprone:error_prone_annotations")
     }
 }
 
