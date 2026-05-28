@@ -60,7 +60,7 @@ final class LevelMap {
      * This constructor enforces that the root node must have a non-null level.
      *
      * @param root the root {@code Node} of the hierarchical structure;
-     *             must have a non-null log level
+     *             must have a non-negative log level
      * @throws AssertionError if the root node's level is {@code null}
      */
     private LevelMap(Node root) {
