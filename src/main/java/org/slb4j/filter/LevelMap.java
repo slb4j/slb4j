@@ -69,25 +69,6 @@ final class LevelMap {
     }
 
     /**
-     * Updates the minimum log level based on the change in log levels.
-     *
-     * @param oldLevel the previous log level before the change, which may be {@code null} if no prior level exists
-     * @param newLevel the new log level after the change, which cannot be {@code null}
-     */
-    private void levelChanged(int oldLevel, int newLevel) {
-        if (newLevel != oldLevel) {
-            synchronized (root) {
-                if (newLevel >= 0 && newLevel < minLevel) {
-                    minLevel = newLevel;
-                    assert minLevel == calculateMinLevel(root);
-                } else if (newLevel > minLevel && oldLevel == minLevel) {
-                    minLevel = calculateMinLevel(root);
-                }
-            }
-        }
-    }
-
-    /**
      * Recursively calculates the minimum log level from the given node and its children.
      * The method traverses the hierarchical structure of nodes and determines the smallest
      * level among the provided node and all its descendants.
@@ -131,9 +112,7 @@ final class LevelMap {
      * @param level the {@code LogLevel} to assign to the root node; can be {@code null} to clear the level
      */
     public void setRootLevel(int level) {
-        int oldLevel = root.level;
-        root.setLevel(level);
-        levelChanged(oldLevel, level);
+        setNodeLevel(root, level);
     }
 
     /**
@@ -290,16 +269,52 @@ final class LevelMap {
         for (String segment : segments) {
             current = current.children.computeIfAbsent(segment, k -> new Node(-1));
         }
-        int oldLevel = current.level;
-
-        current.level = level;
-
-        levelChanged(oldLevel, level);
+        setNodeLevel(current, level);
     }
 
+    /**
+     * Updates the level of the specified node and adjusts the minimum level of the hierarchy if needed.
+     * This method synchronizes on the root node, ensuring thread-safe updates to the node's level
+     * and the `minLevel` property of the `LevelMap` hierarchy.
+     *
+     * @param node  the {@code Node} whose level is being updated; must not be {@code null}.
+     * @param level the new log level to assign to the specified node.
+     */
+    private void setNodeLevel(Node node, int level) {
+        synchronized (root) {
+            int oldLevel = node.level;
+            node.level = level;
+
+            if (level != oldLevel) {
+                if (level >= 0 && level < minLevel) {
+                    minLevel = level;
+                } else if (level > minLevel && oldLevel == minLevel) {
+                    minLevel = calculateMinLevel(root);
+                }
+            }
+
+            // consistencz check
+            assert minLevel == calculateMinLevel(root);
+        }
+    }
+
+    /**
+     * Determines if logging is enabled for the specified logger name and log level.
+     * <p>
+     * The method checks whether the provided level is greater than or equal to both
+     * the minimum log level of the hierarchy and the specific log level associated
+     * with the given logger name.
+     *
+     * @param loggerName the name of the logger whose logging status is being checked;
+     *                   must not be null or empty.
+     * @param level the log level to compare against the thresholds; must be a non-negative integer.
+     * @return true if logging is enabled for the specified logger name and level,
+     *         false otherwise.
+     */
     public boolean isEnabled(String loggerName, int level) {
         return level >= minLevel && level >= level(loggerName);
     }
+
     /**
      * Retrieves the {@link LogLevel} associated with the specified class name by traversing
      * the hierarchical structure. If no specific log level is found for the given class name,
@@ -332,6 +347,13 @@ final class LevelMap {
         return level;
     }
 
+    /**
+     * Splits the provided class name into its constituent segments based on the dot (`.`) character.
+     * The method caches the result for performance optimization if the same class name is called multiple times.
+     *
+     * @param className the fully qualified class name to be split into segments; must not be {@code null}.
+     * @return an array of strings representing the segments of the class name, split by the dot (`.`) character.
+     */
     private static String[] getSegments(String className) {
         // do not use computeIfAbsent here, this is a hot path!
         String[] strings = loggerNameCache.get(className);
