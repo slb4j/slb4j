@@ -38,7 +38,7 @@ final class LevelMap {
     // The minimum log level that is configured for anz node
     private volatile int minLevel;
 
-    // The root level handles the "empty" or "root" logger
+    // The root level is applied when no other rules are found
     private final Node root;
 
     private static final Map<String, String[]> loggerNameCache = new ConcurrentHashMap<>();
