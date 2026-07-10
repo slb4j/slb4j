@@ -281,7 +281,7 @@ final class LevelMap {
      * @param level the new log level to assign to the specified node.
      */
     private void setNodeLevel(Node node, int level) {
-        synchronized (root) {
+        synchronized (this) {
             int oldLevel = node.level;
             node.level = level;
 
