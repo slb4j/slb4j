@@ -389,4 +389,34 @@ public final class SLB4J {
     public static LogLevel getLevel(String prefix) {
         return getDispatcher().getLevel(prefix);
     }
+
+    /**
+     * Checks if the SLF4J extension for the LogBuffer is available on the classpath.
+     * The method verifies whether the required class for the SLF4J extension exists in the runtime environment.
+     *
+     * @return {@code true} if the SLF4J LogBuffer extension is available; {@code false} otherwise.
+     */
+    public static boolean isSlb4jExtAvailable() {
+        return Util.isClassOnClasspath("org.slf4j.ext.LogBufer");
+    }
+
+    /**
+     * Checks if the SLB4J extension for JavaFX (`org.slb4j.ext.fx.FxLogPane`) is available on the classpath.
+     *
+     * @return {@code true} if the class `org.slb4j.ext.fx.FxLogPane` is present on the classpath;
+     *         {@code false} otherwise.
+     */
+    public static boolean isSlb4jExtFxAvailable() {
+        return Util.isClassOnClasspath("org.slb4j.ext.fx.FxLogPane");
+    }
+
+    /**
+     * Checks whether the SLB4J extension for Swing, specifically the class
+     * {@code org.slb4j.ext.swing.SwingLogPane}, is available on the classpath.
+     *
+     * @return true if the SLB4J Swing extension is available, false otherwise.
+     */
+    public static boolean isSlb4jExtSwingAvailable() {
+        return Util.isClassOnClasspath("org.slb4j.ext.swing.SwingLogPane");
+    }
 }
