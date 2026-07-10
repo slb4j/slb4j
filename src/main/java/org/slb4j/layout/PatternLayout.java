@@ -36,7 +36,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
-import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
@@ -503,6 +502,7 @@ public final class PatternLayout implements LogLayout {
             // Background: The lambda would need to bind abbreviationLength and useDotAbbreviation from
             // the current context. Splitting into get() and put() makes sure that the allocation is only
             // done the first time the logger name is encountered.
+            @SuppressWarnings("java:S3824")
             String logger = loggerNames.get(loggerName); // lambda in computeIfAbsent causes memory allocation!
             if (logger == null) {
                 logger = abbreviate(loggerName, abbreviationLength, useDotAbbreviation).toString();
@@ -710,6 +710,7 @@ public final class PatternLayout implements LogLayout {
             // Background: The lambda would need to bind abbreviationLength and useDotAbbreviation from
             // the current context. Splitting into get() and put() makes sure that the allocation is only
             // done the first time the class name is encountered.
+            @SuppressWarnings("java:S3824")
             String className = classNames.get(locationClassName);
             if (className == null) {
                 className = abbreviate(locationClassName, abbreviationLength, useDotAbbreviation).toString();
@@ -1480,24 +1481,31 @@ public final class PatternLayout implements LogLayout {
                 case "Cstart" -> entries.add(new ColorStartEntry(minWidth, maxWidth, leftAlign));
                 case "Cend" -> entries.add(new ColorEndEntry(minWidth, maxWidth, leftAlign));
                 case "d" -> {
-                    ZoneId[] zoneId = {null};
-                    Locale[] locale = {null};
-                    String[] optionsOrPattern = {options != null ? options : ""};
+                    String optionsOrPattern = options != null ? options : "";
+                    ZoneId zoneId = null;
+                    Locale locale = null;
 
                     // Log4j %d{pattern}{timezone}{locale}
                     // If options is a timezone, then it's %d{timezone} (empty pattern)
-                    toZoneId(optionsOrPattern[0]).ifPresentOrElse(z -> {
-                        zoneId[0] = z;
-                        optionsOrPattern[0] = "";
-                    }, () -> toZoneId(secondBlock)
-                            .ifPresentOrElse(z -> zoneId[0] = z, () -> toZoneId(thirdBlock)
-                                    .ifPresent(z -> zoneId[0] = z)));
+                    Optional<ZoneId> zoneInOptions = toZoneId(optionsOrPattern);
+                    Optional<ZoneId> zoneInSecondBlock = toZoneId(secondBlock);
+                    Optional<ZoneId> zoneInThirdBlock = toZoneId(thirdBlock);
 
-                    toLocale(thirdBlock).ifPresentOrElse( loc -> locale[0] = loc,
-                            () -> toLocale(secondBlock)
-                                    .ifPresent(loc -> locale[0] = loc));
+                    if (zoneInOptions.isPresent()) {
+                        zoneId = zoneInOptions.get();
+                        optionsOrPattern = "";
+                        locale = toLocale(secondBlock).or(() -> toLocale(thirdBlock)).orElse(null);
+                    } else if (zoneInSecondBlock.isPresent()) {
+                        zoneId = zoneInSecondBlock.get();
+                        locale = toLocale(thirdBlock).orElse(null);
+                    } else if (zoneInThirdBlock.isPresent()) {
+                        zoneId = zoneInThirdBlock.get();
+                        locale = toLocale(secondBlock).orElse(null);
+                    } else {
+                        locale = toLocale(thirdBlock).or(() -> toLocale(secondBlock)).orElse(null);
+                    }
 
-                    entries.add(new DateEntry(optionsOrPattern[0], zoneId[0], locale[0]));
+                    entries.add(new DateEntry(optionsOrPattern, zoneId, locale));
                 }
                 case "%%", "%" -> entries.add(new LiteralEntry("%"));
                 case "%n", "n" -> entries.add(new NewlineEntry());
