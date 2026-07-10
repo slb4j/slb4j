@@ -37,8 +37,9 @@ java {
 // Meta data object
 /////////////////////////////////////////////////////////////////////////////
 
+val projectVersion = rootProject.libs.versions.projectVersion.get()
+
 object Meta {
-    const val VERSION = "0.12.1"
     const val DESCRIPTION = "Simple Logging Backend for Java"
     const val INCEPTION_YEAR = "2026"
     const val GROUP = "org.slb4j"
@@ -54,7 +55,7 @@ object Meta {
 
 allprojects {
     group = Meta.GROUP
-    version = Meta.VERSION
+    version = projectVersion
 
     if (!name.equals("benchmark")) {
         dependencyLocking {
@@ -65,7 +66,7 @@ allprojects {
 }
 
 group = Meta.GROUP
-version = Meta.VERSION
+version = projectVersion
 
 // check for development/release version
 fun isDevelopmentVersion(versionString: String): Boolean {
@@ -116,7 +117,7 @@ tasks.test {
     )
 }
 
-val jacocoTestReport by tasks.getting(JacocoReport::class) {
+val jacocoTestReport = tasks.getByName<JacocoReport>("jacocoTestReport") {
     executionData.setFrom(fileTree(layout.buildDirectory.dir("jacoco")).include("*.exec"))
 }
 
@@ -125,7 +126,7 @@ allprojects {
         apply(plugin = "com.dua3.gradle.jdkprovider")
 
         jdk {
-            version = "21.0.9+"
+            version = rootProject.libs.versions.jdk.get()
             javaFxBundled = true
         }
     }
@@ -209,7 +210,7 @@ allprojects {
         }
 
         // Task to publish to staging directory per subproject
-        val publishToStagingDirectory by tasks.registering {
+        val publishToStagingDirectory = tasks.register("publishToStagingDirectory") {
             group = "publishing"
             description = "Publish artifacts to root staging directory for JReleaser"
 
@@ -320,7 +321,7 @@ allprojects {
 jreleaser {
     project {
         name.set(Meta.ORGANIZATION_NAME)
-        version.set(Meta.VERSION)
+        version.set(projectVersion)
         group = Meta.GROUP
         authors.set(listOf(Meta.DEVELOPER_NAME))
         license.set(Meta.LICENSE_NAME)

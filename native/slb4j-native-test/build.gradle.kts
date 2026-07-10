@@ -20,7 +20,7 @@ plugins {
 }
 
 jdk {
-    version = "25.0.2+"
+    version = rootProject.libs.versions.jdkNative.get()
     javaFxBundled = true
     nativeImageCapable = true
 }
