@@ -65,6 +65,44 @@ allprojects {
     }
 }
 
+allprojects {
+    val projectPath = path
+
+    tasks.register("resolveAndLockAll") {
+        group = "build setup"
+        description = "Resolves all resolvable configurations in this project for dependency locking."
+
+        notCompatibleWithConfigurationCache("Resolves all configurations to update dependency lock files.")
+
+        doFirst {
+            require(gradle.startParameter.isWriteDependencyLocks) {
+                "Run this task with --write-locks to update lock files."
+            }
+        }
+
+        doLast {
+            configurations
+                .filter {
+                    it.isCanBeResolved &&
+                        // Graal plugin wires an incomplete nativeImageTestClasspath configuration.
+                        it.name != "nativeImageTestClasspath"
+                }
+                .forEach { configuration ->
+                    runCatching { configuration.resolve() }
+                        .onFailure { error ->
+                            logger.warn(
+                                "Skipping dependency lock update for $projectPath:${configuration.name}: ${error.message}"
+                            )
+                        }
+                }
+        }
+    }
+}
+
+tasks.named("resolveAndLockAll") {
+    dependsOn(subprojects.map { it.tasks.named("resolveAndLockAll") })
+}
+
 group = Meta.GROUP
 version = projectVersion
 

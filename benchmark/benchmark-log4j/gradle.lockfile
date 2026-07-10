@@ -1,0 +1,27 @@
+# This is a Gradle generated file for dependency locking.
+# Manual edits can break the build and are not advised.
+# This file is expected to be part of source control.
+# To regenerate this file, run: ./gradlew :benchmark:benchmark-log4j:dependencies --write-locks
+biz.aQute.bnd:biz.aQute.bnd.annotation:7.1.0=jmhCompileClasspath
+com.google.errorprone:error_prone_annotations:2.38.0=jmhCompileClasspath
+commons-logging:commons-logging:1.4.0=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+net.sf.jopt-simple:jopt-simple:5.0.4=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+org.apache.commons:commons-math3:3.6.1=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+org.apache.logging.log4j:log4j-api:2.26.1=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+org.apache.logging.log4j:log4j-bom:2.26.1=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+org.apache.logging.log4j:log4j-core:2.26.1=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+org.apache.logging.log4j:log4j-jcl:2.26.1=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+org.apache.logging.log4j:log4j-jul:2.26.1=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+org.apache.logging.log4j:log4j-slf4j2-impl:2.26.1=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+org.jspecify:jspecify:1.0.0=jmhCompileClasspath
+org.openjdk.jmh:jmh-core:1.37=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+org.openjdk.jmh:jmh-generator-asm:1.37=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+org.openjdk.jmh:jmh-generator-bytecode:1.37=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+org.openjdk.jmh:jmh-generator-reflection:1.37=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+org.osgi:org.osgi.annotation.bundle:2.0.0=jmhCompileClasspath
+org.osgi:org.osgi.annotation.versioning:1.1.2=jmhCompileClasspath
+org.osgi:org.osgi.resource:1.0.0=jmhCompileClasspath
+org.osgi:org.osgi.service.serviceloader:1.0.0=jmhCompileClasspath
+org.ow2.asm:asm:9.0=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+org.slf4j:slf4j-api:2.0.18=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+empty=annotationProcessor,compileClasspath,jmhAnnotationProcessor,testAnnotationProcessor,testCompileClasspath
