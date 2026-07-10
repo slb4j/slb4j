@@ -78,4 +78,9 @@
         <Bug pattern="LG_LOST_LOGGER_DUE_TO_WEAK_REFERENCE"/>
         <Class name="org.slb4j.ReentrantLoggingTest"/>
     </Match>
+
+    <Match>
+        <Bug pattern="USO_UNSAFE_OBJECT_SYNCHRONIZATION"/>
+        <Class name="org.slb4j.handler.RotatingFileHandler"/>
+    </Match>
 </FindBugsFilter>
