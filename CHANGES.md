@@ -1,7 +1,16 @@
+Version 0.12.2
+--------------
+
+- update Gradle version locking
+- fixed an incompatibility with Log4J pattern layout
+- added new methods for checking availability of SLB4J extensions for Swing and JavaFX
+- build script refactorings and fixes for Gradle 10 compatibility warnings
+- some minor code and documentation fixes; plugin and dependency uopdates
+
 Version 0.12.1
 --------------
 
-- fix race condition when setting logger levels 13 minutes ago
+- fix race condition when setting logger levels
 
 Version 0.12.0
 --------------
