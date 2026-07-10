@@ -138,6 +138,11 @@ correctly.
   - layouts: PatternLayout, SimpleLayout, CsvLayout, XmlLayout, JsonLayout, YamlLayout
   - log rotation (size or time based)
   
+  **Known incompatibilities:**
+
+  - The pattern "%d{dd-MMMM-yyyy}{de-DE} %p %m%n" does not use localized month names in Log4J but does in SLB4J.
+    For details, read the Log4J2 issue: https://github.com/apache/logging-log4j2/issues/4177#issuecomment-4932822264
+
 - **Java Util Logging compatibility**
   - automaticially load and apply logging.properties
   - Java Util Logging pattern syntax
