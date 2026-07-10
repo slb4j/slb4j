@@ -50,7 +50,13 @@ public final class PatternLayout implements LogLayout {
 
     private static final int MINIMUM_BUFFER_CAPACITY = 256;
 
-    private static final Pattern PATTERN = Pattern.compile("%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)(\\{([^}]+)})?(\\{([^}]+)})?(\\{([^}]+)})?|%%|%(?![a-zA-Z])");
+    private static final Pattern PATTERN = Pattern.compile(
+            "%(-?\\d*)(\\.\\d+)?([a-zA-Z]+)"
+                    + "(\\{((?:[^{}]|\\{[^{}]*})*)})?"
+                    + "(\\{((?:[^{}]|\\{[^{}]*})*)})?"
+                    + "(\\{((?:[^{}]|\\{[^{}]*})*)})?"
+                    + "|%%|%(?![a-zA-Z])"
+    );
 
     private static final Pattern LOGGER_PRECISION_PATTERN = Pattern.compile("^(\\d+)(\\.)?$");
 
@@ -1521,17 +1527,52 @@ public final class PatternLayout implements LogLayout {
     }
 
     private static Optional<ZoneId> toZoneId(@Nullable String s) {
-        if (s == null || s.isBlank()) return Optional.empty();
+        String candidate = resolveLog4jLookup(s);
+        if (candidate == null || candidate.isBlank()) return Optional.empty();
         try {
-            return Optional.of(ZoneId.of(s));
+            return Optional.of(ZoneId.of(candidate));
         } catch (DateTimeException ignored) {
             return Optional.empty();
         }
     }
 
     private static Optional<Locale> toLocale(@Nullable String s) {
-        if (s == null || s.isBlank()) return Optional.empty();
-        return Optional.of(Locale.forLanguageTag(s.replace('_', '-')));
+        String candidate = resolveLog4jLookup(s);
+        if (candidate == null || candidate.isBlank()) return Optional.empty();
+        return Optional.of(Locale.forLanguageTag(candidate.replace('_', '-')));
+    }
+
+    private static @Nullable String resolveLog4jLookup(@Nullable String s) {
+        if (s == null) return null;
+
+        String candidate = s.strip();
+        if (!(candidate.startsWith("${") && candidate.endsWith("}"))) {
+            return candidate;
+        }
+
+        String body = candidate.substring(2, candidate.length() - 1);
+        int colonIndex = body.indexOf(':');
+        if (colonIndex <= 0) {
+            return candidate;
+        }
+
+        String prefix = body.substring(0, colonIndex);
+        String keyWithDefault = body.substring(colonIndex + 1);
+        String key = keyWithDefault;
+        @Nullable String defaultValue = null;
+        int defaultIndex = keyWithDefault.indexOf(":-");
+        if (defaultIndex >= 0) {
+            key = keyWithDefault.substring(0, defaultIndex);
+            defaultValue = keyWithDefault.substring(defaultIndex + 2);
+        }
+
+        @Nullable String value = switch (prefix) {
+            case "sys" -> System.getProperty(key);
+            case "env" -> System.getenv(key);
+            default -> null;
+        };
+
+        return value != null ? value : defaultValue != null ? defaultValue : candidate;
     }
 
     private static List<LogPatternEntry> parseLiterals(String literal) {
