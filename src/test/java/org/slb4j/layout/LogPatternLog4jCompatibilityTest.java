@@ -208,6 +208,9 @@ class LogPatternLog4jCompatibilityTest {
             "[%d{EEEE, MMMM dd, yyyy - hh:mm a}] %-5p: %m%n",
             "%d{dd-MMM hh:mm:ss a} %-5p %c{1} - %m%n",
             // patterns with locale
+// Log4J issues for the following two:
+// - https://github.com/apache/logging-log4j2/issues/4129
+// - https://github.com/apache/logging-log4j2/issues/4177
 // XXX - fails because unsupported by Log4J2: "%d{dd-MMMM-yyyy}{de-DE} %p %m%n",
 // XXX - fails because unsupported by Log4J2: "%d{EEEE, dd. MMMM yyyy}{de-DE} %p %m%n",
             "%d{dd-MMMM-yyyy}{GMT} %p %m%n",
