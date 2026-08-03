@@ -8,7 +8,7 @@ spotbugs-plugin = { id = "com.github.spotbugs", version = "6.5.9" }
 versions-plugin = { id = "com.github.ben-manes.versions", version = "0.54.0" }
 
 [versions]
-projectVersion = "0.12.3"
+projectVersion = "0.12.4-SNAPSHOT"
 
 jdk = "21"
 jdkNative = "25"
