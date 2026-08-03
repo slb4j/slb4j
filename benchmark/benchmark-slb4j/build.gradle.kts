@@ -15,7 +15,7 @@ dependencies {
     jmh(libs.jcl)
 
     // backend
-    jmh(rootProject)
+    jmh(project(rootProject.path))
 }
 
 jmh {

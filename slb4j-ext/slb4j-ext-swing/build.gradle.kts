@@ -32,7 +32,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testRuntimeOnly(libs.junit.platform.launcher)
 
-    api(rootProject)
+    api(project(rootProject.path))
     api(project(":slb4j-ext"))
 }
 

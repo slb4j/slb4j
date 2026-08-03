@@ -43,7 +43,7 @@ graalvmNative {
 }
 
 dependencies {
-    implementation(rootProject)
+    implementation(project(rootProject.path))
     implementation(project(":slb4j-ext:slb4j-ext-fx"))
     implementation(platform(libs.log4j.bom))
     implementation(libs.slf4j.api)

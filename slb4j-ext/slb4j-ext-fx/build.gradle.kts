@@ -27,7 +27,7 @@ java {
 description = "SLB4J extensions for JavaFX"
 
 dependencies {
-    api(rootProject)
+    api(project(rootProject.path))
     api(project(":slb4j-ext"))
     implementation(libs.jspecify)
 

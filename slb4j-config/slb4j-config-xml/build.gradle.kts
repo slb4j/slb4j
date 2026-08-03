@@ -27,7 +27,7 @@ java {
 description = "SLB4J configuration library (XML)"
 
 dependencies {
-    api(rootProject)
+    api(project(rootProject.path))
     api(project(":slb4j-config"))
     implementation(libs.jspecify)
 

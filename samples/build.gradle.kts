@@ -21,7 +21,7 @@ subprojects {
     }
 
     dependencies {
-        "implementation"(rootProject)
+        add("implementation", project(rootProject.path))
     }
 
     configure<JavaApplication> {
