@@ -15,6 +15,7 @@
  */
 package org.slb4j;
 
+import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -69,7 +70,7 @@ class SLB4JAvailabilityTest {
         );
         return new ClassLoader(null) {
             @Override
-            public URL getResource(String name) {
+            public @Nullable URL getResource(String name) {
                 return availableResources.contains(name) ? markerResource : null;
             }
         };
