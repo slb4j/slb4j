@@ -1,23 +1,23 @@
 [plugins]
-cabe-plugin = { id = "com.dua3.cabe", version = "4.4.0" }
-graalvm-plugin = { id = "org.graalvm.buildtools.native", version = "1.1.3" }
-jdkprovider-plugin = { id = "com.dua3.gradle.jdkprovider", version = "0.8.0" }
+cabe-plugin = { id = "com.dua3.cabe", version = "4.5.0" }
+graalvm-plugin = { id = "org.graalvm.buildtools.native", version = "1.1.6" }
+jdkprovider-plugin = { id = "com.dua3.gradle.jdkprovider", version = "0.11.0" }
 jmh-plugin = { id = "me.champeau.jmh", version = "0.7.3" }
 jreleaser-plugin = { id = "org.jreleaser", version = "1.24.0" }
-spotbugs-plugin = { id = "com.github.spotbugs", version = "6.5.8" }
+spotbugs-plugin = { id = "com.github.spotbugs", version = "6.5.9" }
 versions-plugin = { id = "com.github.ben-manes.versions", version = "0.54.0" }
 
 [versions]
 projectVersion = "0.12.3-SNAPSHOT"
 
-jdk = "21.0.11"
-jdkNative = "25.0.3"
+jdk = "21"
+jdkNative = "25"
 
 commons-logging = "1.4.0"
 jmh = "1.37"
 jackson = "3.1.2"
-jspecify = "1.0.0"
-junit-bom = "6.1.1"
+jspecify = "1.0.1"
+junit-bom = "6.1.2"
 log4j = "2.26.1"
 logback = "1.5.25"
 slf4j = "2.0.18"
