@@ -102,7 +102,7 @@ public abstract class LayoutBuilder {
                 }
                 value = attribute.defaultValue();
             }
-            values.put(attributeName, attribute.converter().apply(value));
+            values.put(attributeName, Objects.requireNonNull(attribute.converter(), "Converter for attribute " + attributeName + " is null").apply(value));
         });
     }
 
