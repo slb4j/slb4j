@@ -1,3 +1,9 @@
+Version 0.12.3
+--------------
+
+- fix NPE when `null` is passed as message to logging calls
+- fix Gradle issues
+
 Version 0.12.2
 --------------
 
