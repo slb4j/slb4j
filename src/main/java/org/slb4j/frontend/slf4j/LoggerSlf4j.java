@@ -106,7 +106,7 @@ public final class LoggerSlf4j extends AbstractLogger {
      * @return the formatted message if arguments are provided, or the raw message pattern
      *         if no arguments are given
      */
-    public static Supplier<CharSequence> formatSlf4jMessage(String messagePattern, @Nullable Object @Nullable [] arguments) {
+    public static Supplier<CharSequence> formatSlf4jMessage(@Nullable String messagePattern, @Nullable Object @Nullable [] arguments) {
         if (arguments != null && arguments.length > 0) {
             return () -> {
                 try {
@@ -116,7 +116,7 @@ public final class LoggerSlf4j extends AbstractLogger {
                 }
             };
         } else {
-            return messagePattern::toString;
+            return String.valueOf(messagePattern)::toString; // nullsafe code that avoids creating a lambda
         }
     }
 
@@ -126,7 +126,7 @@ public final class LoggerSlf4j extends AbstractLogger {
     }
 
     @Override
-    protected void handleNormalizedLoggingCall(Level level, @Nullable Marker marker, String messagePattern, @Nullable Object @Nullable [] arguments, @Nullable Throwable throwable) {
+    protected void handleNormalizedLoggingCall(Level level, @Nullable Marker marker, @Nullable String messagePattern, @Nullable Object @Nullable [] arguments, @Nullable Throwable throwable) {
         LogLevel lvl = translateSlf4jLevel(level);
         if (DISPATCHER.isLevelEnabled(lvl)) {
             Supplier<CharSequence> msg = formatSlf4jMessage(messagePattern, arguments);

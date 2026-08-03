@@ -45,7 +45,7 @@ public final class LoggerJcl implements Log {
     }
 
     @Override
-    public void debug(Object message) {
+    public void debug(@Nullable Object message) {
         dispatch(LogLevel.DEBUG, message, null);
     }
 
@@ -67,37 +67,37 @@ public final class LoggerJcl implements Log {
     }
 
     @Override
-    public void debug(Object message, @Nullable Throwable t) {
+    public void debug(@Nullable Object message, @Nullable Throwable t) {
         dispatch(LogLevel.DEBUG, message, t);
     }
 
     @Override
-    public void error(Object message) {
+    public void error(@Nullable Object message) {
         dispatch(LogLevel.ERROR, message, null);
     }
 
     @Override
-    public void error(Object message, @Nullable Throwable t) {
+    public void error(@Nullable Object message, @Nullable Throwable t) {
         dispatch(LogLevel.ERROR, message, t);
     }
 
     @Override
-    public void fatal(Object message) {
+    public void fatal(@Nullable Object message) {
         dispatch(LogLevel.ERROR, message, null);
     }
 
     @Override
-    public void fatal(Object message, @Nullable Throwable t) {
+    public void fatal(@Nullable Object message, @Nullable Throwable t) {
         dispatch(LogLevel.ERROR, message, t);
     }
 
     @Override
-    public void info(Object message) {
+    public void info(@Nullable Object message) {
         dispatch(LogLevel.INFO, message, null);
     }
 
     @Override
-    public void info(Object message, @Nullable Throwable t) {
+    public void info(@Nullable Object message, @Nullable Throwable t) {
         dispatch(LogLevel.INFO, message, t);
     }
 
@@ -133,22 +133,22 @@ public final class LoggerJcl implements Log {
     }
 
     @Override
-    public void trace(Object message) {
+    public void trace(@Nullable Object message) {
         dispatch(LogLevel.TRACE, message, null);
     }
 
     @Override
-    public void trace(Object message, @Nullable Throwable t) {
+    public void trace(@Nullable Object message, @Nullable Throwable t) {
         dispatch(LogLevel.TRACE, message, t);
     }
 
     @Override
-    public void warn(Object message) {
+    public void warn(@Nullable Object message) {
         dispatch(LogLevel.WARN, message, null);
     }
 
     @Override
-    public void warn(Object message, @Nullable Throwable t) {
+    public void warn(@Nullable Object message, @Nullable Throwable t) {
         dispatch(LogLevel.WARN, message, t);
     }
 

@@ -104,12 +104,12 @@ public final class LoggerLog4j extends AbstractLogger {
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, Message message, @Nullable Throwable t) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable Message message, @Nullable Throwable t) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, CharSequence message, @Nullable Throwable t) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable CharSequence message, @Nullable Throwable t) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
@@ -119,67 +119,67 @@ public final class LoggerLog4j extends AbstractLogger {
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Throwable t) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Throwable t) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object @Nullable ... params) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Object @Nullable ... params) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object p0) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Object p0) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object p0, @Nullable Object p1) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Object p0, @Nullable Object p1) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4, @Nullable Object p5) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4, @Nullable Object p5) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4, @Nullable Object p5, @Nullable Object p6) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4, @Nullable Object p5, @Nullable Object p6) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4, @Nullable Object p5, @Nullable Object p6, @Nullable Object p7) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4, @Nullable Object p5, @Nullable Object p6, @Nullable Object p7) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4, @Nullable Object p5, @Nullable Object p6, @Nullable Object p7, @Nullable Object p8) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4, @Nullable Object p5, @Nullable Object p6, @Nullable Object p7, @Nullable Object p8) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
     @Override
-    public boolean isEnabled(Level level, @Nullable Marker marker, String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4, @Nullable Object p5, @Nullable Object p6, @Nullable Object p7, @Nullable Object p8, @Nullable Object p9) {
+    public boolean isEnabled(Level level, @Nullable Marker marker, @Nullable String message, @Nullable Object p0, @Nullable Object p1, @Nullable Object p2, @Nullable Object p3, @Nullable Object p4, @Nullable Object p5, @Nullable Object p6, @Nullable Object p7, @Nullable Object p8, @Nullable Object p9) {
         return DISPATCHER.isEnabled(name, translateLog4jLevel(level), marker == null ? null : marker.getName());
     }
 
