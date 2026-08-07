@@ -1086,9 +1086,6 @@ jreleaser {
         active.set(org.jreleaser.model.Active.ALWAYS)
         pgp {
             armored.set(true)
-            System.getenv("JRELEASER_GPG_PUBLIC_KEY")
-                ?.takeIf { it.isNotBlank() }
-                ?.let { publicKey.set(it) }
             secretKey.set(System.getenv("SIGNING_SECRET_KEY"))
             passphrase.set(System.getenv("SIGNING_PASSWORD"))
         }
