@@ -2,5 +2,6 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 # To regenerate this file, run: ./gradlew :samples:jul:dependencies --write-locks
-org.jspecify:jspecify:1.0.0=runtimeClasspath,testRuntimeClasspath
+org.jspecify:jspecify:1.0.0=testRuntimeClasspath
+org.jspecify:jspecify:1.0.1=runtimeClasspath
 empty=annotationProcessor,compileClasspath,testAnnotationProcessor,testCompileClasspath
