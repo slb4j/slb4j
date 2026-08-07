@@ -47,6 +47,9 @@ receive signing or Maven Central credentials.
 The protected Publish prepared release workflow downloads the bundle from that exact
 successful CI run, verifies the plan, artifact set, and checksums, then signs and
 deploys the bundle with JReleaser. It never rebuilds the artifacts being promoted.
+It starts automatically after a successful Build run containing a committed prepared
+plan. Manual dispatch is retained only as a controlled retry path and requires the
+protected branch (`main`) and the successful Build run ID.
 
 Required protected secrets are:
 

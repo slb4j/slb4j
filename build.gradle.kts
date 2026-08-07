@@ -745,8 +745,12 @@ tasks.register("checkReleaseCompatibility") {
         plan.modules.filterValues { it.selected }.forEach { (moduleName, module) ->
             val oldVersion = state.modules.getValue(moduleName).version
             val oldJar = downloadPublishedModuleJar(moduleName, oldVersion)
-            val newJar = project(moduleProjectPaths.getValue(moduleName)).layout.buildDirectory
-                .file("libs/$moduleName-${module.version}.jar").get().asFile
+            val newJar = if (prebuiltReleaseBundleMode) {
+                stagedReleaseFile(moduleName, module.version, "$moduleName-${module.version}.jar")
+            } else {
+                project(moduleProjectPaths.getValue(moduleName)).layout.buildDirectory
+                    .file("libs/$moduleName-${module.version}.jar").get().asFile
+            }
             check(newJar.isFile) { "candidate artifact was not built: ${newJar.path}" }
             logger.lifecycle("Checking binary compatibility: $moduleName $oldVersion -> ${module.version}")
             val javaExecutable = File(System.getProperty("java.home"), "bin/java").absolutePath
@@ -962,6 +966,10 @@ val verifyCiReleaseBundle = tasks.register("verifyCiReleaseBundle") {
     }
 }
 
+tasks.named("checkReleaseCompatibility") {
+    mustRunAfter(verifyCiReleaseBundle)
+}
+
 tasks.register("publishSnapshotsToMavenLocal") {
     group = "publishing"
     description = "Publishes every library module and the BOM to the local Maven repository."
@@ -1078,7 +1086,9 @@ jreleaser {
         active.set(org.jreleaser.model.Active.ALWAYS)
         pgp {
             armored.set(true)
-            publicKey.set(System.getenv("JRELEASER_GPG_PUBLIC_KEY"))
+            System.getenv("JRELEASER_GPG_PUBLIC_KEY")
+                ?.takeIf { it.isNotBlank() }
+                ?.let { publicKey.set(it) }
             secretKey.set(System.getenv("SIGNING_SECRET_KEY"))
             passphrase.set(System.getenv("SIGNING_PASSWORD"))
         }
