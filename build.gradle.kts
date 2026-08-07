@@ -38,7 +38,6 @@ plugins {
     alias(libs.plugins.jdkprovider.plugin)
     alias(libs.plugins.cabe.plugin)
     alias(libs.plugins.spotbugs.plugin)
-    alias(libs.plugins.versions.plugin)
     alias(libs.plugins.jreleaser.plugin)
     jacoco
 }

@@ -5,10 +5,10 @@ jdkprovider-plugin = { id = "com.dua3.gradle.jdkprovider", version = "0.11.0" }
 jmh-plugin = { id = "me.champeau.jmh", version = "0.7.3" }
 jreleaser-plugin = { id = "org.jreleaser", version = "1.25.0" }
 spotbugs-plugin = { id = "com.github.spotbugs", version = "6.5.10" }
-versions-plugin = { id = "com.github.ben-manes.versions", version = "0.54.0" }
 
 [versions]
 projectVersion = "0.12.4-SNAPSHOT"
+versions-plugin = "0.60.0"
 
 jdk = "21"
 jdkNative = "25"
