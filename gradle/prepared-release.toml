@@ -1,0 +1,65 @@
+[release]
+schemaVersion = 1
+releaseType = "patch"
+bomVersion = "0.12.4"
+sourceRevision = "3a535b881c8d807c43400f6e111619f6e20f3979"
+
+[modules.slb4j]
+version = "0.12.4"
+sourceRevision = "3a535b881c8d807c43400f6e111619f6e20f3979"
+selected = true
+reason = "direct source and shared build input change"
+
+[modules.slb4j-ext]
+version = "0.12.4"
+sourceRevision = "3a535b881c8d807c43400f6e111619f6e20f3979"
+selected = true
+reason = "shared build or dependency input change"
+
+[modules.slb4j-ext-layouts]
+version = "0.12.4"
+sourceRevision = "3a535b881c8d807c43400f6e111619f6e20f3979"
+selected = true
+reason = "shared build or dependency input change"
+
+[modules.slb4j-ext-swing]
+version = "0.12.4"
+sourceRevision = "3a535b881c8d807c43400f6e111619f6e20f3979"
+selected = true
+reason = "shared build or dependency input change"
+
+[modules.slb4j-ext-fx]
+version = "0.12.4"
+sourceRevision = "3a535b881c8d807c43400f6e111619f6e20f3979"
+selected = true
+reason = "shared build or dependency input change"
+
+[modules.slb4j-config]
+version = "0.12.4"
+sourceRevision = "3a535b881c8d807c43400f6e111619f6e20f3979"
+selected = true
+reason = "shared build or dependency input change"
+
+[modules.slb4j-config-json]
+version = "0.12.4"
+sourceRevision = "3a535b881c8d807c43400f6e111619f6e20f3979"
+selected = true
+reason = "shared build or dependency input change"
+
+[modules.slb4j-config-yaml]
+version = "0.12.4"
+sourceRevision = "3a535b881c8d807c43400f6e111619f6e20f3979"
+selected = true
+reason = "shared build or dependency input change"
+
+[modules.slb4j-config-xml]
+version = "0.12.4"
+sourceRevision = "3a535b881c8d807c43400f6e111619f6e20f3979"
+selected = true
+reason = "shared build or dependency input change"
+
+[modules.slb4j-config-all]
+version = "0.12.4"
+sourceRevision = "3a535b881c8d807c43400f6e111619f6e20f3979"
+selected = true
+reason = "shared build or dependency input change"
