@@ -38,7 +38,7 @@ class SLB4JAvailabilityTest {
 
     @Test
     void testIsSlb4jExtAvailableReflectsClasspath() {
-        assertAvailability(SLB4J::isSlb4jExtAvailable, "org.slf4j.ext.LogBufer");
+        assertAvailability(SLB4J::isSlb4jExtAvailable, "org.slf4j.ext.LogBuffer");
     }
 
     @Test

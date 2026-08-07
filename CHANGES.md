@@ -1,3 +1,8 @@
+Version 0.13.0 (in progress)
+--------------
+
+- fix SLBT.isSlb4jExtAvailable() always returning false
+
 Version 0.12.3
 --------------
 
