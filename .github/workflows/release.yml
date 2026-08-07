@@ -1,0 +1,95 @@
+name: Publish prepared release
+
+on:
+  workflow_run:
+    workflows: [ "Build" ]
+    types: [ completed ]
+  workflow_dispatch:
+    inputs:
+      branch:
+        description: Protected branch containing the committed prepared plan
+        required: true
+        type: string
+      revision:
+        description: Commit SHA containing the prepared plan and tested bundle
+        required: true
+        type: string
+      ci_run_id:
+        description: Successful Build workflow run containing the tested bundle
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: write
+
+concurrency:
+  group: prepared-release-${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || inputs.branch || github.ref_name }}
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish prepared release
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.event == 'push' && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.head_repository.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    environment: maven-central-release
+    steps:
+      - name: Check out prepared release
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.revision }}
+          fetch-depth: 0
+
+      - name: Verify prepared plan is at the branch tip
+        env:
+          RELEASE_BRANCH: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || inputs.branch }}
+        run: |
+          set -euo pipefail
+          git fetch --no-tags origin "refs/heads/$RELEASE_BRANCH:refs/remotes/origin/$RELEASE_BRANCH"
+          test "$(git rev-parse HEAD)" = "$(git rev-parse "origin/$RELEASE_BRANCH")"
+          test -f gradle/prepared-release.toml
+
+      - name: Download tested release bundle
+        uses: actions/download-artifact@v6
+        with:
+          name: release-bundle
+          path: ${{ github.workspace }}/build
+          run-id: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.id || inputs.ci_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify release bundle checksums
+        run: |
+          set -euo pipefail
+          test -f build/release-bundle/manifest.sha256
+          test -f build/release-bundle/metadata.properties
+          (cd build && sha256sum --check --strict release-bundle/manifest.sha256)
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v5
+        with:
+          java-version: '21'
+          distribution: zulu
+          java-package: jdk+fx
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v5
+
+      - name: Configure Git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Publish tested release bundle
+        run: ./gradlew --no-daemon --no-configuration-cache -PprebuiltReleaseBundle=true publishPreparedReleaseFromCi
+        env:
+          SONATYPE_USERNAME: ${{ secrets.SONATYPE_USERNAME }}
+          SONATYPE_PASSWORD: ${{ secrets.SONATYPE_PASSWORD }}
+          SIGNING_SECRET_KEY: ${{ secrets.SIGNING_SECRET_KEY }}
+          SIGNING_PASSWORD: ${{ secrets.SIGNING_PASSWORD }}
+          JRELEASER_GPG_PUBLIC_KEY: ${{ secrets.JRELEASER_GPG_PUBLIC_KEY }}
+
+      - name: Finalize published release
+        env:
+          RELEASE_BRANCH: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_branch || inputs.branch }}
+        run: ./gradlew --no-daemon --no-configuration-cache finalizeRelease -PconfirmFinalize=true -PpushReleaseTag=true -PreleaseBranch="$RELEASE_BRANCH"

@@ -1,7 +1,8 @@
-Version 0.13.0 (in progress)
+Version 0.12.4
 --------------
 
-- fix SLBT.isSlb4jExtAvailable() always returning false
+- fix SLB4J.isSlb4jExtAvailable() always returning false
+- add selective Maven publishing with a BOM and reproducible release plans
 
 Version 0.12.3
 --------------
