@@ -3,8 +3,8 @@
 # This file is expected to be part of source control.
 # To regenerate this file, run: ./gradlew :benchmark:benchmark-logback:dependencies --write-locks
 biz.aQute.bnd:biz.aQute.bnd.annotation:7.1.0=jmhCompileClasspath
-ch.qos.logback:logback-classic:1.5.25=jmh,jmhCompileClasspath,jmhRuntimeClasspath
-ch.qos.logback:logback-core:1.5.25=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+ch.qos.logback:logback-classic:1.6.1=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+ch.qos.logback:logback-core:1.6.1=jmh,jmhCompileClasspath,jmhRuntimeClasspath
 com.google.errorprone:error_prone_annotations:2.38.0=jmhCompileClasspath
 commons-logging:commons-logging:1.4.0=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 net.sf.jopt-simple:jopt-simple:5.0.4=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath

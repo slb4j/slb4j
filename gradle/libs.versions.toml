@@ -30,7 +30,9 @@ jackson-dataformat-yaml = { group = "tools.jackson.dataformat", name = "jackson-
 jspecify = { group = "org.jspecify", name = "jspecify", version.ref = "jspecify" }
 junit-bom = { group = "org.junit", name = "junit-bom", version.ref = "junit-bom" }
 junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter" }
+junit-platform-console = { group = "org.junit.platform", name = "junit-platform-console" }
 junit-platform-launcher = { group = "org.junit.platform", name = "junit-platform-launcher" }
+junit-platform-reporting = { group = "org.junit.platform", name = "junit-platform-reporting" }
 
 # JMH
 jmh-core = { group = "org.openjdk.jmh", name = "jmh-core", version.ref = "jmh" }

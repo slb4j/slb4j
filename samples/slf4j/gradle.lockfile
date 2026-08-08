@@ -2,7 +2,6 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 # To regenerate this file, run: ./gradlew :samples:slf4j:dependencies --write-locks
-org.jspecify:jspecify:1.0.0=testRuntimeClasspath
-org.jspecify:jspecify:1.0.1=runtimeClasspath
+org.jspecify:jspecify:1.0.1=runtimeClasspath,testRuntimeClasspath
 org.slf4j:slf4j-api:2.0.18=compileClasspath,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 empty=annotationProcessor,testAnnotationProcessor

@@ -2,17 +2,10 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 # To regenerate this file, run: ./gradlew :native:slb4j-fx-native-test:dependencies --write-locks
-biz.aQute.bnd:biz.aQute.bnd.annotation:7.1.0=testCompileClasspath
-com.google.errorprone:error_prone_annotations:2.38.0=testCompileClasspath
 commons-logging:commons-logging:1.4.0=compileClasspath,nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apache.logging.log4j:log4j-api:2.26.1=compileClasspath,nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apache.logging.log4j:log4j-bom:2.26.1=compileClasspath,nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.graalvm.buildtools:junit-platform-native:1.1.3=nativeImageTestClasspathInternal
-org.jspecify:jspecify:1.0.0=nativeImageClasspath,nativeImageTestClasspathInternal,testCompileClasspath,testRuntimeClasspath
-org.jspecify:jspecify:1.0.1=runtimeClasspath
-org.osgi:org.osgi.annotation.bundle:2.0.0=testCompileClasspath
-org.osgi:org.osgi.annotation.versioning:1.1.2=testCompileClasspath
-org.osgi:org.osgi.resource:1.0.0=testCompileClasspath
-org.osgi:org.osgi.service.serviceloader:1.0.0=testCompileClasspath
+org.graalvm.buildtools:junit-platform-native:1.1.8=nativeImageTestClasspathInternal
+org.jspecify:jspecify:1.0.1=nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testRuntimeClasspath
 org.slf4j:slf4j-api:2.0.18=compileClasspath,nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 empty=annotationProcessor,testAnnotationProcessor
