@@ -397,7 +397,7 @@ public final class SLB4J {
      * @return {@code true} if the SLF4J LogBuffer extension is available; {@code false} otherwise.
      */
     public static boolean isSlb4jExtAvailable() {
-        return Util.isClassOnClasspath("org.slf4j.ext.LogBuffer");
+        return Util.isClassOnClasspath("org.slb4j.ext.LogBuffer");
     }
 
     /**
