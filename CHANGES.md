@@ -1,3 +1,10 @@
+Version 0.12.5
+--------------
+
+- fix package name in class lookup
+- add lockfile update script
+- update lockfiles
+
 Version 0.12.4
 --------------
 
