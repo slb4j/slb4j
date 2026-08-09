@@ -14,7 +14,8 @@ Options:
   -h, --help                    Show this help text.
 
 The script first displays a dry-run release plan. On confirmation, it writes and
-commits gradle/prepared-release.toml. A second confirmation pushes that commit.
+commits gradle/prepared-release.toml and the release projectVersion in
+gradle/libs.versions.toml. A second confirmation pushes that commit.
 EOF
 }
 
@@ -126,7 +127,34 @@ fi
 prepared_version="$(awk -F '"' '/^bomVersion = "/ { print $2; exit }' gradle/prepared-release.toml)"
 [[ -n "$prepared_version" ]] || { echo "Could not determine the prepared version." >&2; exit 1; }
 
-git add -- gradle/prepared-release.toml
+if ! [[ "$prepared_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+    echo "Prepared release version is not a stable semantic version: $prepared_version" >&2
+    exit 1
+fi
+
+temporary_catalog="$(mktemp)"
+if ! awk -v version="$prepared_version" '
+    /^[[:space:]]*projectVersion[[:space:]]*=/ {
+        count++
+        if ($0 !~ /^[[:space:]]*projectVersion[[:space:]]*=[[:space:]]*"[^"]+"[[:space:]]*(#.*)?$/) {
+            malformed = 1
+        }
+        sub(/"[^"]+"/, "\"" version "\"")
+    }
+    { print }
+    END {
+        if (count != 1 || malformed) {
+            exit 1
+        }
+    }
+' gradle/libs.versions.toml > "$temporary_catalog"; then
+    rm -f "$temporary_catalog"
+    echo "Could not update exactly one projectVersion declaration in gradle/libs.versions.toml." >&2
+    exit 1
+fi
+mv "$temporary_catalog" gradle/libs.versions.toml
+
+git add -- gradle/prepared-release.toml gradle/libs.versions.toml
 git commit -m "Prepare release $prepared_version"
 
 echo "Prepared release $prepared_version in $(git rev-parse --short HEAD)."

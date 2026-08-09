@@ -2,7 +2,7 @@
 
 SLB4J publishes the slb4j-bom on every stable release. Major and minor releases
 publish all libraries; patch releases publish only the libraries selected by the
-prepared release plan.
+prepared release plan. A dependency-catalog-only patch may publish only the BOM.
 
 ## Prepare
 
@@ -15,9 +15,11 @@ Start from a clean branch that is synchronized with its upstream:
 ~~~
 
 The script first runs a dry run. It validates the release line, scoped Git history,
-Maven Central coordinates, and module selection. It asks before writing and committing
-gradle/prepared-release.toml, then asks separately before pushing the preparation
-commit. A patch with no changed library is rejected.
+Maven Central coordinates, and module selection. Dependency lockfile-only changes do
+not select libraries; ordinary dependency-catalog changes can produce a BOM-only patch.
+It asks before writing and committing gradle/prepared-release.toml and the stable
+projectVersion in gradle/libs.versions.toml, then asks separately before pushing the
+preparation commit.
 
 Use --additional-modules module-a,module-b only after reviewing why an unchanged
 dependent must publish a new minimum internal dependency version.
@@ -80,7 +82,9 @@ Maven Central accepted.
 
 ## Snapshots
 
-Development continues with projectVersion in gradle/libs.versions.toml. To publish all
+Development normally continues with a snapshot projectVersion in gradle/libs.versions.toml.
+Preparation temporarily writes the stable release version there so the release bytecode
+instrumentation is used; finalization advances it to the next snapshot. To publish all
 current snapshots locally:
 
 ~~~bash

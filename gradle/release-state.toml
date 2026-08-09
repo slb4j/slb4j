@@ -1,6 +1,7 @@
 [release]
-schemaVersion = 1
+schemaVersion = 2
 bomVersion = "0.12.5"
+publishedRevision = "a023d6f5e9a57079c0429fbec2dfa45a05936ce2"
 
 [modules.slb4j]
 version = "0.12.5"

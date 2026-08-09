@@ -105,6 +105,7 @@ private data class ModuleReleaseState(
 
 private data class PublishedReleaseState(
     val bomVersion: String,
+    val bomPublishedRevision: String,
     val modules: Map<String, ModuleReleaseState>
 )
 
@@ -183,6 +184,8 @@ private fun readPublishedReleaseState(file: File): PublishedReleaseState {
     }
     return PublishedReleaseState(
         release["bomVersion"] ?: throw GradleException("release.bomVersion missing from ${file.path}"),
+        release["publishedRevision"]
+            ?: throw GradleException("release.publishedRevision missing from ${file.path}"),
         modules
     )
 }
@@ -621,7 +624,6 @@ private fun validatePreparedReleasePlan(plan: PreparedReleasePlan) {
         "prepared release source revision is not an ancestor of HEAD: ${plan.sourceRevision}"
     }
     val selectedModules = plan.modules.filterValues { it.selected }.keys
-    check(selectedModules.isNotEmpty()) { "prepared release plan does not select any library module" }
     check(selectedModules == configuredSelectedReleaseModules) {
         "prepared release plan does not match the modules selected during Gradle configuration"
     }
@@ -655,6 +657,9 @@ private fun renderReleasePlan(plan: PreparedReleasePlan) = buildString {
     appendLine("  modules to publish:")
     plan.modules.filterValues { it.selected }.forEach { (moduleName, module) ->
         appendLine("    $moduleName:${module.version} (${module.reason})")
+    }
+    if (plan.modules.values.none { it.selected }) {
+        appendLine("    (none; BOM-only dependency catalog release)")
     }
     appendLine("  retained modules:")
     plan.modules.filterValues { !it.selected }.forEach { (moduleName, module) ->
@@ -770,8 +775,9 @@ tasks.register("checkReleaseCompatibility") {
 private fun writePublishedReleaseState(plan: PreparedReleasePlan, previous: PublishedReleaseState) {
     val content = buildString {
         appendLine("[release]")
-        appendLine("schemaVersion = 1")
+        appendLine("schemaVersion = 2")
         appendLine("bomVersion = \"${tomlString(plan.bomVersion)}\"")
+        appendLine("publishedRevision = \"${tomlString(plan.sourceRevision)}\"")
         publishableModuleNames.forEach { moduleName ->
             val old = previous.modules.getValue(moduleName)
             val planned = plan.modules.getValue(moduleName)

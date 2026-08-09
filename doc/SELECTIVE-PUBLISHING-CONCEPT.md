@@ -3,7 +3,8 @@
 ## Goal
 
 Patch releases publish only the SLB4J libraries whose owned inputs changed, together with
-the org.slb4j:slb4j-bom artifact. Major and minor releases remain full releases.
+the org.slb4j:slb4j-bom artifact. A dependency-catalog-only patch publishes the BOM with
+no library artifacts. Major and minor releases remain full releases.
 
 This keeps patch releases small while the BOM continues to describe one coherent,
 consumer-facing set of versions.
@@ -16,7 +17,7 @@ Versions use major.minor.patch.
 | --- | --- | --- | --- |
 | Major X.0.0 | X.0.0 | all at X.0.0 | all published |
 | Minor X.Y.0 | X.Y.0 | all at X.Y.0 | all published |
-| Patch X.Y.Z | X.Y.Z | changed libraries at X.Y.Z | retain previous versions |
+| Patch X.Y.Z | X.Y.Z | changed libraries at X.Y.Z, or none for a catalog-only patch | retain previous versions |
 
 The BOM is always published. For example, a patch after 0.12.3 may contain:
 
@@ -33,8 +34,8 @@ the BOM version.
 ## Release metadata
 
 gradle/release-state.toml is the authoritative record of successfully published
-artifacts. It stores the BOM version and, for every library, its published version,
-source revision, and owned paths.
+artifacts. It stores the BOM version and source revision and, for every library, its
+published version, source revision, and owned paths.
 
 gradle/prepared-release.toml is a committed candidate plan. It records the release
 revision, every module version, selected modules, selection reasons, and the expected
@@ -68,11 +69,16 @@ Each library is compared with its own publishedRevision using a path-scoped Git 
 The planner does not compare every module with repository HEAD, because an unrelated
 commit must not republish every artifact.
 
-Shared inputs conservatively select all libraries:
+Shared build inputs conservatively select all libraries:
 
 * root build and settings scripts;
-* buildSrc, Gradle properties, version catalog, wrapper, and dependency locks;
-* shared publishing, signing, compiler, or toolchain configuration.
+* buildSrc, Gradle properties, wrapper, and shared publishing, signing, compiler, or
+  toolchain configuration;
+
+Dependency lockfiles do not select libraries. The version catalog is classified by its
+changed entries: ordinary dependency and library entries make a BOM-only patch available,
+while plugin and JDK/toolchain entries select all libraries. The projectVersion entry is
+ignored for selection because finalization changes it to the next snapshot.
 
 Repository documentation, release notes, CI-only files, and administration files do
 not select a library. Documentation under a library source tree does, because it
@@ -103,9 +109,11 @@ prepared plan before projects are configured:
 1. normal development uses projectVersion for all libraries and the BOM;
 2. a prepared plan assigns each selected library its candidate version;
 3. retained libraries use their last published version;
-4. the BOM receives the plan version and constrains every library to its effective
+4. a prepared plan requires projectVersion to equal its stable BOM version, so release
+   bytecode instrumentation is used rather than snapshot instrumentation;
+5. the BOM receives the plan version and constrains every library to its effective
    version;
-5. staging publication is limited to the selected libraries and the BOM.
+6. staging publication is limited to the selected libraries and the BOM.
 
 Snapshots can still be published to the local Maven repository with
 publishSnapshotsToMavenLocal; selective publication is only for stable releases.
@@ -114,7 +122,8 @@ publishSnapshotsToMavenLocal; selective publication is only for stable releases.
 
 The planner requires a clean working tree, valid and ancestor published revisions,
 stable non-snapshot versions, and unused Maven Central coordinates. Patch plans are
-checked for binary and source compatibility with japicmp.
+checked for binary and source compatibility with japicmp. A patch may select no libraries
+only when a publication-relevant dependency-catalog change requires a new BOM.
 
 Publishing is based on the committed plan. CI creates an unsigned, checksummed
 publication bundle after the normal build and tests. A protected release workflow
