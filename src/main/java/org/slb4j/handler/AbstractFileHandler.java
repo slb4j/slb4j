@@ -69,6 +69,7 @@ public abstract sealed class AbstractFileHandler implements LogHandler, AutoClos
     /**
      * Represents the log filtering mechanism for the file handler.
      */
+    @SuppressWarnings("java:S1068") // field is accessed using varhandle
     private LogFilter filter = LogFilter.allPass();
 
     private static final VarHandle LAYOUT_VH;

@@ -17,7 +17,6 @@ package org.slb4j.benchmark;
 
 import org.apache.logging.log4j.LogManager;
 import org.openjdk.jmh.annotations.Param;
-import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
