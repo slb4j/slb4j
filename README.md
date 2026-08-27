@@ -117,35 +117,19 @@ correctly.
 
 ### Done
 
-- **Backend**
-  - Console handler
-  - File handler
-  - Logfile rotation
-- **Frontend support**
-  - JUL (Java Util Logging)
-  - Log4J2
-  - SLF4J
-  - JCL (Jakarta Commons Logging / Apache Commons Logging)
+#### Backend
 
-- **Log4J2 compatibility**
-  - automaticially load and apply log4j2.properties / test-log4j2.properties
-  - Log4J2 compatible message pattern 
-    - Standard patterns
-    - MDC support
-    - Marker support
-    - Location support
-    - Locale support
-  - layouts: PatternLayout, SimpleLayout, CsvLayout, XmlLayout, JsonLayout, YamlLayout
-  - log rotation (size or time based)
-  
-  **Known incompatibilities:**
+- Console handler
+- File handler
+- Logfile rotation
 
-  - The pattern "%d{dd-MMMM-yyyy}{de-DE} %p %m%n" does not use localized month names in Log4J but does in SLB4J.
-    For details, read the Log4J2 issue: https://github.com/apache/logging-log4j2/issues/4177#issuecomment-4932822264
+#### Frontend support
+- JUL (Java Util Logging)
+- Log4J2
+- SLF4J
+- JCL (Jakarta Commons Logging / Apache Commons Logging)
 
-- **Java Util Logging compatibility**
-  - automaticially load and apply logging.properties
-  - Java Util Logging pattern syntax
+#### Features
 
 - Logging filters
 - UI components for live monitoring
@@ -153,6 +137,49 @@ correctly.
 - Setup CI
 - Publish to Maven Central
 - added benchmark results under benchmark/results/${version}
+
+### Log4J2 compatibility
+
+- automaticially load and apply log4j2.properties / test-log4j2.properties; for other types of configuration files 
+  add the corresponding dependency:
+  - XML configurastion: slb4j-config-xml
+  - JSON configurstion: slb4j-config-json
+  - YAML: slb4j-config-yaml
+
+- Log4J2 compatible message pattern 
+  - Standard patterns
+  - MDC support
+  - Marker support
+  - Location support
+  - Locale support
+
+- Supported layouts: PatternLayout, SimpleLayout, and JsonLayout are supported by the base module, other layouts can 
+  be added:
+  - CsvLayout, XmlLayout, YamlLayout: slb4j-ext-layouts
+
+- log rotation (size or time based)
+  
+#### Known incompatibilities with Log4J2 configuration files
+
+  - The pattern "%d{dd-MMMM-yyyy}{de-DE} %p %m%n" does not use localized month names in Log4J but does in SLB4J.
+    For details, read this [comment](https://github.com/apache/logging-log4j2/issues/4177#issuecomment-4932822264)
+    for the corresponding Log4J2 issue.
+
+  - SLB4J XML configuration parsing rejects DOCTYPE declarations. This is stricter than Log4j 2 and may prevent
+    loading configurations that use DTDs, including some legacy Log4j-style XML files. The restriction is
+    intentional: DTD processing enables entity-related attacks such as XML External Entity (XXE) injection and
+    entity-expansion denial-of-service. Use a DTD-free, self-contained Log4j 2 XML configuration instead.
+  
+  - SLB4J's Log4J2 XML configuration parsing disables XInclude processing. This differs from Log4j 2, which can
+    process <xi:include> elements to include configuration content from other files or URLs. The restriction is
+    intentional: XInclude is a separate external-resource loading mechanism and can otherwise enable unintended
+    local-file or network access. Use a single self-contained configuration file instead.
+    See [Log4J2#4064](https://github.com/apache/logging-log4j2/issues/4064) for more information.
+
+### Java Util Logging compatibility
+
+- automaticially load and apply logging.properties
+- Java Util Logging pattern syntax
 
 ### Todo
 
@@ -162,7 +189,6 @@ correctly.
 ### Later
 
 - Read back JSON logs for later analysis
-- Support Log4J2 XML configuration files (extension package)
 
 ### Not Planned
 

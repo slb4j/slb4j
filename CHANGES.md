@@ -2,6 +2,7 @@ Version 0.13.1
 --------------
 
 - fix SwingLogPane sometimes not showing the latest entry before the next logging event is received 
+- harden the Log4J XML parser against XXE attacks
 - update Gradle, dependencies
 
 Version 0.13.0
