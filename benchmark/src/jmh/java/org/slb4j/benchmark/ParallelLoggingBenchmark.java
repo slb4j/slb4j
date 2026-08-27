@@ -15,7 +15,6 @@
  */
 package org.slb4j.benchmark;
 
-import org.apache.commons.logging.Log;
 import org.openjdk.jmh.annotations.Benchmark;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Mode;
@@ -60,6 +59,7 @@ public abstract class ParallelLoggingBenchmark {
     public abstract String category();
 
     @Setup(Level.Trial)
+    @SuppressWarnings("java:S106")
     public void setup(org.openjdk.jmh.infra.BenchmarkParams params) throws IOException {
         originalOut = System.out;
         originalErr = System.err;

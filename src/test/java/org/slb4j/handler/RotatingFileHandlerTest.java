@@ -163,6 +163,7 @@ class RotatingFileHandlerTest {
     }
 
     @Test
+    @SuppressWarnings("java:S2925")
     void testTimeRotation() throws Exception {
         Path logFile = tempDir.resolve("test-time.log");
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile.toString(), "test-time.%i.log", false, RotatingFileHandler.IndexStrategy.USE_MAX)) {

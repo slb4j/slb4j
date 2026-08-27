@@ -44,6 +44,7 @@ public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
     }
 
     @Override
+    @SuppressWarnings("java:S106")
     protected void setupLogging() throws IOException {
         // 1. JCL Bridge Property (Must be first)
         System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");

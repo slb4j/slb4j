@@ -29,6 +29,7 @@ class StabilityTest {
     private static final int MAX_BACKUP_INDEX = 200;
 
     @Test
+    @SuppressWarnings("java:S2925")
     void testStabilityAndCorrectness() throws Exception {
         Path logFile = tempDir.resolve("stability.log");
         // Using a small buffer and small file size to stress the system

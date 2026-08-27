@@ -24,10 +24,10 @@ import org.slb4j.SLB4J;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-public class IntegrationTest {
+class IntegrationTest {
 
     @Test
-    public void testAutoDiscovery() {
+    void testAutoDiscovery() {
         // Trigger SLB4J initialization
         SLB4J.init();
 

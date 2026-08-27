@@ -29,6 +29,7 @@ public class Log4j2TreeFlattener {
      * Constructs a new {@code Log4j2TreeFlattener}.
      */
     public Log4j2TreeFlattener() {
+        // do nothing
     }
 
     /**

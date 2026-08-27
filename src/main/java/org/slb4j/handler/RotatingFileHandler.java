@@ -28,6 +28,7 @@ import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -171,7 +172,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
                 String formatString = matcher.group(1);
                 if (formatString != null) {
                     DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern(formatString);
-                    return () -> LocalDateTime.now().format(dateFormatter);
+                    return () -> LocalDateTime.now(Clock.systemDefaultZone()).format(dateFormatter);
                 }
             }
         } catch (Exception e) {
@@ -179,7 +180,7 @@ public final class RotatingFileHandler extends AbstractFileHandler {
         }
 
         // Default Log4j2 behavior: no leading zeros
-        return () -> LocalDateTime.now().format(dateTimeFormatter);
+        return () -> LocalDateTime.now(Clock.systemDefaultZone()).format(dateTimeFormatter);
     }
 
     private final String getFileName(String pattern, int backupIndex) {

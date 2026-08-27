@@ -24,8 +24,6 @@ import org.slb4j.layout.PatternLayout;
 
 import java.io.IOException;
 
-import static org.slb4j.layout.PatternLayout.DEFAULT_PATTERN_STRING;
-
 public class Slb4jParallelBenchmark extends ParallelLoggingBenchmark {
 
     @Param({"CONSOLE", "FILE"})

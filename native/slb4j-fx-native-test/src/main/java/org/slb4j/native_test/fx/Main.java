@@ -20,11 +20,9 @@ import javafx.scene.Scene;
 import javafx.stage.Stage;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.slb4j.LogFilter;
 import org.slb4j.LogLevel;
 import org.slb4j.SLB4J;
 import org.slb4j.ext.fx.FxLogPane;
-import org.slb4j.filter.LoggerNameFilter;
 import org.slf4j.LoggerFactory;
 
 import java.security.SecureRandom;
@@ -95,6 +93,7 @@ public class Main extends Application {
                                 case 2 -> SLF4J_LOGGER.info(msg);
                                 case 3 -> SLF4J_LOGGER.warn(msg);
                                 case 4 -> SLF4J_LOGGER.error(msg);
+                                default -> {/* do nothing */}
                             }
                         }
                         case 1 -> { // JUL
@@ -104,6 +103,7 @@ public class Main extends Application {
                                 case 2 -> JUL_LOGGER.info(msg);
                                 case 3 -> JUL_LOGGER.warning(msg);
                                 case 4 -> JUL_LOGGER.severe(msg);
+                                default -> {/* do nothing */}
                             }
                         }
                         case 2 -> { // Log4j
@@ -113,6 +113,7 @@ public class Main extends Application {
                                 case 2 -> LOG4J_LOGGER.info(msg);
                                 case 3 -> LOG4J_LOGGER.warn(msg);
                                 case 4 -> LOG4J_LOGGER.error(msg);
+                                default -> {/* do nothing */}
                             }
                         }
                         case 3 -> { // JCL
@@ -122,6 +123,7 @@ public class Main extends Application {
                                 case 2 -> JCL_LOGGER.info(msg);
                                 case 3 -> JCL_LOGGER.warn(msg);
                                 case 4 -> JCL_LOGGER.error(msg);
+                                default -> {/* do nothing */}
                             }
                         }
                     }
