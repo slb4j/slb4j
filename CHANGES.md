@@ -1,3 +1,14 @@
+Version 0.13.1
+--------------
+
+- fix SwingLogPane sometimes not showing the latest entry before the next logging event is received 
+- update Gradle, dependencies
+
+Version 0.13.0
+--------------
+
+- fix selective release workflow
+
 Version 0.12.5
 --------------
 
