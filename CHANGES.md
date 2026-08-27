@@ -1,4 +1,4 @@
-Version 0.13.1
+Version 0.14.0
 --------------
 
 - fix SwingLogPane sometimes not showing the latest entry before the next logging event is received 
