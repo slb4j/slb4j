@@ -2,11 +2,11 @@
 
 ## Goal
 
-Patch releases publish only the SLB4J libraries whose owned inputs changed, together with
-the org.slb4j:slb4j-bom artifact. A dependency-catalog-only patch publishes the BOM with
-no library artifacts. Major and minor releases remain full releases.
+Minor and patch releases publish only the SLB4J libraries whose owned inputs changed, together with
+the org.slb4j:slb4j-bom artifact. A dependency-catalog-only minor or patch release
+publishes the BOM with no library artifacts. Major releases remain full releases.
 
-This keeps patch releases small while the BOM continues to describe one coherent,
+This keeps minor and patch releases small while the BOM continues to describe one coherent,
 consumer-facing set of versions.
 
 ## Release model
@@ -16,7 +16,7 @@ Versions use major.minor.patch.
 | Release | BOM | Selected libraries | Other libraries |
 | --- | --- | --- | --- |
 | Major X.0.0 | X.0.0 | all at X.0.0 | all published |
-| Minor X.Y.0 | X.Y.0 | all at X.Y.0 | all published |
+| Minor X.Y.0 | X.Y.0 | changed libraries at X.Y.0, or none for a catalog-only minor | retain previous versions |
 | Patch X.Y.Z | X.Y.Z | changed libraries at X.Y.Z, or none for a catalog-only patch | retain previous versions |
 
 The BOM is always published. For example, a patch after 0.12.3 may contain:
@@ -122,8 +122,8 @@ publishSnapshotsToMavenLocal; selective publication is only for stable releases.
 
 The planner requires a clean working tree, valid and ancestor published revisions,
 stable non-snapshot versions, and unused Maven Central coordinates. Patch plans are
-checked for binary and source compatibility with japicmp. A patch may select no libraries
-only when a publication-relevant dependency-catalog change requires a new BOM.
+checked for binary and source compatibility with japicmp. A minor or patch release may
+select no libraries only when a publication-relevant dependency-catalog change requires a new BOM.
 
 Publishing is based on the committed plan. CI creates an unsigned, checksummed
 publication bundle after the normal build and tests. A protected release workflow

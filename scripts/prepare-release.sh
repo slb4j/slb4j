@@ -10,7 +10,7 @@ Usage: scripts/prepare-release.sh --type <patch|minor|major> [options]
 Options:
   --type <type>                 Required release type: patch, minor, or major.
   --version <major.minor.patch> Optional explicit release version.
-  --additional-modules <list>   Comma-separated modules to include in a patch release.
+  --additional-modules <list>   Comma-separated modules to include in a patch or minor release.
   -h, --help                    Show this help text.
 
 The script first displays a dry-run release plan. On confirmation, it writes and
@@ -74,8 +74,8 @@ case "$release_type" in
         ;;
 esac
 
-if [[ -n "$additional_modules" && "$release_type" != "patch" ]]; then
-    echo "--additional-modules is only valid for a patch release." >&2
+if [[ -n "$additional_modules" && "$release_type" == "major" ]]; then
+    echo "--additional-modules is only valid for patch and minor releases." >&2
     exit 2
 fi
 

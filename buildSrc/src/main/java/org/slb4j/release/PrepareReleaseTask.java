@@ -135,7 +135,7 @@ public abstract class PrepareReleaseTask extends DefaultTask {
         }
 
         Map<String, String> reasons = new LinkedHashMap<>();
-        if ("patch".equals(releaseType)) {
+        if (!"major".equals(releaseType)) {
             VersionCatalogChange versionCatalogChange = versionCatalogChange(
                     repository,
                     state.bomPublishedRevision(),

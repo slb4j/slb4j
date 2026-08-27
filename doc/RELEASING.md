@@ -1,8 +1,8 @@
 # Releasing SLB4J
 
-SLB4J publishes a coherent BOM on every release. Major and minor releases publish every library module; patch
-releases publish changed modules and the BOM. A patch containing only a publication-relevant dependency-catalog change
-publishes the BOM alone. The BOM constrains each module to the version that actually exists in Maven Central.
+SLB4J publishes a coherent BOM on every release. Major releases publish every library module; minor and patch releases
+publish changed modules and the BOM. A minor or patch release containing only a publication-relevant dependency-catalog
+change publishes the BOM alone. The BOM constrains each module to the version that actually exists in Maven Central.
 
 `gradle/release-state.toml` records the last successfully published version and source revision of every library
 module. `gradle/prepared-release.toml` is a short-lived, committed candidate plan. It is the only source of truth for
@@ -30,9 +30,9 @@ next version is wanted.
 The script requires a clean branch that matches its upstream. It displays the same dry-run plan and validates Git
 history, scoped changes, release-line version, and Maven Central coordinate availability. Gradle lockfile-only changes
 do not select a module: they make dependency resolution reproducible but are not published module metadata. A
-publication-relevant `gradle/libs.versions.toml` change can create a BOM-only patch release; use
+publication-relevant `gradle/libs.versions.toml` change can create a BOM-only minor or patch release; use
 `--additional-modules module-a,module-b` only when an unchanged dependent must publish a new minimum internal
-dependency version.
+dependency version. The option is available for minor and patch releases.
 
 After the dry run, the script asks whether to create and commit `gradle/prepared-release.toml`. It writes the target
 release version to `gradle/libs.versions.toml` in the same commit, so CI compiles with release instrumentation rather
