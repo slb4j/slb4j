@@ -8,20 +8,22 @@ usage() {
 Usage: scripts/prepare-release.sh --type <patch|minor|major> [options]
 
 Options:
-  --type <type>                 Required release type.
+  --type <type>                 Required release type: patch, minor, or major.
   --version <major.minor.patch> Optional explicit release version.
-  --additional-modules <list>   Comma-separated modules for a patch release.
+  --additional-modules <list>   Comma-separated modules to include in a patch release.
   -h, --help                    Show this help text.
 
 The script first displays a dry-run release plan. On confirmation, it writes and
 commits gradle/prepared-release.toml and the release projectVersion in
-gradle/libs.versions.toml. A second confirmation pushes that commit.
+gradle/libs.versions.toml. A second confirmation pushes that commit to the current
+branch's upstream, which starts the protected GitHub release workflow.
 EOF
 }
 
 confirm() {
     local prompt="$1"
     local answer
+
     read -r -p "$prompt [y/N] " answer
     case "$answer" in
         [Yy]|[Yy][Ee][Ss]) return 0 ;;
@@ -63,7 +65,8 @@ while [[ $# -gt 0 ]]; do
 done
 
 case "$release_type" in
-    patch|minor|major) ;;
+    patch|minor|major)
+        ;;
     *)
         echo "Supply --type patch, --type minor, or --type major." >&2
         usage >&2
@@ -86,24 +89,24 @@ if [[ -n "$(git status --porcelain)" ]]; then
 fi
 
 if [[ -e gradle/prepared-release.toml ]]; then
-    echo "gradle/prepared-release.toml already exists; resolve the existing release first." >&2
+    echo "gradle/prepared-release.toml already exists; publish, finalize, or resolve the existing release first." >&2
     exit 1
 fi
 
 branch="$(git branch --show-current)"
 if [[ -z "$branch" ]]; then
-    echo "Preparing a release requires a checked-out branch." >&2
+    echo "Preparing a release requires a checked-out branch, not a detached HEAD." >&2
     exit 1
 fi
 
 if ! git rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' >/dev/null 2>&1; then
-    echo "The current branch '$branch' must have an upstream." >&2
+    echo "The current branch '$branch' must have an upstream before preparing a release." >&2
     exit 1
 fi
 
 git fetch --quiet
 if [[ "$(git rev-parse HEAD)" != "$(git rev-parse '@{upstream}')" ]]; then
-    echo "The current branch '$branch' must match its upstream." >&2
+    echo "The current branch '$branch' must match its upstream before preparing a release; pull or push first." >&2
     exit 1
 fi
 
@@ -125,7 +128,10 @@ fi
 
 ./gradlew --no-configuration-cache prepareRelease "${release_arguments[@]}" -PconfirmRelease=true
 prepared_version="$(awk -F '"' '/^bomVersion = "/ { print $2; exit }' gradle/prepared-release.toml)"
-[[ -n "$prepared_version" ]] || { echo "Could not determine the prepared version." >&2; exit 1; }
+if [[ -z "$prepared_version" ]]; then
+    echo "Could not determine the prepared release version." >&2
+    exit 1
+fi
 
 if ! [[ "$prepared_version" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
     echo "Prepared release version is not a stable semantic version: $prepared_version" >&2
@@ -158,10 +164,10 @@ git add -- gradle/prepared-release.toml gradle/libs.versions.toml
 git commit -m "Prepare release $prepared_version"
 
 echo "Prepared release $prepared_version in $(git rev-parse --short HEAD)."
-if ! confirm "Push the prepared plan and start the protected release workflow?"; then
+if ! confirm "Push the prepared plan and start the protected GitHub release workflow?"; then
     echo "The prepared release commit remains local and has not started a release."
     exit 0
 fi
 
 git push
-echo "Pushed prepared release $prepared_version from '$branch'."
+echo "Pushed prepared release $prepared_version from '$branch'. Monitor the 'Publish prepared release' workflow in GitHub Actions."
