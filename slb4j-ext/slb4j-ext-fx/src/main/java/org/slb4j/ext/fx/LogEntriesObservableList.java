@@ -23,85 +23,81 @@ import javafx.collections.ObservableListBase;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.locks.Condition;
-import java.util.concurrent.locks.Lock;
-import java.util.concurrent.locks.ReadWriteLock;
-import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * This class represents a table model for displaying log entries in a Swing LogPane.
+ * This class represents an observable list for displaying log entries in an FxLogPane.
  */
 final class LogEntriesObservableList extends ObservableListBase<LogEntry> implements LogBuffer.LogBufferListener {
-    private static final long REST_TIME_IN_MS = 50;
-
+    private final LogBuffer buffer;
     private volatile List<LogEntry> data = Collections.emptyList();
     private final AtomicLong totalAdded = new AtomicLong(0);
     private final AtomicLong totalRemoved = new AtomicLong(0);
-
-    private final ReadWriteLock updateLock = new ReentrantReadWriteLock();
-    private final Lock updateWriteLock = updateLock.writeLock();
-    private final Condition updatesAvailableCondition = updateWriteLock.newCondition();
+    private final AtomicBoolean updateScheduled = new AtomicBoolean();
+    private final AtomicLong updateGeneration = new AtomicLong();
 
     /**
-     * Constructs a new LogTableModel with the specified LogBuffer.
+     * Constructs a new observable list with the specified LogBuffer.
      *
      * @param buffer the LogBuffer to use for storing log messages
      * @throws NullPointerException if the buffer is null
      */
     LogEntriesObservableList(LogBuffer buffer) {
+        this.buffer = buffer;
         buffer.addLogBufferListener(this);
+        // Entries can be written between the LogBuffer being registered with the
+        // dispatcher and this list registering as its listener. No notification
+        // is delivered for those entries, so load the initial snapshot explicitly.
+        scheduleUpdate();
+    }
 
-        Thread updateThread = new Thread(() -> {
-            while (true) {
-                updateWriteLock.lock();
-                try {
-                    updatesAvailableCondition.await();
+    private void scheduleUpdate() {
+        if (updateScheduled.compareAndSet(false, true)) {
+            Platform.runLater(this::update);
+        }
+    }
 
-                    Platform.runLater(() -> {
-                        try {
-                            beginChange();
-                            LogBuffer.BufferState state = buffer.getBufferState();
-                            List<LogEntry> newData = Arrays.asList(state.entries());
-                            totalAdded.getAndSet(state.totalAdded());
-                            long ta = totalAdded.get();
-                            long trOld = totalRemoved.getAndSet(state.totalRemoved());
-                            long tr = totalRemoved.get();
+    private void update() {
+        long generation = updateGeneration.get();
+        boolean changeStarted = false;
+        try {
+            LogBuffer.BufferState state = buffer.getBufferState();
+            List<LogEntry> newData = Arrays.asList(state.entries());
+            totalAdded.getAndSet(state.totalAdded());
+            long ta = totalAdded.get();
+            long trOld = totalRemoved.getAndSet(state.totalRemoved());
+            long tr = totalRemoved.get();
 
-                            assert newData.size() == ta - tr;
+            assert newData.size() == ta - tr;
 
-                            int newSz = newData.size();
-                            int oldSz = data.size();
-                            int removedRows = (int) Math.min(oldSz, (tr - trOld));
-                            int remainingRows = oldSz - removedRows;
-                            int addedRows = newSz - remainingRows;
-                            List<LogEntry> removed = List.copyOf(data.subList(0, removedRows));
+            int newSz = newData.size();
+            int oldSz = data.size();
+            int removedRows = (int) Math.min(oldSz, tr - trOld);
+            int remainingRows = oldSz - removedRows;
+            int addedRows = newSz - remainingRows;
+            List<LogEntry> removed = List.copyOf(data.subList(0, removedRows));
 
-                            data = newData;
-                            nextRemove(0, removed);
-                            nextAdd(newSz - addedRows, newSz);
-                        } finally {
-                            endChange();
-                        }
-                    });
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                } catch (Exception e) {
-                    // ignore
-                } finally {
-                    updateWriteLock.unlock();
-                }
-                try {
-                    //noinspection BusyWait - to avoid using up all CPU cycles when entries come in fast
-                    Thread.sleep(REST_TIME_IN_MS);
-                } catch (InterruptedException e) {
-                    Thread.currentThread().interrupt();
-                }
+            beginChange();
+            changeStarted = true;
+            data = newData;
+            if (removedRows > 0) {
+                nextRemove(0, removed);
             }
-        }, "LogEntriesObservableList Update Thread");
-        updateThread.setPriority(Thread.NORM_PRIORITY - 1);
-        updateThread.setDaemon(true);
-        updateThread.start();
+            if (addedRows > 0) {
+                nextAdd(newSz - addedRows, newSz);
+            }
+        } finally {
+            if (changeStarted) {
+                endChange();
+            }
+            updateScheduled.set(false);
+            // An update notification received while this update was running may not have
+            // scheduled another FX task. Queue one now so that its entries are flushed.
+            if (updateGeneration.get() != generation) {
+                scheduleUpdate();
+            }
+        }
     }
 
     @Override
@@ -118,22 +114,14 @@ final class LogEntriesObservableList extends ObservableListBase<LogEntry> implem
 
     @Override
     public void entries(int removed, int added) {
-        updateWriteLock.lock();
-        try {
-            updatesAvailableCondition.signalAll();
-        } finally {
-            updateWriteLock.unlock();
-        }
+        updateGeneration.incrementAndGet();
+        scheduleUpdate();
     }
 
     @Override
     public void clear() {
-        updateWriteLock.lock();
-        try {
-            updatesAvailableCondition.signalAll();
-        } finally {
-            updateWriteLock.unlock();
-        }
+        updateGeneration.incrementAndGet();
+        scheduleUpdate();
     }
 
 }
