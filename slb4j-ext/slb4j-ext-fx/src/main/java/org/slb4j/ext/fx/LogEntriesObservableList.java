@@ -80,12 +80,18 @@ final class LogEntriesObservableList extends ObservableListBase<LogEntry> implem
 
             beginChange();
             changeStarted = true;
-            data = newData;
             if (removedRows > 0) {
+                // Each elementary ObservableList change must reflect the list's
+                // state immediately after that change.
+                data = data.subList(removedRows, oldSz);
                 nextRemove(0, removed);
             }
             if (addedRows > 0) {
+                data = newData;
                 nextAdd(newSz - addedRows, newSz);
+            }
+            if (removedRows > 0 && addedRows == 0) {
+                data = newData;
             }
         } finally {
             if (changeStarted) {

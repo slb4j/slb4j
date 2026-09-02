@@ -70,16 +70,23 @@ final class LogTableModel extends AbstractTableModel implements LogBuffer.LogBuf
         int remainingRows = oldSz - removedRows;
         int addedRows = newSz - remainingRows;
 
-        data = newData;
-
         if (removedRows > 0) {
+            // A DELETE event requires the model to expose its post-deletion state
+            // while listeners process the event. In particular, TableRowSorter
+            // uses getRowCount() to update its mapping.
+            data = data.subList(removedRows, oldSz);
             fireTableRowsDeleted(0, removedRows - 1);
         }
         if (addedRows > 0) {
+            data = newData;
             fireTableRowsInserted(newSz - addedRows, newSz - 1);
         }
         if (removedRows == 0 && addedRows == 0 && oldSz == newSz && oldSz > 0) {
+            data = newData;
             fireTableDataChanged();
+        }
+        if (removedRows > 0 && addedRows == 0) {
+            data = newData;
         }
 
         updateScheduled.set(false);

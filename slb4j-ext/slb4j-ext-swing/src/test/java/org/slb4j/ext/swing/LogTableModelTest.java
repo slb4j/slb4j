@@ -18,15 +18,83 @@ package org.slb4j.ext.swing;
 import org.junit.jupiter.api.Test;
 import org.slb4j.LogLevel;
 import org.slb4j.ext.LogBuffer;
+import org.slb4j.ext.LogEntry;
+import org.slb4j.ext.LogEntryFilter;
+import org.slb4j.filter.LogLevelFilter;
 
+import javax.swing.JTable;
+import javax.swing.RowFilter;
 import javax.swing.SwingUtilities;
+import javax.swing.event.TableModelEvent;
+import javax.swing.table.TableRowSorter;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LogTableModelTest {
+
+    @Test
+    void removesTheEvictedRowBeforeAnnouncingTheReplacement() throws Exception {
+        LogBuffer buffer = new LogBuffer("test", 2);
+        LogTableModel model = new LogTableModel(buffer);
+        AtomicInteger rowCountAfterDelete = new AtomicInteger(-1);
+        model.addTableModelListener(event -> {
+            if (event.getType() == TableModelEvent.DELETE) {
+                rowCountAfterDelete.set(model.getRowCount());
+            }
+        });
+
+        add(buffer, "first");
+        add(buffer, "second");
+        drainEventQueue();
+
+        add(buffer, "third");
+        drainEventQueue();
+
+        assertEquals(1, rowCountAfterDelete.get(),
+                "the model must expose the post-deletion row count before firing an insertion");
+    }
+
+    @Test
+    void displaysTraceAndDebugEntriesAfterBufferRollover() throws Exception {
+        LogBuffer buffer = new LogBuffer("test", 2);
+        AtomicReference<LogTableModel> modelReference = new AtomicReference<>();
+        AtomicReference<TableRowSorter<LogTableModel>> sorterReference = new AtomicReference<>();
+        SwingUtilities.invokeAndWait(() -> {
+            LogTableModel model = new LogTableModel(buffer);
+            TableRowSorter<LogTableModel> sorter = new TableRowSorter<>(model);
+            LogEntryFilter levelFilter = LogEntryFilter.forFilter(LogLevelFilter.pass(LogLevel.TRACE));
+            sorter.setRowFilter(new RowFilter<>() {
+                @Override
+                public boolean include(Entry<? extends LogTableModel, ? extends Integer> entry) {
+                    LogEntry logEntry = entry.getModel().getEntry(entry.getIdentifier());
+                    return logEntry != null && levelFilter.test(logEntry);
+                }
+            });
+            JTable table = new JTable(model);
+            table.setRowSorter(sorter);
+            modelReference.set(model);
+            sorterReference.set(sorter);
+        });
+
+        add(buffer, LogLevel.DEBUG, "first");
+        add(buffer, LogLevel.TRACE, "second");
+        drainEventQueue();
+        add(buffer, LogLevel.DEBUG, "third");
+        drainEventQueue();
+
+        SwingUtilities.invokeAndWait(() -> {
+            LogTableModel model = modelReference.get();
+            TableRowSorter<LogTableModel> sorter = sorterReference.get();
+            assertEquals(2, sorter.getViewRowCount());
+            assertEquals("second", model.getEntry(sorter.convertRowIndexToModel(0)).message());
+            assertEquals("third", model.getEntry(sorter.convertRowIndexToModel(1)).message());
+        });
+    }
 
     @Test
     void displaysEntriesAddedBeforeItRegistersAsAListener() throws Exception {
@@ -56,7 +124,11 @@ class LogTableModelTest {
     }
 
     private static void add(LogBuffer buffer, String message) {
-        buffer.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, null, message, null);
+        add(buffer, LogLevel.INFO, message);
+    }
+
+    private static void add(LogBuffer buffer, LogLevel level, String message) {
+        buffer.handle(System.currentTimeMillis(), "test", level, null, null, null, message, null);
     }
 
     private static void drainEventQueue() throws Exception {

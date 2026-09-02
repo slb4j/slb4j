@@ -15,15 +15,21 @@
  */
 package org.slb4j.ext.fx;
 
+import javafx.collections.ListChangeListener;
+import javafx.collections.transformation.FilteredList;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.slb4j.LogLevel;
 import org.slb4j.ext.LogBuffer;
+import org.slb4j.ext.LogEntry;
+import org.slb4j.ext.LogEntryFilter;
+import org.slb4j.filter.LogLevelFilter;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,6 +37,36 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @Execution(ExecutionMode.SAME_THREAD)
 class LogEntriesObservableListTest extends FxTestBase {
+
+    @Test
+    void displaysTraceAndDebugEntriesAfterBufferRollover() throws Throwable {
+        LogBuffer buffer = new LogBuffer("test", 2);
+        AtomicReference<FilteredList<LogEntry>> entries = new AtomicReference<>();
+        AtomicInteger changes = new AtomicInteger();
+        runOnFxThreadAndWait(() -> {
+            FilteredList<LogEntry> visibleEntries = new FilteredList<>(new LogEntriesObservableList(buffer),
+                    LogEntryFilter.forFilter(LogLevelFilter.pass(LogLevel.TRACE)));
+            visibleEntries.addListener((ListChangeListener<LogEntry>) change -> changes.incrementAndGet());
+            entries.set(visibleEntries);
+        });
+        runOnFxThreadAndWait(() -> {
+            // Ensure the initial empty snapshot has completed.
+        });
+
+        add(buffer, LogLevel.DEBUG, "first");
+        add(buffer, LogLevel.TRACE, "second");
+        runOnFxThreadAndWait(() -> {
+            // Ensure the initial entries are visible before the buffer overflows.
+        });
+
+        add(buffer, LogLevel.DEBUG, "third");
+        runOnFxThreadAndWait(() -> {
+            assertTrue(changes.get() > 0, "the filtered list was not notified of the rollover");
+            assertEquals(2, entries.get().size());
+            assertEquals("second", entries.get().get(0).message());
+            assertEquals("third", entries.get().get(1).message());
+        });
+    }
 
     @Test
     void flushesAnEntryAddedWhileThePreviousUpdateIsBeingApplied() throws Throwable {
@@ -67,7 +103,11 @@ class LogEntriesObservableListTest extends FxTestBase {
     }
 
     private static void add(LogBuffer buffer, String message) {
-        buffer.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, null, message, null);
+        add(buffer, LogLevel.INFO, message);
+    }
+
+    private static void add(LogBuffer buffer, LogLevel level, String message) {
+        buffer.handle(System.currentTimeMillis(), "test", level, null, null, null, message, null);
     }
 
     @SuppressWarnings("java:S2925") // accepted for test code
