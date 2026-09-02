@@ -1,7 +1,7 @@
 [release]
 schemaVersion = 2
-bomVersion = "0.14.0"
-publishedRevision = "954b76635c862b79a93523d697958ae0700d7c0b"
+bomVersion = "0.14.1"
+publishedRevision = "f165eef95aabcb12283f11e6a0177d2a444c80ea"
 
 [modules.slb4j]
 version = "0.14.0"
@@ -19,13 +19,13 @@ publishedRevision = "954b76635c862b79a93523d697958ae0700d7c0b"
 paths = ["slb4j-ext/slb4j-ext-layouts/src", "slb4j-ext/slb4j-ext-layouts/build.gradle.kts"]
 
 [modules.slb4j-ext-swing]
-version = "0.14.0"
-publishedRevision = "954b76635c862b79a93523d697958ae0700d7c0b"
+version = "0.14.1"
+publishedRevision = "f165eef95aabcb12283f11e6a0177d2a444c80ea"
 paths = ["slb4j-ext/slb4j-ext-swing/src", "slb4j-ext/slb4j-ext-swing/build.gradle.kts"]
 
 [modules.slb4j-ext-fx]
-version = "0.14.0"
-publishedRevision = "954b76635c862b79a93523d697958ae0700d7c0b"
+version = "0.14.1"
+publishedRevision = "f165eef95aabcb12283f11e6a0177d2a444c80ea"
 paths = ["slb4j-ext/slb4j-ext-fx/src", "slb4j-ext/slb4j-ext-fx/build.gradle.kts"]
 
 [modules.slb4j-config]
