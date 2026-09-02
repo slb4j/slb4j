@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test;
 import org.slb4j.LogLevel;
 import org.slb4j.ext.LogBuffer;
 
+import javax.swing.SwingUtilities;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
@@ -26,6 +27,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LogTableModelTest {
+
+    @Test
+    void displaysEntriesAddedBeforeItRegistersAsAListener() throws Exception {
+        LogBuffer buffer = new LogBuffer("test", 2);
+        add(buffer, "first");
+        LogTableModel model = new LogTableModel(buffer);
+        drainEventQueue();
+
+        assertEquals(1, model.getRowCount());
+        assertEquals("first", model.getEntry(0).message());
+    }
 
     @Test
     void flushesAnEntryAddedWhileThePreviousUpdateIsBeingApplied() throws Exception {
@@ -45,6 +57,12 @@ class LogTableModelTest {
 
     private static void add(LogBuffer buffer, String message) {
         buffer.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, null, message, null);
+    }
+
+    private static void drainEventQueue() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            // Reaching this task means that all previously queued updates have run.
+        });
     }
 
     @SuppressWarnings("java:S2925") // accepted for test code

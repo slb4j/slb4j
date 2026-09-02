@@ -41,6 +41,10 @@ final class LogTableModel extends AbstractTableModel implements LogBuffer.LogBuf
     LogTableModel(LogBuffer buffer) {
         this.buffer = buffer;
         buffer.addLogBufferListener(this);
+        // Entries can be written between the LogBuffer being registered with the
+        // dispatcher and this model registering as its listener. No notification
+        // is delivered for those entries, so load the initial snapshot explicitly.
+        scheduleUpdate();
     }
 
     private void scheduleUpdate() {
