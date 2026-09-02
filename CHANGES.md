@@ -1,3 +1,8 @@
+Version 0.14.1
+--------------
+
+- fix log messages sometimes not being flushed to the LogPane control before the next message comes in
+
 Version 0.14.0
 --------------
 
