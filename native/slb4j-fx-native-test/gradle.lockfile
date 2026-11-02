@@ -7,5 +7,6 @@ org.apache.logging.log4j:log4j-api:2.26.1=compileClasspath,nativeImageClasspath,
 org.apache.logging.log4j:log4j-bom:2.26.1=compileClasspath,nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.graalvm.buildtools:junit-platform-native:1.1.8=nativeImageTestClasspathInternal
 org.jspecify:jspecify:1.0.1=nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testRuntimeClasspath
-org.slf4j:slf4j-api:2.0.18=compileClasspath,nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
+org.slf4j:slf4j-api:2.0.18=nativeImageClasspath,nativeImageTestClasspathInternal,testCompileClasspath,testRuntimeClasspath
+org.slf4j:slf4j-api:2.0.20=compileClasspath,runtimeClasspath
 empty=annotationProcessor,testAnnotationProcessor

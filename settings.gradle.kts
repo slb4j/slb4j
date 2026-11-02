@@ -79,7 +79,7 @@ private fun readReleaseVersions(file: File, requireSelection: Boolean): ReleaseV
 }
 
 plugins {
-    id("io.github.ben-manes.versions.settings") version "0.61.0"
+    id("io.github.ben-manes.versions.settings") version "0.67.0"
 }
 
 private fun versionCatalogVersion(alias: String): String {
