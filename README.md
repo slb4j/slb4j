@@ -182,6 +182,8 @@ The script writes each run to `benchmark_results/<timestamp>/`. Checked-in bench
 
 - Log4j 2-style message patterns (supported conversions include):
   - Common pattern conversions
+  - `%enc` / `%encode` with `HTML`, `JSON`, `CRLF`, and `XML` encodings
+  - `%replace` for Log4j-compatible regular-expression replacement
   - MDC support
   - Marker support
   - Location support

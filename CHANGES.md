@@ -1,8 +1,8 @@
-Version 0.15.0
---------------
+Version 0.15.0 (to be released)
+-------------------------------
 
 - remove `implements Externizable` from LogBuffer for security reasons.
-- 
+- support `%enc` and `%replace` in PatternLayout
 
 Version 0.14.1
 --------------

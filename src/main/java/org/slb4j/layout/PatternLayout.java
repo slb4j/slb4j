@@ -37,6 +37,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.IntFunction;
 import java.util.function.Supplier;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -669,6 +670,166 @@ public final class PatternLayout implements LogLayout {
         public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
             appendFormatted(app, msg, false);
         }
+    }
+
+    /**
+     * Encodes the output of a nested pattern using one of Log4j's standard
+     * pattern encoding formats.
+     * <p>
+     * This is the implementation of Log4j's {@code %enc} and
+     * {@code %encode} converters. In particular, {@code CRLF} can be used to
+     * prevent message data from creating additional physical log records:
+     * {@code %enc{%msg}{CRLF}}.
+     */
+    public static final class EncodingEntry extends AbstractLogPatternEntry {
+        private final LogPatternEntry[] nestedEntries;
+        private final EscapeFormat escapeFormat;
+
+        EncodingEntry(int minWidth, int maxWidth, boolean leftAlign, LogPatternEntry[] nestedEntries, @Nullable String format) {
+            super("enc", minWidth, maxWidth, leftAlign, requiresLocation(nestedEntries));
+            this.nestedEntries = nestedEntries;
+            this.escapeFormat = EscapeFormat.from(format);
+        }
+
+        @Override
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+            StringBuilder nested = new StringBuilder();
+            for (LogPatternEntry entry : nestedEntries) {
+                entry.format(nested, timestamp, loggerName, lvl, mrk, mdc, location, msg, t, consoleCodes);
+            }
+            escapeFormat.escape(nested);
+            appendFormatted(app, nested, false);
+        }
+    }
+
+    /**
+     * Applies a regular-expression replacement to the output of a nested
+     * pattern. This is the implementation of Log4j's {@code %replace}
+     * converter and allows configurations to remove terminal control
+     * characters, for example:
+     * {@code %replace{%msg}{\u001B}{}}.
+     */
+    public static final class ReplaceEntry extends AbstractLogPatternEntry {
+        private final LogPatternEntry[] nestedEntries;
+        private final Pattern pattern;
+        private final String replacement;
+
+        ReplaceEntry(int minWidth, int maxWidth, boolean leftAlign, LogPatternEntry[] nestedEntries, @Nullable String regex, @Nullable String replacement) {
+            super("replace", minWidth, maxWidth, leftAlign, requiresLocation(nestedEntries));
+            this.nestedEntries = nestedEntries;
+            this.pattern = Pattern.compile(Objects.requireNonNullElse(regex, ""));
+            this.replacement = Objects.requireNonNullElse(replacement, "");
+        }
+
+        @Override
+        public void format(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location location, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+            StringBuilder nested = new StringBuilder();
+            for (LogPatternEntry entry : nestedEntries) {
+                entry.format(nested, timestamp, loggerName, lvl, mrk, mdc, location, msg, t, consoleCodes);
+            }
+            appendFormatted(app, pattern.matcher(nested).replaceAll(replacement), false);
+        }
+    }
+
+    private enum EscapeFormat {
+        HTML {
+            @Override
+            void escape(StringBuilder value) {
+                replaceCharacters(value, c -> switch (c) {
+                    case '\r' -> "\\r";
+                    case '\n' -> "\\n";
+                    case '&' -> "&amp;";
+                    case '<' -> "&lt;";
+                    case '>' -> "&gt;";
+                    case '"' -> "&quot;";
+                    case '\'' -> "&apos;";
+                    case '/' -> "&#x2F;";
+                    default -> null;
+                });
+            }
+        },
+        JSON {
+            @Override
+            void escape(StringBuilder value) {
+                replaceCharacters(value, c -> switch (c) {
+                    case '\b' -> "\\b";
+                    case '\t' -> "\\t";
+                    case '\f' -> "\\f";
+                    case '\n' -> "\\n";
+                    case '\r' -> "\\r";
+                    case '"', '\\' -> "\\" + (char) c;
+                    default -> Character.isISOControl(c) ? String.format(Locale.ROOT, "\\u%04X", (int) c) : null;
+                });
+            }
+        },
+        CRLF {
+            @Override
+            void escape(StringBuilder value) {
+                replaceCharacters(value, c -> switch (c) {
+                    case '\r' -> "\\r";
+                    case '\n' -> "\\n";
+                    default -> null;
+                });
+            }
+        },
+        XML {
+            @Override
+            void escape(StringBuilder value) {
+                replaceCharacters(value, c -> switch (c) {
+                    case '&' -> "&amp;";
+                    case '<' -> "&lt;";
+                    case '>' -> "&gt;";
+                    case '"' -> "&quot;";
+                    case '\'' -> "&apos;";
+                    default -> isValidXml10(c) ? null : "\uFFFD";
+                });
+            }
+        };
+
+        abstract void escape(StringBuilder value);
+
+        static EscapeFormat from(@Nullable String value) {
+            if (value == null || value.isBlank()) {
+                return HTML;
+            }
+            try {
+                return valueOf(value.trim().toUpperCase(Locale.ROOT));
+            } catch (IllegalArgumentException ignored) {
+                return HTML;
+            }
+        }
+
+        private static void replaceCharacters(StringBuilder value, IntFunction<@Nullable String> replacement) {
+            for (int i = 0; i < value.length();) {
+                int codePoint = value.codePointAt(i);
+                int codePointLength = Character.charCount(codePoint);
+                String escaped = replacement.apply(codePoint);
+                if (escaped != null) {
+                    value.replace(i, i + codePointLength, escaped);
+                    i += escaped.length();
+                } else {
+                    i += codePointLength;
+                }
+            }
+        }
+
+        private static boolean isValidXml10(int codePoint) {
+            return codePoint == 0x9
+                    || codePoint == 0xA
+                    || codePoint == 0xD
+                    || (codePoint >= 0x20 && codePoint <= 0xD7FF)
+                    || (codePoint >= 0xE000 && codePoint <= 0xFFFD)
+                    || (codePoint >= 0x10000 && codePoint <= 0x10FFFF);
+        }
+    }
+
+    private static boolean requiresLocation(LogPatternEntry[] entries) {
+        for (LogPatternEntry entry : entries) {
+            if (entry.isLocationNeeded()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -1484,6 +1645,21 @@ public final class PatternLayout implements LogLayout {
                 case "t", "thread" -> entries.add(new ThreadEntry(minWidth, maxWidth, leftAlign));
                 case "X", "mdc" -> entries.add(new MdcEntry(minWidth, maxWidth, leftAlign, options));
                 case "ex", "exception", "throwable" -> entries.add(new ExceptionEntry(minWidth, maxWidth, leftAlign));
+                case "enc", "encode" -> entries.add(new EncodingEntry(
+                        minWidth,
+                        maxWidth,
+                        leftAlign,
+                        parseLog4jPatternString(options != null ? options : ""),
+                        secondBlock
+                ));
+                case "replace" -> entries.add(new ReplaceEntry(
+                        minWidth,
+                        maxWidth,
+                        leftAlign,
+                        parseLog4jPatternString(options != null ? options : ""),
+                        secondBlock,
+                        thirdBlock
+                ));
                 case "Cstart" -> entries.add(new ColorStartEntry(minWidth, maxWidth, leftAlign));
                 case "Cend" -> entries.add(new ColorEndEntry(minWidth, maxWidth, leftAlign));
                 case "d" -> {

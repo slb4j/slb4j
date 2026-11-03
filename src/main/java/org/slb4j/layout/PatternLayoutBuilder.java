@@ -26,7 +26,7 @@ public class PatternLayoutBuilder extends LayoutBuilder {
             PATTERN, new LayoutAtribute(PATTERN, true, PatternLayout.DEFAULT_PATTERN_STRING, String::valueOf),
             ALWAYS_WRITE_EXCEPTIONS, new LayoutAtribute(ALWAYS_WRITE_EXCEPTIONS, true, "true", Boolean::parseBoolean),
             DISABLE_ANSI, new LayoutAtribute(DISABLE_ANSI, true, "false", Boolean::parseBoolean),
-            NO_CONSOLE_NO_ANSI, new LayoutAtribute(NO_CONSOLE_NO_ANSI, false, "false", Boolean::parseBoolean)
+            NO_CONSOLE_NO_ANSI, new LayoutAtribute(NO_CONSOLE_NO_ANSI, true, "false", Boolean::parseBoolean)
     );
 
     /**
@@ -42,10 +42,11 @@ public class PatternLayoutBuilder extends LayoutBuilder {
         String pattern = (String) getValue(PATTERN);
         boolean alwaysWriteExceptions = (boolean) getValue(ALWAYS_WRITE_EXCEPTIONS);
         boolean disableAnsi = (boolean) getValue(DISABLE_ANSI);
+        boolean noConsoleNoAnsi = (boolean) getValue(NO_CONSOLE_NO_ANSI);
 
         List<PatternLayout.LogPatternEntry> logPatternEntries = new ArrayList<>(Arrays.asList(PatternLayout.parseLog4jPatternString(pattern)));
 
-        if (disableAnsi) {
+        if (disableAnsi || (noConsoleNoAnsi && System.console() == null)) {
             logPatternEntries.removeIf(entry -> entry instanceof PatternLayout.ColorStartEntry || entry instanceof PatternLayout.ColorEndEntry);
         }
 
