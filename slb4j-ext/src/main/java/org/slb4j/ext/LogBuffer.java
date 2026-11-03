@@ -22,13 +22,7 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 
-import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.PrintWriter;
-import java.io.StringWriter;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -44,7 +38,7 @@ import java.util.concurrent.locks.ReentrantLock;
  * <p>All operations are thread-safe. For compound operations requiring consistency
  * across multiple calls, use {@link #getBufferState()} to get an atomic snapshot.
  */
-public class LogBuffer implements LogHandler, Externalizable {
+public class LogBuffer implements LogHandler {
 
     /**
      * The default capacity.
@@ -52,12 +46,12 @@ public class LogBuffer implements LogHandler, Externalizable {
     public static final int DEFAULT_CAPACITY = 10_000;
 
     private final String name;
-    private final transient RingBuffer buffer;
+    private final RingBuffer buffer;
     private final Collection<LogBufferListener> listeners = new CopyOnWriteArrayList<>();
     private final AtomicLong totalAdded = new AtomicLong(0);
     private final AtomicLong totalRemoved = new AtomicLong(0);
     private final ReentrantLock lock = new ReentrantLock();
-    private transient LogFilter filter = LogFilter.allPass();
+    private LogFilter filter = LogFilter.allPass();
 
     private static final class RingBuffer {
 
@@ -209,85 +203,6 @@ public class LogBuffer implements LogHandler, Externalizable {
         }
         if (removed > 0) {
             listeners.forEach(listener -> listener.entries(removed, 0));
-        }
-    }
-
-    @Override
-    public void writeExternal(ObjectOutput out) throws IOException {
-        BufferState bufferState = getBufferState();
-        out.writeInt(bufferState.entries.length);
-        for (LogEntry entry : bufferState.entries) {
-            // Serialize individual fields to avoid non-serializable components
-            out.writeObject(entry.message());
-            out.writeObject(entry.logger());
-            out.writeLong(entry.time());
-            out.writeObject(entry.level());
-            out.writeObject(entry.marker());
-            out.writeObject(entry.location());
-
-            // Handle throwable carefully
-            Throwable t = entry.throwable();
-            if (t != null) {
-                out.writeBoolean(true);
-                out.writeObject(t.getClass().getName());
-                out.writeObject(t.getMessage());
-                // Serialize stack trace as string to avoid serialization issues
-                try (StringWriter sw = new StringWriter(); PrintWriter pw = new PrintWriter(sw)) {
-                    t.printStackTrace(pw);
-                    out.writeObject(sw.toString());
-                }
-            } else {
-                out.writeBoolean(false);
-            }
-        }
-    }
-
-    @Override
-    public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        int n = in.readInt();
-        List<LogEntry> entries = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            String message = (String) in.readObject();
-            String loggerName = (String) in.readObject();
-            long time = in.readLong();
-            LogLevel level = (LogLevel) in.readObject();
-            String marker = (String) in.readObject();
-            MDC mdc = (MDC) in.readObject();
-            Location location = (Location) in.readObject();
-
-            Throwable throwable = null;
-            if (in.readBoolean()) {
-                String throwableClass = (String) in.readObject();
-                String throwableMessage = (String) in.readObject();
-                String stackTrace = (String) in.readObject();
-                // Create a simple throwable representation
-                throwable = new RuntimeException(
-                        "Deserialized " + throwableClass + ": " + throwableMessage +
-                                "\nOriginal stack trace:\n" + stackTrace);
-            }
-
-            entries.add(LogEntry.of(time, loggerName, level, marker, mdc, location, message, throwable));
-        }
-
-        // Update buffer state and notify listeners
-        int removed;
-        lock.lock();
-        try {
-            removed = buffer.size();
-            buffer.clear();
-            buffer.addAll(entries);
-            totalAdded.set(entries.size());
-            totalRemoved.set(0);
-        } finally {
-            lock.unlock();
-        }
-
-        // Notify listeners about the state change
-        if (removed > 0) {
-            listeners.forEach(LogBufferListener::clear);
-        }
-        if (!entries.isEmpty()) {
-            listeners.forEach(listener -> listener.entries(0, entries.size()));
         }
     }
 

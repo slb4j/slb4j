@@ -1,3 +1,9 @@
+Version 0.15.0
+--------------
+
+- remove `implements Externizable` from LogBuffer for security reasons.
+- 
+
 Version 0.14.1
 --------------
 
