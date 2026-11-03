@@ -13,5 +13,6 @@ org.openjdk.jmh:jmh-generator-asm:1.37=jmh,jmhCompileClasspath,jmhRuntimeClasspa
 org.openjdk.jmh:jmh-generator-bytecode:1.37=jmh,jmhCompileClasspath,jmhRuntimeClasspath
 org.openjdk.jmh:jmh-generator-reflection:1.37=jmh,jmhCompileClasspath,jmhRuntimeClasspath
 org.ow2.asm:asm:9.0=jmh,jmhCompileClasspath,jmhRuntimeClasspath
-org.slf4j:slf4j-api:2.0.18=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+org.slf4j:slf4j-api:2.0.18=runtimeClasspath
+org.slf4j:slf4j-api:2.0.20=jmh,jmhCompileClasspath,jmhRuntimeClasspath,testRuntimeClasspath
 empty=annotationProcessor,compileClasspath,jmhAnnotationProcessor,testAnnotationProcessor,testCompileClasspath

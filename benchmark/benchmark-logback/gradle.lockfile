@@ -3,8 +3,8 @@
 # This file is expected to be part of source control.
 # To regenerate this file, run: ./gradlew :benchmark:benchmark-logback:dependencies --write-locks
 biz.aQute.bnd:biz.aQute.bnd.annotation:7.1.0=jmhCompileClasspath
-ch.qos.logback:logback-classic:1.6.1=jmh,jmhCompileClasspath,jmhRuntimeClasspath
-ch.qos.logback:logback-core:1.6.1=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+ch.qos.logback:logback-classic:1.6.6=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+ch.qos.logback:logback-core:1.6.6=jmh,jmhCompileClasspath,jmhRuntimeClasspath
 com.google.errorprone:error_prone_annotations:2.38.0=jmhCompileClasspath
 commons-logging:commons-logging:1.4.0=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 net.sf.jopt-simple:jopt-simple:5.0.4=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
@@ -22,7 +22,8 @@ org.osgi:org.osgi.annotation.versioning:1.1.2=jmhCompileClasspath
 org.osgi:org.osgi.resource:1.0.0=jmhCompileClasspath
 org.osgi:org.osgi.service.serviceloader:1.0.0=jmhCompileClasspath
 org.ow2.asm:asm:9.0=jmh,jmhCompileClasspath,jmhRuntimeClasspath
-org.slf4j:jcl-over-slf4j:2.0.18=jmh,jmhCompileClasspath,jmhRuntimeClasspath
-org.slf4j:jul-to-slf4j:2.0.18=jmh,jmhCompileClasspath,jmhRuntimeClasspath
-org.slf4j:slf4j-api:2.0.18=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
+org.slf4j:jcl-over-slf4j:2.0.20=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+org.slf4j:jul-to-slf4j:2.0.20=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+org.slf4j:slf4j-api:2.0.18=runtimeClasspath
+org.slf4j:slf4j-api:2.0.20=jmh,jmhCompileClasspath,jmhRuntimeClasspath,testRuntimeClasspath
 empty=annotationProcessor,compileClasspath,jmhAnnotationProcessor,testAnnotationProcessor,testCompileClasspath
