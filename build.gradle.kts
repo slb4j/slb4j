@@ -348,6 +348,7 @@ dependencies {
 
     testImplementation(platform(libs.junit.bom))
     testImplementation(libs.junit.jupiter)
+    testImplementation(libs.jackson.databind)
     testImplementation(platform(libs.log4j.bom))
     testImplementation(libs.log4j.api)
     testImplementation(libs.log4j.core)
@@ -792,7 +793,7 @@ private val japicmpTool = configurations.create("japicmpTool") {
 }
 
 dependencies {
-    add(japicmpTool.name, "com.github.siom79.japicmp:japicmp:0.26.5:jar-with-dependencies") {
+    add(japicmpTool.name, "com.github.siom79.japicmp:japicmp:0.27.0:jar-with-dependencies") {
         isTransitive = false
     }
 }
