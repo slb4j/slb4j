@@ -60,9 +60,11 @@ public final class JsonLayout implements LogLayout {
 
     @Override
     public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
-        app.append("\"thread\":\"").append(Thread.currentThread().getName());
+        app.append("{\"thread\":\"");
+        appendJsonEscaped(app, Thread.currentThread().getName());
         app.append("\",\"level\":\"").append(lvl.name());
         app.append("\",\"loggerName\":\"");
+        appendJsonEscaped(app, loggerName);
         app.append("\",\"message\":\"");
         appendJsonEscaped(app, msg);
         app.append("\", \"endOfBatch\":false");
@@ -114,11 +116,11 @@ public final class JsonLayout implements LogLayout {
 
         // Appends exception details if present
         if (t != null) {
-            app.append(",\"thrown\":\"{\"localizedMessage\": \"");
+            app.append(",\"thrown\":{\"localizedMessage\":\"");
             appendJsonEscaped(app, t.getLocalizedMessage());
-            app.append("\",\"message\": \"");
+            app.append("\",\"message\":\"");
             appendJsonEscaped(app, t.getMessage());
-            app.append("\",\"name\": \"");
+            app.append("\",\"name\":\"");
             appendJsonEscaped(app, t.getClass().getName());
             app.append("\"");
 
@@ -129,6 +131,8 @@ public final class JsonLayout implements LogLayout {
                 appendJsonEscaped(app, sb.toString());
                 app.append("\"");
             }
+
+            app.append("}");
         }
 
         app.append("}\n");
@@ -150,7 +154,21 @@ public final class JsonLayout implements LogLayout {
             return;
         }
 
-        int length = Math.min(s.length(), maxStringLength);
+        int length = Math.clamp(maxStringLength, 0, s.length());
+        appendJsonEscaped(app, s, length);
+
+        if (length < s.length()) {
+            appendJsonEscaped(app, truncatedStringSuffix, truncatedStringSuffix.length());
+        }
+    }
+
+    private void appendJsonEscaped(Appendable app, @Nullable CharSequence s, int maxLength) throws IOException {
+        if (s == null) {
+            app.append("null");
+            return;
+        }
+
+        int length = Math.clamp(maxLength, 0, s.length());
         for (int i = 0; i < length; i++) {
             char c = s.charAt(i);
             switch (c) {
@@ -170,10 +188,6 @@ public final class JsonLayout implements LogLayout {
                     }
                 }
             }
-        }
-
-        if (length < s.length()) {
-            app.append(truncatedStringSuffix);
         }
     }
 }
