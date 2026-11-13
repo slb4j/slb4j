@@ -3,7 +3,7 @@
     <Appenders>
         <Console name="STDOUT" target="SYSTEM_OUT">
             <ThresholdFilter level="INFO" onMatch="ACCEPT" onMismatch="DENY"/>
-            <PatternLayout pattern="%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
+            <PatternLayout pattern="%highlight{%msg}%n" disableAnsi="true"/>
         </Console>
     </Appenders>
     <Loggers>

@@ -19,6 +19,8 @@ package org.slb4j.config.yaml;
 import org.junit.jupiter.api.Test;
 import org.slb4j.LogLevel;
 import org.slb4j.LoggingConfiguration;
+import org.slb4j.handler.ConsoleHandler;
+import org.slb4j.layout.PatternLayout;
 
 import java.io.InputStream;
 
@@ -38,6 +40,12 @@ class ConfigParserLog4jYamlTest {
             assertEquals(LogLevel.INFO, config.getRootLevel());
             assertNotNull(config.getHandler("STDOUT"));
             assertNotNull(config.getHandler("STDOUT").getFilter());
+
+            PatternLayout layout = (PatternLayout) ((ConsoleHandler) config.getHandler("STDOUT")).getLayout();
+            StringBuilder output = new StringBuilder();
+            layout.formatLogEntry(output, 0, "logger", LogLevel.INFO, null, null, null,
+                    "message", null, ConsoleHandler.COLOR_MAP_DEFAULT.get(LogLevel.INFO));
+            assertEquals("message" + System.lineSeparator(), output.toString());
 
             // the configured level is DEBUG
             assertEquals(LogLevel.DEBUG, config.getRootFilter().getLevel("org.slb4j.test"));

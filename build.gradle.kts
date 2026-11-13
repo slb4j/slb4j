@@ -4,8 +4,10 @@ import org.gradle.api.publish.PublishingExtension
 import org.gradle.api.publish.maven.MavenPublication
 import org.gradle.api.tasks.Delete
 import org.gradle.api.tasks.bundling.Jar
+import org.gradle.api.tasks.testing.Test
 import org.gradle.plugins.signing.Sign
 import org.gradle.kotlin.dsl.withType
+import org.gradle.testing.jacoco.tasks.JacocoReport
 import org.slb4j.release.PrepareReleaseTask
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -32,14 +34,15 @@ import java.util.Properties
  * limitations under the License.
  */
 plugins {
-    id("java-library")
-    id("maven-publish")
-    id("signing")
+    `java-library`
+    `maven-publish`
+    `signing`
+    `jacoco`
+    `jacoco-report-aggregation`
     alias(libs.plugins.jdkprovider.plugin)
     alias(libs.plugins.cabe.plugin)
     alias(libs.plugins.spotbugs.plugin)
     alias(libs.plugins.jreleaser.plugin)
-    jacoco
 }
 
 java {
@@ -95,6 +98,19 @@ private val moduleProjectPaths = mapOf(
     "slb4j-config-yaml" to ":slb4j-config:slb4j-config-yaml",
     "slb4j-config-xml" to ":slb4j-config:slb4j-config-xml",
     "slb4j-config-all" to ":slb4j-config:slb4j-config-all"
+)
+
+private val coverageProjectPaths = listOf(
+    ":",
+    ":slb4j-ext",
+    ":slb4j-ext:slb4j-ext-layouts",
+    ":slb4j-ext:slb4j-ext-swing",
+    ":slb4j-ext:slb4j-ext-fx",
+    ":slb4j-config",
+    ":slb4j-config:slb4j-config-json",
+    ":slb4j-config:slb4j-config-yaml",
+    ":slb4j-config:slb4j-config-xml",
+    ":slb4j-config:slb4j-config-all"
 )
 
 private data class ModuleReleaseState(
@@ -362,7 +378,76 @@ tasks.test {
 }
 
 val jacocoTestReport = tasks.getByName<JacocoReport>("jacocoTestReport") {
+    dependsOn(tasks.test)
     executionData.setFrom(fileTree(layout.buildDirectory.dir("jacoco")).include("*.exec"))
+    // Cabe instruments the classes used by the test runtime into this directory.
+    // Reporting against build/classes/java/main causes JaCoCo class-ID mismatches
+    // and results in 0% coverage for every package.
+    classDirectories.setFrom(layout.buildDirectory.dir("classes-cabe/main"))
+    sourceDirectories.setFrom(layout.projectDirectory.dir("src/main/java"))
+}
+
+// Aggregate JaCoCo data for the production modules. Samples, benchmarks, native
+// test projects, and the BOM are deliberately excluded from the coverage scope.
+dependencies {
+    coverageProjectPaths
+        .filter { it != ":" }
+        .forEach { jacocoAggregation(project(it)) }
+    jacocoAggregation(project(":"))
+}
+
+tasks.named<JacocoReport>("testCodeCoverageReport") {
+    reports {
+        xml.required.set(true)
+        html.required.set(true)
+    }
+
+    // Cabe instruments the classes used by the test runtime into a separate
+    // directory. JaCoCo must analyze those same class files so their class IDs
+    // match the execution data.
+    classDirectories.setFrom(project.provider {
+        coverageProjectPaths.flatMap { path ->
+            val coveredProject = project(path)
+            val cabeClasses = coveredProject.layout.buildDirectory.dir("classes-cabe/main").get().asFile
+            val mainClasses = coveredProject.layout.buildDirectory.dir("classes/java/main").get().asFile
+            when {
+                cabeClasses.exists() -> listOf<File>(cabeClasses)
+                mainClasses.exists() -> listOf<File>(mainClasses)
+                else -> emptyList()
+            }
+        }
+    })
+}
+
+subprojects {
+    if (path in coverageProjectPaths) {
+        // Every aggregated production project must publish JaCoCo execution
+        // data. Projects that already use Cabe keep using their transformed
+        // classes; the remaining projects use their regular Java output.
+        apply(plugin = "java-library")
+        apply(plugin = "jacoco")
+
+        tasks.withType<JacocoReport>().configureEach {
+            reports {
+                xml.required.set(true)
+                html.required.set(false)
+            }
+            onlyIf { executionData.files.any(File::exists) }
+
+            val cabeClasses = layout.buildDirectory.dir("classes-cabe/main")
+            classDirectories.setFrom(project.provider {
+                if (cabeClasses.get().asFile.exists()) {
+                    cabeClasses.get().asFile
+                } else {
+                    sourceSets.main.get().output.classesDirs
+                }
+            })
+        }
+
+        tasks.withType<Test>().configureEach {
+            finalizedBy(tasks.named("jacocoTestReport"))
+        }
+    }
 }
 
 allprojects {
