@@ -17,6 +17,20 @@ import java.util.Objects;
  */
 public final class JsonLayout implements LogLayout {
 
+    /**
+     * Hard upper limit for {@code maxStringLength}.
+     */
+    public static final int HARD_MAX_STRING_LENGTH = 1_048_576;
+    /**
+     * Hard lower limit for {@code maxStringLength}.
+     */
+    public static final int HARD_MIN_STRING_LENGTH = 0;
+
+    /**
+     * Maximum length for {@code truncatedStringSuffix}.
+     */
+    public static final int MAX_TRUNCATED_STRING_SUFFIX_LENGTH = 256;
+
     private final boolean propertiesEnabled;
     private final boolean locationInfoEnabled;
     private final boolean stacktraceEnabled;
@@ -26,11 +40,16 @@ public final class JsonLayout implements LogLayout {
     /**
      * Constructs an instance of the JsonLayout class with the specified configuration parameters.
      *
-     * @param propertiesEnabled whether context information (MDC) should be included in the JSON log output.
-     * @param locationInfoEnabled whether location information (source file and line number) should be included in the JSON log output.
-     * @param stacktraceEnabled whether stack trace details should be included in the JSON log output if a throwable is present.
-     * @param maxStringLength the maximum length for string fields in the JSON log output; strings exceeding this length will be truncated.
-     * @param truncatedStringSuffix the suffix appended to truncated strings to indicate truncation.
+     * @param propertiesEnabled     whether context information (MDC) should be included in the JSON log output.
+     * @param locationInfoEnabled   whether location information (source file and line number) should be included in
+     *                              the JSON log output.
+     * @param stacktraceEnabled     whether stack trace details should be included in the JSON log output if a
+     *                              throwable is present.
+     * @param maxStringLength       the maximum length for string fields in the JSON log output; strings exceeding
+     *                              this length will be truncated. The value must be in the range
+     *                              ({@link HARD_MIN_STRING_LENGTH}, {@link HARD_MAX_STRING_LENGTH}).
+     * @param truncatedStringSuffix the suffix appended to truncated strings to indicate truncation. Must not be longer
+     *                              than {@link MAX_TRUNCATED_STRING_SUFFIX_LENGTH} characters.
      */
     public JsonLayout(boolean propertiesEnabled, boolean locationInfoEnabled, boolean stacktraceEnabled, int maxStringLength, String truncatedStringSuffix) {
         this.propertiesEnabled = propertiesEnabled;
@@ -38,6 +57,13 @@ public final class JsonLayout implements LogLayout {
         this.stacktraceEnabled = stacktraceEnabled;
         this.maxStringLength = maxStringLength;
         this.truncatedStringSuffix = truncatedStringSuffix;
+
+        if (maxStringLength < HARD_MIN_STRING_LENGTH || maxStringLength > HARD_MAX_STRING_LENGTH) {
+            throw new IllegalArgumentException("maxStringLength must be in the range [" + HARD_MIN_STRING_LENGTH + ", " + HARD_MAX_STRING_LENGTH + "]");
+        }
+        if (truncatedStringSuffix.length() > MAX_TRUNCATED_STRING_SUFFIX_LENGTH) {
+            throw new IllegalArgumentException("truncatedStringSuffix must be no longer than " + MAX_TRUNCATED_STRING_SUFFIX_LENGTH + " characters");
+        }
     }
 
     @Override
@@ -72,14 +98,41 @@ public final class JsonLayout implements LogLayout {
         app.append(",\"nanoOfSecond\":\"").append(Long.toString(timestamp%1000)).append("000000");
         app.append("\"}");
 
-        // Appends marker map if present
+        appendMarkerMap(app, mrk);
+        appendContextMap(app, mdc);
+        appendLocation(app, loc);
+        appendThrowable(app, t);
+
+        app.append("}\n");
+    }
+
+    /**
+     * Appends the JSON marker field for the supplied marker value.
+     * If the marker is null, nothing is appended. When present, the marker value is JSON-escaped
+     * before being written.
+     *
+     * @param app the appendable to which the marker JSON fragment will be written
+     * @param mrk the marker value to append; may be null
+     * @throws IOException if an I/O error occurs while writing to the appendable
+     */
+    private void appendMarkerMap(Appendable app, @Nullable String mrk) throws IOException {
         if (mrk != null) {
             app.append(",\"marker\":\"");
             appendJsonEscaped(app, mrk);
             app.append("\"");
         }
+    }
 
-        // Appends context map if present
+    /**
+     * Appends the JSON context map field for the supplied mapping diagnostic context when property output is enabled.
+     * If property output is disabled, the supplied context is null, or the context map is empty, nothing is appended.
+     * Context map keys and values are JSON-escaped before being written.
+     *
+     * @param app the appendable to which the context map JSON fragment will be written
+     * @param mdc the mapping diagnostic context to append; may be null
+     * @throws IOException if an I/O error occurs while writing to the appendable
+     */
+    private void appendContextMap(Appendable app, @Nullable MDC mdc) throws IOException {
         if (propertiesEnabled && mdc != null) {
             Map<String, String> contextMap = mdc.get();
             if (!contextMap.isEmpty()) {
@@ -99,8 +152,19 @@ public final class JsonLayout implements LogLayout {
                 app.append("}");
             }
         }
+    }
 
-        // Appends location details if present: class, method, file, line
+    /**
+     * Appends the JSON location field for the supplied source location when location output is enabled.
+     * If location output is disabled or the supplied location is null, nothing is appended. The appended
+     * location object includes the class name, method name, file name, and line number, with string values
+     * JSON-escaped before being written.
+     *
+     * @param app the appendable to which the location JSON fragment will be written
+     * @param loc the source location to append; may be null
+     * @throws IOException if an I/O error occurs while writing to the appendable
+     */
+    private void appendLocation(Appendable app, @Nullable Location loc) throws IOException {
         if (locationInfoEnabled && loc != null) {
             app.append(",\"location\":{");
             app.append("\"class\":\"");
@@ -113,8 +177,20 @@ public final class JsonLayout implements LogLayout {
             app.append(String.valueOf(loc.getLineNumber()));
             app.append("}");
         }
+    }
 
-        // Appends exception details if present
+    /**
+     * Appends JSON fields describing the supplied throwable to the given appendable.
+     * If the throwable is null, nothing is appended. When present, the throwable output includes
+     * the localized message, message, and fully qualified class name, with values JSON-escaped.
+     * If stack trace output is enabled, the throwable stack trace is also appended as an escaped
+     * JSON string.
+     *
+     * @param app the appendable to which the throwable JSON fragment will be written
+     * @param t the throwable to append; may be null
+     * @throws IOException if an I/O error occurs while writing to the appendable
+     */
+    private void appendThrowable(Appendable app, @Nullable Throwable t) throws IOException {
         if (t != null) {
             app.append(",\"thrown\":{\"localizedMessage\":\"");
             appendJsonEscaped(app, t.getLocalizedMessage());
@@ -134,8 +210,6 @@ public final class JsonLayout implements LogLayout {
 
             app.append("}");
         }
-
-        app.append("}\n");
     }
 
     /**
@@ -162,6 +236,18 @@ public final class JsonLayout implements LogLayout {
         }
     }
 
+    /**
+     * Appends a JSON-escaped representation of the supplied character sequence to the given appendable,
+     * limiting the number of source characters processed to the specified maximum length. If the
+     * character sequence is null, appends the literal {@code null}. Characters that require JSON
+     * escaping, including quotation marks, backslashes, slashes, control characters, and standard
+     * escape sequences, are written in escaped form.
+     *
+     * @param app the appendable to which the escaped JSON content is written
+     * @param s the character sequence to escape; may be null
+     * @param maxLength the maximum number of source characters to process, clamped to the range from zero to the input length
+     * @throws IOException if an I/O error occurs while writing to the appendable
+     */
     private void appendJsonEscaped(Appendable app, @Nullable CharSequence s, int maxLength) throws IOException {
         if (s == null) {
             app.append("null");
