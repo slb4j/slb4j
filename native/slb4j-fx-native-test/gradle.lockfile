@@ -5,8 +5,7 @@
 commons-logging:commons-logging:1.4.0=compileClasspath,nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apache.logging.log4j:log4j-api:2.26.1=compileClasspath,nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 org.apache.logging.log4j:log4j-bom:2.26.1=compileClasspath,nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
-org.graalvm.buildtools:junit-platform-native:1.1.8=nativeImageTestClasspathInternal
+org.graalvm.buildtools:junit-platform-native:1.1.18=nativeImageTestClasspathInternal
 org.jspecify:jspecify:1.0.1=nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testRuntimeClasspath
-org.slf4j:slf4j-api:2.0.18=nativeImageClasspath,nativeImageTestClasspathInternal,testCompileClasspath,testRuntimeClasspath
-org.slf4j:slf4j-api:2.0.20=compileClasspath,runtimeClasspath
+org.slf4j:slf4j-api:2.0.20=compileClasspath,nativeImageClasspath,nativeImageTestClasspathInternal,runtimeClasspath,testCompileClasspath,testRuntimeClasspath
 empty=annotationProcessor,testAnnotationProcessor

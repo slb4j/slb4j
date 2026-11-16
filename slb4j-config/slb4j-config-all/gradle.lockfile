@@ -2,8 +2,7 @@
 # Manual edits can break the build and are not advised.
 # This file is expected to be part of source control.
 # To regenerate this file, run: ./gradlew :slb4j-config:slb4j-config-all:dependencies --write-locks
-com.fasterxml.jackson.core:jackson-annotations:2.22=runtimeClasspath
-com.fasterxml.jackson.core:jackson-annotations:2.23=testRuntimeClasspath
+com.fasterxml.jackson.core:jackson-annotations:2.23=runtimeClasspath,testRuntimeClasspath
 org.apiguardian:apiguardian-api:1.1.2=testCompileClasspath
 org.jacoco:org.jacoco.agent:0.8.15=jacocoAgent,jacocoAnt
 org.jacoco:org.jacoco.ant:0.8.15=jacocoAnt
@@ -24,12 +23,8 @@ org.ow2.asm:asm-commons:9.10.1=jacocoAnt
 org.ow2.asm:asm-tree:9.10.1=jacocoAnt
 org.ow2.asm:asm:9.10.1=jacocoAnt
 org.snakeyaml:snakeyaml-engine:3.0.1=runtimeClasspath,testRuntimeClasspath
-tools.jackson.core:jackson-core:3.2.1=runtimeClasspath
-tools.jackson.core:jackson-core:3.3.0=testRuntimeClasspath
-tools.jackson.core:jackson-databind:3.2.1=runtimeClasspath
-tools.jackson.core:jackson-databind:3.3.0=testRuntimeClasspath
-tools.jackson.dataformat:jackson-dataformat-yaml:3.2.1=runtimeClasspath
-tools.jackson.dataformat:jackson-dataformat-yaml:3.3.0=testRuntimeClasspath
-tools.jackson:jackson-bom:3.2.1=runtimeClasspath
-tools.jackson:jackson-bom:3.3.0=testRuntimeClasspath
+tools.jackson.core:jackson-core:3.3.0=runtimeClasspath,testRuntimeClasspath
+tools.jackson.core:jackson-databind:3.3.0=runtimeClasspath,testRuntimeClasspath
+tools.jackson.dataformat:jackson-dataformat-yaml:3.3.0=runtimeClasspath,testRuntimeClasspath
+tools.jackson:jackson-bom:3.3.0=runtimeClasspath,testRuntimeClasspath
 empty=annotationProcessor,compileClasspath,testAnnotationProcessor
