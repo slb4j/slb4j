@@ -3,6 +3,7 @@ Version 0.15.0 (to be released)
 
 - remove `implements Externizable` from LogBuffer for security reasons.
 - support `%enc` and `%replace` in PatternLayout
+- JsonLayout: handle invalid unicode in; ensure limits for maximum string length and truncated suffix length
 
 Version 0.14.1
 --------------

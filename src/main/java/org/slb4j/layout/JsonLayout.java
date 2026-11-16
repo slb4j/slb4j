@@ -228,7 +228,12 @@ public final class JsonLayout implements LogLayout {
             return;
         }
 
+        // determine length, truncating if necessary, and handle a possible trainling incomplete surrogate pair
         int length = Math.clamp(maxStringLength, 0, s.length());
+        if (length > 0 && Character.isHighSurrogate(s.charAt(length - 1))) {
+            length--;
+        }
+
         appendJsonEscaped(app, s, length);
 
         if (length < s.length()) {
@@ -257,20 +262,36 @@ public final class JsonLayout implements LogLayout {
         int length = Math.clamp(maxLength, 0, s.length());
         for (int i = 0; i < length; i++) {
             char c = s.charAt(i);
-            switch (c) {
-                case '"' -> app.append("\\\"");
-                case '\\' -> app.append("\\\\");
-                case '/' -> app.append("\\/");
-                case '\b' -> app.append("\\b");
-                case '\f' -> app.append("\\f");
-                case '\n' -> app.append("\\n");
-                case '\r' -> app.append("\\r");
-                case '\t' -> app.append("\\t");
-                default -> {
-                    if (c < 32) {
-                        app.append(String.format("\\u%04x", (int) c));
-                    } else {
-                        app.append(c);
+
+            if (Character.isHighSurrogate(c)) {
+                if (i + 1 < length && Character.isLowSurrogate(s.charAt(i + 1))) {
+                    // if c begins a valid surrogate pair and the next character is a low surrogate, both are appended unchanged.
+                    app.append(c).append(s.charAt(++i));
+                } else {
+                    // if no matching low surrogate follows, it appends U+FFFD (�), the Unicode replacement character.
+                    app.append('\uFFFD');
+                }
+            } else if (Character.isLowSurrogate(c)) {
+                // if c is an unpaired low surrogate, the Unicode replacement character U+FFFD (�) is appended.
+                app.append('\uFFFD');
+            } else {
+                // JSON-escape characters
+                switch (c) {
+                    case '"' -> app.append("\\\"");
+                    case '\\' -> app.append("\\\\");
+                    case '/' -> app.append("\\/");
+                    case '\b' -> app.append("\\b");
+                    case '\f' -> app.append("\\f");
+                    case '\n' -> app.append("\\n");
+                    case '\r' -> app.append("\\r");
+                    case '\t' -> app.append("\\t");
+                    default -> {
+                        if (c < 32) {
+                            // append control characters as \\uxxxx
+                            app.append(String.format("\\u%04x", (int) c));
+                        } else {
+                            app.append(c);
+                        }
                     }
                 }
             }
