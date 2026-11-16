@@ -47,7 +47,9 @@ public final class JsonLayout implements LogLayout {
      *                              throwable is present.
      * @param maxStringLength       the maximum length for string fields in the JSON log output; strings exceeding
      *                              this length will be truncated. The value must be in the range
-     *                              ({@link HARD_MIN_STRING_LENGTH}, {@link HARD_MAX_STRING_LENGTH}).
+     *                              [{@link HARD_MIN_STRING_LENGTH}, {@link HARD_MAX_STRING_LENGTH}].
+     *                              If {@code maxStringLength} is 0, only {@code truncatedStringSuffix will be
+     *                              appended for non-empty values.
      * @param truncatedStringSuffix the suffix appended to truncated strings to indicate truncation. Must not be longer
      *                              than {@link MAX_TRUNCATED_STRING_SUFFIX_LENGTH} characters.
      */

@@ -13,6 +13,7 @@ import java.util.Collections;
 import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class JsonLayoutTest {
@@ -102,6 +103,46 @@ class JsonLayoutTest {
     }
 
     @Test
+    void testJsonEncodingWithMalformedUnicode() throws IOException {
+        JsonLayout layout = new JsonLayout(false, false, false, 1024, "...");
+        StringBuilder sb = new StringBuilder();
+
+        layout.formatLogEntry(sb, 0, "logger", LogLevel.INFO, null, null, null,
+                "a\uD800b\uDC00c\u2028\u2029", null, ConsoleCode.empty());
+
+        JsonNode json = parseJson(sb.toString());
+        assertEquals("a�b�c\u2028\u2029", json.get("message").asString());
+    }
+
+    @Test
+    void testJsonEncodingDoesNotSplitSurrogatePairWhenTruncating() throws IOException {
+        String emoji = "\uD83D\uDE00";
+
+        JsonLayout truncatedLayout = new JsonLayout(false, false, false, 2, "...");
+        StringBuilder truncated = new StringBuilder();
+        truncatedLayout.formatLogEntry(truncated, 0, "logger", LogLevel.INFO, null, null, null,
+                "A" + emoji + "B", null, ConsoleCode.empty());
+        assertEquals("A...", parseJson(truncated.toString()).get("message").asString());
+
+        JsonLayout completeLayout = new JsonLayout(false, false, false, 2, "...");
+        StringBuilder complete = new StringBuilder();
+        completeLayout.formatLogEntry(complete, 0, "logger", LogLevel.INFO, null, null, null,
+                emoji, null, ConsoleCode.empty());
+        assertEquals(emoji, parseJson(complete.toString()).get("message").asString());
+    }
+
+    @Test
+    void testJsonLayoutRejectsInvalidLimits() {
+        assertThrows(IllegalArgumentException.class,
+                () -> new JsonLayout(false, false, false, -1, "..."));
+        assertThrows(IllegalArgumentException.class,
+                () -> new JsonLayout(false, false, false, JsonLayout.HARD_MAX_STRING_LENGTH + 1, "..."));
+        assertThrows(IllegalArgumentException.class,
+                () -> new JsonLayout(false, false, false, 1,
+                        "x".repeat(JsonLayout.MAX_TRUNCATED_STRING_SUFFIX_LENGTH + 1)));
+    }
+
+    @Test
     void testJsonOutputFormatWithMdc() throws IOException {
         JsonLayout layout = new JsonLayout(true, true, true, 1024, "...");
         StringBuilder sb = new StringBuilder();
@@ -170,7 +211,41 @@ class JsonLayoutTest {
         assertTrue(thrown.get("stacktrace").asString().startsWith("java.lang.RuntimeException: test exception"));
     }
 
-    private static JsonNode parseJson(String output) throws IOException {
+    @Test
+    void testJsonOutputFormatWithNestedCauses() throws IOException {
+        JsonLayout layout = new JsonLayout(false, false, true, JsonLayout.HARD_MAX_STRING_LENGTH, "...");
+        Throwable cause = new IllegalArgumentException("cause \"message\"");
+        Throwable throwable = new RuntimeException("outer", cause);
+        throwable.addSuppressed(new IllegalStateException("suppressed\nmessage"));
+        StringBuilder sb = new StringBuilder();
+
+        layout.formatLogEntry(sb, 0, "logger", LogLevel.ERROR, null, null, null,
+                "message", throwable, ConsoleCode.empty());
+
+        JsonNode thrown = parseJson(sb.toString()).get("thrown");
+        assertTrue(thrown.isObject());
+        assertTrue(thrown.get("stacktrace").asString().contains("Caused by: java.lang.IllegalArgumentException: cause \"message\""));
+        assertTrue(thrown.get("stacktrace").asString().contains("Suppressed: java.lang.IllegalStateException: suppressed"));
+    }
+
+    @Test
+    void testEveryOutputLineIsACompleteJsonEvent() throws IOException {
+        JsonLayout layout = new JsonLayout(false, false, false, 1024, "...");
+        StringBuilder sb = new StringBuilder();
+
+        layout.formatLogEntry(sb, 0, "logger", LogLevel.INFO, null, null, null,
+                "first", null, ConsoleCode.empty());
+        layout.formatLogEntry(sb, 1, "logger", LogLevel.INFO, null, null, null,
+                "second\nmessage", null, ConsoleCode.empty());
+
+        String[] lines = sb.toString().split("\\R", -1);
+        assertEquals(3, lines.length);
+        assertEquals("", lines[2]);
+        assertTrue(parseJson(lines[0]).isObject());
+        assertTrue(parseJson(lines[1]).isObject());
+    }
+
+    private static JsonNode parseJson(String output) {
         return JSON.readTree(output);
     }
 }
