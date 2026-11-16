@@ -22,6 +22,7 @@ import org.slb4j.support.Util;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -43,6 +44,8 @@ public final class SLB4J {
     private static final UniversalDispatcher DISPATCHER;
 
     private static volatile LoggingConfiguration activeConfiguration;
+
+    private static final Object CONFIGURATION_LOCK = new Object();
 
     private static final Map<String, String> LOADED_PLUGINS = new ConcurrentHashMap<>();
 
@@ -176,20 +179,29 @@ public final class SLB4J {
 
     /**
      * Replaces the active configuration with the provided configuration.
+     * The dispatcher owns the handlers in the active configuration; handlers
+     * removed by a later replacement are shut down. A handler intentionally
+     * shared by both configurations remains active.
      *
      * @param config the new logging configuration to be set; must not be null
      */
     public static void setConfiguration(LoggingConfiguration config) {
-        setStatusLevel(config.getStatusLevel());
-        setStatusName(config.getStatusName());
-        setStatusDest(config.getStatusDest());
+        Objects.requireNonNull(config, "config");
 
-        DISPATCHER.clearLogHandlers();
-        config.getHandlers().values().forEach(DISPATCHER::addLogHandler);
-        DISPATCHER.setFilter(config.getRootFilter());
-        DISPATCHER.setFilter(config.getRootFilter());
+        // Prepare everything that can fail before changing the active state.
+        LoggingConfiguration replacement = LoggingConfiguration.copyOf(config);
+        List<LogHandler> replacementHandlers = List.copyOf(replacement.getHandlers().values());
 
-        activeConfiguration = LoggingConfiguration.copyOf(config);
+        synchronized (CONFIGURATION_LOCK) {
+            DISPATCHER.replaceLogHandlers(replacementHandlers);
+            DISPATCHER.setFilter(replacement.getRootFilter());
+
+            setStatusLevel(replacement.getStatusLevel());
+            setStatusName(replacement.getStatusName());
+            setStatusDest(replacement.getStatusDest());
+
+            activeConfiguration = replacement;
+        }
 
         SLB4J.logInternal(LogLevel.INFO, "Logging configuration updated");
         SLB4J.logInternal(LogLevel.DEBUG, "Active logging configuration: %s", activeConfiguration);

@@ -6,6 +6,7 @@ Version 0.15.0 (to be released)
 - XmlLayout: handle invalid unicode
 - JsonLayout: handle invalid unicode
 - JsonLayout: ensure limits for maximum string length and truncated suffix length
+- fix: leaking file handlers when configuration is changed at runtime
 
 Version 0.14.1
 --------------

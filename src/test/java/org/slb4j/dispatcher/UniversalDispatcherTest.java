@@ -26,6 +26,9 @@ import org.slb4j.LogFilter;
 import org.slb4j.filter.LoggerNamePrefixFilter;
 
 import java.util.SequencedCollection;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 
 import static org.junit.jupiter.api.Assertions.*;
 
@@ -79,8 +82,65 @@ class UniversalDispatcherTest {
         assertTrue(dispatcher.isEnabled("com.example", LogLevel.DEBUG, null));
     }
 
+    @Test
+    void replacingHandlersShutsDownRemovedHandlersOnce() {
+        UniversalDispatcher dispatcher = new UniversalDispatcher();
+        TestLogHandler oldHandler = new TestLogHandler();
+        TestLogHandler newHandler = new TestLogHandler();
+
+        dispatcher.replaceLogHandlers(java.util.List.of(oldHandler));
+        dispatcher.replaceLogHandlers(java.util.List.of(newHandler));
+
+        assertEquals(1, oldHandler.shutdownCount.get());
+        assertEquals(0, newHandler.shutdownCount.get());
+
+        // Replacing with the same handler does not close a shared instance.
+        dispatcher.replaceLogHandlers(java.util.List.of(newHandler));
+        assertEquals(0, newHandler.shutdownCount.get());
+
+        dispatcher.shutdown();
+        dispatcher.shutdown();
+        assertEquals(1, newHandler.shutdownCount.get());
+    }
+
+    @Test
+    void replacementDoesNotWaitForInFlightDispatch() throws Exception {
+        UniversalDispatcher dispatcher = new UniversalDispatcher();
+        CountDownLatch entered = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        TestLogHandler oldHandler = new TestLogHandler(entered, release);
+
+        dispatcher.setRootLevel(LogLevel.TRACE);
+        dispatcher.replaceLogHandlers(java.util.List.of(oldHandler));
+        Thread dispatch = new Thread(() -> dispatcher.filterAndDispatch(
+                System.currentTimeMillis(), "test", LogLevel.INFO, null, null,
+                () -> null, () -> "message", null));
+        dispatch.start();
+
+        assertTrue(entered.await(5, TimeUnit.SECONDS));
+        dispatcher.replaceLogHandlers(java.util.List.of());
+        assertEquals(0, oldHandler.shutdownCount.get());
+
+        release.countDown();
+        dispatch.join(TimeUnit.SECONDS.toMillis(5));
+        assertFalse(dispatch.isAlive());
+        assertEquals(1, oldHandler.shutdownCount.get());
+    }
+
     private static class TestLogHandler implements LogHandler {
         private LogFilter filter = LogFilter.allPass();
+        private final AtomicInteger shutdownCount = new AtomicInteger();
+        private final @Nullable CountDownLatch entered;
+        private final @Nullable CountDownLatch release;
+
+        TestLogHandler() {
+            this(null, null);
+        }
+
+        TestLogHandler(@Nullable CountDownLatch entered, @Nullable CountDownLatch release) {
+            this.entered = entered;
+            this.release = release;
+        }
 
         @Override
         public String name() {
@@ -89,7 +149,14 @@ class UniversalDispatcherTest {
 
         @Override
         public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, CharSequence msg, @Nullable Throwable t) {
-            // No-op
+            if (entered != null) {
+                entered.countDown();
+                try {
+                    release.await();
+                } catch (InterruptedException e) {
+                    Thread.currentThread().interrupt();
+                }
+            }
         }
 
         @Override
@@ -104,7 +171,7 @@ class UniversalDispatcherTest {
 
         @Override
         public void shutdown() {
-            // nothing to do
+            shutdownCount.incrementAndGet();
         }
 
         @Override
