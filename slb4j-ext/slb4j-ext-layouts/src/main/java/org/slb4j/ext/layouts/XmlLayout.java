@@ -98,18 +98,20 @@ public final class XmlLayout implements LogLayout {
 
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            
-            if (Character.isHighSurrogate(c)) {
-                if (i + 1 < s.length() && Character.isLowSurrogate(s.charAt(i + 1))) {
-                    // A valid surrogate pair represents an XML 1.0 character above U+FFFF.
-                    app.append(c).append(s.charAt(++i));
+
+            if (Character.isSurrogate(c)) {
+                if (Character.isHighSurrogate(c)) {
+                    if (i + 1 < s.length() && Character.isLowSurrogate(s.charAt(i + 1))) {
+                        // A valid surrogate pair represents an XML 1.0 character above U+FFFF.
+                        app.append(c).append(s.charAt(++i));
+                    } else {
+                        // replace unpaired surrogate with the Unicode replacement character (U+FFFD)”.
+                        app.append('\uFFFD');
+                    }
                 } else {
-                    // replace unpaired surrogate with code for missing character.
+                    // replace unpaired surrogate with the Unicode replacement character (U+FFFD)”.
                     app.append('\uFFFD');
                 }
-            } else if (Character.isLowSurrogate(c)) {
-                // replace unpaired surrogate with code for missing character.
-                app.append('\uFFFD');
             } else {
                 switch (c) {
                     case '<' -> app.append("&lt;");

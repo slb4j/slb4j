@@ -265,17 +265,19 @@ public final class JsonLayout implements LogLayout {
         for (int i = 0; i < length; i++) {
             char c = s.charAt(i);
 
-            if (Character.isHighSurrogate(c)) {
-                if (i + 1 < length && Character.isLowSurrogate(s.charAt(i + 1))) {
-                    // if c begins a valid surrogate pair and the next character is a low surrogate, both are appended unchanged.
-                    app.append(c).append(s.charAt(++i));
+            if (Character.isSurrogate(c)) {
+                if (Character.isHighSurrogate(c)) {
+                    if (i + 1 < length && Character.isLowSurrogate(s.charAt(i + 1))) {
+                        // if c begins a valid surrogate pair and the next character is a low surrogate, both are appended unchanged.
+                        app.append(c).append(s.charAt(++i));
+                    } else {
+                        // if no matching low surrogate follows, append U+FFFD (�), the Unicode replacement character.
+                        app.append('\uFFFD');
+                    }
                 } else {
-                    // if no matching low surrogate follows, it appends U+FFFD (�), the Unicode replacement character.
+                    // if c is an unpaired low surrogate, append U+FFFD (�), the Unicode replacement character.
                     app.append('\uFFFD');
                 }
-            } else if (Character.isLowSurrogate(c)) {
-                // if c is an unpaired low surrogate, the Unicode replacement character U+FFFD (�) is appended.
-                app.append('\uFFFD');
             } else {
                 // JSON-escape characters
                 switch (c) {
