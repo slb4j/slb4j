@@ -83,7 +83,8 @@ public final class XmlLayout implements LogLayout {
 
     /**
      * Escapes a given string for safe inclusion in XML by converting special characters into their corresponding
-     * XML entities.
+     * XML entities. Characters that are not permitted by XML 1.0, including forbidden control characters and
+     * unpaired surrogates, are replaced with the Unicode replacement character.
      *
      * @param app the {@code Appendable} to which the escaped string will be appended
      * @param s the input string to be XML-escaped; may be null
@@ -97,20 +98,38 @@ public final class XmlLayout implements LogLayout {
 
         for (int i = 0; i < s.length(); i++) {
             char c = s.charAt(i);
-            switch (c) {
-                case '<' -> app.append("&lt;");
-                case '>' -> app.append("&gt;");
-                case '&' -> app.append("&amp;");
-                case '"' -> app.append("&quot;");
-                case '\'' -> app.append("&apos;");
-                default -> {
-                    if (c < 32 && c != '\t' && c != '\n' && c != '\r') {
-                        app.append("&#").append(Integer.toString(c)).append(";");
-                    } else {
-                        app.append(c);
-                    }
+            
+            if (Character.isHighSurrogate(c)) {
+                if (i + 1 < s.length() && Character.isLowSurrogate(s.charAt(i + 1))) {
+                    // A valid surrogate pair represents an XML 1.0 character above U+FFFF.
+                    app.append(c).append(s.charAt(++i));
+                } else {
+                    // replace unpaired surrogate with code for missing character.
+                    app.append('\uFFFD');
+                }
+            } else if (Character.isLowSurrogate(c)) {
+                // replace unpaired surrogate with code for missing character.
+                app.append('\uFFFD');
+            } else {
+                switch (c) {
+                    case '<' -> app.append("&lt;");
+                    case '>' -> app.append("&gt;");
+                    case '&' -> app.append("&amp;");
+                    case '"' -> app.append("&quot;");
+                    case '\'' -> app.append("&apos;");
+                    default -> app.append(isValidXml10Character(c) ? c : '\uFFFD');
                 }
             }
         }
+    }
+
+    /**
+     * Returns whether the supplied UTF-16 code unit is permitted in XML 1.0.
+     * Surrogate pairs are handled separately by {@link #appendXmlEscaped(Appendable, CharSequence)}.
+     */
+    private static boolean isValidXml10Character(char c) {
+        return c == '\t' || c == '\n' || c == '\r'
+                || c >= 0x20 && c <= 0xD7FF
+                || c >= 0xE000 && c <= 0xFFFD;
     }
 }
