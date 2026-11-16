@@ -25,7 +25,9 @@ import java.util.SequencedCollection;
 public interface LogDispatcher {
     /**
      * Adds a handler for log entry events. The handler will be invoked
-     * whenever a log entry is received.
+     * whenever a log entry is received. The dispatcher owns the handler while
+     * it is registered and may invoke {@link LogHandler#shutdown()} when the
+     * handler is removed or the dispatcher is reconfigured.
      *
      * @param handler The log entry handler to be added.
      */
@@ -33,7 +35,7 @@ public interface LogDispatcher {
 
     /**
      * Removes a previously added log entry handler. The handler will no longer be invoked
-     * for any log entries.
+     * for any log entries and is shut down when it is no longer registered.
      *
      * @param handler The log entry handler to be removed.
      */

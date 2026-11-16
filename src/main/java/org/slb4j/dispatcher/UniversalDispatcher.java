@@ -25,11 +25,15 @@ import org.jspecify.annotations.Nullable;
 import org.slb4j.SLB4J;
 import org.slb4j.filter.LoggerNamePrefixFilter;
 
-import java.lang.invoke.MethodHandles;
-import java.lang.invoke.VarHandle;
+import java.util.ArrayList;
+import java.util.IdentityHashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.SequencedCollection;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 /**
@@ -64,26 +68,11 @@ public final class UniversalDispatcher implements LogDispatcher {
         return SingletonHolder.INSTANCE;
     }
 
-    /**
-     * The root filter. DO NOT REMOVE!
-     */
-    private LoggerNamePrefixFilter rootFilter = new LoggerNamePrefixFilter("root");
+    /** The active filter and handler snapshot. */
+    private final AtomicReference<DispatchState> state;
 
-    private static final VarHandle ROOT_FILTER_VH;
-
-    static {
-        try {
-            MethodHandles.Lookup l = MethodHandles.lookup();
-            ROOT_FILTER_VH = l.findVarHandle(UniversalDispatcher.class, "rootFilter", LoggerNamePrefixFilter.class);
-        } catch (ReflectiveOperationException e) {
-            throw new ExceptionInInitializerError(e);
-        }
-    }
-
-    /**
-     * A thread-safe list of LogHandler instances.
-     */
-    private final List<LogHandler> handlers = new CopyOnWriteArrayList<>();
+    /** Configuration changes are off the dispatch hot path. */
+    private final Object configurationLock = new Object();
 
     /**
      * Default constructor for the CommonDispatcher class.
@@ -92,6 +81,8 @@ public final class UniversalDispatcher implements LogDispatcher {
      * without any specific configuration or parameters.
      */
     public UniversalDispatcher() {
+        HandlerSnapshot emptyHandlers = new HandlerSnapshot(List.of());
+        this.state = new AtomicReference<>(new DispatchState(new LoggerNamePrefixFilter("root"), emptyHandlers));
         Runtime.getRuntime().addShutdownHook(new Thread(this::shutdown, "UniversalDispatcher-ShutdownHook"));
     }
 
@@ -107,13 +98,7 @@ public final class UniversalDispatcher implements LogDispatcher {
      * should not be expected to process any further log entries.
      */
     public void shutdown() {
-        for (int i = 0; i < handlers.size(); i++) {
-            try {
-                handlers.get(i).shutdown();
-            } catch (Exception e) {
-                SLB4J.logInternal(LogLevel.WARN, "Error shutting down log handler %s: %s", handlers.get(i).name(), e);
-            }
-        }
+        clearLogHandlers();
     }
 
     /**
@@ -140,23 +125,35 @@ public final class UniversalDispatcher implements LogDispatcher {
 
     @Override
     public void addLogHandler(LogHandler handler) {
-        handlers.add(handler);
+        synchronized (configurationLock) {
+            List<LogHandler> replacement = new ArrayList<>(getLogHandlers());
+            replacement.add(handler);
+            replaceLogHandlersLocked(replacement);
+        }
     }
 
     @Override
     public void removeLogHandler(LogHandler handler) {
-        handlers.remove(handler);
+        synchronized (configurationLock) {
+            List<LogHandler> replacement = new ArrayList<>();
+            for (LogHandler registered : getLogHandlers()) {
+                if (registered != handler) {
+                    replacement.add(registered);
+                }
+            }
+            replaceLogHandlersLocked(replacement);
+        }
     }
 
     @Override
     public void setFilter(LoggerNamePrefixFilter filter) {
-        ROOT_FILTER_VH.setRelease(this, filter);
+        state.updateAndGet(current -> new DispatchState(filter, current.handlers));
         SLB4J.logInternal(LogLevel.INFO, "Global dispatcher filter set to: %s", filter);
     }
 
     @Override
     public LoggerNamePrefixFilter getFilter() {
-        return (LoggerNamePrefixFilter) ROOT_FILTER_VH.getAcquire(this);
+        return state.get().filter;
     }
 
     @Override
@@ -183,12 +180,57 @@ public final class UniversalDispatcher implements LogDispatcher {
      * Removes all registered log handlers.
      */
     public void clearLogHandlers() {
-        handlers.clear();
+        replaceLogHandlers(List.of());
+    }
+
+    /**
+     * Atomically replaces the registered handlers and releases handlers that
+     * are no longer part of the active set.
+     * <p>
+     * The dispatcher owns handlers while they are registered. A handler that
+     * is present in both sets is retained, which allows a caller to share a
+     * handler between successive configurations without closing it during the
+     * replacement.
+     *
+     * @param replacement the complete replacement handler set
+     */
+    public void replaceLogHandlers(Iterable<? extends LogHandler> replacement) {
+        List<LogHandler> newHandlers = new ArrayList<>();
+        replacement.forEach(handler -> newHandlers.add(Objects.requireNonNull(handler, "handler")));
+
+        synchronized (configurationLock) {
+            replaceLogHandlersLocked(newHandlers);
+        }
+    }
+
+    /**
+     * Replaces the active log handler snapshot with the supplied handlers while preserving
+     * the current dispatch filter. The state update is performed atomically so concurrent
+     * dispatch operations observe either the previous handler snapshot or the replacement
+     * snapshot. After the replacement is installed, handlers from the previous snapshot that
+     * are not retained by the new snapshot are retired.
+     *
+     * @param replacement the complete set of log handlers to install
+     */
+    private void replaceLogHandlersLocked(List<LogHandler> replacement) {
+        HandlerSnapshot newHandlers = new HandlerSnapshot(replacement);
+        HandlerSnapshot oldHandlers;
+
+        for (;;) {
+            DispatchState current = state.get();
+            DispatchState updated = new DispatchState(current.filter, newHandlers);
+            if (state.compareAndSet(current, updated)) {
+                oldHandlers = current.handlers;
+                break;
+            }
+        }
+
+        oldHandlers.retire(newHandlers);
     }
 
     @Override
     public SequencedCollection<LogHandler> getLogHandlers() {
-        return List.copyOf(handlers);
+        return state.get().handlers.getHandlers();
     }
 
     /**
@@ -206,21 +248,145 @@ public final class UniversalDispatcher implements LogDispatcher {
      * @param t an optional {@code Throwable} associated with the log event; may be null
      */
     public void filterAndDispatch(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver locationResolver, Supplier<CharSequence> msg, @Nullable Throwable t) {
-        if (getFilter().isEnabled(loggerName, lvl, mrk)) {
-            CharSequence message = null;
-            Location loc =  null;
-            for (int i = 0; i < handlers.size(); i++) {
-                LogHandler handler = handlers.get(i);
-                if (handler.isEnabled(lvl)) {
-                    if (loc == null && handler.isLocationNeeded()) {
-                        loc = locationResolver.resolve();
-                    }
-                    if (message == null) {
-                        message = msg.get();
-                    }
-                    handler.handle(timestamp, loggerName, lvl, mrk, mdc, loc, message, t);
+        DispatchState dispatchState = state.get();
+        HandlerSnapshot handlers = dispatchState.handlers;
+        if (!handlers.enter()) {
+            // Configuration changes are rare. If the snapshot was retired
+            // between the state read and enter(), use the slow path once.
+            synchronized (configurationLock) {
+                dispatchState = state.get();
+                handlers = dispatchState.handlers;
+                if (!handlers.enter()) {
+                    return;
                 }
             }
+        }
+
+        try {
+            if (dispatchState.filter.isEnabled(loggerName, lvl, mrk)) {
+                CharSequence message = null;
+                Location loc =  null;
+                for (LogHandler handler : handlers.handlers) {
+                    if (handler.isEnabled(lvl)) {
+                        if (loc == null && handler.isLocationNeeded()) {
+                            loc = locationResolver.resolve();
+                        }
+                        if (message == null) {
+                            message = msg.get();
+                        }
+                        handler.handle(timestamp, loggerName, lvl, mrk, mdc, loc, message, t);
+                    }
+                }
+            }
+        } finally {
+            handlers.exit();
+        }
+    }
+
+    /**
+     * Lifecycle snapshot of the dispatcher's registered {@link LogHandler} instances.
+     *
+     * A snapshot represents the handler set observed by concurrent dispatch operations.
+     * Callers enter the snapshot before iterating handlers and exit it when dispatch
+     * completes. This reader accounting allows a replaced snapshot to remain available
+     * to in-flight dispatch operations while preventing new readers from entering after
+     * retirement begins.
+     *
+     * When retired, the snapshot identifies handlers that are not present in the
+     * replacement snapshot by object identity and schedules only those handlers for
+     * shutdown. Handler instances shared with the replacement snapshot are retained and
+     * are not closed. Shutdown is performed once, either immediately when no readers are
+     * active or after the final reader exits.
+     *
+     * This class is intended for internal use by {@code UniversalDispatcher} to support
+     * atomic handler replacement, safe concurrent dispatch, and deterministic cleanup of
+     * obsolete handlers.
+     */
+    private static final class HandlerSnapshot {
+        private final CopyOnWriteArrayList<LogHandler> handlers;
+        private final AtomicInteger readers = new AtomicInteger();
+        private volatile boolean closing;
+        private final AtomicBoolean closed = new AtomicBoolean();
+        private volatile List<LogHandler> handlersToClose = List.of();
+
+        private HandlerSnapshot(List<LogHandler> handlers) {
+            this.handlers = new CopyOnWriteArrayList<>(handlers);
+        }
+
+        private SequencedCollection<LogHandler> getHandlers() {
+            return List.copyOf(handlers);
+        }
+
+        private boolean enter() {
+            if (closing) {
+                return false;
+            }
+
+            readers.incrementAndGet();
+            if (!closing) {
+                return true;
+            }
+
+            exit();
+            return false;
+        }
+
+        private void exit() {
+            if (readers.decrementAndGet() == 0 && closing) {
+                closeHandlers();
+            }
+        }
+
+        private void retire(HandlerSnapshot replacement) {
+            List<LogHandler> toClose = new ArrayList<>();
+            IdentityHashMap<LogHandler, Boolean> seen = new IdentityHashMap<>();
+            for (LogHandler handler : handlers) {
+                if (!containsSameInstance(replacement.handlers, handler) && seen.put(handler, Boolean.TRUE) == null) {
+                    toClose.add(handler);
+                }
+            }
+
+            handlersToClose = List.copyOf(toClose);
+            closing = true;
+            if (readers.get() == 0) {
+                closeHandlers();
+            }
+        }
+
+        private void closeHandlers() {
+            if (closed.compareAndSet(false, true)) {
+                for (LogHandler handler : handlersToClose) {
+                    shutdownHandler(handler);
+                }
+            }
+        }
+
+        private void shutdownHandler(LogHandler handler) {
+            try {
+                handler.shutdown();
+            } catch (Exception e) {
+                SLB4J.logInternal(LogLevel.WARN, "Error shutting down log handler %s: %s", handler.name(), e);
+            }
+        }
+
+        private static boolean containsSameInstance(CopyOnWriteArrayList<LogHandler> handlers, LogHandler candidate) {
+            for (LogHandler handler : handlers) {
+                if (handler == candidate) {
+                    return true;
+                }
+            }
+            return false;
+        }
+    }
+
+
+    private static final class DispatchState {
+        private final LoggerNamePrefixFilter filter;
+        private final HandlerSnapshot handlers;
+
+        private DispatchState(LoggerNamePrefixFilter filter, HandlerSnapshot handlers) {
+            this.filter = filter;
+            this.handlers = handlers;
         }
     }
 
