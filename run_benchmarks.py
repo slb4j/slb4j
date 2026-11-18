@@ -30,6 +30,7 @@ SEQUENTIAL_BACKENDS_MAP = {
     "slb4j": "Slb4jBenchmark",
     "log4j": "Log4jBenchmark",
     "logback": "LogbackBenchmark",
+    "rainbowgum": "RainbowGumBenchmark",
     "jul": "JulBenchmark"
 }
 
@@ -37,6 +38,7 @@ PARALLEL_BACKENDS_MAP = {
     "slb4j": "Slb4jParallelBenchmark",
     "log4j": "Log4jParallelBenchmark",
     "logback": "LogbackParallelBenchmark",
+    "rainbowgum": "RainbowGumParallelBenchmark",
     "jul": "JulParallelBenchmark"
 }
 

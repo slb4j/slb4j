@@ -23,7 +23,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
 
@@ -33,7 +32,6 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
     @Param({"COMPACT", "DEFAULT", "DETAILED"})
     public String format;
 
-    private Path tempFile;
 
 
     @Override

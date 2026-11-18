@@ -43,14 +43,14 @@ public class Log4jParallelBenchmark extends ParallelLoggingBenchmark {
         String pattern = "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p %c - %m%n";
 
         org.apache.logging.log4j.core.layout.PatternLayout layout = org.apache.logging.log4j.core.layout.PatternLayout.newBuilder()
-                .withPattern(pattern)
+                .setPattern(pattern)
                 .build();
 
         org.apache.logging.log4j.core.Appender appender;
         if ("FILE".equals(category)) {
             appender = org.apache.logging.log4j.core.appender.FileAppender.newBuilder()
                     .setName("File")
-                    .withFileName(tempFile.toString())
+                    .setFileName(tempFile.toString())
                     .setLayout(layout)
                     .build();
         } else {

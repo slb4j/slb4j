@@ -19,6 +19,7 @@ jspecify = "1.0.1"
 junit-bom = "6.1.3"
 log4j = "2.26.1"
 logback = "1.6.6"
+rainbowgum = "1.0.1"
 slf4j = "2.0.20"
 spotbugs = "4.10.5"
 
@@ -47,6 +48,10 @@ slf4j-api = { group = "org.slf4j", name = "slf4j-api", version.ref = "slf4j" }
 # backends
 logback-classic = { group = "ch.qos.logback", name = "logback-classic", version.ref = "logback" }
 log4j-core = { group = "org.apache.logging.log4j", name = "log4j-core" }
+rainbowgum-core = { group = "io.jstach.rainbowgum", name = "rainbowgum-core", version.ref = "rainbowgum" }
+rainbowgum-file = { group = "io.jstach.rainbowgum", name = "rainbowgum-file", version.ref = "rainbowgum" }
+rainbowgum-pattern = { group = "io.jstach.rainbowgum", name = "rainbowgum-pattern", version.ref = "rainbowgum" }
+rainbowgum-slf4j = { group = "io.jstach.rainbowgum", name = "rainbowgum-slf4j", version.ref = "rainbowgum" }
 
 # bridges
 jcl-to-log4j = { group = "org.apache.logging.log4j", name = "log4j-jcl" }

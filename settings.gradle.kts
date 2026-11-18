@@ -138,6 +138,7 @@ include("native:slb4j-fx-native-test")
 
 include("benchmark:benchmark-jul")
 include("benchmark:benchmark-logback")
+include("benchmark:benchmark-rainbowgum")
 include("benchmark:benchmark-log4j")
 include("benchmark:benchmark-slb4j")
 include("slb4j-ext:slb4j-ext-layouts")

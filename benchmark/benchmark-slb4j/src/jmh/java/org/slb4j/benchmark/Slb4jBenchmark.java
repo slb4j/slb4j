@@ -28,7 +28,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class Slb4jBenchmark extends AbstractLoggingBenchmark {
 
@@ -38,7 +37,6 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
     @Param({"COMPACT", "DEFAULT", "DETAILED"})
     public String format;
 
-    private Path tempFile;
     private FileHandler fileHandler;
 
 

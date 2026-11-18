@@ -24,7 +24,6 @@ import org.slf4j.MarkerFactory;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 
 public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
 
@@ -34,7 +33,6 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
     @Param({"COMPACT", "DEFAULT", "DETAILED"})
     public String format;
 
-    private Path tempFile;
 
     @Override
     public String backend() {
@@ -55,14 +53,14 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
         };
 
         org.apache.logging.log4j.core.layout.PatternLayout layout = org.apache.logging.log4j.core.layout.PatternLayout.newBuilder()
-                .withPattern(pattern)
+                .setPattern(pattern)
                 .build();
 
         org.apache.logging.log4j.core.Appender appender;
         if ("FILE".equals(category)) {
             appender = org.apache.logging.log4j.core.appender.FileAppender.newBuilder()
                     .setName("File")
-                    .withFileName(tempFile.toString())
+                    .setFileName(tempFile.toString())
                     .setLayout(layout)
                     .build();
         } else {

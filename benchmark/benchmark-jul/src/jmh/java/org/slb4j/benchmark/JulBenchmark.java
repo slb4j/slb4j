@@ -21,8 +21,8 @@ import org.openjdk.jmh.annotations.Setup;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.util.logging.FileHandler;
+import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -35,8 +35,7 @@ public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
     @Param("SIMPLE")
     public String format;
 
-    private Path tempFile;
-    private FileHandler fileHandler;
+    private Handler fileHandler;
 
     @Override
     public String backend() {
@@ -69,7 +68,11 @@ public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
 
         // 4. Setup File/Console Handler
         tempFile = Files.createTempFile("jul-bench", ".log");
-        fileHandler = new FileHandler(tempFile.toString());
+        if ("CONSOLE".equals(category)) {
+            fileHandler = new java.util.logging.ConsoleHandler();
+        } else {
+            fileHandler = new FileHandler(tempFile.toString());
+        }
         fileHandler.setFormatter(new SimpleFormatter());
         fileHandler.setLevel(java.util.logging.Level.INFO);
         root.addHandler(fileHandler);
@@ -80,9 +83,6 @@ public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
         this.slf4jLogger = org.slf4j.LoggerFactory.getLogger(JulBenchmark.class);
         this.jclLogger = org.apache.commons.logging.LogFactory.getLog(JulBenchmark.class);
         this.log4jLogger = org.apache.logging.log4j.LogManager.getLogger(JulBenchmark.class);
-
-        System.out.println("JCL INFO: " + jclLogger.isInfoEnabled());
-        System.out.println("Log4j INFO: " + log4jLogger.isInfoEnabled());
     }
 
     @Override
