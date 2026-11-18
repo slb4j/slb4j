@@ -46,7 +46,7 @@ final class JulBenchmarkFormatting {
             case "COMPACT" -> COMPACT_FORMAT;
             case "DEFAULT" -> DEFAULT_FORMAT;
             case "DETAILED" -> DETAILED_FORMAT;
-            default -> throw new IllegalArgumentException("Unknown JUL benchmark format: " + format);
+            default -> throw new IllegalArgumentException("Invalid format: " + format);
         };
     }
 }

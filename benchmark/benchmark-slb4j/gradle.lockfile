@@ -20,5 +20,6 @@ org.osgi:org.osgi.annotation.versioning:1.1.2=jmhCompileClasspath
 org.osgi:org.osgi.resource:1.0.0=jmhCompileClasspath
 org.osgi:org.osgi.service.serviceloader:1.0.0=jmhCompileClasspath
 org.ow2.asm:asm:9.0=jmh,jmhCompileClasspath,jmhRuntimeClasspath
+org.slf4j:jul-to-slf4j:2.0.20=jmh,jmhCompileClasspath,jmhRuntimeClasspath
 org.slf4j:slf4j-api:2.0.20=jmh,jmhCompileClasspath,jmhRuntimeClasspath,runtimeClasspath,testRuntimeClasspath
 empty=annotationProcessor,compileClasspath,jmhAnnotationProcessor,testAnnotationProcessor,testCompileClasspath

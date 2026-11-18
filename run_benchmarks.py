@@ -45,6 +45,8 @@ PARALLEL_BACKENDS_MAP = {
 VALID_HANDLERS = ["CONSOLE", "FILE"]
 VALID_FORMATS = ["COMPACT", "DEFAULT", "DETAILED"]
 VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
+SAMPLE_OUTPUT_ENV = "SLB4J_SAMPLE_OUTPUT_FILE"
+SAMPLE_FRONTENDS = ["JUL", "JCL", "LOG4J", "SLF4J"]
 
 # ANSI colors
 BLACK = "\033[0;30m"
@@ -173,6 +175,63 @@ def run_command(command, output_file=None):
         process.wait()
     return process.returncode == 0
 
+def initialize_sample_output(args, results_dir):
+    if args.dryrun:
+        return None
+
+    report_path = os.path.abspath(os.path.join(results_dir, "SAMPLE_OUTPUT.md"))
+    with open(report_path, "w", encoding="utf-8") as report:
+        report.write("# Benchmark Sample Outputs\n\n")
+        for format_name in VALID_FORMATS:
+            for exception in (False, True):
+                for frontend in SAMPLE_FRONTENDS:
+                    suffix = " (with exception)" if exception else ""
+                    report.write(f"## Format: {format_name}, Frontend {frontend}{suffix}\n\n````text\n````\n\n")
+    os.environ[SAMPLE_OUTPUT_ENV] = report_path
+    return report_path
+
+def create_results_directory(timestamp):
+    os.makedirs("benchmark_results", exist_ok=True)
+    suffix = 0
+    while True:
+        name = timestamp if suffix == 0 else f"{timestamp}_{suffix}"
+        results_dir = os.path.join("benchmark_results", name)
+        try:
+            os.mkdir(results_dir)
+            return results_dir
+        except FileExistsError:
+            suffix += 1
+
+def collect_sample_output(args):
+    success = True
+    for backend, benchmark in SEQUENTIAL_BACKENDS_MAP.items():
+        cmd = f"./gradlew --quiet :benchmark:benchmark-{backend}:jmh"
+        cmd += f" -Pjmh.includes='{benchmark}\\.slf4j$'"
+        cmd += " -Pjmh.parameters='category=CONSOLE;format=COMPACT,DEFAULT,DETAILED;messageType=CONSTANT;outputToFile=false'"
+        cmd += " -Pjmh.warmupIterations=0 -Pjmh.iterations=1 -Pjmh.timeOnIteration=10ms -Pjmh.forks=1"
+        if args.dryrun:
+            print(f"{LIGHT_YELLOW}Dry run (sample output): {cmd}{RESET}")
+        elif not run_command(cmd):
+            print(f"{BOLD_RED}Sample output collection failed for backend: {backend}{RESET}")
+            success = False
+    return success
+
+def validate_sample_output(report_path):
+    with open(report_path, encoding="utf-8") as report:
+        text = report.read()
+    missing = []
+    for format_name in VALID_FORMATS:
+        for frontend in SAMPLE_FRONTENDS:
+            for exception in (False, True):
+                kind = "exception" if exception else "plain"
+                for backend in SEQUENTIAL_BACKENDS_MAP:
+                    marker = f"<!-- sample-output:{format_name}:{frontend}:{kind}:{backend.upper()} -->"
+                    if text.count(marker) != 1:
+                        missing.append(f"{format_name}/{frontend}/{kind}/{backend}")
+    if missing:
+        print(f"{BOLD_RED}Incomplete sample report: {', '.join(missing)}{RESET}")
+    return not missing
+
 def get_estimated_runtime(args):
     return calculate_runtime(args)
 
@@ -219,6 +278,7 @@ def calculate_runtime(args):
             format_multiplier = num_formats if backend == "jul" else 1
             total_runtime += gradle_startup_overhead + total_benchmarks_per_backend * format_multiplier * time_per_benchmark
 
+    total_runtime += len(SEQUENTIAL_BACKENDS_MAP) * (gradle_startup_overhead + len(VALID_FORMATS) * 0.11)
     return total_runtime
 
 def move_profiler_outputs(backend, results_dir, profiler_subdir):
@@ -860,11 +920,19 @@ if __name__ == "__main__":
         if args.message_types is None: args.message_types = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
 
     timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
-    results_dir = os.path.join("benchmark_results", timestamp)
-    if not os.path.exists(results_dir):
-        os.makedirs(results_dir)
+    results_dir = create_results_directory(timestamp)
+
+    sample_output_path = initialize_sample_output(args, results_dir)
+    if sample_output_path:
+        print(f"Sample output report: {sample_output_path}")
 
     print(f"{BOLD_GREEN}Estimated total runtime: {format_duration(get_estimated_runtime(args))}{RESET}")
+
+    sample_success = collect_sample_output(args)
+    if sample_output_path:
+        os.environ.pop(SAMPLE_OUTPUT_ENV, None)
+        if not sample_success or not validate_sample_output(sample_output_path):
+            sys.exit(1)
     
     cmd_line = "python3 " + " ".join(sys.argv)
     sys_info = get_system_info()

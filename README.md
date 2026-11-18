@@ -141,9 +141,11 @@ SLB4J provides a unified logging interface, so you can remove other logging back
 
 ## Benchmarks
 
-The repository contains a `run_benchmarks.py` script for benchmarking the SLB4J, JUL, Log4j 2, and Logback backends through the JUL, Log4j 2, SLF4J, and JCL APIs. Available combinations and run settings depend on the selected benchmark options.
+The repository contains a `run_benchmarks.py` script for benchmarking the SLB4J, JUL, Log4j 2, Logback, and Rainbow Gum backends through the JUL, Log4j 2, SLF4J, and JCL APIs. Available combinations and run settings depend on the selected benchmark options.
 
 Run `run_benchmarks.py --help` to display the options that can be passed to the script.
+
+Each non-dry-run invocation writes `benchmark_results/<timestamp>/SAMPLE_OUTPUT.md` alongside its benchmark reports. A separate short serial console run captures each of the three formats for all five backends and all four APIs, with and without exceptions, independently of the selected benchmark filters. The report groups the resulting backend outputs by format and frontend for comparison. Dry runs do not create a sample report.
 
 The script writes each run to `benchmark_results/<timestamp>/`. Checked-in benchmark reports are stored under `benchmark/results/<version>/`. The `smoketest` mode is a quick wiring check, not a meaningful performance measurement.
 

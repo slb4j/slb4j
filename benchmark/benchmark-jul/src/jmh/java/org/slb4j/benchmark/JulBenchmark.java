@@ -70,6 +70,7 @@ public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
         if ("CONSOLE".equals(category)) {
             fileHandler = new java.util.logging.ConsoleHandler();
         } else {
+            Files.deleteIfExists(tempFile);
             fileHandler = new FileHandler(tempFile.toString());
         }
         fileHandler.setFormatter(JulBenchmarkFormatting.newFormatter(format));

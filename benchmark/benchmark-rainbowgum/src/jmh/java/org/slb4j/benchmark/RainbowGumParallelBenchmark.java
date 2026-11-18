@@ -41,10 +41,10 @@ public class RainbowGumParallelBenchmark extends ParallelLoggingBenchmark {
     }
 
     @Override
-    void setupLogging() throws IOException {
+    void setupLogging(String format) throws IOException {
         rainbowTempFile = Files.createTempFile("rainbowgum-parallel-bench", ".log");
         rainbowGum = RainbowGumBenchmark.configureRainbowGum(category, "DEFAULT", rainbowTempFile);
-        super.setupLogging();
+        super.setupLogging(format);
     }
 
     @Override

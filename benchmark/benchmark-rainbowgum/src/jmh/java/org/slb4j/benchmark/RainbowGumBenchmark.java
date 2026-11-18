@@ -16,6 +16,7 @@
 package org.slb4j.benchmark;
 
 import io.jstach.rainbowgum.LogOutput;
+import io.jstach.rainbowgum.LogProperties;
 import io.jstach.rainbowgum.RainbowGum;
 import io.jstach.rainbowgum.file.FileOutputBuilder;
 import io.jstach.rainbowgum.pattern.format.PatternEncoderBuilder;
@@ -80,11 +81,18 @@ public class RainbowGumBenchmark extends AbstractLoggingBenchmark {
         String pattern = switch (format) {
             case "COMPACT" -> "%d{HH:mm:ss.SSS} %-5level %-30.30logger{0} - %msg%n";
             case "DETAILED" ->
-                    "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %X{userId} (%class.%method\\(%file:%line\\)) - %msg%n";
-            default -> "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%n";
+                    "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %X{userId} \\(%class.%method\\(%file:%line\\)\\) - %msg%n";
+            case "DEFAULT" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n";
+            default -> throw new IllegalArgumentException("Invalid format: " + format);
         };
 
-        return RainbowGum.builder().route(route -> {
+        return RainbowGum.builder(config -> {
+            if ("DETAILED".equals(format)) {
+                config.properties(LogProperties.builder()
+                        .fromProperties("logging.caller.logger.org.slb4j.benchmark=true")
+                        .build());
+            }
+        }).route(route -> {
             route.level(System.Logger.Level.INFO);
             route.appender("benchmark", appender -> {
                 if ("FILE".equals(category)) {

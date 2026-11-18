@@ -16,6 +16,7 @@ dependencies {
 
     // backend
     jmh(project(rootProject.path))
+    jmh(libs.jul.to.slf4j)
 }
 
 jmh {
