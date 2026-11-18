@@ -25,14 +25,13 @@ import java.util.logging.FileHandler;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
-import java.util.logging.SimpleFormatter;
 
 public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
 
     @Param({"CONSOLE", "FILE"})
     public String category;
 
-    @Param("SIMPLE")
+    @Param({"COMPACT", "DEFAULT", "DETAILED"})
     public String format;
 
     private Handler fileHandler;
@@ -73,7 +72,7 @@ public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
         } else {
             fileHandler = new FileHandler(tempFile.toString());
         }
-        fileHandler.setFormatter(new SimpleFormatter());
+        fileHandler.setFormatter(JulBenchmarkFormatting.newFormatter(format));
         fileHandler.setLevel(java.util.logging.Level.INFO);
         root.addHandler(fileHandler);
 

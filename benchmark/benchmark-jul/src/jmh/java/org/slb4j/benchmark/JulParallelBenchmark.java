@@ -18,11 +18,13 @@ package org.slb4j.benchmark;
 import org.openjdk.jmh.annotations.Param;
 
 import java.io.IOException;
-import java.util.logging.LogManager;
 
 public class JulParallelBenchmark extends ParallelLoggingBenchmark {
     @Param({"CONSOLE", "FILE"})
     public String category;
+
+    @Param({"COMPACT", "DEFAULT", "DETAILED"})
+    public String format;
 
     @Override
     public String backend() {
