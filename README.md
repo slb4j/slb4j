@@ -147,6 +147,8 @@ Run `run_benchmarks.py --help` to display the options that can be passed to the 
 
 Each non-dry-run invocation writes `benchmark_results/<timestamp>/SAMPLE_OUTPUT.md` alongside its benchmark reports. A separate short serial console run captures each of the three formats for all five backends and all four APIs, with and without exceptions, independently of the selected benchmark filters. The report groups the resulting backend outputs by format and frontend for comparison. Dry runs do not create a sample report.
 
+JUL uses `SimpleFormatter` for COMPACT and DEFAULT, so its logger name remains fully qualified and DEFAULT omits the thread name. DETAILED uses a custom formatter to show the logging thread and caller location; file and line information is available while the synchronous handler can see the caller on the stack.
+
 The script writes each run to `benchmark_results/<timestamp>/`. Checked-in benchmark reports are stored under `benchmark/results/<version>/`. The `smoketest` mode is a quick wiring check, not a meaningful performance measurement.
 
 ## Status
