@@ -22,7 +22,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class RainbowGumParallelBenchmark extends ParallelLoggingBenchmark {
+public class RbGumParallelBenchmark extends ParallelLoggingBenchmark {
 
     @Param({"CONSOLE", "FILE"})
     public String category;
@@ -43,7 +43,7 @@ public class RainbowGumParallelBenchmark extends ParallelLoggingBenchmark {
     @Override
     void setupLogging(String format) throws IOException {
         rainbowTempFile = Files.createTempFile("rainbowgum-parallel-bench", ".log");
-        rainbowGum = RainbowGumBenchmark.configureRainbowGum(category, "DEFAULT", rainbowTempFile);
+        rainbowGum = RbGumBenchmark.configureRainbowGum(category, "DEFAULT", rainbowTempFile);
         super.setupLogging(format);
     }
 

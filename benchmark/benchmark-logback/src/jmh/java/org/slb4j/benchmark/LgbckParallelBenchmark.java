@@ -16,23 +16,12 @@
 package org.slb4j.benchmark;
 
 import ch.qos.logback.classic.LoggerContext;
-import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
-import org.openjdk.jmh.annotations.Setup;
 import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
-
-public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
-
+public class LgbckParallelBenchmark extends ParallelLoggingBenchmark {
     @Param({"CONSOLE", "FILE"})
     public String category;
-
-    @Param({"COMPACT", "DEFAULT", "DETAILED"})
-    public String format;
-
-
 
     @Override
     public String backend() {
@@ -40,13 +29,16 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
     }
 
     @Override
-    protected void setupLogging() throws IOException {
-        tempFile = Files.createTempFile("logback-bench", ".log");
+    public String category() {
+        return category;
+    }
 
+    @Override
+    public void setupBackend() {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.reset();
 
-        String pattern = getPattern(format).replace("(", "\\(").replace(")", "\\)");
+        String pattern = "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%n";
 
         ch.qos.logback.classic.encoder.PatternLayoutEncoder encoder = new ch.qos.logback.classic.encoder.PatternLayoutEncoder();
         encoder.setContext(context);
@@ -72,31 +64,5 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
         root.detachAndStopAllAppenders();
         root.addAppender(appender);
         root.setLevel(ch.qos.logback.classic.Level.INFO);
-
-        slf4jLogger = LoggerFactory.getLogger(LogbackBenchmark.class);
-        log4jLogger = org.apache.logging.log4j.LogManager.getLogger(LogbackBenchmark.class);
-        julLogger = java.util.logging.Logger.getLogger(LogbackBenchmark.class.getName());
-        jclLogger = org.apache.commons.logging.LogFactory.getLog(LogbackBenchmark.class);
-
-        if ("DETAILED".equals(format)) {
-            org.slf4j.MDC.put("userId", "benchUser");
-        }
-    }
-
-    @Override
-    protected void tearDownLogging() {
-        org.slf4j.MDC.clear();
-        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        context.stop();
-        try {
-            Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
-    @Setup(Level.Iteration)
-    public void setupIteration(org.openjdk.jmh.infra.BenchmarkParams params) {
-        updateLogMessage(params, category, format);
     }
 }

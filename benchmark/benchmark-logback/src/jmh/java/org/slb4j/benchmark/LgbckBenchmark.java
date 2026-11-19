@@ -16,12 +16,23 @@
 package org.slb4j.benchmark;
 
 import ch.qos.logback.classic.LoggerContext;
+import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
+import org.openjdk.jmh.annotations.Setup;
 import org.slf4j.LoggerFactory;
 
-public class LogbackParallelBenchmark extends ParallelLoggingBenchmark {
+import java.io.IOException;
+import java.nio.file.Files;
+
+public class LgbckBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
+
     @Param({"CONSOLE", "FILE"})
     public String category;
+
+    @Param({"COMPACT", "DEFAULT", "DETAILED"})
+    public String format;
+
+
 
     @Override
     public String backend() {
@@ -29,16 +40,13 @@ public class LogbackParallelBenchmark extends ParallelLoggingBenchmark {
     }
 
     @Override
-    public String category() {
-        return category;
-    }
+    protected void setupLogging() throws IOException {
+        tempFile = Files.createTempFile("logback-bench", ".log");
 
-    @Override
-    public void setupBackend() {
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.reset();
 
-        String pattern = "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level %logger - %msg%n";
+        String pattern = getPattern(format).replace("(", "\\(").replace(")", "\\)");
 
         ch.qos.logback.classic.encoder.PatternLayoutEncoder encoder = new ch.qos.logback.classic.encoder.PatternLayoutEncoder();
         encoder.setContext(context);
@@ -64,5 +72,31 @@ public class LogbackParallelBenchmark extends ParallelLoggingBenchmark {
         root.detachAndStopAllAppenders();
         root.addAppender(appender);
         root.setLevel(ch.qos.logback.classic.Level.INFO);
+
+        slf4jLogger = LoggerFactory.getLogger(LgbckBenchmark.class);
+        log4jLogger = org.apache.logging.log4j.LogManager.getLogger(LgbckBenchmark.class);
+        julLogger = java.util.logging.Logger.getLogger(LgbckBenchmark.class.getName());
+        jclLogger = org.apache.commons.logging.LogFactory.getLog(LgbckBenchmark.class);
+
+        if ("DETAILED".equals(format)) {
+            org.slf4j.MDC.put("userId", "benchUser");
+        }
+    }
+
+    @Override
+    protected void tearDownLogging() {
+        org.slf4j.MDC.clear();
+        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
+        context.stop();
+        try {
+            Files.deleteIfExists(tempFile);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Setup(Level.Iteration)
+    public void setupIteration(org.openjdk.jmh.infra.BenchmarkParams params) {
+        updateLogMessage(params, category, format);
     }
 }

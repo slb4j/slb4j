@@ -29,7 +29,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
-public class RainbowGumBenchmark extends AbstractLoggingBenchmark {
+public class RbGumBenchmark extends AbstractLoggingBenchmark {
 
     @Param({"CONSOLE", "FILE"})
     public String category;
@@ -49,10 +49,10 @@ public class RainbowGumBenchmark extends AbstractLoggingBenchmark {
         tempFile = Files.createTempFile("rainbowgum-bench", ".log");
         rainbowGum = configureRainbowGum(category, format, tempFile);
 
-        slf4jLogger = LoggerFactory.getLogger(RainbowGumBenchmark.class);
-        log4jLogger = org.apache.logging.log4j.LogManager.getLogger(RainbowGumBenchmark.class);
-        julLogger = java.util.logging.Logger.getLogger(RainbowGumBenchmark.class.getName());
-        jclLogger = org.apache.commons.logging.LogFactory.getLog(RainbowGumBenchmark.class);
+        slf4jLogger = LoggerFactory.getLogger(RbGumBenchmark.class);
+        log4jLogger = org.apache.logging.log4j.LogManager.getLogger(RbGumBenchmark.class);
+        julLogger = java.util.logging.Logger.getLogger(RbGumBenchmark.class.getName());
+        jclLogger = org.apache.commons.logging.LogFactory.getLog(RbGumBenchmark.class);
 
         if ("DETAILED".equals(format)) {
             org.slf4j.MDC.put("userId", "benchUser");

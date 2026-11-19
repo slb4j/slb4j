@@ -1,8 +1,12 @@
 Version next (to be released)
 -----------------------------
 
-- benchmarks: refactor; make sure patterns are consistent
-- emit a warning a timezone lookup is used that is not supported by Log4J
+- benchmarks: refactor; make sure patterns are consistent; rename Logback and Rainbow Gum benchmarks (the class name is 
+  written to the log, same length class names should avoid effects when the backend needs to shorten logger names in 
+  putput)
+- emit a warning when a timezone or locale lookup is used that is not supported by Log4J
+- add logging sample output to verify all backends produce similar results in benchmarks
+- upddate logback
 
 Version 0.15.0
 --------------
