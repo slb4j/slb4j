@@ -7,6 +7,7 @@ Version next (to be released)
 - emit a warning when a timezone or locale lookup is used that is not supported by Log4J
 - add logging sample output to verify all backends produce similar results in benchmarks
 - upddate logback
+- add MDC support to JCL
 
 Version 0.15.0
 --------------

@@ -23,6 +23,8 @@ import org.slb4j.dispatcher.UniversalDispatcher;
 import org.apache.commons.logging.Log;
 import org.slb4j.support.StackWalkerLocationResolver;
 
+import java.util.Collections;
+import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -32,6 +34,18 @@ import java.util.function.Supplier;
 public final class LoggerJcl implements Log {
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
     private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(LoggerJcl.class, "org.slb4j.frontend.jcl");
+    private static final org.slb4j.MDC MDC_INSTANCE = new org.slb4j.MDC() {
+        @Override
+        public @Nullable String get(String key) {
+            return org.slf4j.MDC.get(key);
+        }
+
+        @Override
+        public Map<String, String> get() {
+            Map<String, String> contextMap = org.slf4j.MDC.getCopyOfContextMap();
+            return contextMap == null ? Collections.emptyMap() : contextMap;
+        }
+    };
 
     private final String name;
 
@@ -62,7 +76,7 @@ public final class LoggerJcl implements Log {
     private void dispatch(LogLevel level, @Nullable Object message, @Nullable Throwable t) {
         if (DISPATCHER.isLevelEnabled(level)) {
             Supplier<CharSequence> msg = (message == null ? "null" : message)::toString;
-            DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, level, null, null, LOCATION_RESOLVER, msg, t);
+            DISPATCHER.filterAndDispatch(System.currentTimeMillis(), name, level, null, MDC_INSTANCE, LOCATION_RESOLVER, msg, t);
         }
     }
 
