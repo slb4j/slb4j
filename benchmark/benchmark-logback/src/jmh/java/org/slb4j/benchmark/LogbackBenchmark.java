@@ -46,7 +46,7 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.reset();
 
-        String pattern = getPattern(format);
+        String pattern = getPattern(format).replace("(", "\\(").replace(")", "\\)");
 
         ch.qos.logback.classic.encoder.PatternLayoutEncoder encoder = new ch.qos.logback.classic.encoder.PatternLayoutEncoder();
         encoder.setContext(context);
