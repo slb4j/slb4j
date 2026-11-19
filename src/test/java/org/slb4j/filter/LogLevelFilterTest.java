@@ -18,11 +18,12 @@ package org.slb4j.filter;
 import org.slb4j.LogLevel;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-
+import org.slb4j.MDC;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 
 class LogLevelFilterTest {
+    private static final MDC MDC_INSTANCE = MDC.createMdc();
 
     @ParameterizedTest
     @CsvSource({
@@ -61,7 +62,7 @@ class LogLevelFilterTest {
         assertEquals(expected, filter.isEnabled("any.logger", level, "any.marker"),
                 () -> "isEnabled failed for threshold " + threshold + " and level " + level);
 
-        assertEquals(expected, filter.test(System.currentTimeMillis(), "any.logger", level, "any.marker", null, "msg", null),
+        assertEquals(expected, filter.test(System.currentTimeMillis(), "any.logger", level, "any.marker", MDC_INSTANCE, "msg", null),
                 () -> "test failed for threshold " + threshold + " and level " + level);
     }
 }

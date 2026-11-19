@@ -35,6 +35,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class FileHandlerTest {
 
     private static final Location LOC = null;
+    private static final MDC MDC_INSTANCE = MDC.createMdc();
 
     @TempDir
     Path tempDir;
@@ -44,8 +45,8 @@ class FileHandlerTest {
         Path logFile = tempDir.resolve("test.log");
         try (FileHandler handler = new FileHandler("test", logFile.toString(), false)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Hello, World!", null);
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Second line", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "Hello, World!", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "Second line", null);
         }
 
         assertTrue(Files.exists(logFile));
@@ -62,7 +63,7 @@ class FileHandlerTest {
 
         try (FileHandler handler = new FileHandler("test", logFile.toString(), true)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Second line", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "Second line", null);
         }
         
         List<String> lines = Files.readAllLines(logFile);
@@ -78,7 +79,7 @@ class FileHandlerTest {
 
         try (FileHandler handler = new FileHandler("test", logFile.toString(), false)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "New content", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "New content", null);
         }
 
         List<String> lines = Files.readAllLines(logFile);
@@ -95,12 +96,12 @@ class FileHandlerTest {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg"));
             handler.setFlushLevel(LogLevel.ERROR);
 
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "info", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "info", null);
             // Should be in buffer, not necessarily on disk. 
             // Files.size() might still show 0 or old size if OS/JVM hasn't flushed.
             // But wait, our check for flush is logical. 
 
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.ERROR, null, null, LOC, "error", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.ERROR, null, MDC_INSTANCE, LOC, "error", null);
             // This should trigger a flush.
         }
         assertEquals("infoerror", Files.readString(logFile));
@@ -123,7 +124,7 @@ class FileHandlerTest {
             LogFilter newFilter = new LogFilter() {
                 @Override public LogFilter copy() { return this; }
                 @Override public String name() { return "testFilter"; }
-                @Override public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, CharSequence msg, @Nullable Throwable t) {
+                @Override public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, MDC mdc, CharSequence msg, @Nullable Throwable t) {
                     return lvl == LogLevel.ERROR;
                 }
             };
@@ -131,8 +132,8 @@ class FileHandlerTest {
             assertSame(newFilter, handler.getFilter());
 
             // Test that filter actually works
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "should be filtered", null);
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.ERROR, null, null, LOC, "should be kept", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "should be filtered", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.ERROR, null, MDC_INSTANCE, LOC, "should be kept", null);
         }
 
         List<String> lines = Files.readAllLines(logFile);

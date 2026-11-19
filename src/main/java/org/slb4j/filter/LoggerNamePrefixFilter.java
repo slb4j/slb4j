@@ -113,7 +113,7 @@ public final class LoggerNamePrefixFilter implements LogFilter {
     }
 
     @Override
-    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, CharSequence msg, @Nullable Throwable t) {
+    public boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, MDC mdc, CharSequence msg, @Nullable Throwable t) {
         return levelMap.isEnabled(loggerName, lvl.ordinal());
     }
 

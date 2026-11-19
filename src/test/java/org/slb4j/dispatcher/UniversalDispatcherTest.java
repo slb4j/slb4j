@@ -113,7 +113,7 @@ class UniversalDispatcherTest {
         dispatcher.setRootLevel(LogLevel.TRACE);
         dispatcher.replaceLogHandlers(java.util.List.of(oldHandler));
         Thread dispatch = new Thread(() -> dispatcher.filterAndDispatch(
-                System.currentTimeMillis(), "test", LogLevel.INFO, null, null,
+                System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC.createMdc(),
                 () -> null, () -> "message", null));
         dispatch.start();
 
@@ -148,7 +148,7 @@ class UniversalDispatcherTest {
         }
 
         @Override
-        public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, CharSequence msg, @Nullable Throwable t) {
+        public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, MDC mdc, @Nullable Location loc, CharSequence msg, @Nullable Throwable t) {
             if (entered != null) {
                 entered.countDown();
                 try {

@@ -64,7 +64,7 @@ class LogEntryMdcTest {
 
     @Test
     void entryWithoutContextRemainsWithoutContext() {
-        LogEntry entry = LogEntry.of(0, "test", LogLevel.INFO, null, null, null, "message", null);
-        assertNull(entry.mdc());
+        LogEntry entry = LogEntry.of(0, "test", LogLevel.INFO, null, MDC.createMdc(), null, "message", null);
+        assertTrue(entry.mdc().get().isEmpty());
     }
 }

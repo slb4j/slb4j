@@ -87,7 +87,7 @@ public final class JsonLayout implements LogLayout {
     }
 
     @Override
-    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, MDC mdc, @Nullable Location loc, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
         app.append("{\"thread\":\"");
         appendJsonEscaped(app, Thread.currentThread().getName());
         app.append("\",\"level\":\"").append(lvl.name());
@@ -134,7 +134,7 @@ public final class JsonLayout implements LogLayout {
      * @param mdc the mapping diagnostic context to append; may be null
      * @throws IOException if an I/O error occurs while writing to the appendable
      */
-    private void appendContextMap(Appendable app, @Nullable MDC mdc) throws IOException {
+    private void appendContextMap(Appendable app, MDC mdc) throws IOException {
         if (propertiesEnabled && mdc != null) {
             Map<String, String> contextMap = mdc.get();
             if (!contextMap.isEmpty()) {

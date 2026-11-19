@@ -69,7 +69,7 @@ public interface LogEntry {
      * @return an {@link MDC} object containing key-value pairs of contextual information,
      * or null if no MDC is associated with the log event.
      */
-    @Nullable MDC mdc();
+    MDC mdc();
 
     /**
      * Retrieves the location information associated with the log entry.
@@ -122,7 +122,7 @@ public interface LogEntry {
             String logger,
             LogLevel level,
             @Nullable String marker,
-            @Nullable MDC mdc,
+            MDC mdc,
             @Nullable Location location,
             String message,
             @Nullable Throwable throwable
@@ -139,9 +139,9 @@ public interface LogEntry {
         );
     }
 
-    private static @Nullable MDC snapshot(@Nullable MDC mdc) {
-        if (mdc == null) {
-            return null;
+    private static MDC snapshot(MDC mdc) {
+        if (mdc.isEmpty()) {
+            return MDC.EMPTY;
         }
         Map<String, String> values = Collections.unmodifiableMap(new HashMap<>(mdc.get()));
         return new MDC() {
@@ -163,7 +163,7 @@ record LogEntryRecord(
         String logger,
         LogLevel level,
         @Nullable String marker,
-        @Nullable MDC mdc,
+        MDC mdc,
         @Nullable Location location,
         @Nullable String message,
         @Nullable Throwable throwable

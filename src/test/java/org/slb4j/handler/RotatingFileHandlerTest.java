@@ -17,6 +17,7 @@ package org.slb4j.handler;
 
 import org.slb4j.Location;
 import org.slb4j.LogLevel;
+import org.slb4j.MDC;
 import org.slb4j.layout.PatternLayout;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -35,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 class RotatingFileHandlerTest {
 
     private static final Location LOC = null;
+    private static final MDC MDC_INSTANCE = MDC.createMdc();
 
     @TempDir
     Path tempDir;
@@ -44,8 +46,8 @@ class RotatingFileHandlerTest {
         Path logFile = tempDir.resolve("test.log");
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile.toString(), "", false, RotatingFileHandler.IndexStrategy.USE_MAX)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Hello, World!", null);
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Second line", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "Hello, World!", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "Second line", null);
         }
 
         assertTrue(Files.exists(logFile));
@@ -62,7 +64,7 @@ class RotatingFileHandlerTest {
 
         try (RotatingFileHandler handler = new RotatingFileHandler("test", logFile.toString(), "", true, RotatingFileHandler.IndexStrategy.USE_MAX)) {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Second line", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "Second line", null);
         }
 
         List<String> lines = Files.readAllLines(logFile);
@@ -80,9 +82,9 @@ class RotatingFileHandlerTest {
             handler.setMaxBackupIndex(2);
 
             // Entry 1: 7 bytes. Total 7.
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "1234567", null);
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "1234567", null);
             // Entry 2: 7 bytes. Total 14 > 10. ROTATE BEFORE WRITE.
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "ABCDEFG", null);
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "ABCDEFG", null);
         }
 
         // The file that triggered rotation (1234567) should be in .1
@@ -100,9 +102,9 @@ class RotatingFileHandlerTest {
             handler.setMaxFileSize(5);
             handler.setMaxBackupIndex(3);
 
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "AAAAA", null);
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "BBBBB", null); // A moves to .1
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "CCCCC", null); // B moves to .1, A moves to .2
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "AAAAA", null);
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "BBBBB", null); // A moves to .1
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "CCCCC", null); // B moves to .1, A moves to .2
         }
 
         assertEquals("CCCCC", Files.readString(logFile));
@@ -119,10 +121,10 @@ class RotatingFileHandlerTest {
             handler.setMaxFileSize(1);
             handler.setMaxBackupIndex(2);
 
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "1", null); // app.log = "1"
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "2", null); // app.log -> .1 (with "1"), app.log = "2"
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "3", null); // app.log -> .2 (with "2"), app.log = "3"
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "4", null); // .1 deleted, app.log -> .3 (with "3"), app.log = "4"
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "1", null); // app.log = "1"
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "2", null); // app.log -> .1 (with "1"), app.log = "2"
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "3", null); // app.log -> .2 (with "2"), app.log = "3"
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "4", null); // .1 deleted, app.log -> .3 (with "3"), app.log = "4"
         }
 
         assertFalse(Files.exists(tempDir.resolve("max-purge.1.log")), "Oldest index (1) should be purged");
@@ -138,8 +140,8 @@ class RotatingFileHandlerTest {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg"));
             handler.setMaxFileSize(5);
 
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "AAAAA", null); // Writes to direct-1.log
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "BBBBB", null); // Writes to direct-2.log
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "AAAAA", null); // Writes to direct-1.log
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "BBBBB", null); // Writes to direct-2.log
         }
 
         assertFalse(Files.exists(tempDir.resolve("direct.log")));
@@ -155,8 +157,8 @@ class RotatingFileHandlerTest {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg"));
             handler.setMaxFileSize(1);
 
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "Data", null);
-            handler.handle(0, "t", LogLevel.INFO, null, null, LOC, "Next", null);
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "Data", null);
+            handler.handle(0, "t", LogLevel.INFO, null, MDC_INSTANCE, LOC, "Next", null);
         }
 
         assertTrue(Files.exists(tempDir.resolve("padded-001.log")));
@@ -170,9 +172,9 @@ class RotatingFileHandlerTest {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg%n"));
             handler.setRotationTimeUnit(ChronoUnit.SECONDS);
 
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Line 1", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "Line 1", null);
             Thread.sleep(1100);
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "Line 2", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "Line 2", null);
         }
 
         assertTrue(Files.exists(tempDir.resolve("test-time.1.log")));
@@ -185,9 +187,9 @@ class RotatingFileHandlerTest {
             handler.setLayout(PatternLayout.parseLog4jPattern("%msg"));
             handler.setFlushLevel(LogLevel.ERROR);
 
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, LOC, "info", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, LOC, "info", null);
             // In a real OS, if we didn't flush, readString might be empty here.
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.ERROR, null, null, LOC, "error", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.ERROR, null, MDC_INSTANCE, LOC, "error", null);
         }
         assertEquals("infoerror", Files.readString(logFile));
     }

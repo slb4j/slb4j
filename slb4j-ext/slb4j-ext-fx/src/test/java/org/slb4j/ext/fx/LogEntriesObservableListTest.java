@@ -21,6 +21,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.parallel.Execution;
 import org.junit.jupiter.api.parallel.ExecutionMode;
 import org.slb4j.LogLevel;
+import org.slb4j.MDC;
 import org.slb4j.ext.LogBuffer;
 import org.slb4j.ext.LogEntry;
 import org.slb4j.ext.LogEntryFilter;
@@ -107,7 +108,7 @@ class LogEntriesObservableListTest extends FxTestBase {
     }
 
     private static void add(LogBuffer buffer, LogLevel level, String message) {
-        buffer.handle(System.currentTimeMillis(), "test", level, null, null, null, message, null);
+        buffer.handle(System.currentTimeMillis(), "test", level, null, MDC.createMdc(), null, message, null);
     }
 
     @SuppressWarnings("java:S2925") // accepted for test code

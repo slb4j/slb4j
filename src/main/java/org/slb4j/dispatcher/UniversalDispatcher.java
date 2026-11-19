@@ -247,7 +247,7 @@ public final class UniversalDispatcher implements LogDispatcher {
      * @param msg the supplier for the log message; must not be null
      * @param t an optional {@code Throwable} associated with the log event; may be null
      */
-    public void filterAndDispatch(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, LocationResolver locationResolver, Supplier<CharSequence> msg, @Nullable Throwable t) {
+    public void filterAndDispatch(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, MDC mdc, LocationResolver locationResolver, Supplier<CharSequence> msg, @Nullable Throwable t) {
         DispatchState dispatchState = state.get();
         HandlerSnapshot handlers = dispatchState.handlers;
         if (!handlers.enter()) {

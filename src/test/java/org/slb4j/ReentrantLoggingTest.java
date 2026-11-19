@@ -41,7 +41,7 @@ class ReentrantLoggingTest {
         dispatcher.addLogHandler(new LogHandler() {
             private LogFilter filter = LogFilter.allPass();
             @Override public String name() { return "counting"; }
-            @Override public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, @Nullable Location loc, CharSequence msg, @Nullable Throwable t) {
+            @Override public void handle(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, MDC mdc, @Nullable Location loc, CharSequence msg, @Nullable Throwable t) {
                 messages.add(msg.toString());
             }
             @Override public void setFilter(LogFilter filter) { this.filter = filter; }

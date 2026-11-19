@@ -91,7 +91,7 @@ class SLB4JConfigurationTest {
         }
 
         @Override
-        public void handle(long timestamp, String loggerName, LogLevel level, @Nullable String marker, @Nullable MDC mdc, @Nullable Location location, CharSequence message, @Nullable Throwable throwable) {
+        public void handle(long timestamp, String loggerName, LogLevel level, @Nullable String marker, MDC mdc, @Nullable Location location, CharSequence message, @Nullable Throwable throwable) {
             messages.add(message.toString());
         }
 

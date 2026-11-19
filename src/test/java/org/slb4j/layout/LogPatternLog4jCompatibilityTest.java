@@ -27,6 +27,7 @@ import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.spi.LoggerContextFactory;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -77,10 +78,12 @@ class LogPatternLog4jCompatibilityTest {
     private static final String APPENDER_NAME = "TestAppender";
     private @Nullable CompatibilityAppender appender;
     private @Nullable LoggerContext context;
+    private @Nullable LoggerContextFactory contextFactory;
 
     @BeforeEach
     void setUp() {
-        System.setProperty("log4j2.loggerContextFactory", "org.apache.logging.log4j.core.impl.Log4jContextFactory");
+        contextFactory = LogManager.getFactory();
+        LogManager.setFactory(new org.apache.logging.log4j.core.impl.Log4jContextFactory());
     }
 
     @AfterEach
@@ -88,7 +91,7 @@ class LogPatternLog4jCompatibilityTest {
         if (context != null) {
             Configurator.shutdown(context);
         }
-        System.clearProperty("log4j2.loggerContextFactory");
+        LogManager.setFactory(contextFactory);
     }
 
     /**

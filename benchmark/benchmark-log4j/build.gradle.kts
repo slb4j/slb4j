@@ -21,7 +21,6 @@ dependencies {
     jmh(libs.jcl.to.log4j)
     jmh(libs.slf4j.to.log4j)
     jmh(libs.jul.to.log4j)
-    jmh(libs.jul.to.slf4j)
 }
 
 jmh {

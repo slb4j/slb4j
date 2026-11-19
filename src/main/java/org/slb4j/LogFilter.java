@@ -111,7 +111,7 @@ public interface LogFilter {
      * @param t          the throwable associated with the log entry, can be {@code null}
      * @return {@code true}, if the log entry should be processed, {@code false} if it should be filtered out
      */
-    boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, @Nullable MDC mdc, CharSequence msg, @Nullable Throwable t);
+    boolean test(long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, MDC mdc, CharSequence msg, @Nullable Throwable t);
 
     /**
      * Determines if logging is enabled for a specific name, log level, and optional marker.

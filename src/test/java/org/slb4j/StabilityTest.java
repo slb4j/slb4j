@@ -23,6 +23,8 @@ class StabilityTest {
     @TempDir
     Path tempDir;
 
+    private static final MDC MDC_INSTANCE = MDC.createMdc();
+
     private static final int NUM_THREADS = 10;
     private static final int MSG_PER_THREAD = 10000;
     private static final long MAX_FILE_SIZE = 100 * 1024; // 100KB to ensure many rotations
@@ -57,7 +59,7 @@ class StabilityTest {
                                 "logger-" + threadId,
                                 LogLevel.INFO,
                                 null,
-                                null,
+                                MDC_INSTANCE,
                                 () -> null, // Dummy LocationResolver
                                 () -> {
                                     // Occasionally delay formatting to trigger overtaking

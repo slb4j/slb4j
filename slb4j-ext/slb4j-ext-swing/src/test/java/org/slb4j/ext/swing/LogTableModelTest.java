@@ -17,6 +17,7 @@ package org.slb4j.ext.swing;
 
 import org.junit.jupiter.api.Test;
 import org.slb4j.LogLevel;
+import org.slb4j.MDC;
 import org.slb4j.ext.LogBuffer;
 import org.slb4j.ext.LogEntry;
 import org.slb4j.ext.LogEntryFilter;
@@ -128,7 +129,7 @@ class LogTableModelTest {
     }
 
     private static void add(LogBuffer buffer, LogLevel level, String message) {
-        buffer.handle(System.currentTimeMillis(), "test", level, null, null, null, message, null);
+        buffer.handle(System.currentTimeMillis(), "test", level, null, MDC.createMdc(), null, message, null);
     }
 
     private static void drainEventQueue() throws Exception {

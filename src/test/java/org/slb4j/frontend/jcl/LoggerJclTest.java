@@ -53,7 +53,7 @@ class LoggerJclTest {
 
     private static final class CapturingHandler implements LogHandler {
         private LogFilter filter = LogFilter.allPass();
-        private @Nullable MDC mdc;
+        private MDC mdc;
         private CharSequence message = "";
 
         @Override
@@ -63,7 +63,7 @@ class LoggerJclTest {
 
         @Override
         public void handle(long timestamp, String loggerName, LogLevel level, @Nullable String marker,
-                           @Nullable MDC mdc, @Nullable Location location, CharSequence message,
+                           MDC mdc, @Nullable Location location, CharSequence message,
                            @Nullable Throwable throwable) {
             this.mdc = mdc;
             this.message = message;

@@ -3,6 +3,7 @@ package org.slb4j.handler;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
 import org.slb4j.LogLevel;
+import org.slb4j.MDC;
 import org.slb4j.layout.PatternLayout;
 
 import java.io.IOException;
@@ -17,6 +18,8 @@ import static org.junit.jupiter.api.Assertions.*;
  * These tests are designed to demonstrate issues 1.4 and 1.6 from review.md.
  */
 class RotatingFileHandlerBugReproductionTest {
+
+    private static final MDC MDC_INSTANCE = MDC.createMdc();
 
     @TempDir
     Path tempDir;
@@ -40,19 +43,19 @@ class RotatingFileHandlerBugReproductionTest {
             handler.setMaxBackupIndex(2); // Only keep 2 archived backups
 
             // 1st log: writes to test.log. size becomes > 1.
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, null, "Line 1", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, null, "Line 1", null);
 
             // 2nd log: triggers rotation. test.log -> test-archived-1.log. Writes "Line 2" to new test.log.
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, null, "Line 2", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, null, "Line 2", null);
 
             // 3rd log: triggers rotation. test.log -> test-archived-2.log. Writes "Line 3" to new test.log.
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, null, "Line 3", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, null, "Line 3", null);
 
             // 4th log: triggers rotation.
             // It should delete test-archived-1.log.
             // It should roll test.log to test-archived-3.log.
             // Writes "Line 4" to new test.log.
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, null, "Line 4", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, null, "Line 4", null);
         }
 
         // We should only have test.log, test-archived-2.log, test-archived-3.log
@@ -77,8 +80,8 @@ class RotatingFileHandlerBugReproductionTest {
             handler.setMaxFileSize(1);
             handler.setMaxBackupIndex(0);
 
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, null, "Line 1", null);
-            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, null, "Line 2", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, null, "Line 1", null);
+            handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, null, "Line 2", null);
         }
 
         assertTrue(Files.exists(logFile));
@@ -111,11 +114,11 @@ class RotatingFileHandlerBugReproductionTest {
         // This call triggers rotate(). rotate() calls writer.close(), then rotateWithPattern() which throws IOException.
         // nextFile() is never called, or if it was, rotate() has already exited exceptionally.
         // The IOException is caught by AbstractFileHandler.doHandle and logged to status logger.
-        handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, null, "Should trigger fail", null);
+        handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, null, "Should trigger fail", null);
 
         // Now check if we can still log.
         // If it's broken, this will fail to write to the file.
-        handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, null, null, "Next line", null);
+        handler.handle(System.currentTimeMillis(), "test", LogLevel.INFO, null, MDC_INSTANCE, null, "Next line", null);
         handler.close();
 
         assertTrue(Files.exists(logFile));

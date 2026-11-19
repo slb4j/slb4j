@@ -19,6 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class JsonLayoutTest {
 
     private static final ObjectMapper JSON = new ObjectMapper();
+    private static final MDC MDC_INSTANCE = MDC.createMdc();
 
     @Test
     void testJsonOutputFormat() throws IOException {
@@ -26,7 +27,7 @@ class JsonLayoutTest {
         StringBuilder sb = new StringBuilder();
         long timestamp = 1706673600000L; // 2024-01-31 04:00:00 UTC
 
-        layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.INFO, "testMarker", null, null,
+        layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.INFO, "testMarker", MDC_INSTANCE, null,
                 "test message with \"quotes\"", null, ConsoleCode.empty());
 
         String output = sb.toString();
@@ -94,7 +95,7 @@ class JsonLayoutTest {
         JsonLayout layout = new JsonLayout(false, false, false, 1, "\"\n");
         StringBuilder sb = new StringBuilder();
 
-        layout.formatLogEntry(sb, 0, "logger", LogLevel.INFO, null, null, null,
+        layout.formatLogEntry(sb, 0, "logger", LogLevel.INFO, null, MDC_INSTANCE, null,
                 "message", null, ConsoleCode.empty());
 
         JsonNode json = parseJson(sb.toString());
@@ -107,7 +108,7 @@ class JsonLayoutTest {
         JsonLayout layout = new JsonLayout(false, false, false, 1024, "...");
         StringBuilder sb = new StringBuilder();
 
-        layout.formatLogEntry(sb, 0, "logger", LogLevel.INFO, null, null, null,
+        layout.formatLogEntry(sb, 0, "logger", LogLevel.INFO, null, MDC_INSTANCE, null,
                 "a\uD800b\uDC00c\u2028\u2029", null, ConsoleCode.empty());
 
         JsonNode json = parseJson(sb.toString());
@@ -120,13 +121,13 @@ class JsonLayoutTest {
 
         JsonLayout truncatedLayout = new JsonLayout(false, false, false, 2, "...");
         StringBuilder truncated = new StringBuilder();
-        truncatedLayout.formatLogEntry(truncated, 0, "logger", LogLevel.INFO, null, null, null,
+        truncatedLayout.formatLogEntry(truncated, 0, "logger", LogLevel.INFO, null, MDC_INSTANCE, null,
                 "A" + emoji + "B", null, ConsoleCode.empty());
         assertEquals("A...", parseJson(truncated.toString()).get("message").asString());
 
         JsonLayout completeLayout = new JsonLayout(false, false, false, 2, "...");
         StringBuilder complete = new StringBuilder();
-        completeLayout.formatLogEntry(complete, 0, "logger", LogLevel.INFO, null, null, null,
+        completeLayout.formatLogEntry(complete, 0, "logger", LogLevel.INFO, null, MDC_INSTANCE, null,
                 emoji, null, ConsoleCode.empty());
         assertEquals(emoji, parseJson(complete.toString()).get("message").asString());
     }
@@ -184,7 +185,7 @@ class JsonLayoutTest {
             public String getFileName() { return "Test.java"; }
         };
 
-        layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.INFO, null, null, location, "msg", null,
+        layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.INFO, null, MDC_INSTANCE, location, "msg", null,
                 ConsoleCode.empty());
 
         JsonNode json = parseJson(sb.toString());
@@ -202,7 +203,7 @@ class JsonLayoutTest {
 
         Throwable t = new RuntimeException("test exception");
 
-        layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.ERROR, null, null, null, "msg", t,
+        layout.formatLogEntry(sb, timestamp, "testLogger", LogLevel.ERROR, null, MDC_INSTANCE, null, "msg", t,
                 ConsoleCode.empty());
 
         JsonNode thrown = parseJson(sb.toString()).get("thrown");
@@ -219,7 +220,7 @@ class JsonLayoutTest {
         throwable.addSuppressed(new IllegalStateException("suppressed\nmessage"));
         StringBuilder sb = new StringBuilder();
 
-        layout.formatLogEntry(sb, 0, "logger", LogLevel.ERROR, null, null, null,
+        layout.formatLogEntry(sb, 0, "logger", LogLevel.ERROR, null, MDC_INSTANCE, null,
                 "message", throwable, ConsoleCode.empty());
 
         JsonNode thrown = parseJson(sb.toString()).get("thrown");
@@ -233,9 +234,9 @@ class JsonLayoutTest {
         JsonLayout layout = new JsonLayout(false, false, false, 1024, "...");
         StringBuilder sb = new StringBuilder();
 
-        layout.formatLogEntry(sb, 0, "logger", LogLevel.INFO, null, null, null,
+        layout.formatLogEntry(sb, 0, "logger", LogLevel.INFO, null, MDC_INSTANCE, null,
                 "first", null, ConsoleCode.empty());
-        layout.formatLogEntry(sb, 1, "logger", LogLevel.INFO, null, null, null,
+        layout.formatLogEntry(sb, 1, "logger", LogLevel.INFO, null, MDC_INSTANCE, null,
                 "second\nmessage", null, ConsoleCode.empty());
 
         String[] lines = sb.toString().split("\\R", -1);

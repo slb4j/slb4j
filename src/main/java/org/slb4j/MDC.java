@@ -31,6 +31,30 @@ import java.util.Map;
  */
 public interface MDC {
     /**
+     * An MDC implementation that contains no diagnostic context entries.
+     *
+     * This instance always reports itself as empty and returns an empty map for
+     * the complete context.
+     */
+    MDC EMPTY = new MDC() {
+        @Override
+        public @Nullable String get(String key) {
+
+            return "";
+        }
+
+        @Override
+        public Map<String, String> get() {
+            return Collections.emptyMap();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return true;
+        }
+    };
+
+    /**
      * Retrieves the value associated with the specified key in the
      * Mapping Diagnostic Context (MDC).
      *
@@ -48,6 +72,15 @@ public interface MDC {
      *         at the time of its creation.
      */
     Map<String, String> get();
+
+    /**
+     * Determines whether the Mapping Diagnostic Context contains no entries.
+     *
+     * @return true if the MDC contains no entries, false otherwise
+     */
+    default boolean isEmpty() {
+        return get().isEmpty();
+    }
 
     /**
      * Creates an MDC adapter backed by the first supported diagnostic context implementation
@@ -128,20 +161,7 @@ public interface MDC {
             SLB4J.logInternal(LogLevel.WARN,"method not found in MDC", e);
         }
 
-        //
-        return new MDC() {
-
-            @Override
-            public @Nullable String get(String key) {
-
-                return "";
-            }
-
-            @Override
-            public Map<String, String> get() {
-                return Map.of();
-            }
-        };
+        // return an empty MDC
+        return EMPTY;
     }
-
 }
