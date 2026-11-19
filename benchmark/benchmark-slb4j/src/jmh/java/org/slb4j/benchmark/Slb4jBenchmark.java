@@ -54,7 +54,8 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
         LogLayout pattern = switch (format) {
             case "COMPACT" -> PatternLayout.LAYOUT_INSTANCE_COMPACT.uncolored();
             case "DETAILED" -> PatternLayout.LAYOUT_INSTANCE_DETAILED.uncolored();
-            default -> PatternLayout.LAYOUT_INSTANCE_DEFAULT.uncolored();
+            case "DEFAULT" -> PatternLayout.LAYOUT_INSTANCE_DEFAULT.uncolored();
+            default -> throw new IllegalArgumentException("Invalid format: " + format);
         };
 
         UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
@@ -77,12 +78,14 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
 
         if ("DETAILED".equals(format)) {
             org.slf4j.MDC.put("userId", "benchUser");
+            org.apache.logging.log4j.ThreadContext.put("userId", "benchUser");
         }
     }
 
     @Override
     protected void tearDownLogging() {
         org.slf4j.MDC.clear();
+        org.apache.logging.log4j.ThreadContext.clearAll();
         if (fileHandler != null) {
             fileHandler.close();
         }

@@ -20,6 +20,7 @@ import org.slb4j.LogLayout;
 import org.slb4j.Location;
 import org.slb4j.LogLevel;
 import org.slb4j.MDC;
+import org.slb4j.SLB4J;
 import org.slb4j.support.IoStringBuilder;
 import org.slb4j.support.formatter.PatternTimeStampFormatter;
 import org.slb4j.support.TimeStampFormatter;
@@ -36,6 +37,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.TimeZone;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.IntFunction;
 import java.util.function.Supplier;
@@ -115,7 +117,7 @@ public final class PatternLayout implements LogLayout {
      * This format provides comprehensive information about log events, including contextual
      * details, useful for debugging and auditing purposes.
      */
-    public static final PatternLayout LAYOUT_INSTANCE_DETAILED = parseLog4jPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%throwable%n");
+    public static final PatternLayout  LAYOUT_INSTANCE_DETAILED = parseLog4jPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %marker %logger{36} [%X] (%class.%method(%file:%line)) - %msg%throwable%n");
 
     /**
      * Creates a new {@code PatternLayout} instance with the same pattern text but excludes
@@ -1670,7 +1672,7 @@ public final class PatternLayout implements LogLayout {
                     // Log4j %d{pattern}{timezone}{locale}
                     // If options is a timezone, then it's %d{timezone} (empty pattern)
                     Optional<ZoneId> zoneInOptions = toZoneId(optionsOrPattern);
-                    Optional<ZoneId> zoneInSecondBlock = toZoneId(secondBlock);
+                    Optional<ZoneId> zoneInSecondBlock = toZoneId(secondBlock, true);
                     Optional<ZoneId> zoneInThirdBlock = toZoneId(thirdBlock);
 
                     if (zoneInOptions.isPresent()) {
@@ -1703,11 +1705,26 @@ public final class PatternLayout implements LogLayout {
     }
 
     private static Optional<ZoneId> toZoneId(@Nullable String s) {
+        return toZoneId(s, false);
+    }
+
+    private static Optional<ZoneId> toZoneId(@Nullable String s, boolean warnOnInvalid) {
+        if (s != null) {
+            String original = s.strip();
+            if (original.startsWith("${") && original.endsWith("}")) {
+                SLB4J.logInternal(LogLevel.WARN, "Log4J incomptibitlity: Log4J does not expand lookups in date options here and falls back to GMT, SLB4J expands the lookup: '%s'", original);
+            }
+        }
+
         String candidate = resolveLog4jLookup(s);
         if (candidate == null || candidate.isBlank()) return Optional.empty();
         try {
             return Optional.of(ZoneId.of(candidate));
         } catch (DateTimeException ignored) {
+            if (warnOnInvalid) {
+                SLB4J.logInternal(LogLevel.WARN, "Invalid timezone '%s' in date pattern, using GMT", candidate);
+                return Optional.of(TimeZone.getTimeZone(candidate).toZoneId());
+            }
             return Optional.empty();
         }
     }

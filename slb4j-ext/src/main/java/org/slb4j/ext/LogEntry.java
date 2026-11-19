@@ -20,6 +20,10 @@ import org.slb4j.LogLevel;
 import org.slb4j.MDC;
 import org.jspecify.annotations.Nullable;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * The LogEntry record encapsulates information about a single log event.
  * It is an immutable and thread-safe representation of a log message
@@ -99,6 +103,7 @@ public interface LogEntry {
 
     /**
      * Creates a new instance of a {@link LogEntry} with the specified properties.
+     * The MDC, if present, is captured as an immutable snapshot.
      *
      * @param time      the timestamp of the log event in milliseconds since the epoch.
      * @param logger    the name of the logger that generated the log event.
@@ -127,11 +132,29 @@ public interface LogEntry {
                 logger,
                 level,
                 marker,
-                mdc,
+                snapshot(mdc),
                 location,
                 message,
                 throwable
         );
+    }
+
+    private static @Nullable MDC snapshot(@Nullable MDC mdc) {
+        if (mdc == null) {
+            return null;
+        }
+        Map<String, String> values = Collections.unmodifiableMap(new HashMap<>(mdc.get()));
+        return new MDC() {
+            @Override
+            public @Nullable String get(String key) {
+                return values.get(key);
+            }
+
+            @Override
+            public Map<String, String> get() {
+                return values;
+            }
+        };
     }
 }
 

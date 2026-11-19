@@ -27,7 +27,7 @@ SLB4J provides adapters for the following logging APIs:
 - SLF4J 2.x
 - JCL (Jakarta Commons Logging / Apache Commons Logging)
 
-The API artifacts are not bundled with `slb4j`; add the facade dependencies your application uses (for example, `slf4j-api`, `log4j-api`, or `commons-logging`). JUL is part of the JDK. The SLF4J integration currently uses a no-op MDC adapter, so calls to SLF4J's `MDC` API do not store context data.
+The API artifacts are not bundled with `slb4j`; add the facade dependencies your application uses (for example, `slf4j-api`, `log4j-api`, or `commons-logging`). JUL is part of the JDK. The SLF4J integration uses SLF4J's `BasicMDCAdapter` to store diagnostic context data, including an independent copy inherited by child threads. Native Log4j uses its own `ThreadContext`; native JCL and JUL do not provide MDC data.
 
 ## How to Use
 
@@ -204,6 +204,10 @@ The script writes each run to `benchmark_results/<timestamp>/`. Checked-in bench
   - The pattern `%d{dd-MMMM-yyyy}{de-DE} %p %m%n` does not use localized month names in Log4j 2 but does in SLB4J.
     For details, read this [comment](https://github.com/apache/logging-log4j2/issues/4177#issuecomment-4932822264)
     for the corresponding Log4J2 issue.
+
+  - Date pattern timezone lookups such as `%d{dd-MMMM-yyyy}{${sys:user.timezone}} %p %m%n` are expanded by
+    SLB4J and a warning is emitted. Log4j 2 does not expand lookups in date options and falls back to GMT,
+    so the formatted date can differ. For Log4J compatibility, remove the lookup not supported by Log4J.
 
   - SLB4J XML configuration parsing rejects DOCTYPE declarations. This is stricter than Log4j 2 and may prevent
     loading configurations that use DTDs, including some legacy Log4j-style XML files. The restriction is

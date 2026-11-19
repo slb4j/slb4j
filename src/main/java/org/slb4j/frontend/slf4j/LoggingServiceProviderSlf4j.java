@@ -18,8 +18,8 @@ package org.slb4j.frontend.slf4j;
 import org.slb4j.SLB4J;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.IMarkerFactory;
+import org.slf4j.helpers.BasicMDCAdapter;
 import org.slf4j.helpers.BasicMarkerFactory;
-import org.slf4j.helpers.NOPMDCAdapter;
 import org.slf4j.helpers.NOP_FallbackServiceProvider;
 import org.slf4j.spi.MDCAdapter;
 import org.slf4j.spi.SLF4JServiceProvider;
@@ -40,7 +40,7 @@ public final class LoggingServiceProviderSlf4j implements SLF4JServiceProvider {
 
     private final ILoggerFactory loggerFactory = new LoggerFactorySlf4j();
     private final IMarkerFactory markerFactory = new BasicMarkerFactory();
-    private final MDCAdapter mdcAdapter = new NOPMDCAdapter();
+    private final MDCAdapter mdcAdapter = new BasicMDCAdapter();
 
     @Override
     public ILoggerFactory getLoggerFactory() {
