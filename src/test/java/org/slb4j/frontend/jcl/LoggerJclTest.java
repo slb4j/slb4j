@@ -15,6 +15,7 @@
  */
 package org.slb4j.frontend.jcl;
 
+import org.apache.logging.log4j.ThreadContext;
 import org.junit.jupiter.api.Test;
 import org.jspecify.annotations.Nullable;
 import org.slb4j.Location;
@@ -32,7 +33,7 @@ class LoggerJclTest {
 
     @Test
     void includesSlf4jMdcInLogEvents() {
-        org.slf4j.MDC.put("userId", "benchUser");
+        ThreadContext.put("userId", "benchUser");
         UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
         LogLevel originalRootLevel = dispatcher.getRootLevel();
         CapturingHandler handler = new CapturingHandler();
@@ -44,7 +45,7 @@ class LoggerJclTest {
             assertEquals("benchUser", handler.mdc.get("userId"));
             assertTrue(handler.message.toString().contains("message"));
         } finally {
-            org.slf4j.MDC.clear();
+            ThreadContext.removeStack();
             dispatcher.removeLogHandler(handler);
             dispatcher.setRootLevel(originalRootLevel);
         }

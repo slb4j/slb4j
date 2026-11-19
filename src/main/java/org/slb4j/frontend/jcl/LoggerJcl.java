@@ -19,12 +19,11 @@ import org.jspecify.annotations.Nullable;
 import org.slb4j.LocationResolver;
 import org.slb4j.LogHandler;
 import org.slb4j.LogLevel;
+import org.slb4j.MDC;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.apache.commons.logging.Log;
 import org.slb4j.support.StackWalkerLocationResolver;
 
-import java.util.Collections;
-import java.util.Map;
 import java.util.function.Supplier;
 
 /**
@@ -34,18 +33,7 @@ import java.util.function.Supplier;
 public final class LoggerJcl implements Log {
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
     private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(LoggerJcl.class, "org.slb4j.frontend.jcl");
-    private static final org.slb4j.MDC MDC_INSTANCE = new org.slb4j.MDC() {
-        @Override
-        public @Nullable String get(String key) {
-            return org.slf4j.MDC.get(key);
-        }
-
-        @Override
-        public Map<String, String> get() {
-            Map<String, String> contextMap = org.slf4j.MDC.getCopyOfContextMap();
-            return contextMap == null ? Collections.emptyMap() : contextMap;
-        }
-    };
+    private static final MDC MDC_INSTANCE = MDC.createMdc();
 
     private final String name;
 

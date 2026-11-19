@@ -18,9 +18,12 @@ package org.slb4j.frontend.jul;
 
 import org.slb4j.LocationResolver;
 import org.slb4j.LogLevel;
+import org.slb4j.MDC;
 import org.slb4j.dispatcher.UniversalDispatcher;
 import org.slb4j.support.StackWalkerLocationResolver;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.function.Supplier;
 import java.util.logging.Handler;
 import java.util.logging.Level;
@@ -39,6 +42,7 @@ public final class JulHandler extends Handler {
     private static final java.util.logging.Formatter FORMATTER = new java.util.logging.SimpleFormatter();
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
     private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(Logger.class, "java.util.logging");
+    private static final MDC MDC_INSTANCE = MDC.createMdc();
 
     /**
      * Constructs a new instance of the {@code JulHandler}.
@@ -92,7 +96,7 @@ public final class JulHandler extends Handler {
             if (DISPATCHER.isLevelEnabled(lvl)) {
                 Supplier<CharSequence> msg = formatJulMessage(logRecord);
                 Throwable t = logRecord.getThrown();
-                DISPATCHER.filterAndDispatch(logRecord.getMillis(), loggerName, lvl, null, null, LOCATION_RESOLVER, msg, t);
+                DISPATCHER.filterAndDispatch(logRecord.getMillis(), loggerName, lvl, null, MDC_INSTANCE, LOCATION_RESOLVER, msg, t);
             }
         }
     }

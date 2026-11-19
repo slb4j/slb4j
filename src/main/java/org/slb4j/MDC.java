@@ -17,6 +17,9 @@ package org.slb4j;
 
 import org.jspecify.annotations.Nullable;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.util.Collections;
 import java.util.Map;
 
 /**
@@ -45,4 +48,100 @@ public interface MDC {
      *         at the time of its creation.
      */
     Map<String, String> get();
+
+    /**
+     * Creates an MDC adapter backed by the first supported diagnostic context implementation
+     * available on the classpath.
+     *
+     * The lookup order is Log4j ThreadContext, then SLF4J MDC. If neither implementation is
+     * available or usable, a fallback MDC implementation is returned that contains no data.
+     *
+     * @return an MDC adapter for the available diagnostic context implementation, or a fallback
+     *         MDC implementation when none is available
+     */
+    @SuppressWarnings("unchecked")
+    static MDC createMdc() {
+        // try org.apache.logging.log4j.ThreadContext
+        try {
+            Class<?> threadContextClass = Class.forName("org.apache.logging.log4j.ThreadContext");
+            Method get = threadContextClass.getMethod("get", String.class);
+            Method getImmutableContext = threadContextClass.getMethod("getImmutableContext");
+
+            return new MDC() {
+                @Override
+                public @Nullable String get(String key) {
+                    try {
+                        return (String) get.invoke(null, key);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        SLB4J.logInternal(LogLevel.WARN,"could not get value for key " + key + " from ThreadContext", e);
+                        return null;
+                    }
+                }
+
+                @Override
+                public Map<String, String> get() {
+                    try {
+                        return (Map<String, String>) getImmutableContext.invoke(null);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        SLB4J.logInternal(LogLevel.WARN,"could not get immutable context", e);
+                        return Collections.emptyMap();
+                    }
+                }
+            };
+        } catch (ClassNotFoundException e) {
+            SLB4J.logInternal(LogLevel.DEBUG,"org.apache.logging.log4j.ThreadContext is not on classpath", e);
+        } catch (NoSuchMethodException e) {
+            SLB4J.logInternal(LogLevel.WARN,"method not found in ThreadContext", e);
+        }
+
+        // try org.slf4j.MDC
+        try {
+            Class<?> threadContextClass = Class.forName("org.slf4j.MDC");
+            Method get = threadContextClass.getMethod("get", String.class);
+            Method getCopyOfContextMap = threadContextClass.getMethod("getCopyOfContextMap");
+
+            return new MDC() {
+                @Override
+                public @Nullable String get(String key) {
+                    try {
+                        return (String) get.invoke(null, key);
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        SLB4J.logInternal(LogLevel.WARN,"could not get MDC value for key " + key, e);
+                        return null;
+                    }
+                }
+
+                @Override
+                public Map<String, String> get() {
+                    try {
+                        Map<String, String> contextMap = (Map<String, String>) getCopyOfContextMap.invoke(null);
+                        return contextMap != null ? contextMap : Collections.emptyMap();
+                    } catch (IllegalAccessException | InvocationTargetException e) {
+                        SLB4J.logInternal(LogLevel.WARN,"could not get context map", e);
+                        return Collections.emptyMap();
+                    }
+                }
+            };
+        } catch (ClassNotFoundException e) {
+            SLB4J.logInternal(LogLevel.DEBUG,"org.slf4j.MDC is not on classpath", e);
+        } catch (NoSuchMethodException e) {
+            SLB4J.logInternal(LogLevel.WARN,"method not found in MDC", e);
+        }
+
+        //
+        return new MDC() {
+
+            @Override
+            public @Nullable String get(String key) {
+
+                return "";
+            }
+
+            @Override
+            public Map<String, String> get() {
+                return Map.of();
+            }
+        };
+    }
+
 }
