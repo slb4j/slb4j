@@ -46,13 +46,7 @@ public class LogbackBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchma
         LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
         context.reset();
 
-        String pattern = switch (format) {
-            case "COMPACT" -> "%d{HH:mm:ss.SSS} %-5level %-30.30logger{0} - %msg%n";
-            case "DETAILED" ->
-                    "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %X{userId} \\(%class.%method\\(%file:%line\\)\\) - %msg%n";
-            case "DEFAULT" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n";
-            default -> throw new IllegalArgumentException("Invalid format: " + format);
-        };
+        String pattern = getPattern(format);
 
         ch.qos.logback.classic.encoder.PatternLayoutEncoder encoder = new ch.qos.logback.classic.encoder.PatternLayoutEncoder();
         encoder.setContext(context);

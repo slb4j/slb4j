@@ -94,9 +94,17 @@ final class SampleOutput {
     }
 
     static void validateCaptured(String frontend, String backend, boolean exception, String message, String output) throws IOException {
-        if (!output.contains(message) || (exception && !output.contains("Sample exception"))) {
+        if (!output.contains(message)) {
             throw new IOException("Incomplete output captured for " + frontend + "/" + backend
-                    + (exception ? " with exception" : ""));
+                    + "\n  expected message: '" + message.replaceAll("\n", "\\\\n") + "'"
+                    + "\n  actual output:    '" + output.replaceAll("\n", "\\\\n") + "'"
+            );
+        }
+        if (exception && !output.contains("Sample exception")) {
+            throw new IOException("Invalid exception captured for " + frontend + "/" + backend
+                    + "\n  expected exception: 'Sample exception'"
+                    + "\n  actual exception:   '" + output.replaceAll("\n", "\\\\n") + "'"
+            );
         }
     }
 

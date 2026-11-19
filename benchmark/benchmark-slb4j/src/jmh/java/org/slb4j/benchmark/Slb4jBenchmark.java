@@ -51,23 +51,18 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
 
         tempFile = Files.createTempFile("slb4j-bench", ".log");
 
-        LogLayout pattern = switch (format) {
-            case "COMPACT" -> PatternLayout.LAYOUT_INSTANCE_COMPACT.uncolored();
-            case "DETAILED" -> PatternLayout.LAYOUT_INSTANCE_DETAILED.uncolored();
-            case "DEFAULT" -> PatternLayout.LAYOUT_INSTANCE_DEFAULT.uncolored();
-            default -> throw new IllegalArgumentException("Invalid format: " + format);
-        };
+        LogLayout layout = PatternLayout.parseLog4jPattern(getPattern(format));
 
         UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
         dispatcher.getLogHandlers().forEach(dispatcher::removeLogHandler);
 
         if ("CONSOLE".equals(category)) {
             ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, !"DETAILED".equals(format));
-            consoleHandler.setLayout(pattern);
+            consoleHandler.setLayout(layout);
             dispatcher.addLogHandler(consoleHandler);
         } else {
             fileHandler = new FileHandler("file", tempFile.toString(), false);
-            fileHandler.setLayout(pattern);
+            fileHandler.setLayout(layout);
             dispatcher.addLogHandler(fileHandler);
         }
 

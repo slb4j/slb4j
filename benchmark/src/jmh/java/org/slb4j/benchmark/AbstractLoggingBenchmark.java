@@ -52,6 +52,15 @@ public abstract class AbstractLoggingBenchmark {
     private static final String LAMBDA_PARAMETER = "LAMBDA_PARAMETER";
     private static final String LOG_MESSAGE_FORMAT_STRING = "Benchmark backend=%s frontend=%s category=%s format=%s messageType=%s";
 
+    protected static String getPattern(String format) {
+        return switch (format) {
+            case "COMPACT" -> "%d{HH:mm:ss.SSS} %-5p %-30.30c{1.} - %m%ex%n";
+            case "DETAILED" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5p %X{userId} (%C.%M(%F:%L)) - %m%ex%n";
+            case "DEFAULT" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%ex%n";
+            default -> throw new IllegalArgumentException("Invalid format: " + format);
+        };
+    }
+
     @Param({"false", "true"})
     public String outputToFile;
 

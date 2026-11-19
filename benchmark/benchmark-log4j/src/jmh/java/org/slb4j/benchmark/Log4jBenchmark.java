@@ -46,12 +46,7 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
         org.apache.logging.log4j.core.LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
         org.apache.logging.log4j.core.config.Configuration config = context.getConfiguration();
 
-        String pattern = switch (format) {
-            case "COMPACT" -> "%d{HH:mm:ss.SSS} %-5p %-30.30c{1.} - %m%n";
-            case "DETAILED" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5p %X{userId} (%C.%M(%F:%L)) - %m%n";
-            case "DEFAULT" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n";
-            default -> throw new IllegalArgumentException("Invalid format: " + format);
-        };
+        String pattern = getPattern(format);
 
         org.apache.logging.log4j.core.layout.PatternLayout layout = org.apache.logging.log4j.core.layout.PatternLayout.newBuilder()
                 .setPattern(pattern)

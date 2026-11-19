@@ -1712,7 +1712,8 @@ public final class PatternLayout implements LogLayout {
         if (s != null) {
             String original = s.strip();
             if (original.startsWith("${") && original.endsWith("}")) {
-                SLB4J.logInternal(LogLevel.WARN, "Log4J incomptibitlity: Log4J does not expand lookups in date options here and falls back to GMT, SLB4J expands the lookup: '%s'", original);
+                SLB4J.logInternal(LogLevel.WARN, "Log4J incompatibility: Log4J does not expand lookups in date options here, SLB4J expands the lookup: '%s'", original);
+                SLB4J.logInternal(LogLevel.WARN, "Remove the lookup to make your configuration compatible with Log4J.");
             }
         }
 

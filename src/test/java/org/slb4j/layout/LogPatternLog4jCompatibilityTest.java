@@ -31,7 +31,6 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slb4j.ConsoleCode;
@@ -220,7 +219,11 @@ class LogPatternLog4jCompatibilityTest {
             // unsupported by Log4J2: "%d{EEEE, dd. MMMM yyyy}{de-DE} %p %m%n",
             "%d{dd-MMMM-yyyy}{Europe/Berlin}{de-DE} %p %m%n",
             "%d{dd-MMMM-yyyy}{GMT} %p %m%n",
-            "%d{dd-MMMM-yyyy}{GMT}{de-DE} %p %m%n"
+            "%d{dd-MMMM-yyyy}{GMT}{de-DE} %p %m%n",
+            // the patterns use in benchmarks
+            "%d{HH:mm:ss.SSS} %-5p %-30.30c{1.} - %m%n",
+            "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5p %X{userId} (%C.%M(%F:%L)) - %m%n",
+            "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"
     })
     void testPatternCompatibility(String pattern) {
         // in CI, locale "de-DE" is not available in all runners, so ignore the pattern if the locale is not available
@@ -250,9 +253,12 @@ class LogPatternLog4jCompatibilityTest {
             "Discrepancies found:\n" + String.join("\n", appender.getDiscrepancies()));
     }
 
-    @Test
-    void testUnsupportedTimezoneLookupEmitsWarning() {
-        String pattern = "%d{dd-MMMM-yyyy}{${sys:user.timezone}}{de-DE} %p %m%n";
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "%d{dd-MMMM-yyyy}{${sys:user.timezone}}{de-DE} %p %m%n",
+            "%d{dd-MMMM-yyyy}{Europe/Berlin}{${sys:user.locale}} %p %m%n"
+    })
+    void testUnsupportedDateLookupEmitsWarning(String pattern) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         PrintStream originalErr = System.err;
         LogLevel originalStatusLevel = SLB4J.getStatusLevel();
