@@ -15,11 +15,9 @@
  */
 package org.slb4j.benchmark;
 
-import org.apache.logging.log4j.LogManager;
 import org.openjdk.jmh.annotations.Param;
 
-import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class Log4jParallelBenchmark extends ParallelLoggingBenchmark {
     @Param({"CONSOLE", "FILE"})
@@ -36,50 +34,7 @@ public class Log4jParallelBenchmark extends ParallelLoggingBenchmark {
     }
 
     @Override
-    protected void setupBackend() throws IOException {
-        org.apache.logging.log4j.core.LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
-        org.apache.logging.log4j.core.config.Configuration config = context.getConfiguration();
-
-        String pattern = "%d{yyyy-MM-dd HH:mm:ss.SSS} %-5p %c - %m%n";
-
-        org.apache.logging.log4j.core.layout.PatternLayout layout = org.apache.logging.log4j.core.layout.PatternLayout.newBuilder()
-                .setPattern(pattern)
-                .build();
-
-        org.apache.logging.log4j.core.Appender appender;
-        if ("FILE".equals(category)) {
-            appender = org.apache.logging.log4j.core.appender.FileAppender.newBuilder()
-                    .setName("File")
-                    .setFileName(tempFile.toString())
-                    .setLayout(layout)
-                    .build();
-        } else {
-            appender = org.apache.logging.log4j.core.appender.ConsoleAppender.newBuilder()
-                    .setName("Console")
-                    .setTarget(org.apache.logging.log4j.core.appender.ConsoleAppender.Target.SYSTEM_OUT)
-                    .setLayout(layout)
-                    .build();
-        }
-
-        appender.start();
-        config.addAppender(appender);
-        org.apache.logging.log4j.core.config.AppenderRef ref = org.apache.logging.log4j.core.config.AppenderRef.createAppenderRef(appender.getName(), null, null);
-
-        org.apache.logging.log4j.core.config.LoggerConfig loggerConfig = config.getRootLogger();
-        loggerConfig.getAppenders().forEach((name, a) -> loggerConfig.removeAppender(name));
-        loggerConfig.addAppender(appender, null, null);
-        loggerConfig.setLevel(org.apache.logging.log4j.Level.INFO);
-
-        context.updateLoggers();
-    }
-
-    @Override
-    protected void tearDownLogging() {
-        LogManager.shutdown();
-        try {
-            Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    protected BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile) {
+        return new Log4jConfigurator(category, format, tempFile);
     }
 }

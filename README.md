@@ -27,7 +27,11 @@ SLB4J provides adapters for the following logging APIs:
 - SLF4J 2.x
 - JCL (Jakarta Commons Logging / Apache Commons Logging)
 
-The API artifacts are not bundled with `slb4j`; add the facade dependencies your application uses (for example, `slf4j-api`, `log4j-api`, or `commons-logging`). JUL is part of the JDK. The SLF4J integration uses SLF4J's `BasicMDCAdapter` to store diagnostic context data, including an independent copy inherited by child threads. Native Log4j uses its own `ThreadContext`; native JCL and JUL do not provide MDC data.
+The API artifacts are not bundled with `slb4j`; add the facade dependencies your application uses (for example, 
+`slf4j-api`, `log4j-api`, or `commons-logging`). JUL is part of the JDK. The SLF4J integration uses SLF4J's 
+`BasicMDCAdapter` to store diagnostic context data, including an independent copy inherited by child threads. Native 
+Log4j uses its own `ThreadContext`; native JCL and JUL do not provide own MDC implemntations. For those, either 
+Log4J ThreadContext or SLF4 MDC is used if found on the classpath. Otherwise, no MDC data is available.
 
 ## How to Use
 

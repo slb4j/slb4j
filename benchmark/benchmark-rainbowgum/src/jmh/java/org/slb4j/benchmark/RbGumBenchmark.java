@@ -15,18 +15,10 @@
  */
 package org.slb4j.benchmark;
 
-import io.jstach.rainbowgum.LogOutput;
-import io.jstach.rainbowgum.LogProperties;
-import io.jstach.rainbowgum.RainbowGum;
-import io.jstach.rainbowgum.file.FileOutputBuilder;
-import io.jstach.rainbowgum.pattern.format.PatternEncoderBuilder;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class RbGumBenchmark extends AbstractLoggingBenchmark {
@@ -37,7 +29,6 @@ public class RbGumBenchmark extends AbstractLoggingBenchmark {
     @Param({"COMPACT", "DEFAULT", "DETAILED"})
     public String format;
 
-    private RainbowGum rainbowGum;
 
     @Override
     public String backend() {
@@ -45,63 +36,12 @@ public class RbGumBenchmark extends AbstractLoggingBenchmark {
     }
 
     @Override
-    protected void setupLogging() throws IOException {
-        tempFile = Files.createTempFile("rainbowgum-bench", ".log");
-        rainbowGum = configureRainbowGum(category, format, tempFile);
-
-        slf4jLogger = LoggerFactory.getLogger(RbGumBenchmark.class);
-        log4jLogger = org.apache.logging.log4j.LogManager.getLogger(RbGumBenchmark.class);
-        julLogger = java.util.logging.Logger.getLogger(RbGumBenchmark.class.getName());
-        jclLogger = org.apache.commons.logging.LogFactory.getLog(RbGumBenchmark.class);
-
-        if ("DETAILED".equals(format)) {
-            org.slf4j.MDC.put("userId", "benchUser");
-        }
-    }
-
-    @Override
-    protected void tearDownLogging() {
-        org.slf4j.MDC.clear();
-        if (rainbowGum != null) {
-            rainbowGum.close();
-        }
-        try {
-            Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    protected BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile) {
+        return new RainbowGumConfigurator(category, format, tempFile);
     }
 
     @Setup(Level.Iteration)
     public void setupIteration(org.openjdk.jmh.infra.BenchmarkParams params) {
         updateLogMessage(params, category, format);
-    }
-
-    static RainbowGum configureRainbowGum(String category, String format, Path tempFile) {
-        String pattern = switch (format) {
-            case "COMPACT" -> "%d{HH:mm:ss.SSS} %-5level %-30.30logger{0} - %msg%n";
-            case "DETAILED" ->
-                    "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %X{userId} \\(%class.%method\\(%file:%line\\)\\) - %msg%n";
-            case "DEFAULT" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n";
-            default -> throw new IllegalArgumentException("Invalid format: " + format);
-        };
-
-        return RainbowGum.builder(config -> {
-            if ("DETAILED".equals(format)) {
-                config.properties(LogProperties.builder()
-                        .fromProperties("logging.caller.logger.org.slb4j.benchmark=true")
-                        .build());
-            }
-        }).route(route -> {
-            route.level(System.Logger.Level.INFO);
-            route.appender("benchmark", appender -> {
-                if ("FILE".equals(category)) {
-                    appender.output(new FileOutputBuilder("benchmark").fileName(tempFile.toString()).append(false).build());
-                } else {
-                    appender.output(LogOutput.ofStandardOut());
-                }
-                appender.encoder(new PatternEncoderBuilder("benchmark").pattern(pattern).build());
-            });
-        }).set();
     }
 }

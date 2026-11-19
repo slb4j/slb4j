@@ -15,15 +15,11 @@
  */
 package org.slb4j.benchmark;
 
-import org.apache.logging.log4j.LogManager;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
-import org.slf4j.LoggerFactory;
-import org.slf4j.MarkerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
 
@@ -40,68 +36,8 @@ public class Log4jBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
     }
 
     @Override
-    protected void setupLogging() throws IOException {
-        tempFile = Files.createTempFile("log4j-bench", ".log");
-
-        org.apache.logging.log4j.core.LoggerContext context = (org.apache.logging.log4j.core.LoggerContext) LogManager.getContext(false);
-        org.apache.logging.log4j.core.config.Configuration config = context.getConfiguration();
-
-        String pattern = getPattern(format);
-
-        org.apache.logging.log4j.core.layout.PatternLayout layout = org.apache.logging.log4j.core.layout.PatternLayout.newBuilder()
-                .setPattern(pattern)
-                .build();
-
-        org.apache.logging.log4j.core.Appender appender;
-        if ("FILE".equals(category)) {
-            appender = org.apache.logging.log4j.core.appender.FileAppender.newBuilder()
-                    .setName("File")
-                    .setFileName(tempFile.toString())
-                    .setLayout(layout)
-                    .build();
-        } else {
-            appender = org.apache.logging.log4j.core.appender.ConsoleAppender.newBuilder()
-                    .setName("Console")
-                    .setTarget(org.apache.logging.log4j.core.appender.ConsoleAppender.Target.SYSTEM_OUT)
-                    .setLayout(layout)
-                    .build();
-        }
-
-        appender.start();
-        config.addAppender(appender);
-        org.apache.logging.log4j.core.config.AppenderRef ref = org.apache.logging.log4j.core.config.AppenderRef.createAppenderRef(appender.getName(), null, null);
-
-        org.apache.logging.log4j.core.config.LoggerConfig loggerConfig = config.getRootLogger();
-        loggerConfig.getAppenders().forEach((name, a) -> loggerConfig.removeAppender(name));
-        loggerConfig.addAppender(appender, null, null);
-        loggerConfig.setLevel(org.apache.logging.log4j.Level.INFO);
-
-        context.updateLoggers();
-
-        slf4jLogger = LoggerFactory.getLogger(Log4jBenchmark.class);
-        log4jLogger = LogManager.getLogger(Log4jBenchmark.class);
-        julLogger = java.util.logging.Logger.getLogger(Log4jBenchmark.class.getName());
-        jclLogger = org.apache.commons.logging.LogFactory.getLog(Log4jBenchmark.class);
-
-        slf4jMarker = MarkerFactory.getMarker("BENCH");
-        log4jMarker = org.apache.logging.log4j.MarkerManager.getMarker("BENCH");
-
-        if ("DETAILED".equals(format)) {
-            org.slf4j.MDC.put("userId", "benchUser");
-            org.apache.logging.log4j.ThreadContext.put("userId", "benchUser");
-        }
-    }
-
-    @Override
-    protected void tearDownLogging() {
-        org.slf4j.MDC.clear();
-        org.apache.logging.log4j.ThreadContext.clearAll();
-        LogManager.shutdown();
-        try {
-            Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    protected BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile) {
+        return new Log4jConfigurator(category, format, tempFile);
     }
 
     @Setup(Level.Iteration)

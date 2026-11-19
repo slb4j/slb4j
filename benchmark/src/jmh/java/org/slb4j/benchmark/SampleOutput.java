@@ -39,16 +39,6 @@ final class SampleOutput {
     private SampleOutput() {
     }
 
-    static void installJulToSlf4jBridge() {
-        try {
-            Class<?> bridge = Class.forName("org.slf4j.bridge.SLF4JBridgeHandler");
-            bridge.getMethod("removeHandlersForRootLogger").invoke(null);
-            bridge.getMethod("install").invoke(null);
-        } catch (ReflectiveOperationException e) {
-            throw new IllegalStateException("Could not install the JUL-to-SLF4J bridge", e);
-        }
-    }
-
     static void writeIfConfigured(
             String backend,
             String category,

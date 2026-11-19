@@ -15,14 +15,11 @@
  */
 package org.slb4j.benchmark;
 
-import ch.qos.logback.classic.LoggerContext;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class LgbckBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
 
@@ -40,59 +37,8 @@ public class LgbckBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark
     }
 
     @Override
-    protected void setupLogging() throws IOException {
-        tempFile = Files.createTempFile("logback-bench", ".log");
-
-        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        context.reset();
-
-        String pattern = getPattern(format).replace("(", "\\(").replace(")", "\\)");
-
-        ch.qos.logback.classic.encoder.PatternLayoutEncoder encoder = new ch.qos.logback.classic.encoder.PatternLayoutEncoder();
-        encoder.setContext(context);
-        encoder.setPattern(pattern);
-        encoder.start();
-
-        ch.qos.logback.core.Appender appender;
-        if ("FILE".equals(category)) {
-            ch.qos.logback.core.FileAppender fileAppender = new ch.qos.logback.core.FileAppender();
-            fileAppender.setFile(tempFile.toString());
-            fileAppender.setEncoder(encoder);
-            appender = fileAppender;
-        } else {
-            ch.qos.logback.core.ConsoleAppender consoleAppender = new ch.qos.logback.core.ConsoleAppender();
-            consoleAppender.setEncoder(encoder);
-            appender = consoleAppender;
-        }
-        appender.setContext(context);
-        appender.setName("Appender");
-        appender.start();
-
-        ch.qos.logback.classic.Logger root = context.getLogger(org.slf4j.Logger.ROOT_LOGGER_NAME);
-        root.detachAndStopAllAppenders();
-        root.addAppender(appender);
-        root.setLevel(ch.qos.logback.classic.Level.INFO);
-
-        slf4jLogger = LoggerFactory.getLogger(LgbckBenchmark.class);
-        log4jLogger = org.apache.logging.log4j.LogManager.getLogger(LgbckBenchmark.class);
-        julLogger = java.util.logging.Logger.getLogger(LgbckBenchmark.class.getName());
-        jclLogger = org.apache.commons.logging.LogFactory.getLog(LgbckBenchmark.class);
-
-        if ("DETAILED".equals(format)) {
-            org.slf4j.MDC.put("userId", "benchUser");
-        }
-    }
-
-    @Override
-    protected void tearDownLogging() {
-        org.slf4j.MDC.clear();
-        LoggerContext context = (LoggerContext) LoggerFactory.getILoggerFactory();
-        context.stop();
-        try {
-            Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    protected BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile) {
+        return new LogbackConfigurator(category, format, tempFile);
     }
 
     @Setup(Level.Iteration)

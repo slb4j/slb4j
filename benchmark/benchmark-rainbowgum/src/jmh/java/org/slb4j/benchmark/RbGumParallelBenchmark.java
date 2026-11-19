@@ -15,11 +15,8 @@
  */
 package org.slb4j.benchmark;
 
-import io.jstach.rainbowgum.RainbowGum;
 import org.openjdk.jmh.annotations.Param;
 
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 
 public class RbGumParallelBenchmark extends ParallelLoggingBenchmark {
@@ -27,8 +24,6 @@ public class RbGumParallelBenchmark extends ParallelLoggingBenchmark {
     @Param({"CONSOLE", "FILE"})
     public String category;
 
-    private RainbowGum rainbowGum;
-    private Path rainbowTempFile;
 
     @Override
     public String backend() {
@@ -41,32 +36,7 @@ public class RbGumParallelBenchmark extends ParallelLoggingBenchmark {
     }
 
     @Override
-    void setupLogging(String format) throws IOException {
-        rainbowTempFile = Files.createTempFile("rainbowgum-parallel-bench", ".log");
-        rainbowGum = RbGumBenchmark.configureRainbowGum(category, "DEFAULT", rainbowTempFile);
-        super.setupLogging(format);
-    }
-
-    @Override
-    public void setupBackend() {
-        // Rainbow Gum must be installed before the shared setup obtains SLF4J loggers.
-    }
-
-    @Override
-    protected Path outputFile() {
-        return rainbowTempFile;
-    }
-
-    @Override
-    void tearDownLogging() {
-        if (rainbowGum != null) {
-            rainbowGum.close();
-        }
-        super.tearDownLogging();
-        try {
-            Files.deleteIfExists(rainbowTempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    protected BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile) {
+        return new RainbowGumConfigurator(category, format, tempFile);
     }
 }

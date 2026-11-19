@@ -19,12 +19,7 @@ import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
 
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.logging.FileHandler;
-import java.util.logging.Handler;
-import java.util.logging.LogManager;
-import java.util.logging.Logger;
+import java.nio.file.Path;
 
 public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
 
@@ -34,7 +29,6 @@ public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
     @Param({"COMPACT", "DEFAULT", "DETAILED"})
     public String format;
 
-    private Handler fileHandler;
 
     @Override
     public String backend() {
@@ -42,59 +36,8 @@ public class JulBenchmark extends org.slb4j.benchmark.AbstractLoggingBenchmark {
     }
 
     @Override
-    @SuppressWarnings("java:S106")
-    protected void setupLogging() throws IOException {
-        // 1. JCL Bridge Property (Must be first)
-        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
-        org.apache.commons.logging.LogFactory.releaseAll();
-
-        // 2. Configure JUL Backend properly
-        LogManager manager = LogManager.getLogManager();
-        // Do NOT call manager.reset() - it kills the Log4j bridge listeners
-
-        Logger root = Logger.getLogger("");
-        // Clear existing handlers to prevent duplicates in JMH warmups
-        for (java.util.logging.Handler h : root.getHandlers()) {
-            root.removeHandler(h);
-        }
-
-        root.setLevel(java.util.logging.Level.INFO);
-
-        // 3. Explicitly enable the benchmark class logger in JUL
-        // Bridges check this specific name!
-        Logger benchmarkLogger = Logger.getLogger(JulBenchmark.class.getName());
-        benchmarkLogger.setLevel(java.util.logging.Level.INFO);
-
-        // 4. Setup File/Console Handler
-        tempFile = Files.createTempFile("jul-bench", ".log");
-        if ("CONSOLE".equals(category)) {
-            fileHandler = new java.util.logging.ConsoleHandler();
-        } else {
-            Files.deleteIfExists(tempFile);
-            fileHandler = new FileHandler(tempFile.toString());
-        }
-        fileHandler.setFormatter(JulBenchmarkFormatting.newFormatter(format));
-        fileHandler.setLevel(java.util.logging.Level.INFO);
-        root.addHandler(fileHandler);
-
-        // 5. Initialize the Frontends
-        // Important: SLF4J, JCL, and Log4j must be fetched AFTER JUL is ready
-        this.julLogger = benchmarkLogger;
-        this.slf4jLogger = org.slf4j.LoggerFactory.getLogger(JulBenchmark.class);
-        this.jclLogger = org.apache.commons.logging.LogFactory.getLog(JulBenchmark.class);
-        this.log4jLogger = org.apache.logging.log4j.LogManager.getLogger(JulBenchmark.class);
-    }
-
-    @Override
-    protected void tearDownLogging() {
-        if (fileHandler != null) {
-            fileHandler.close();
-        }
-        try {
-            Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    protected BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile) {
+        return new JulConfigurator(category, format, tempFile, getClass());
     }
 
     @Setup(Level.Iteration)

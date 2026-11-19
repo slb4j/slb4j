@@ -20,6 +20,7 @@ dependencies {
     // bridges
     jmh(libs.jcl.to.log4j)
     jmh(libs.slf4j.to.log4j)
+    jmh(libs.jul.to.log4j)
     jmh(libs.jul.to.slf4j)
 }
 
@@ -63,6 +64,7 @@ jmh {
     }
 
     resultFormat.set("JSON")
+    jvmArgs.add("-Djava.util.logging.manager=org.apache.logging.log4j.jul.LogManager")
 }
 
 tasks.named("jmh") {

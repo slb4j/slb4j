@@ -16,13 +16,8 @@
 package org.slb4j.benchmark;
 
 import org.openjdk.jmh.annotations.Param;
-import org.slb4j.LogLayout;
-import org.slb4j.dispatcher.UniversalDispatcher;
-import org.slb4j.handler.ConsoleHandler;
-import org.slb4j.handler.FileHandler;
-import org.slb4j.layout.PatternLayout;
 
-import java.io.IOException;
+import java.nio.file.Path;
 
 public class Slb4jParallelBenchmark extends ParallelLoggingBenchmark {
 
@@ -40,21 +35,7 @@ public class Slb4jParallelBenchmark extends ParallelLoggingBenchmark {
     }
 
     @Override
-    public void setupBackend() throws IOException {
-        UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
-        dispatcher.getLogHandlers().forEach(dispatcher::removeLogHandler);
-
-        // use pattern without highlighting
-        LogLayout pattern = PatternLayout.LAYOUT_INSTANCE_DEFAULT.uncolored();
-
-        if ("CONSOLE".equals(category)) {
-            ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, true);
-            consoleHandler.setLayout(pattern);
-            dispatcher.addLogHandler(consoleHandler);
-        } else {
-            FileHandler fileHandler = new FileHandler("file", tempFile.toString(), false);
-            fileHandler.setLayout(pattern);
-            dispatcher.addLogHandler(fileHandler);
-        }
+    protected BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile) {
+        return new Slb4jConfigurator(category, format, tempFile);
     }
 }

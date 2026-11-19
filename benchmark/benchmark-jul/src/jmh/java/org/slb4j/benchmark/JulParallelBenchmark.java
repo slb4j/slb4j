@@ -17,7 +17,7 @@ package org.slb4j.benchmark;
 
 import org.openjdk.jmh.annotations.Param;
 
-import java.io.IOException;
+import java.nio.file.Path;
 
 public class JulParallelBenchmark extends ParallelLoggingBenchmark {
     @Param({"CONSOLE", "FILE"})
@@ -37,7 +37,7 @@ public class JulParallelBenchmark extends ParallelLoggingBenchmark {
     }
 
     @Override
-    protected void setupBackend() throws IOException {
-        System.setProperty("org.apache.commons.logging.Log", "org.apache.commons.logging.impl.Jdk14Logger");
+    protected BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile) {
+        return new JulConfigurator(category, format, tempFile, getClass());
     }
 }

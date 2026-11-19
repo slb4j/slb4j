@@ -18,16 +18,8 @@ package org.slb4j.benchmark;
 import org.openjdk.jmh.annotations.Level;
 import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.Setup;
-import org.slb4j.LogLayout;
-import org.slb4j.SLB4J;
-import org.slb4j.dispatcher.UniversalDispatcher;
-import org.slb4j.handler.ConsoleHandler;
-import org.slb4j.handler.FileHandler;
-import org.slb4j.layout.PatternLayout;
-import org.slf4j.LoggerFactory;
 
-import java.io.IOException;
-import java.nio.file.Files;
+import java.nio.file.Path;
 
 public class Slb4jBenchmark extends AbstractLoggingBenchmark {
 
@@ -37,7 +29,6 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
     @Param({"COMPACT", "DEFAULT", "DETAILED"})
     public String format;
 
-    private FileHandler fileHandler;
 
 
     @Override
@@ -46,49 +37,8 @@ public class Slb4jBenchmark extends AbstractLoggingBenchmark {
     }
 
     @Override
-    protected void setupLogging() throws IOException {
-        SLB4J.init();
-
-        tempFile = Files.createTempFile("slb4j-bench", ".log");
-
-        LogLayout layout = PatternLayout.parseLog4jPattern(getPattern(format));
-
-        UniversalDispatcher dispatcher = UniversalDispatcher.getInstance();
-        dispatcher.getLogHandlers().forEach(dispatcher::removeLogHandler);
-
-        if ("CONSOLE".equals(category)) {
-            ConsoleHandler consoleHandler = new ConsoleHandler("console", System.out, !"DETAILED".equals(format));
-            consoleHandler.setLayout(layout);
-            dispatcher.addLogHandler(consoleHandler);
-        } else {
-            fileHandler = new FileHandler("file", tempFile.toString(), false);
-            fileHandler.setLayout(layout);
-            dispatcher.addLogHandler(fileHandler);
-        }
-
-        slf4jLogger = LoggerFactory.getLogger(Slb4jBenchmark.class);
-        log4jLogger = org.apache.logging.log4j.LogManager.getLogger(Slb4jBenchmark.class);
-        julLogger = java.util.logging.Logger.getLogger(Slb4jBenchmark.class.getName());
-        jclLogger = org.apache.commons.logging.LogFactory.getLog(Slb4jBenchmark.class);
-
-        if ("DETAILED".equals(format)) {
-            org.slf4j.MDC.put("userId", "benchUser");
-            org.apache.logging.log4j.ThreadContext.put("userId", "benchUser");
-        }
-    }
-
-    @Override
-    protected void tearDownLogging() {
-        org.slf4j.MDC.clear();
-        org.apache.logging.log4j.ThreadContext.clearAll();
-        if (fileHandler != null) {
-            fileHandler.close();
-        }
-        try {
-            Files.deleteIfExists(tempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+    protected BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile) {
+        return new Slb4jConfigurator(category, format, tempFile);
     }
 
     @Setup(Level.Iteration)
