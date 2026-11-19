@@ -1,5 +1,11 @@
-Version 0.15.0 (to be released)
--------------------------------
+Version next (to be released)
+-----------------------------
+
+- benchmarks: refactor; make sure patterns are consistent
+- emit a warning a timezone lookup is used that is not supported by Log4J
+
+Version 0.15.0
+--------------
 
 - remove `implements Externizable` from LogBuffer for security reasons.
 - support `%enc` and `%replace` in PatternLayout

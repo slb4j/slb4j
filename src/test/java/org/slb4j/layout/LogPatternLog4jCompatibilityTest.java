@@ -31,6 +31,7 @@ import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slb4j.ConsoleCode;
@@ -38,9 +39,12 @@ import org.slb4j.Location;
 import org.slb4j.LogLevel;
 import org.slb4j.LogLayout;
 import org.slb4j.MDC;
+import org.slb4j.SLB4J;
 import org.slb4j.frontend.log4j.LoggerLog4j;
 import org.slb4j.handler.ConsoleHandler;
 
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
 import java.time.format.TextStyle;
@@ -48,6 +52,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assumptions.assumeTrue;
@@ -213,7 +218,7 @@ class LogPatternLog4jCompatibilityTest {
             // See https://github.com/apache/logging-log4j2/issues/4129 for details.
             // unsupported by Log4J2: "%d{dd-MMMM-yyyy}{de-DE} %p %m%n",
             // unsupported by Log4J2: "%d{EEEE, dd. MMMM yyyy}{de-DE} %p %m%n",
-            "%d{dd-MMMM-yyyy}{${sys:user.timezone}}{de-DE} %p %m%n",
+            "%d{dd-MMMM-yyyy}{Europe/Berlin}{de-DE} %p %m%n",
             "%d{dd-MMMM-yyyy}{GMT} %p %m%n",
             "%d{dd-MMMM-yyyy}{GMT}{de-DE} %p %m%n"
     })
@@ -241,9 +246,34 @@ class LogPatternLog4jCompatibilityTest {
             org.apache.logging.log4j.ThreadContext.clearMap();
         }
 
-        assert appender != null;
-        assertTrue(appender.getDiscrepancies().isEmpty(),
+        assertTrue(Objects.requireNonNull(appender).getDiscrepancies().isEmpty(),
             "Discrepancies found:\n" + String.join("\n", appender.getDiscrepancies()));
+    }
+
+    @Test
+    void testUnsupportedTimezoneLookupEmitsWarning() {
+        String pattern = "%d{dd-MMMM-yyyy}{${sys:user.timezone}}{de-DE} %p %m%n";
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        PrintStream originalErr = System.err;
+        LogLevel originalStatusLevel = SLB4J.getStatusLevel();
+        String originalStatusDest = SLB4J.getStatusDest();
+
+        try (PrintStream capturedErr = new PrintStream(output, false, StandardCharsets.UTF_8)) {
+            System.setErr(capturedErr);
+            SLB4J.setStatusDest("err");
+            SLB4J.setStatusLevel(LogLevel.WARN);
+
+            PatternLayout.parseLog4jPattern(pattern);
+
+            capturedErr.flush();
+            String warning = output.toString(StandardCharsets.UTF_8);
+            assertTrue(warning.contains("does not expand lookups in date options"),
+                    "Expected an incompatibility warning, got: " + warning);
+        } finally {
+            System.setErr(originalErr);
+            SLB4J.setStatusDest(originalStatusDest);
+            SLB4J.setStatusLevel(originalStatusLevel);
+        }
     }
 
     /**
