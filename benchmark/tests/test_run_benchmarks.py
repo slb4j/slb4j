@@ -15,57 +15,84 @@ SPEC.loader.exec_module(run_benchmarks)
 
 
 class SampleOutputRunnerTest(unittest.TestCase):
-    def setUp(self):
-        self.previous_value = os.environ.get(run_benchmarks.SAMPLE_OUTPUT_ENV)
-
-    def tearDown(self):
-        if self.previous_value is None:
-            os.environ.pop(run_benchmarks.SAMPLE_OUTPUT_ENV, None)
-        else:
-            os.environ[run_benchmarks.SAMPLE_OUTPUT_ENV] = self.previous_value
-
-    def test_initializes_one_absolute_report_path_for_the_invocation(self):
+    def test_initializes_report_only_when_requested(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
             report = Path(directory) / "SAMPLE_OUTPUT.md"
-            args = SimpleNamespace(dryrun=False)
+            args = SimpleNamespace(dryrun=False, sample_output=True)
 
             result = run_benchmarks.initialize_sample_output(args, directory)
 
             self.assertEqual(os.path.abspath(report), result)
-            self.assertEqual(result, os.environ[run_benchmarks.SAMPLE_OUTPUT_ENV])
-            text = report.read_text(encoding="utf-8")
-            headings = [line for line in text.splitlines() if line.startswith("## ")]
-            self.assertEqual(24, len(headings))
-            for format_name in ("COMPACT", "DEFAULT", "DETAILED"):
-                for frontend in ("JUL", "JCL", "LOG4J", "SLF4J"):
-                    for suffix in ("", " (with exception)"):
-                        self.assertIn(f"## Format: {format_name}, Frontend {frontend}{suffix}", headings)
+            self.assertEqual("# Benchmark Sample Outputs\n\n", report.read_text(encoding="utf-8"))
 
-    def test_dry_run_does_not_create_a_sample_report_or_change_environment(self):
+            self.assertIsNone(run_benchmarks.initialize_sample_output(
+                SimpleNamespace(dryrun=False, sample_output=False), directory))
+
+    def test_dry_run_does_not_create_a_sample_report(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
             report = Path(directory) / "SAMPLE_OUTPUT.md"
-            os.environ[run_benchmarks.SAMPLE_OUTPUT_ENV] = "existing-path"
 
-            result = run_benchmarks.initialize_sample_output(SimpleNamespace(dryrun=True), directory)
+            result = run_benchmarks.initialize_sample_output(
+                SimpleNamespace(dryrun=True, sample_output=True), directory)
 
             self.assertIsNone(result)
             self.assertFalse(report.exists())
-            self.assertEqual("existing-path", os.environ[run_benchmarks.SAMPLE_OUTPUT_ENV])
 
-    def test_collection_covers_all_backends_and_formats_even_for_filtered_runs(self):
-        args = SimpleNamespace(dryrun=False, backends=["jul"], formats=["DEFAULT"], parallel=True)
-        with patch.object(run_benchmarks, "run_command", return_value=True) as command:
-            self.assertTrue(run_benchmarks.collect_sample_output(args))
-        self.assertEqual(len(run_benchmarks.SEQUENTIAL_BACKENDS_MAP), command.call_count)
-        for backend, benchmark in run_benchmarks.SEQUENTIAL_BACKENDS_MAP.items():
-            task = f":benchmark:benchmark-{backend}:jmh"
-            commands = [call.args[0] for call in command.call_args_list if task in call.args[0]]
-            self.assertEqual(1, len(commands))
-            self.assertIn(f"-x {task}Jar", commands[0])
-            self.assertIn("-x :jar -x :benchmark:jar", commands[0])
-            self.assertIn(benchmark, commands[0])
-            self.assertIn("format=COMPACT,DEFAULT,DETAILED", commands[0])
-            self.assertIn("category=CONSOLE", commands[0])
+    def test_appends_new_benchmark_output(self):
+        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
+            output = Path(directory) / "benchmark.out"
+            report = Path(directory) / "SAMPLE_OUTPUT.md"
+            output.write_text("old output\nactual benchmark output\n", encoding="utf-8")
+            report.write_text("# Benchmark Sample Outputs\n\n", encoding="utf-8")
+
+            run_benchmarks.append_sample_output(output, report, "jul", 2, len("old output\n"))
+
+            self.assertTrue(output.exists())
+            self.assertEqual(
+                "# Benchmark Sample Outputs\n\n## jul (run 3)\n\n````text\n"
+                "actual benchmark output\n````\n\n",
+                report.read_text(encoding="utf-8"))
+
+    def test_rejects_sample_output_with_more_than_one_line(self):
+        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
+            output = Path(directory) / "benchmark.out"
+            report = Path(directory) / "SAMPLE_OUTPUT.md"
+            output.write_text("first\nsecond\n", encoding="utf-8")
+
+            with self.assertRaisesRegex(RuntimeError, "Expected one line"):
+                run_benchmarks.append_sample_output(output, report, "jul", 0)
+
+    def test_sample_output_uses_a_separate_single_shot_fork(self):
+        args = SimpleNamespace(
+            backends=["jul"], message_types=["CONSTANT"], frontends=["jul"], formats=["DEFAULT"],
+            handlers=["CONSOLE"], output_to_file=False, sample_output=True, warmup=2, iterations=7,
+            time="10ms", forks=1, profile=None, dryrun=True)
+
+        with patch("builtins.print") as output:
+            run_benchmarks.collect_results(args, "timestamp", "results", sample_output_path="samples.md")
+
+        commands = [call.args[0] for call in output.call_args_list if call.args and "Command:" in call.args[0]]
+        self.assertEqual(2, len(commands))
+
+        benchmark_command, sample_command = commands
+        self.assertIn("outputToFile=false", benchmark_command)
+        self.assertIn("-Pjmh.warmupIterations=2", benchmark_command)
+        self.assertIn("-Pjmh.iterations=7", benchmark_command)
+        self.assertNotIn("jmh.benchmarkMode", benchmark_command)
+
+        self.assertIn("outputToFile=true", sample_command)
+        self.assertIn("-Pjmh.benchmarkMode=SingleShotTime", sample_command)
+        self.assertIn("-Pjmh.warmupIterations=0", sample_command)
+        self.assertIn("-Pjmh.iterations=1", sample_command)
+        self.assertIn("-Pjmh.forks=1", sample_command)
+        self.assertNotIn("-Pjmh.timeOnIteration", sample_command)
+
+    def test_sample_output_rejects_parallel_only_runs(self):
+        args = SimpleNamespace(
+            serial=False, parallel=True, sample_output=True, backends=None, handlers=None,
+            formats=None, message_types=None)
+
+        self.assertFalse(run_benchmarks.validate_args(args))
 
     def test_compiles_all_benchmark_modules_in_one_gradle_invocation(self):
         with patch.object(run_benchmarks, "run_command", return_value=True) as command:
@@ -82,26 +109,6 @@ class SampleOutputRunnerTest(unittest.TestCase):
             self.assertTrue(run_benchmarks.compile_benchmarks(SimpleNamespace(dryrun=True)))
         command.assert_not_called()
 
-    def test_sample_collection_failure_is_reported(self):
-        with patch.object(run_benchmarks, "run_command", return_value=False):
-            self.assertFalse(run_benchmarks.collect_sample_output(SimpleNamespace(dryrun=False)))
-
-    def test_validation_requires_exactly_one_sample_for_every_combination(self):
-        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
-            report = Path(directory) / "SAMPLE_OUTPUT.md"
-            markers = [
-                f"<!-- sample-output:{fmt}:{frontend}:{kind}:{backend.upper()} -->"
-                for fmt in run_benchmarks.VALID_FORMATS
-                for frontend in run_benchmarks.SAMPLE_FRONTENDS
-                for kind in ("plain", "exception")
-                for backend in run_benchmarks.SEQUENTIAL_BACKENDS_MAP
-            ]
-            report.write_text("\n".join(markers), encoding="utf-8")
-            self.assertTrue(run_benchmarks.validate_sample_output(report))
-            report.write_text("\n".join(markers[:-1]), encoding="utf-8")
-            self.assertFalse(run_benchmarks.validate_sample_output(report))
-            report.write_text("\n".join(markers + markers[:1]), encoding="utf-8")
-            self.assertFalse(run_benchmarks.validate_sample_output(report))
 
     def test_results_directories_do_not_collide(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:

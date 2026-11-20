@@ -33,6 +33,9 @@ jmh {
     fork.set(project.findProperty("jmh.forks")?.toString()?.toInt())
     warmup.set(project.findProperty("jmh.warmupTime")?.toString())
     timeOnIteration.set(project.findProperty("jmh.timeOnIteration")?.toString())
+    project.findProperty("jmh.benchmarkMode")?.toString()?.let {
+        benchmarkMode.set(listOf(it))
+    }
 
     project.findProperty("jmh.includes")?.toString()?.let {
         includes.set(listOf(it))

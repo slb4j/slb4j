@@ -128,21 +128,6 @@ public abstract class AbstractLoggingBenchmark {
             org.apache.logging.log4j.ThreadContext.put("userId", "benchUser");
         }
 
-        SampleOutput.writeIfConfigured(
-                backend(),
-                params.getParam("category"),
-                params.getParam("format"),
-                tempFile,
-                stdoutOutput,
-                stderrOutput,
-                originalOut,
-                originalErr,
-                slf4jLogger,
-                jclLogger,
-                log4jLogger,
-                julLogger
-        );
-
         OutputStream benchmarkOutput = fileOut != null ? fileOut : OutputStream.nullOutputStream();
         stdoutOutput.setTarget(benchmarkOutput);
         stderrOutput.setTarget(benchmarkOutput);
