@@ -58,11 +58,29 @@ class SampleOutputRunnerTest(unittest.TestCase):
             self.assertTrue(run_benchmarks.collect_sample_output(args))
         self.assertEqual(len(run_benchmarks.SEQUENTIAL_BACKENDS_MAP), command.call_count)
         for backend, benchmark in run_benchmarks.SEQUENTIAL_BACKENDS_MAP.items():
-            commands = [call.args[0] for call in command.call_args_list if f"benchmark-{backend}:jmh" in call.args[0]]
+            task = f":benchmark:benchmark-{backend}:jmh"
+            commands = [call.args[0] for call in command.call_args_list if task in call.args[0]]
             self.assertEqual(1, len(commands))
+            self.assertIn(f"-x {task}Jar", commands[0])
+            self.assertIn("-x :jar -x :benchmark:jar", commands[0])
             self.assertIn(benchmark, commands[0])
             self.assertIn("format=COMPACT,DEFAULT,DETAILED", commands[0])
             self.assertIn("category=CONSOLE", commands[0])
+
+    def test_compiles_all_benchmark_modules_in_one_gradle_invocation(self):
+        with patch.object(run_benchmarks, "run_command", return_value=True) as command:
+            self.assertTrue(run_benchmarks.compile_benchmarks(SimpleNamespace(dryrun=False)))
+
+        command.assert_called_once()
+        build_command = command.call_args.args[0]
+        self.assertTrue(build_command.startswith("./gradlew --offline --quiet "))
+        for backend in run_benchmarks.SEQUENTIAL_BACKENDS_MAP:
+            self.assertIn(f":benchmark:benchmark-{backend}:jmhJar", build_command)
+
+    def test_dry_run_does_not_compile_benchmarks(self):
+        with patch.object(run_benchmarks, "run_command") as command:
+            self.assertTrue(run_benchmarks.compile_benchmarks(SimpleNamespace(dryrun=True)))
+        command.assert_not_called()
 
     def test_sample_collection_failure_is_reported(self):
         with patch.object(run_benchmarks, "run_command", return_value=False):

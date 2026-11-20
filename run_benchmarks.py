@@ -175,6 +175,21 @@ def run_command(command, output_file=None):
         process.wait()
     return process.returncode == 0
 
+def benchmark_task(backend):
+    return f":benchmark:benchmark-{backend}:jmh"
+
+def benchmark_run_command(backend):
+    task = benchmark_task(backend)
+    return f"./gradlew --offline --quiet {task} -x {task}Jar -x :jar -x :benchmark:jar"
+
+def compile_benchmarks(args):
+    tasks = " ".join(f"{benchmark_task(backend)}Jar" for backend in SEQUENTIAL_BACKENDS_MAP)
+    command = f"./gradlew --offline --quiet {tasks}"
+    if args.dryrun:
+        print(f"{LIGHT_YELLOW}Dry run (compile): {command}{RESET}")
+        return True
+    return run_command(command)
+
 def initialize_sample_output(args, results_dir):
     if args.dryrun:
         return None
@@ -205,7 +220,7 @@ def create_results_directory(timestamp):
 def collect_sample_output(args):
     success = True
     for backend, benchmark in SEQUENTIAL_BACKENDS_MAP.items():
-        cmd = f"./gradlew --quiet :benchmark:benchmark-{backend}:jmh"
+        cmd = benchmark_run_command(backend)
         cmd += f" -Pjmh.includes='{benchmark}\\.slf4j$'"
         cmd += " -Pjmh.parameters='category=CONSOLE;format=COMPACT,DEFAULT,DETAILED;messageType=CONSTANT;outputToFile=false'"
         cmd += " -Pjmh.warmupIterations=0 -Pjmh.iterations=1 -Pjmh.timeOnIteration=10ms -Pjmh.forks=1"
@@ -340,7 +355,7 @@ def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None)
         
         include_pattern = f"{benchmark_class}\\.({'|'.join(effective_frontends)})_.*"
         
-        cmd = f"./gradlew --quiet :benchmark:benchmark-{backend}:jmh"
+        cmd = benchmark_run_command(backend)
         cmd += f" -Pjmh.includes='{include_pattern}'"
         
         params = []
@@ -462,7 +477,7 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None):
             if not args.dryrun and len(runs) > 1:
                 print(f"  Run {i+1}/{len(runs)}: messageType={run['msg_types']}, exclude={run['exclude']}")
             
-            cmd = f"./gradlew --quiet :benchmark:benchmark-{backend}:jmh"
+            cmd = benchmark_run_command(backend)
             
             includes = [f"{benchmark_class}\\.{f}" for f in effective_frontends]
             include_pattern = f"{benchmark_class}\\.({'|'.join(effective_frontends)})"
@@ -927,6 +942,10 @@ if __name__ == "__main__":
         print(f"Sample output report: {sample_output_path}")
 
     print(f"{BOLD_GREEN}Estimated total runtime: {format_duration(get_estimated_runtime(args))}{RESET}")
+
+    if not compile_benchmarks(args):
+        print(f"{BOLD_RED}Error: Benchmark compilation failed{RESET}")
+        sys.exit(1)
 
     sample_success = collect_sample_output(args)
     if sample_output_path:
