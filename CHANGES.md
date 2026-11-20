@@ -9,6 +9,9 @@ Version next (to be released)
 - upddate logback
 - add MDC support to JCL and JUL. Both will test for presence of Log4J ThreadContext and SLF4J MDC on the classpath
   (in that order) and use the first one found. If neither is found, an immutable empty default MDC is used. 
+- declare PatternLayout entry classes private
+- add ISO offset pattern compatibility
+- add Log4j date preset compatibility
 
 Version 0.15.0
 --------------
