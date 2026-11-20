@@ -219,6 +219,16 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
         }
     }
 
+    /**
+     * Creates a formatting part for the specified date-time pattern character and repeat count.
+     * The returned part appends the corresponding formatted value, localized text, time-zone
+     * offset, literal character sequence, or no output depending on the pattern character.
+     *
+     * @param c the pattern character identifying the date-time field or literal to format
+     * @param count the number of consecutive occurrences of the pattern character
+     * @param locale the locale used to resolve localized month names, day names, and AM/PM strings
+     * @return a formatting part that appends the value represented by the specified pattern character
+     */
     private static Part createPart(char c, int count, Locale locale) {
         return switch (c) {
             case 'y' ->
@@ -281,8 +291,8 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
                 String[] ampm = getAmPmStrings(locale);
                 yield (app, y, M, d, H, m, s, S, O) -> app.append(H < 12 ? ampm[0] : ampm[1]);
             }
-            case 'X' -> (app, y, M, d, H, m, s, S, O) -> appendOffset(app, O);
-            case 'x' -> (app, y, M, d, H, m, s, S, O) -> appendNumericOffset(app, O, count);
+            case 'X' -> createOffsetPart(count, true);
+            case 'x' -> createOffsetPart(count, false);
             default -> switch (count) {
                 case 0 -> (app, y, M, d, H, m, s, S, O) -> {};
                 case 1 -> (app, y, M, d, H, m, s, S, O) -> app.append(c);
@@ -294,13 +304,75 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
         };
     }
 
+    /**
+     * Creates a timestamp formatting part that appends the time zone offset using
+     * the specified offset pattern width.
+     *
+     * @param count the number of offset pattern letters, from 1 to 5, determining
+     *              whether minutes and seconds are included and whether separators
+     *              are used.
+     * @param zeroAsZ whether a zero offset should be written as {@code Z}; when
+     *                {@code false}, zero is written as a numeric offset.
+     * @return a {@code Part} that appends the formatted time zone offset to the
+     *         output.
+     * @throws IllegalArgumentException if {@code count} is greater than 5.
+     */
+    private static Part createOffsetPart(int count, boolean zeroAsZ) {
+        if (zeroAsZ) {
+            return switch (count) {
+                case 1 -> (app, y, M, d, H, m, s, S, O) -> appendIsoOffset(app, O, 1);
+                case 2 -> (app, y, M, d, H, m, s, S, O) -> appendIsoOffset(app, O, 2);
+                case 3 -> (app, y, M, d, H, m, s, S, O) -> appendIsoOffset(app, O, 3);
+                case 4 -> (app, y, M, d, H, m, s, S, O) -> appendIsoOffset(app, O, 4);
+                case 5 -> (app, y, M, d, H, m, s, S, O) -> appendIsoOffset(app, O, 5);
+                default -> throw new IllegalArgumentException("Too many pattern letters: X");
+            };
+        }
+        return switch (count) {
+            case 1 -> (app, y, M, d, H, m, s, S, O) -> appendNumericOffset(app, O, 1);
+            case 2 -> (app, y, M, d, H, m, s, S, O) -> appendNumericOffset(app, O, 2);
+            case 3 -> (app, y, M, d, H, m, s, S, O) -> appendNumericOffset(app, O, 3);
+            case 4 -> (app, y, M, d, H, m, s, S, O) -> appendNumericOffset(app, O, 4);
+            case 5 -> (app, y, M, d, H, m, s, S, O) -> appendNumericOffset(app, O, 5);
+            default -> throw new IllegalArgumentException("Too many pattern letters: x");
+        };
+    }
+
+    /**
+     * Appends an ISO-8601 time zone offset to the specified output, writing {@code Z}
+     * for a zero offset and a numeric offset otherwise.
+     *
+     * @param app the destination to which the offset is appended
+     * @param offsetSeconds the time zone offset from UTC, in seconds
+     * @param count the offset pattern width controlling the numeric offset format
+     * @throws IOException if the destination throws an exception while appending
+     */
+    private static void appendIsoOffset(Appendable app, int offsetSeconds, int count) throws IOException {
+        if (offsetSeconds == 0) {
+            app.append('Z');
+            return;
+        }
+        appendNumericOffset(app, offsetSeconds, count);
+    }
+
+    /**
+     * Appends a numeric time zone offset to the specified output.
+     * The offset is written with a leading sign, two-digit hours, and optional
+     * minutes and seconds according to the offset pattern width.
+     *
+     * @param app the destination to which the numeric offset is appended
+     * @param offsetSeconds the time zone offset from UTC, in seconds
+     * @param count the offset pattern width controlling whether minutes and
+     *              seconds are included and whether colon separators are used
+     * @throws IOException if the destination throws an exception while appending
+     */
     private static void appendNumericOffset(Appendable app, int offsetSeconds, int count) throws IOException {
         int absoluteSeconds = Math.abs(offsetSeconds);
         int minutes = absoluteSeconds / 60 % 60;
         app.append(offsetSeconds < 0 ? '-' : '+');
         appendInt2(app, absoluteSeconds / 3600);
         if (count > 1 || minutes != 0) {
-            if (count % 2 == 1 && count > 1) {
+            if (count == 3 || count == 5) {
                 app.append(':');
             }
             appendInt2(app, minutes);

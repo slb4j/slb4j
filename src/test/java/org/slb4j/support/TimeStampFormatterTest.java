@@ -15,15 +15,18 @@
  */
 package org.slb4j.support;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.slb4j.support.formatter.PatternTimeStampFormatter;
 
 import java.time.Instant;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 class TimeStampFormatterTest {
 
@@ -101,5 +104,35 @@ class TimeStampFormatterTest {
         String actual = formatter.toString(timestamp);
 
         assertEquals(expected, actual, "DST handling failed for timestamp " + timestamp);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"x", "xx", "xxx", "xxxx", "xxxxx", "X", "XX", "XXX", "XXXX", "XXXXX"})
+    void testOffsetPatterns(String pattern) {
+        long timestamp = 0L;
+        ZoneId zoneId = ZoneOffset.ofHoursMinutesSeconds(5, 30, 45);
+
+        TimeStampFormatter formatter = PatternTimeStampFormatter.parse(pattern, zoneId);
+        DateTimeFormatter stdFormatter = DateTimeFormatter.ofPattern(pattern).withZone(zoneId);
+
+        assertEquals(stdFormatter.format(Instant.ofEpochMilli(timestamp)), formatter.toString(timestamp));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"X", "XX", "XXX", "XXXX", "XXXXX"})
+    void testUtcOffsetPatterns(String pattern) {
+        long timestamp = 0L;
+        ZoneId zoneId = ZoneOffset.UTC;
+
+        TimeStampFormatter formatter = PatternTimeStampFormatter.parse(pattern, zoneId);
+        DateTimeFormatter stdFormatter = DateTimeFormatter.ofPattern(pattern).withZone(zoneId);
+
+        assertEquals(stdFormatter.format(Instant.ofEpochMilli(timestamp)), formatter.toString(timestamp));
+    }
+
+    @Test
+    void testInvalidOffsetPatterns() {
+        assertThrows(IllegalArgumentException.class, () -> PatternTimeStampFormatter.parse("xxxxxx", ZoneOffset.UTC));
+        assertThrows(IllegalArgumentException.class, () -> PatternTimeStampFormatter.parse("XXXXXX", ZoneOffset.UTC));
     }
 }
