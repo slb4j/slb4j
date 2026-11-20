@@ -1211,13 +1211,36 @@ public final class PatternLayout implements LogLayout {
             this.datePattern = pattern;
             this.zoneId = zoneId;
             this.locale = locale;
-            this.formatter = (switch (pattern) {
-                case "ISO8601" -> PatternTimeStampFormatter.parse("yyyy-MM-dd'T'HH:mm:ss,SSS", effectiveZoneId(), effectiveLocale());
-                case "HH:mm:ss,SSS" -> PatternTimeStampFormatter.parse("HH:mm:ss,SSS", effectiveZoneId(), effectiveLocale());
-                case "yyyy-MM-dd HH:mm:ss,SSS" -> PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", effectiveZoneId(), effectiveLocale());
-                case "yyyy-MM-dd HH:mm:ss" -> PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss", effectiveZoneId(), effectiveLocale());
-                default -> PatternTimeStampFormatter.parse(pattern.isEmpty() ? "HH:mm:ss" : pattern, effectiveZoneId(), effectiveLocale());
-            });
+            String format = switch (pattern) {
+                case "ABSOLUTE" -> "HH:mm:ss,SSS";
+                case "ABSOLUTE_MICROS" -> "HH:mm:ss,SSSSSS";
+                case "ABSOLUTE_NANOS" -> "HH:mm:ss,SSSSSSSSS";
+                case "ABSOLUTE_PERIOD" -> "HH:mm:ss.SSS";
+                case "COMPACT" -> "yyyyMMddHHmmssSSS";
+                case "DATE" -> "dd MMM yyyy HH:mm:ss,SSS";
+                case "DATE_PERIOD" -> "dd MMM yyyy HH:mm:ss.SSS";
+                case "DEFAULT" -> "yyyy-MM-dd HH:mm:ss,SSS";
+                case "DEFAULT_MICROS" -> "yyyy-MM-dd HH:mm:ss,SSSSSS";
+                case "DEFAULT_NANOS" -> "yyyy-MM-dd HH:mm:ss,SSSSSSSSS";
+                case "DEFAULT_PERIOD" -> "yyyy-MM-dd HH:mm:ss.SSS";
+                case "ISO8601" -> "yyyy-MM-dd'T'HH:mm:ss,SSS";
+                case "ISO8601_BASIC" -> "yyyyMMdd'T'HHmmss,SSS";
+                case "ISO8601_BASIC_PERIOD" -> "yyyyMMdd'T'HHmmss.SSS";
+                case "ISO8601_OFFSET_DATE_TIME_HH" -> "yyyy-MM-dd'T'HH:mm:ss,SSSx";
+                case "ISO8601_OFFSET_DATE_TIME_HHMM" -> "yyyy-MM-dd'T'HH:mm:ss,SSSxx";
+                case "ISO8601_OFFSET_DATE_TIME_HHCMM", "ISO8601_OFFSET_DATE_TIME_HHCOLONMM" -> "yyyy-MM-dd'T'HH:mm:ss,SSSxxx";
+                case "ISO8601_PERIOD" -> "yyyy-MM-dd'T'HH:mm:ss.SSS";
+                case "ISO8601_PERIOD_MICROS" -> "yyyy-MM-dd'T'HH:mm:ss.SSSSSS";
+                case "US_MONTH_DAY_YEAR2_TIME" -> "dd/MM/yy HH:mm:ss.SSS";
+                case "US_MONTH_DAY_YEAR4_TIME" -> "dd/MM/yyyy HH:mm:ss.SSS";
+                case "" -> "HH:mm:ss";
+                default -> pattern;
+            };
+            this.formatter = switch (format) {
+                case "UNIX" -> (timestamp, app) -> app.append(Long.toString(timestamp / 1000));
+                case "UNIX_MILLIS" -> TimeStampFormatter.MILLIS_FORMATTER_LOCAL_ZONE;
+                default -> PatternTimeStampFormatter.parse(format, effectiveZoneId(), effectiveLocale());
+            };
         }
 
         @Override

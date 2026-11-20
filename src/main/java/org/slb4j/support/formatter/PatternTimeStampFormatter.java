@@ -268,6 +268,13 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
                     switch (count) {
                         case 2 -> (app, y, M, d, H, m, s, S, O) -> appendInt2(app, S);
                         case 3 -> (app, y, M, d, H, m, s, S, O) -> appendInt3(app, S);
+                        case 4, 5, 6, 7, 8, 9 -> {
+                            String zeros = "0".repeat(count - 3);
+                            yield (app, y, M, d, H, m, s, S, O) -> {
+                                appendInt3(app, S);
+                                app.append(zeros);
+                            };
+                        }
                         default -> (app, y, M, d, H, m, s, S, O) -> appendInt(app, count, S);
                     };
             case 'a' -> {
@@ -275,6 +282,7 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
                 yield (app, y, M, d, H, m, s, S, O) -> app.append(H < 12 ? ampm[0] : ampm[1]);
             }
             case 'X' -> (app, y, M, d, H, m, s, S, O) -> appendOffset(app, O);
+            case 'x' -> (app, y, M, d, H, m, s, S, O) -> appendNumericOffset(app, O, count);
             default -> switch (count) {
                 case 0 -> (app, y, M, d, H, m, s, S, O) -> {};
                 case 1 -> (app, y, M, d, H, m, s, S, O) -> app.append(c);
@@ -284,6 +292,26 @@ public final class PatternTimeStampFormatter extends AbstractTimeStampFormatter 
                 }
             };
         };
+    }
+
+    private static void appendNumericOffset(Appendable app, int offsetSeconds, int count) throws IOException {
+        int absoluteSeconds = Math.abs(offsetSeconds);
+        int minutes = absoluteSeconds / 60 % 60;
+        app.append(offsetSeconds < 0 ? '-' : '+');
+        appendInt2(app, absoluteSeconds / 3600);
+        if (count > 1 || minutes != 0) {
+            if (count % 2 == 1 && count > 1) {
+                app.append(':');
+            }
+            appendInt2(app, minutes);
+            int seconds = absoluteSeconds % 60;
+            if (count >= 4 && seconds != 0) {
+                if (count == 5) {
+                    app.append(':');
+                }
+                appendInt2(app, seconds);
+            }
+        }
     }
 
 }

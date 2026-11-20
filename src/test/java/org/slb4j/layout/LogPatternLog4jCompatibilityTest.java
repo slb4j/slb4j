@@ -27,6 +27,8 @@ import org.apache.logging.log4j.core.appender.AbstractAppender;
 import org.apache.logging.log4j.core.config.Configuration;
 import org.apache.logging.log4j.core.config.Configurator;
 import org.apache.logging.log4j.core.config.LoggerConfig;
+import org.apache.logging.log4j.core.impl.Log4jLogEvent;
+import org.apache.logging.log4j.message.SimpleMessage;
 import org.apache.logging.log4j.spi.LoggerContextFactory;
 import org.jspecify.annotations.NullMarked;
 import org.jspecify.annotations.Nullable;
@@ -47,6 +49,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.io.Serializable;
 import java.nio.charset.StandardCharsets;
+import java.time.Instant;
 import java.time.format.TextStyle;
 import java.util.ArrayList;
 import java.util.List;
@@ -254,6 +257,41 @@ class LogPatternLog4jCompatibilityTest {
 
         assertTrue(Objects.requireNonNull(appender).getDiscrepancies().isEmpty(),
             "Discrepancies found:\n" + String.join("\n", appender.getDiscrepancies()));
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "ISO8601", "ISO8601_PERIOD", "ISO8601_BASIC", "ISO8601_BASIC_PERIOD", "ISO8601_PERIOD_MICROS",
+            "ISO8601_OFFSET_DATE_TIME_HHMM", "ISO8601_OFFSET_DATE_TIME_HH",
+            "ISO8601_OFFSET_DATE_TIME_HHCOLONMM", "ISO8601_OFFSET_DATE_TIME_HHCMM",
+            "DEFAULT", "DEFAULT_MICROS", "DEFAULT_NANOS", "DEFAULT_PERIOD",
+            "ABSOLUTE", "ABSOLUTE_MICROS", "ABSOLUTE_NANOS", "ABSOLUTE_PERIOD",
+            "DATE", "DATE_PERIOD", "COMPACT", "US_MONTH_DAY_YEAR2_TIME", "US_MONTH_DAY_YEAR4_TIME",
+            "UNIX", "UNIX_MILLIS"
+    })
+    void testDatePresetCompatibility(String preset) {
+        // Log4j calls the colon-separated offset preset HHCMM.
+        String log4jPreset = preset.equals("ISO8601_OFFSET_DATE_TIME_HHCOLONMM")
+                ? "ISO8601_OFFSET_DATE_TIME_HHCMM" : preset;
+        LogEvent event = Log4jLogEvent.newBuilder()
+                .setTimeMillis(Instant.parse("2026-03-04T02:12:13.007Z").toEpochMilli())
+                .setLoggerName("org.slb4j.TestLogger")
+                .setLevel(Level.INFO)
+                .setMessage(new SimpleMessage("Test message"))
+                .build();
+        for (String zone : List.of("UTC", "GMT+05:30", "GMT-07:00")) {
+            String pattern = "%d{" + preset + "}{" + zone + "}{en-US}";
+            String log4jPattern = "%d{" + log4jPreset + "}{" + zone + "}{en-US}";
+            var log4jLayout = org.apache.logging.log4j.core.layout.PatternLayout.newBuilder()
+                    .setPattern(log4jPattern)
+                    .build();
+            var comparison = new CompatibilityAppender(APPENDER_NAME, null, log4jLayout,
+                    PatternLayout.parseLog4jPattern(pattern));
+
+            comparison.append(event);
+            assertTrue(comparison.getDiscrepancies().isEmpty(),
+                    () -> pattern + "\n" + String.join("\n", comparison.getDiscrepancies()));
+        }
     }
 
     @ParameterizedTest

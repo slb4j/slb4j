@@ -39,6 +39,9 @@ jmh {
     project.findProperty("jmh.excludes")?.toString()?.let {
         excludes.set(it.split(","))
     }
+    if (!project.hasProperty("jmh.includes")) {
+        excludes.add("\\.sampleOutput$")
+    }
 
     project.findProperty("jmh.parameters")?.toString()?.let { params ->
         params.split(";").forEach {

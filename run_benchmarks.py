@@ -24,6 +24,8 @@ import datetime
 import sys
 import platform
 import math
+import shlex
+import tempfile
 
 # Constants
 SEQUENTIAL_BACKENDS_MAP = {
@@ -44,9 +46,9 @@ PARALLEL_BACKENDS_MAP = {
 
 VALID_HANDLERS = ["CONSOLE", "FILE"]
 VALID_FORMATS = ["COMPACT", "DEFAULT", "DETAILED"]
+SAMPLE_FRONTENDS = ["jul", "jcl", "log4j", "slf4j"]
 VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
 VALID_RUN_TYPES = ["SERIAL", "PARALLEL", "SAMPLE_OUTPUT"]
-BENCHMARK_OUTPUT_FILE = "benchmark.out"
 
 # ANSI colors
 BLACK = "\033[0;30m"
@@ -142,6 +144,10 @@ def validate_args(args):
                 print(f"{BOLD_RED}Error: Invalid parallel backend {b}. Valid backends are: {list(backends_map.keys())}{RESET}")
                 return False
     
+    if run_sample_output and args.frontends and any(f not in SAMPLE_FRONTENDS for f in args.frontends):
+        print(f"{BOLD_RED}Error: Sample frontends must be one of: {SAMPLE_FRONTENDS}{RESET}")
+        return False
+
     if args.handlers:
         for c in args.handlers:
             if c not in VALID_HANDLERS:
@@ -196,24 +202,79 @@ def initialize_sample_output(args, results_dir):
         return None
 
     report_path = os.path.abspath(os.path.join(results_dir, "SAMPLE_OUTPUT.md"))
-    with open(report_path, "w", encoding="utf-8") as report:
-        report.write("# Benchmark Sample Outputs\n\n")
+    write_sample_output(report_path, {})
     return report_path
 
-def append_sample_output(output_path, report_path, backend, run_index, start_offset=0):
+def read_sample_output(output_path, with_exception):
     with open(output_path, encoding="utf-8") as output:
-        output.seek(start_offset)
         text = output.read()
-    lines = text.splitlines()
-    if len(lines) != 1:
-        raise RuntimeError(f"Expected one line of sample output for backend {backend}, got {len(lines)}")
-    with open(report_path, "a", encoding="utf-8") as report:
-        report.write(f"## {backend} (run {run_index + 1})\n\n````text\n")
-        report.write(f"{lines[0]}\n")
-        report.write("````\n\n")
+    lines = (text.rstrip("\n") if with_exception else text).splitlines()
+    if not with_exception and (len(lines) != 1 or not lines[0]):
+        raise RuntimeError(f"Expected one line of sample output in {output_path}, got {len(lines)}")
+    if with_exception and (len(lines) < 2 or not lines[0]):
+        raise RuntimeError(f"Expected sample output with a stack trace in {output_path}")
+    return lines
 
-def benchmark_output_path(backend):
-    return os.path.join("benchmark", f"benchmark-{backend}", BENCHMARK_OUTPUT_FILE)
+def write_sample_output(report_path, samples):
+    label_width = max(map(len, SEQUENTIAL_BACKENDS_MAP)) + 2
+    with open(report_path, "w", encoding="utf-8") as report:
+        report.write("# Benchmark Sample Outputs\n\n")
+        for with_exception in (False, True):
+            suffix = " (with exception)" if with_exception else ""
+            for fmt in VALID_FORMATS:
+                for frontend in SAMPLE_FRONTENDS:
+                    section = samples.get((with_exception, fmt, frontend))
+                    if not section:
+                        continue
+                    report.write(f"## Format: {fmt}, Frontend {frontend.upper()}{suffix}\n\n````text\n")
+                    for backend in SEQUENTIAL_BACKENDS_MAP:
+                        if backend in section:
+                            first, *rest = section[backend]
+                            label = backend.upper() + ":"
+                            report.write(f"{label:<{label_width}}{first}\n")
+                            for line in rest:
+                                report.write(" " * label_width + line + "\n")
+                    report.write("````\n\n")
+
+def collect_backend_samples(backend, formats, frontends, directory, dryrun, samples):
+    include = f"{SEQUENTIAL_BACKENDS_MAP[backend]}\\.sampleOutput$"
+    params = [
+        "outputToFile=true", "category=CONSOLE", "messageType=CONSTANT",
+        f"format={','.join(formats)}", f"sampleFrontend={','.join(frontends)}",
+        "sampleException=false,true", f"sampleDirectory={directory}",
+    ]
+    command = benchmark_run_command(backend) + f" -Pjmh.includes='{include}'"
+    command += " -Pjmh.parameters=" + shlex.quote(";".join(params))
+    command += " -Pjmh.benchmarkMode=SingleShotTime"
+    command += " -Pjmh.warmupIterations=0 -Pjmh.iterations=1 -Pjmh.forks=1"
+    command += " -Pjmh.jvmArgs='-Djmh.ignoreLock=true'"
+    if dryrun:
+        print(f"  Command: {command}")
+        return
+    if not run_command(command):
+        raise RuntimeError(f"Sample output collection failed for backend: {backend}")
+    for fmt in formats:
+        for frontend in frontends:
+            for variant in ("false", "true"):
+                with_exception = variant == "true"
+                path = os.path.join(directory, f"{fmt}-{frontend}-{variant}.out")
+                lines = read_sample_output(path, with_exception)
+                samples.setdefault((with_exception, fmt, frontend), {})[backend] = lines
+
+def collect_sample_output(args, results_dir, report_path):
+    formats = [fmt for fmt in VALID_FORMATS if not args.formats or fmt in args.formats]
+    frontends = [frontend for frontend in SAMPLE_FRONTENDS if not args.frontends or frontend in args.frontends]
+    samples = {}
+    for backend in SEQUENTIAL_BACKENDS_MAP:
+        if args.backends and backend not in args.backends:
+            continue
+        if args.dryrun:
+            collect_backend_samples(backend, formats, frontends, "<sample-directory>", True, samples)
+        else:
+            with tempfile.TemporaryDirectory(dir=os.path.abspath(results_dir)) as directory:
+                collect_backend_samples(backend, formats, frontends, directory, False, samples)
+    if not args.dryrun:
+        write_sample_output(report_path, samples)
 
 def create_results_directory(timestamp):
     os.makedirs("benchmark_results", exist_ok=True)
@@ -277,11 +338,9 @@ def calculate_runtime(args):
 
     if run_sample_output:
         selected_backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
-        msg_types = args.message_types if args.message_types else VALID_MESSAGE_TYPES
-        sample_runs_per_backend = int("CONSTANT" in msg_types)
-        sample_runs_per_backend += int(any(mt not in ("CONSTANT", "LAMBDA_PARAMETER") for mt in msg_types))
-        sample_runs_per_backend += int("LAMBDA_PARAMETER" in msg_types)
-        total_runtime += len(selected_backends) * sample_runs_per_backend * (gradle_startup_overhead + 0.1)
+        num_formats = len(args.formats or VALID_FORMATS)
+        num_frontends = len(args.frontends or SAMPLE_FRONTENDS)
+        total_runtime += len(selected_backends) * (gradle_startup_overhead + 2 * num_formats * num_frontends * 0.1)
 
     return total_runtime
 
@@ -405,12 +464,11 @@ def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None)
                 
     return all_results
 
-def collect_results(args, timestamp, results_dir, profiler_subdir=None, sample_output_path=None):
+def collect_results(args, timestamp, results_dir, profiler_subdir=None):
     all_results = []
     selected_backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
     run_types = set(args.run)
     run_serial = "SERIAL" in run_types
-    run_sample_output = "SAMPLE_OUTPUT" in run_types
     success = True
     
     for backend in selected_backends:
@@ -505,27 +563,10 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None, sample_o
                         cmd += f" -Pjmh.profilerOutput='{prof_dir}'"
                 cmd += f" -Pjmh.jvmArgs='{' '.join(jvm_args)}'"
 
-            sample_cmd = None
-            if run_sample_output:
-                sample_include = f"{benchmark_class}\\.{effective_frontends[0]}$"
-                sample_cmd = benchmark_run_command(backend) + f" -Pjmh.includes='{sample_include}'"
-                sample_params = [
-                    "outputToFile=true",
-                    f"format={(args.formats or VALID_FORMATS)[0]}",
-                    f"category={(args.handlers or VALID_HANDLERS)[0]}",
-                    f"messageType={run['msg_types'][0]}"
-                ]
-                sample_cmd += f" -Pjmh.parameters='{';'.join(sample_params)}'"
-                sample_cmd += " -Pjmh.benchmarkMode=SingleShotTime"
-                sample_cmd += " -Pjmh.warmupIterations=0 -Pjmh.iterations=1 -Pjmh.forks=1"
-                sample_cmd += f" -Pjmh.jvmArgs='{' '.join(jvm_args)}'"
-
             if args.dryrun:
                 print(f"{LIGHT_YELLOW}Dry run (Run {i+1}/{len(runs)}): Would execute command for backend {backend}:{RESET}")
                 if cmd:
                     print(f"  Command: {cmd}")
-                if sample_cmd:
-                    print(f"  Command: {sample_cmd}")
                 continue
 
             output_file = None
@@ -550,15 +591,6 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None, sample_o
                     print(f"{BOLD_RED}Error: Benchmark failed for {backend} (run {i}){RESET}")
                     success = False
 
-            if sample_cmd and sample_output_path:
-                sample_output_file = benchmark_output_path(backend)
-                sample_start = os.path.getsize(sample_output_file) \
-                    if os.path.exists(sample_output_file) else 0
-                if run_command(sample_cmd):
-                    append_sample_output(sample_output_file, sample_output_path, backend, i, sample_start)
-                else:
-                    print(f"{BOLD_RED}Sample output collection failed for backend: {backend}{RESET}")
-        
         if not args.dryrun and run_serial:
             # Check for profiler output files in the root directory and move them
             if args.profile:
@@ -967,11 +999,10 @@ if __name__ == "__main__":
     run_parallel = "PARALLEL" in run_types
     run_sample_output = "SAMPLE_OUTPUT" in run_types
 
-    if run_serial or run_sample_output:
+    if run_serial:
         profiler_subdir = "profile-serial" if args.profile else None
-        results = collect_results(args, timestamp, results_dir, profiler_subdir=profiler_subdir,
-                                  sample_output_path=sample_output_path)
-        if run_serial and not args.dryrun:
+        results = collect_results(args, timestamp, results_dir, profiler_subdir=profiler_subdir)
+        if not args.dryrun:
             generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line)
     
     if run_parallel:
@@ -979,3 +1010,10 @@ if __name__ == "__main__":
         results = collect_parallel_results(args, timestamp, results_dir, profiler_subdir=profiler_subdir)
         if not args.dryrun:
             generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line)
+
+    if run_sample_output:
+        try:
+            collect_sample_output(args, results_dir, sample_output_path)
+        except (OSError, RuntimeError) as error:
+            print(f"{BOLD_RED}Error: {error}{RESET}", file=sys.stderr)
+            sys.exit(1)

@@ -38,29 +38,64 @@ class SampleOutputRunnerTest(unittest.TestCase):
             self.assertIsNone(result)
             self.assertFalse(report.exists())
 
-    def test_appends_new_benchmark_output(self):
+    def test_formats_samples_like_the_reference(self):
+        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
+            report = Path(directory) / "SAMPLE_OUTPUT.md"
+            samples = {
+                (True, "COMPACT", "jul"): {"jul": ["message", "Exception", "\tat caller"]},
+                (False, "DEFAULT", "slf4j"): {"jul": ["later"]},
+                (False, "COMPACT", "jul"): {"jul": ["second"], "slb4j": ["first"]},
+            }
+            run_benchmarks.write_sample_output(report, samples)
+            self.assertEqual(
+                "# Benchmark Sample Outputs\n\n"
+                "## Format: COMPACT, Frontend JUL\n\n````text\n"
+                "SLB4J:      first\nJUL:        second\n````\n\n"
+                "## Format: DEFAULT, Frontend SLF4J\n\n````text\nJUL:        later\n````\n\n"
+                "## Format: COMPACT, Frontend JUL (with exception)\n\n````text\n"
+                "JUL:        message\n            Exception\n            \tat caller\n````\n\n",
+                report.read_text(encoding="utf-8"))
+
+    def test_collects_matrix_in_one_gradle_command_per_backend(self):
+        args = run_benchmarks.parse_args([
+            "--run", "SAMPLE_OUTPUT", "--backends", "jul", "--frontends", "slf4j", "jcl",
+            "--formats", "DEFAULT", "COMPACT", "--message-types", "LAMBDA_PARAMETER",
+        ])
+        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
+            report = Path(directory) / "SAMPLE_OUTPUT.md"
+
+            def capture(command):
+                params = command.split("sampleDirectory=", 1)[1].split("'", 1)[0]
+                for fmt in ("DEFAULT", "COMPACT"):
+                    for frontend in ("slf4j", "jcl"):
+                        for variant in ("false", "true"):
+                            text = "message\n" if variant == "false" else "message\nException\n\tat caller\n\n"
+                            (Path(params) / f"{fmt}-{frontend}-{variant}.out").write_text(text, encoding="utf-8")
+                return True
+
+            with patch.object(run_benchmarks, "run_command", side_effect=capture) as command:
+                run_benchmarks.collect_sample_output(args, directory, report)
+
+            command.assert_called_once()
+            self.assertIn("sampleFrontend=jcl,slf4j", command.call_args.args[0])
+            self.assertIn("sampleException=false,true", command.call_args.args[0])
+            text = report.read_text(encoding="utf-8")
+            self.assertEqual(8, text.count("## Format:"))
+            self.assertEqual(4, text.count("            \tat caller\n````\n"))
+
+    def test_reads_single_line_benchmark_output(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
             output = Path(directory) / "benchmark.out"
-            report = Path(directory) / "SAMPLE_OUTPUT.md"
-            output.write_text("old output\nactual benchmark output\n", encoding="utf-8")
-            report.write_text("# Benchmark Sample Outputs\n\n", encoding="utf-8")
-
-            run_benchmarks.append_sample_output(output, report, "jul", 2, len("old output\n"))
-
-            self.assertTrue(output.exists())
-            self.assertEqual(
-                "# Benchmark Sample Outputs\n\n## jul (run 3)\n\n````text\n"
-                "actual benchmark output\n````\n\n",
-                report.read_text(encoding="utf-8"))
+            output.write_text("actual benchmark output\n", encoding="utf-8")
+            self.assertEqual(["actual benchmark output"], run_benchmarks.read_sample_output(output, False))
 
     def test_rejects_sample_output_with_more_than_one_line(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
             output = Path(directory) / "benchmark.out"
-            report = Path(directory) / "SAMPLE_OUTPUT.md"
             output.write_text("first\nsecond\n", encoding="utf-8")
 
             with self.assertRaisesRegex(RuntimeError, "Expected one line"):
-                run_benchmarks.append_sample_output(output, report, "jul", 0)
+                run_benchmarks.read_sample_output(output, False)
 
     def test_serial_and_sample_output_use_a_separate_single_shot_fork(self):
         args = SimpleNamespace(
@@ -69,7 +104,8 @@ class SampleOutputRunnerTest(unittest.TestCase):
             time="10ms", forks=1, profile=None, dryrun=True)
 
         with patch("builtins.print") as output:
-            run_benchmarks.collect_results(args, "timestamp", "results", sample_output_path="samples.md")
+            run_benchmarks.collect_results(args, "timestamp", "results")
+            run_benchmarks.collect_sample_output(args, "results", None)
 
         commands = [call.args[0] for call in output.call_args_list if call.args and "Command:" in call.args[0]]
         self.assertEqual(2, len(commands))
@@ -94,7 +130,7 @@ class SampleOutputRunnerTest(unittest.TestCase):
             time="10ms", forks=1, profile=None, dryrun=True)
 
         with patch("builtins.print") as output:
-            run_benchmarks.collect_results(args, "timestamp", "results", sample_output_path="samples.md")
+            run_benchmarks.collect_sample_output(args, "results", None)
 
         commands = [call.args[0] for call in output.call_args_list if call.args and "Command:" in call.args[0]]
         self.assertEqual(1, len(commands))
@@ -106,7 +142,7 @@ class SampleOutputRunnerTest(unittest.TestCase):
     def test_parallel_and_sample_output_are_valid_together(self):
         args = SimpleNamespace(
             run=["PARALLEL", "SAMPLE_OUTPUT"], backends=["jul"], handlers=None,
-            formats=None, message_types=None)
+            frontends=None, formats=None, message_types=None)
 
         self.assertTrue(run_benchmarks.validate_args(args))
 
