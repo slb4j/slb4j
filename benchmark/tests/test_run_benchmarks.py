@@ -18,7 +18,7 @@ class SampleOutputRunnerTest(unittest.TestCase):
     def test_initializes_report_only_when_requested(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
             report = Path(directory) / "SAMPLE_OUTPUT.md"
-            args = SimpleNamespace(dryrun=False, sample_output=True)
+            args = SimpleNamespace(dryrun=False, run=["SAMPLE_OUTPUT"])
 
             result = run_benchmarks.initialize_sample_output(args, directory)
 
@@ -26,14 +26,14 @@ class SampleOutputRunnerTest(unittest.TestCase):
             self.assertEqual("# Benchmark Sample Outputs\n\n", report.read_text(encoding="utf-8"))
 
             self.assertIsNone(run_benchmarks.initialize_sample_output(
-                SimpleNamespace(dryrun=False, sample_output=False), directory))
+                SimpleNamespace(dryrun=False, run=["SERIAL"]), directory))
 
     def test_dry_run_does_not_create_a_sample_report(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
             report = Path(directory) / "SAMPLE_OUTPUT.md"
 
             result = run_benchmarks.initialize_sample_output(
-                SimpleNamespace(dryrun=True, sample_output=True), directory)
+                SimpleNamespace(dryrun=True, run=["SAMPLE_OUTPUT"]), directory)
 
             self.assertIsNone(result)
             self.assertFalse(report.exists())
@@ -62,10 +62,10 @@ class SampleOutputRunnerTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "Expected one line"):
                 run_benchmarks.append_sample_output(output, report, "jul", 0)
 
-    def test_sample_output_uses_a_separate_single_shot_fork(self):
+    def test_serial_and_sample_output_use_a_separate_single_shot_fork(self):
         args = SimpleNamespace(
             backends=["jul"], message_types=["CONSTANT"], frontends=["jul"], formats=["DEFAULT"],
-            handlers=["CONSOLE"], output_to_file=False, sample_output=True, warmup=2, iterations=7,
+            handlers=["CONSOLE"], output_to_file=False, run=["SERIAL", "SAMPLE_OUTPUT"], warmup=2, iterations=7,
             time="10ms", forks=1, profile=None, dryrun=True)
 
         with patch("builtins.print") as output:
@@ -87,12 +87,41 @@ class SampleOutputRunnerTest(unittest.TestCase):
         self.assertIn("-Pjmh.forks=1", sample_command)
         self.assertNotIn("-Pjmh.timeOnIteration", sample_command)
 
-    def test_sample_output_rejects_parallel_only_runs(self):
+    def test_sample_only_runs_only_the_sample_fork(self):
         args = SimpleNamespace(
-            serial=False, parallel=True, sample_output=True, backends=None, handlers=None,
+            backends=["jul"], message_types=["CONSTANT"], frontends=["jul"], formats=["DEFAULT"],
+            handlers=["CONSOLE"], output_to_file=False, run=["SAMPLE_OUTPUT"], warmup=2, iterations=7,
+            time="10ms", forks=1, profile=None, dryrun=True)
+
+        with patch("builtins.print") as output:
+            run_benchmarks.collect_results(args, "timestamp", "results", sample_output_path="samples.md")
+
+        commands = [call.args[0] for call in output.call_args_list if call.args and "Command:" in call.args[0]]
+        self.assertEqual(1, len(commands))
+        self.assertIn("outputToFile=true", commands[0])
+        self.assertIn("-Pjmh.benchmarkMode=SingleShotTime", commands[0])
+        self.assertIn("-Pjmh.iterations=1", commands[0])
+        self.assertNotIn("outputToFile=false", commands[0])
+
+    def test_parallel_and_sample_output_are_valid_together(self):
+        args = SimpleNamespace(
+            run=["PARALLEL", "SAMPLE_OUTPUT"], backends=["jul"], handlers=None,
             formats=None, message_types=None)
 
-        self.assertFalse(run_benchmarks.validate_args(args))
+        self.assertTrue(run_benchmarks.validate_args(args))
+
+    def test_run_option_is_required_and_accepts_multiple_run_types(self):
+        with self.assertRaises(SystemExit):
+            run_benchmarks.parse_args([])
+
+        args = run_benchmarks.parse_args(["--run", "SERIAL", "SAMPLE_OUTPUT"])
+        self.assertEqual(["SERIAL", "SAMPLE_OUTPUT"], args.run)
+
+        with self.assertRaises(SystemExit):
+            run_benchmarks.parse_args(["--run", "UNKNOWN"])
+
+        with self.assertRaises(SystemExit):
+            run_benchmarks.parse_args(["--serial"])
 
     def test_compiles_all_benchmark_modules_in_one_gradle_invocation(self):
         with patch.object(run_benchmarks, "run_command", return_value=True) as command:

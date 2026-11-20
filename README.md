@@ -149,7 +149,7 @@ The repository contains a `run_benchmarks.py` script for benchmarking the SLB4J,
 
 Run `run_benchmarks.py --help` to display the options that can be passed to the script.
 
-Pass `--sample-output` to write one line of logging output from the selected serial benchmarks to `benchmark_results/<timestamp>/SAMPLE_OUTPUT.md`. Sample output uses the same mechanism as `--output-to-file`, but runs as a single-shot invocation in a separate fork so it does not affect the measured benchmark. Dry runs do not create a sample report.
+The required `--run` option accepts one or more of `SERIAL`, `PARALLEL`, and `SAMPLE_OUTPUT`. For example, `--run SERIAL PARALLEL` runs both benchmark types, while `--run SAMPLE_OUTPUT` collects only one line of logging output per selected sample and skips throughput measurements. Add `SERIAL` or `PARALLEL` to `--run` to collect samples alongside measured benchmarks. Sample output is written to `benchmark_results/<timestamp>/SAMPLE_OUTPUT.md` using a single-shot invocation in a separate fork, so it does not affect the measured benchmark. Dry runs do not create a sample report.
 
 JUL uses `SimpleFormatter` for COMPACT and DEFAULT, so its logger name remains fully qualified and DEFAULT omits the thread name. DETAILED uses a custom formatter to show the logging thread and caller location; file and line information is available while the synchronous handler can see the caller on the stack.
 
