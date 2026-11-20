@@ -3,24 +3,21 @@ package org.slb4j.layout;
 import org.slb4j.LogLayout;
 
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.Map;
 
 /**
  * A builder class for creating instances of {@link PatternLayout} using Log4J2 options.
  */
-public class PatternLayoutBuilder extends LayoutBuilder {
+public final class PatternLayoutBuilder extends LayoutBuilder {
 
-    private static final String TYPE = "type";
-    private static final String CHARSET = "charset";
-    private static final String PATTERN = "pattern";
-    private static final String ALWAYS_WRITE_EXCEPTIONS = "alwaysWriteExceptions";
-    private static final String DISABLE_ANSI = "disableAnsi";
-    private static final String NO_CONSOLE_NO_ANSI = "noConsoleNoAnsi";
+    static final String TYPE = "type";
+    static final String CHARSET = "charset";
+    static final String PATTERN = "pattern";
+    static final String ALWAYS_WRITE_EXCEPTIONS = "alwaysWriteExceptions";
+    static final String DISABLE_ANSI = "disableAnsi";
+    static final String NO_CONSOLE_NO_ANSI = "noConsoleNoAnsi";
 
-    private static final Map<String, LayoutAtribute> ATTRIBUTES = Map.of(
+    static final Map<String, LayoutAtribute> ATTRIBUTES = Map.of(
             TYPE, new LayoutAtribute(TYPE, true, null, null),
             CHARSET, new LayoutAtribute(CHARSET, false, "UTF-8", Charset::forName),
             PATTERN, new LayoutAtribute(PATTERN, true, PatternLayout.DEFAULT_PATTERN_STRING, String::valueOf),
@@ -39,23 +36,6 @@ public class PatternLayoutBuilder extends LayoutBuilder {
     }
 
     public LogLayout build() {
-        String pattern = (String) getValue(PATTERN);
-        boolean alwaysWriteExceptions = (boolean) getValue(ALWAYS_WRITE_EXCEPTIONS);
-        boolean disableAnsi = (boolean) getValue(DISABLE_ANSI);
-        boolean noConsoleNoAnsi = (boolean) getValue(NO_CONSOLE_NO_ANSI);
-
-        List<PatternLayout.LogPatternEntry> logPatternEntries = new ArrayList<>(Arrays.asList(PatternLayout.parseLog4jPatternString(pattern)));
-
-        if (disableAnsi || (noConsoleNoAnsi && System.console() == null)) {
-            logPatternEntries.removeIf(entry -> entry instanceof PatternLayout.ColorStartEntry || entry instanceof PatternLayout.ColorEndEntry);
-        }
-
-        if (alwaysWriteExceptions && logPatternEntries.stream().noneMatch(entry -> entry instanceof PatternLayout.ExceptionEntry)) {
-            PatternLayout.ExceptionEntry exceptionEntry = new PatternLayout.ExceptionEntry(0, Integer.MAX_VALUE, true);
-            int insertOffset =  !logPatternEntries.isEmpty() && logPatternEntries.getLast() instanceof PatternLayout.NewlineEntry ? -1 : 0;
-            logPatternEntries.add(logPatternEntries.size() + insertOffset, exceptionEntry);
-        }
-
-        return new PatternLayout(pattern, logPatternEntries.toArray(PatternLayout.LogPatternEntry[]::new));
+        return PatternLayout.build(this);
     }
 }

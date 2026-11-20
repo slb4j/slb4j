@@ -355,10 +355,10 @@ public final class FxLogPane extends BorderPane implements LogPane {
         tableView.setEditable(false);
         @SuppressWarnings("unchecked")
         TableColumn<@Nullable LogEntry, ?>[] columns = new TableColumn[]{
-                createColumn(texts.headerTimeColumn(), new PatternLayout.DateEntry("HH:mm:ss,SSS"), true, "88:88:88,888"),
-                createColumn(texts.headerLevelColumn(), new PatternLayout.LevelEntry(0, 0, false), true, Arrays.stream(LogLevel.values()).map(Object::toString).toArray(String[]::new)),
-                createColumn(texts.headerLoggerColumn(), new PatternLayout.LoggerEntry(0, 0, true, 0, false), false, "X".repeat(40)),
-                createColumn(texts.headerMessageColumn(), new PatternLayout.MessageEntry(0, 0, false), false)
+                createColumn(texts.headerTimeColumn(), PatternLayout.dateEntry("HH:mm:ss,SSS", null, null), true, "88:88:88,888"),
+                createColumn(texts.headerLevelColumn(), PatternLayout.levelEntry(0, 0, false, false), true, Arrays.stream(LogLevel.values()).map(Object::toString).toArray(String[]::new)),
+                createColumn(texts.headerLoggerColumn(), PatternLayout.loggerEntry(0, 0, true, 0, false), false, "X".repeat(40)),
+                createColumn(texts.headerMessageColumn(), PatternLayout.messageEntry(0, 0, false), false)
         };
         tableView.getColumns().setAll(columns);
         tableView.setColumnResizePolicy(TableView.CONSTRAINED_RESIZE_POLICY_FLEX_LAST_COLUMN);

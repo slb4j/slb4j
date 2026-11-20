@@ -317,6 +317,74 @@ public final class PatternLayout implements LogLayout {
         }
     }
 
+    public static LogPatternEntry levelEntry(int minWidth, int maxWidth, boolean leftAlign, boolean useJulNames) {
+        return new LevelEntry(minWidth, maxWidth, leftAlign, useJulNames);
+    }
+
+    public static LogPatternEntry loggerEntry(int minWidth, int maxWidth, boolean leftAlign, int abbreviationLength, boolean useDotAbbreviation) {
+        return new LoggerEntry(minWidth, maxWidth, leftAlign, abbreviationLength, useDotAbbreviation);
+    }
+
+    public static LogPatternEntry threadEntry(int minWidth, int maxWidth, boolean leftAlign) {
+        return new ThreadEntry(minWidth, maxWidth, leftAlign);
+    }
+
+    public static LogPatternEntry mdcEntry(int minWidth, int maxWidth, boolean leftAlign, @Nullable String key) {
+        return new MdcEntry(minWidth, maxWidth, leftAlign, key);
+    }
+
+    public static LogPatternEntry markerEntry(int minWidth, int maxWidth, boolean leftAlign) {
+        return new MarkerEntry(minWidth, maxWidth, leftAlign);
+    }
+
+    public static LogPatternEntry messageEntry(int minWidth, int maxWidth, boolean leftAlign) {
+        return new MessageEntry(minWidth, maxWidth, leftAlign);
+    }
+
+    public static LogPatternEntry encodingEntry(int minWidth, int maxWidth, boolean leftAlign, LogPatternEntry[] nestedEntries, @Nullable String format) {
+        return new EncodingEntry(minWidth, maxWidth, leftAlign, nestedEntries, format);
+    }
+
+    public static LogPatternEntry replaceEntry(int minWidth, int maxWidth, boolean leftAlign, LogPatternEntry[] nestedEntries, @Nullable String regex, @Nullable String replacement) {
+        return new ReplaceEntry(minWidth, maxWidth, leftAlign, nestedEntries, regex, replacement);
+    }
+
+    public static LogPatternEntry classEntry(int minWidth, int maxWidth, boolean leftAlign, int abbreviationLength, boolean useDotAbbreviation) {
+        return new ClassEntry(minWidth, maxWidth, leftAlign, abbreviationLength, useDotAbbreviation);
+    }
+
+    public static LogPatternEntry methodEntry(int minWidth, int maxWidth, boolean leftAlign) {
+        return new MethodEntry(minWidth, maxWidth, leftAlign);
+    }
+
+    public static LogPatternEntry lineEntry(int minWidth, int maxWidth, boolean leftAlign) {
+        return new LineEntry(minWidth, maxWidth, leftAlign);
+    }
+
+    public static LogPatternEntry fileEntry(int minWidth, int maxWidth, boolean leftAlign) {
+        return new FileEntry(minWidth, maxWidth, leftAlign);
+    }
+
+    public static LogPatternEntry locationEntry(int minWidth, int maxWidth, boolean leftAlign) {
+        return new LocationEntry(minWidth, maxWidth, leftAlign);
+    }
+
+    public static LogPatternEntry exceptionEntry(int minWidth, int maxWidth, boolean leftAlign) {
+        return new ExceptionEntry(minWidth, maxWidth, leftAlign);
+    }
+
+    public static LogPatternEntry colorStartEntry(int minWidth, int maxWidth, boolean leftAlign) {
+        return new ColorStartEntry(minWidth, maxWidth, leftAlign);
+    }
+
+    public static LogPatternEntry colorEndEntry(int minWidth, int maxWidth, boolean leftAlign) {
+        return new ColorEndEntry(minWidth, maxWidth, leftAlign);
+    }
+
+    public static LogPatternEntry dateEntry(String pattern, @Nullable ZoneId zoneId, @Nullable Locale locale) {
+        return new DateEntry(pattern, zoneId, locale);
+    }
+
     /**
      * An optimized pattern entry for default log format:
      * <pre>
@@ -325,7 +393,7 @@ public final class PatternLayout implements LogLayout {
      */
     public static final class DefaultPatternEntry implements LogPatternEntry {
         private TimeStampFormatter timeStampFormatter = PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZoneId.systemDefault(), Locale.getDefault());
-        private LevelEntry levelEntry = new LevelEntry(5, 5, true);
+        private LevelEntry levelEntry = new LevelEntry(5, 5, true, false);
         private LoggerEntry loggerEntry = new LoggerEntry(0, 0, false, 36, false);
 
         /**
@@ -382,7 +450,7 @@ public final class PatternLayout implements LogLayout {
      * and applying formatting options such as alignment and truncation based on the
      * parent class's configuration.
      */
-    public static final class LevelEntry extends AbstractLogPatternEntry {
+    private static final class LevelEntry extends AbstractLogPatternEntry {
         private final boolean useJulNames;
 
         /**
@@ -400,21 +468,6 @@ public final class PatternLayout implements LogLayout {
         public LevelEntry(int minWidth, int maxWidth, boolean leftAlign, boolean useJulNames) {
             super("p", minWidth, maxWidth, leftAlign, false);
             this.useJulNames = useJulNames;
-        }
-
-        /**
-         * Constructs a LevelEntry instance with the specified formatting configuration.
-         *
-         * @param minWidth The minimum width of the formatted log level string. If the formatted
-         *                 output is shorter than this width, padding will be added.
-         * @param maxWidth The maximum width of the formatted log level string. If the formatted
-         *                 output is longer than this width, it will be truncated.
-         * @param leftAlign A flag indicating whether the log level string should be left-aligned.
-         *                  If true, padding will be added to the right of the string; otherwise,
-         *                  padding will be added to the left.
-         */
-        public LevelEntry(int minWidth, int maxWidth, boolean leftAlign) {
-            this(minWidth, maxWidth, leftAlign, false);
         }
 
         @Override
@@ -478,7 +531,7 @@ public final class PatternLayout implements LogLayout {
      * with formatting applied according to the specified minimum width, maximum width, and alignment
      * settings. If truncation is required, the logger name will be truncated from the left.
      */
-    public static final class LoggerEntry extends AbstractLogPatternEntry {
+    private static final class LoggerEntry extends AbstractLogPatternEntry {
         private final int abbreviationLength;
         private final boolean useDotAbbreviation;
         private final Map<String, String> loggerNames = new ConcurrentHashMap<>(128);
@@ -533,7 +586,7 @@ public final class PatternLayout implements LogLayout {
     /**
      * Represents a log format entry for the thread name.
      */
-    public static final class ThreadEntry extends AbstractLogPatternEntry {
+    private static final class ThreadEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a new ThreadEntry instance, representing a log format entry for the thread name.
          *
@@ -560,7 +613,7 @@ public final class PatternLayout implements LogLayout {
     /**
      * Represents a log format entry for the MDC (Mapped Diagnostic Context).
      */
-    public static final class MdcEntry extends AbstractLogPatternEntry {
+    private static final class MdcEntry extends AbstractLogPatternEntry {
         private final @Nullable String key;
 
         /**
@@ -617,7 +670,7 @@ public final class PatternLayout implements LogLayout {
      * Represents a log format entry that formats and appends a marker value to a log output.
      * A marker is a string that can be used in log messages to provide additional context or categorization.
      */
-    public static final class MarkerEntry extends AbstractLogPatternEntry {
+    private static final class MarkerEntry extends AbstractLogPatternEntry {
         /**
          * Constructs an instance of MarkerEntry with the specified formatting parameters.
          * A MarkerEntry formats and appends a marker value to the log output. A marker is
@@ -649,7 +702,7 @@ public final class PatternLayout implements LogLayout {
      * log message text according to the provided parameters for minimum width, maximum width,
      * and alignment.
      */
-    public static final class MessageEntry extends AbstractLogPatternEntry {
+    private static final class MessageEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a new instance of MessageEntry with the specified formatting parameters.
          *
@@ -680,7 +733,7 @@ public final class PatternLayout implements LogLayout {
      * prevent message data from creating additional physical log records:
      * {@code %enc{%msg}{CRLF}}.
      */
-    public static final class EncodingEntry extends AbstractLogPatternEntry {
+    private static final class EncodingEntry extends AbstractLogPatternEntry {
         private final LogPatternEntry[] nestedEntries;
         private final EscapeFormat escapeFormat;
 
@@ -708,7 +761,7 @@ public final class PatternLayout implements LogLayout {
      * characters, for example:
      * {@code %replace{%msg}{\u001B}{}}.
      */
-    public static final class ReplaceEntry extends AbstractLogPatternEntry {
+    private static final class ReplaceEntry extends AbstractLogPatternEntry {
         private final LogPatternEntry[] nestedEntries;
         private final Pattern pattern;
         private final String replacement;
@@ -757,7 +810,7 @@ public final class PatternLayout implements LogLayout {
                     case '\n' -> "\\n";
                     case '\r' -> "\\r";
                     case '"', '\\' -> "\\" + (char) c;
-                    default -> Character.isISOControl(c) ? String.format(Locale.ROOT, "\\u%04X", (int) c) : null;
+                    default -> Character.isISOControl(c) ? String.format(Locale.ROOT, "\\u%04X", c) : null;
                 });
             }
         },
@@ -834,7 +887,7 @@ public final class PatternLayout implements LogLayout {
     /**
      * Represents a log entry for the class name of the log event's location.
      */
-    public static final class ClassEntry extends AbstractLogPatternEntry {
+    private static final class ClassEntry extends AbstractLogPatternEntry {
         private final int abbreviationLength;
         private final boolean useDotAbbreviation;
         private final Map<String, String> classNames = new ConcurrentHashMap<>(128);
@@ -901,7 +954,7 @@ public final class PatternLayout implements LogLayout {
      * This class is a concrete implementation of {@link AbstractLogPatternEntry}, responsible for
      * formatting and appending the method name of the log's location information to the output.
      */
-    public static final class MethodEntry extends AbstractLogPatternEntry {
+    private static final class MethodEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a {@code MethodEntry} instance for formatting log messages to include the method name of the log's location.
          *
@@ -925,7 +978,7 @@ public final class PatternLayout implements LogLayout {
      * log entries by appending the line number from the logging location. If the
      * location is null, it appends a null value.
      */
-    public static final class LineEntry extends AbstractLogPatternEntry {
+    private static final class LineEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a LineEntry instance with specified formatting parameters for log entries.
          *
@@ -953,7 +1006,7 @@ public final class PatternLayout implements LogLayout {
      * A concrete implementation of {@link AbstractLogPatternEntry} that formats and appends
      * the name of the file associated with the location of the log event.
      */
-    public static final class FileEntry extends AbstractLogPatternEntry {
+    private static final class FileEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a FileEntry instance, which is a concrete implementation of
          * {@link AbstractLogPatternEntry} that formats and appends the file name
@@ -982,7 +1035,7 @@ public final class PatternLayout implements LogLayout {
      * <p>
      * This class formats the location string according to specified width and alignment constraints.
      */
-    public static final class LocationEntry extends AbstractLogPatternEntry {
+    private static final class LocationEntry extends AbstractLogPatternEntry {
         /**
          * Constructs an instance of the LocationEntry class. This constructor initializes
          * a log format entry responsible for formatting and displaying the location
@@ -1036,7 +1089,7 @@ public final class PatternLayout implements LogLayout {
      * for handling and formatting exception-related log entries. It formats the exception information
      * into the log output, including the exception type and message.
      */
-    public static final class ExceptionEntry extends AbstractLogPatternEntry {
+    private static final class ExceptionEntry extends AbstractLogPatternEntry {
         /**
          * Constructs an instance of ExceptionEntry, a specialized log format entry
          * that handles the formatting of exceptions in a logging framework. This
@@ -1072,7 +1125,7 @@ public final class PatternLayout implements LogLayout {
      * The color code to be inserted is specified via a pair of color codes passed as a parameter
      * during formatting.
      */
-    public static final class ColorStartEntry extends AbstractLogPatternEntry {
+    private static final class ColorStartEntry extends AbstractLogPatternEntry {
         /**
          * Constructs an instance of ColorStartEntry with the specified formatting parameters.
          *
@@ -1101,7 +1154,7 @@ public final class PatternLayout implements LogLayout {
      * Represents a specific type of log format entry designed to insert an ending
      * color code into a log message.
      */
-    public static final class ColorEndEntry extends AbstractLogPatternEntry {
+    private static final class ColorEndEntry extends AbstractLogPatternEntry {
         /**
          * Constructs a ColorEndEntry instance used for formatting log entries with
          * specific width constraints and alignment settings.
@@ -1132,7 +1185,7 @@ public final class PatternLayout implements LogLayout {
      * This class implements the {@code LogPatternEntry} interface and provides functionality
      * to format a log entry's timestamp according to various date-time patterns.
      */
-    public static final class DateEntry implements LogPatternEntry {
+    private static final class DateEntry implements LogPatternEntry {
         private final String datePattern;
         private final @Nullable ZoneId zoneId;
         private final @Nullable Locale locale;
@@ -1145,28 +1198,6 @@ public final class PatternLayout implements LogLayout {
 
         private final ZoneId effectiveZoneId() {
             return Objects.requireNonNullElseGet(zoneId, ZoneId::systemDefault);
-        }
-
-        /**
-         * Constructs a {@code DateEntry} instance with the specified date-time pattern.
-         *
-         * @param pattern the pattern to be used for formatting date-time values;
-         *                isSupported patterns include "ISO8601", "HH:mm:ss,SSS",
-         *                "yyyy-MM-dd HH:mm:ss,SSS", "yyyy-MM-dd HH:mm:ss", or a custom pattern.
-         *                If the pattern is empty, "HH:mm:ss" will be used as the default.
-         */
-        public DateEntry(String pattern) {
-            this(pattern, null);
-        }
-
-        /**
-         * Constructs a {@code DateEntry} instance with the specified date-time pattern and locale.
-         *
-         * @param pattern the pattern to be used for formatting date-time values.
-         * @param locale  the locale to be used for formatting.
-         */
-        public DateEntry(String pattern, @Nullable Locale locale) {
-            this(pattern, null, locale);
         }
 
         /**
@@ -1214,7 +1245,7 @@ public final class PatternLayout implements LogLayout {
     /**
      * Represents a log format entry that inserts a newline character into the log output.
      */
-    public static final class NewlineEntry implements LogPatternEntry {
+    private static final class NewlineEntry implements LogPatternEntry {
 
         /**
          * Constructs a new instance of the NewlineEntry class which represents a log format entry
@@ -1238,7 +1269,7 @@ public final class PatternLayout implements LogLayout {
     /**
      * Represents a log format entry in CSV output.
      */
-    public static final class CsvEntry implements LogPatternEntry {
+    private static final class CsvEntry implements LogPatternEntry {
         TimeStampFormatter formatter = PatternTimeStampFormatter.parse("yyyy-MM-dd HH:mm:ss,SSS", ZoneId.systemDefault(), Locale.getDefault());
 
         /**
@@ -1323,19 +1354,19 @@ public final class PatternLayout implements LogLayout {
                         if (j + 1 < len) {
                             char sub = pattern.charAt(j + 1);
                             entries.add(switch (sub) {
-                                case 'Y' -> new DateEntry("yyyy");
-                                case 'm' -> new DateEntry("MM");
-                                case 'd' -> new DateEntry("dd");
-                                case 'H' -> new DateEntry("HH");
-                                case 'M' -> new DateEntry("mm");
-                                case 'S' -> new DateEntry("ss");
-                                case 'L' -> new DateEntry("SSS");
-                                case 'b' -> new DateEntry("MMM");
-                                case 'l' -> new DateEntry("h");
-                                case 'p', 'P', 'T' -> new DateEntry("a");
-                                case 'B' -> new DateEntry("MMMM");
-                                case 'A' -> new DateEntry("EEEE");
-                                case 'a' -> new DateEntry("EEE");
+                                case 'Y' -> new DateEntry("yyyy", null, null);
+                                case 'm' -> new DateEntry("MM", null, null);
+                                case 'd' -> new DateEntry("dd", null, null);
+                                case 'H' -> new DateEntry("HH", null, null);
+                                case 'M' -> new DateEntry("mm", null, null);
+                                case 'S' -> new DateEntry("ss", null, null);
+                                case 'L' -> new DateEntry("SSS", null, null);
+                                case 'b' -> new DateEntry("MMM", null, null);
+                                case 'l' -> new DateEntry("h", null, null);
+                                case 'p', 'P', 'T' -> new DateEntry("a", null, null);
+                                case 'B' -> new DateEntry("MMMM", null, null);
+                                case 'A' -> new DateEntry("EEEE", null, null);
+                                case 'a' -> new DateEntry("EEE", null, null);
                                 default -> new LiteralEntry(pattern.substring(i, j + 2));
                             });
                             i = j + 2;
@@ -1345,7 +1376,7 @@ public final class PatternLayout implements LogLayout {
                         if (j + 1 < len) {
                             char sub = pattern.charAt(j + 1);
                             entries.add(switch (sub) {
-                                case 'p', 'P' -> new DateEntry("a");
+                                case 'p', 'P' -> new DateEntry("a", null, null);
                                 default -> new LiteralEntry(pattern.substring(i, j + 2));
                             });
                             i = j + 2;
@@ -1511,11 +1542,12 @@ public final class PatternLayout implements LogLayout {
      * @param consoleCodes the color codes for the log level (start and end)
      * @throws IOException if an I/O error occurs while writing to the appendable
      */
-    public void formatLogEntry(Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, MDC mdc, @Nullable Location loc, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
+    public void formatLogEntry(@Nullable Appendable app, long timestamp, String loggerName, LogLevel lvl, @Nullable String mrk, MDC mdc, @Nullable Location loc, @Nullable CharSequence msg, @Nullable Throwable t, ConsoleCode consoleCodes) throws IOException {
         switch (app) {
             case IoStringBuilder iosb -> iosb.ensureCapacity(MINIMUM_BUFFER_CAPACITY);
             case StringBuilder sb -> sb.ensureCapacity(MINIMUM_BUFFER_CAPACITY);
             case StringBuffer sb -> sb.ensureCapacity(MINIMUM_BUFFER_CAPACITY);
+            case null -> { return; }
             default -> { /* do nothing */ }
         }
 
@@ -1771,4 +1803,26 @@ public final class PatternLayout implements LogLayout {
         entries.add(new LiteralEntry(literal));
         return entries;
     }
+
+    static LogLayout build(PatternLayoutBuilder builder) {
+        String pattern = (String) builder.getValue(PatternLayoutBuilder.PATTERN);
+        boolean alwaysWriteExceptions = (boolean) builder.getValue(PatternLayoutBuilder.ALWAYS_WRITE_EXCEPTIONS);
+        boolean disableAnsi = (boolean) builder.getValue(PatternLayoutBuilder.DISABLE_ANSI);
+        boolean noConsoleNoAnsi = (boolean) builder.getValue(PatternLayoutBuilder.NO_CONSOLE_NO_ANSI);
+
+        List<PatternLayout.LogPatternEntry> logPatternEntries = new ArrayList<>(Arrays.asList(PatternLayout.parseLog4jPatternString(pattern)));
+
+        if (disableAnsi || (noConsoleNoAnsi && System.console() == null)) {
+            logPatternEntries.removeIf(entry -> entry instanceof PatternLayout.ColorStartEntry || entry instanceof PatternLayout.ColorEndEntry);
+        }
+
+        if (alwaysWriteExceptions && logPatternEntries.stream().noneMatch(entry -> entry instanceof PatternLayout.ExceptionEntry)) {
+            PatternLayout.ExceptionEntry exceptionEntry = new PatternLayout.ExceptionEntry(0, Integer.MAX_VALUE, true);
+            int insertOffset =  !logPatternEntries.isEmpty() && logPatternEntries.getLast() instanceof PatternLayout.NewlineEntry ? -1 : 0;
+            logPatternEntries.add(logPatternEntries.size() + insertOffset, exceptionEntry);
+        }
+
+        return new PatternLayout(pattern, logPatternEntries.toArray(PatternLayout.LogPatternEntry[]::new));
+    }
+
 }
