@@ -39,6 +39,15 @@ import java.util.logging.Logger;
  */
 public final class JulHandler extends Handler {
 
+    static {
+        // make sure the levels in the JUL hierarchy are consistent as documented in Javadoc
+        assert Level.FINEST.intValue() == 300;
+        assert Level.FINE.intValue() == 500;
+        assert Level.INFO.intValue() == 800;
+        assert Level.WARNING.intValue() == 900;
+        assert Level.SEVERE.intValue() == 1000;
+    }
+
     private static final java.util.logging.Formatter FORMATTER = new java.util.logging.SimpleFormatter();
     private static final UniversalDispatcher DISPATCHER = UniversalDispatcher.getInstance();
     private static final LocationResolver LOCATION_RESOLVER = new StackWalkerLocationResolver(Logger.class, "java.util.logging");
@@ -60,12 +69,13 @@ public final class JulHandler extends Handler {
      * @return the {@code LogLevel} equivalent of the provided {@code java.util.logging.Level}
      */
     public static LogLevel translateJulLevel(Level level) {
-        int val = level.intValue();
-        if (val <= Level.FINEST.intValue()) return LogLevel.TRACE;
-        if (val <= Level.FINE.intValue()) return LogLevel.DEBUG;
-        if (val <= Level.INFO.intValue()) return LogLevel.INFO;
-        if (val <= Level.WARNING.intValue()) return LogLevel.WARN;
-        return LogLevel.ERROR;
+        return switch (level.intValue() / 100) {
+            case 0, 1, 2, 3 -> LogLevel.TRACE;
+            case 4, 5 -> LogLevel.DEBUG;
+            case 6, 7, 8 -> LogLevel.INFO;
+            case 9 -> LogLevel.WARN;
+            default -> LogLevel.ERROR;
+        };
     }
 
     /**
