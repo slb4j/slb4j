@@ -42,18 +42,24 @@ class SampleOutputRunnerTest(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
             report = Path(directory) / "SAMPLE_OUTPUT.md"
             samples = {
-                (True, "COMPACT", "jul"): {"jul": ["message", "Exception", "\tat caller"]},
-                (False, "DEFAULT", "slf4j"): {"jul": ["later"]},
-                (False, "COMPACT", "jul"): {"jul": ["second"], "slb4j": ["first"]},
+                ("COMPACT", "CONSTANT_EXCEPTION", "jul"): {"jul": ["message", "Exception", "\tat caller"]},
+                ("DEFAULT", "CONSTANT", "slf4j"): {"jul": ["later"]},
+                ("COMPACT", "LAMBDA", "jul"): {"jul": ["lambda"]},
+                ("COMPACT", "ARGUMENTS", "jul"): {"jul": ["arguments"]},
+                ("COMPACT", "CONSTANT", "jcl"): {"jul": ["jcl message"]},
+                ("COMPACT", "CONSTANT", "jul"): {"jul": ["second"], "slb4j": ["first"]},
             }
             run_benchmarks.write_sample_output(report, samples)
             self.assertEqual(
                 "# Benchmark Sample Outputs\n\n"
-                "## Format: COMPACT, Frontend JUL\n\n````text\n"
+                "## Format: COMPACT, Frontend JUL, CONSTANT\n\n````text\n"
                 "SLB4J:      first\nJUL:        second\n````\n\n"
-                "## Format: DEFAULT, Frontend SLF4J\n\n````text\nJUL:        later\n````\n\n"
-                "## Format: COMPACT, Frontend JUL (with exception)\n\n````text\n"
-                "JUL:        message\n            Exception\n            \tat caller\n````\n\n",
+                "## Format: COMPACT, Frontend JCL, CONSTANT\n\n````text\nJUL:        jcl message\n````\n\n"
+                "## Format: COMPACT, Frontend JUL, ARGUMENTS\n\n````text\nJUL:        arguments\n````\n\n"
+                "## Format: COMPACT, Frontend JUL, LAMBDA\n\n````text\nJUL:        lambda\n````\n\n"
+                "## Format: COMPACT, Frontend JUL, CONSTANT (with exception)\n\n````text\n"
+                "JUL:        message\n            Exception\n            \tat caller\n````\n\n"
+                "## Format: DEFAULT, Frontend SLF4J, CONSTANT\n\n````text\nJUL:        later\n````\n\n",
                 report.read_text(encoding="utf-8"))
 
     def test_collects_matrix_in_one_gradle_command_per_backend(self):
@@ -68,8 +74,10 @@ class SampleOutputRunnerTest(unittest.TestCase):
                 params = command.split("sampleDirectory=", 1)[1].split("'", 1)[0]
                 for fmt in ("DEFAULT", "COMPACT"):
                     for frontend in ("slf4j", "jcl"):
-                        for variant in ("false", "true"):
-                            text = "message\n" if variant == "false" else "message\nException\n\tat caller\n\n"
+                        for variant in ("CONSTANT", "ARGUMENTS", "LAMBDA", "CONSTANT_EXCEPTION"):
+                            text = f"{variant} message\n"
+                            if variant == "CONSTANT_EXCEPTION":
+                                text += "Exception\n\tat caller\n\n"
                             (Path(params) / f"{fmt}-{frontend}-{variant}.out").write_text(text, encoding="utf-8")
                 return True
 
@@ -78,9 +86,11 @@ class SampleOutputRunnerTest(unittest.TestCase):
 
             command.assert_called_once()
             self.assertIn("sampleFrontend=jcl,slf4j", command.call_args.args[0])
-            self.assertIn("sampleException=false,true", command.call_args.args[0])
+            self.assertIn("sampleVariant=CONSTANT,ARGUMENTS,LAMBDA,CONSTANT_EXCEPTION", command.call_args.args[0])
             text = report.read_text(encoding="utf-8")
-            self.assertEqual(8, text.count("## Format:"))
+            self.assertEqual(16, text.count("## Format:"))
+            self.assertIn("Frontend JCL, ARGUMENTS\n\n````text\nJUL:        ARGUMENTS message\n", text)
+            self.assertIn("Frontend SLF4J, LAMBDA\n\n````text\nJUL:        LAMBDA message\n", text)
             self.assertEqual(4, text.count("            \tat caller\n````\n"))
 
     def test_reads_single_line_benchmark_output(self):

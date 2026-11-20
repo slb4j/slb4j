@@ -47,6 +47,12 @@ PARALLEL_BACKENDS_MAP = {
 VALID_HANDLERS = ["CONSOLE", "FILE"]
 VALID_FORMATS = ["COMPACT", "DEFAULT", "DETAILED"]
 SAMPLE_FRONTENDS = ["jul", "jcl", "log4j", "slf4j"]
+SAMPLE_VARIANTS = {
+    "CONSTANT": "CONSTANT",
+    "ARGUMENTS": "ARGUMENTS",
+    "LAMBDA": "LAMBDA",
+    "CONSTANT_EXCEPTION": "CONSTANT (with exception)",
+}
 VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
 VALID_RUN_TYPES = ["SERIAL", "PARALLEL", "SAMPLE_OUTPUT"]
 
@@ -208,6 +214,9 @@ def initialize_sample_output(args, results_dir):
 def read_sample_output(output_path, with_exception):
     with open(output_path, encoding="utf-8") as output:
         text = output.read()
+    if len(text) == 0:
+        return ["N/A"]
+
     lines = (text.rstrip("\n") if with_exception else text).splitlines()
     if not with_exception and (len(lines) != 1 or not lines[0]):
         raise RuntimeError(f"Expected one line of sample output in {output_path}, got {len(lines)}")
@@ -219,14 +228,13 @@ def write_sample_output(report_path, samples):
     label_width = max(map(len, SEQUENTIAL_BACKENDS_MAP)) + 2
     with open(report_path, "w", encoding="utf-8") as report:
         report.write("# Benchmark Sample Outputs\n\n")
-        for with_exception in (False, True):
-            suffix = " (with exception)" if with_exception else ""
-            for fmt in VALID_FORMATS:
+        for fmt in VALID_FORMATS:
+            for variant, title in SAMPLE_VARIANTS.items():
                 for frontend in SAMPLE_FRONTENDS:
-                    section = samples.get((with_exception, fmt, frontend))
+                    section = samples.get((fmt, variant, frontend))
                     if not section:
                         continue
-                    report.write(f"## Format: {fmt}, Frontend {frontend.upper()}{suffix}\n\n````text\n")
+                    report.write(f"## Format: {fmt}, Frontend {frontend.upper()}, {title}\n\n````text\n")
                     for backend in SEQUENTIAL_BACKENDS_MAP:
                         if backend in section:
                             first, *rest = section[backend]
@@ -241,7 +249,7 @@ def collect_backend_samples(backend, formats, frontends, directory, dryrun, samp
     params = [
         "outputToFile=true", "category=CONSOLE", "messageType=CONSTANT",
         f"format={','.join(formats)}", f"sampleFrontend={','.join(frontends)}",
-        "sampleException=false,true", f"sampleDirectory={directory}",
+        f"sampleVariant={','.join(SAMPLE_VARIANTS)}", f"sampleDirectory={directory}",
     ]
     command = benchmark_run_command(backend) + f" -Pjmh.includes='{include}'"
     command += " -Pjmh.parameters=" + shlex.quote(";".join(params))
@@ -255,11 +263,10 @@ def collect_backend_samples(backend, formats, frontends, directory, dryrun, samp
         raise RuntimeError(f"Sample output collection failed for backend: {backend}")
     for fmt in formats:
         for frontend in frontends:
-            for variant in ("false", "true"):
-                with_exception = variant == "true"
+            for variant in SAMPLE_VARIANTS:
                 path = os.path.join(directory, f"{fmt}-{frontend}-{variant}.out")
-                lines = read_sample_output(path, with_exception)
-                samples.setdefault((with_exception, fmt, frontend), {})[backend] = lines
+                lines = read_sample_output(path, variant == "CONSTANT_EXCEPTION")
+                samples.setdefault((fmt, variant, frontend), {})[backend] = lines
 
 def collect_sample_output(args, results_dir, report_path):
     formats = [fmt for fmt in VALID_FORMATS if not args.formats or fmt in args.formats]
@@ -340,7 +347,8 @@ def calculate_runtime(args):
         selected_backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
         num_formats = len(args.formats or VALID_FORMATS)
         num_frontends = len(args.frontends or SAMPLE_FRONTENDS)
-        total_runtime += len(selected_backends) * (gradle_startup_overhead + 2 * num_formats * num_frontends * 0.1)
+        num_samples = len(SAMPLE_VARIANTS) * num_formats * num_frontends
+        total_runtime += len(selected_backends) * (gradle_startup_overhead + num_samples * 0.1)
 
     return total_runtime
 
