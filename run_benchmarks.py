@@ -47,12 +47,6 @@ PARALLEL_BACKENDS_MAP = {
 VALID_HANDLERS = ["CONSOLE", "FILE"]
 VALID_FORMATS = ["COMPACT", "DEFAULT", "DETAILED"]
 SAMPLE_FRONTENDS = ["jul", "jcl", "log4j", "slf4j"]
-SAMPLE_VARIANTS = {
-    "CONSTANT": "CONSTANT",
-    "ARGUMENTS": "ARGUMENTS",
-    "LAMBDA": "LAMBDA",
-    "CONSTANT_EXCEPTION": "CONSTANT (with exception)",
-}
 VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
 VALID_RUN_TYPES = ["SERIAL", "PARALLEL", "SAMPLE_OUTPUT"]
 
@@ -229,27 +223,30 @@ def write_sample_output(report_path, samples):
     with open(report_path, "w", encoding="utf-8") as report:
         report.write("# Benchmark Sample Outputs\n\n")
         for fmt in VALID_FORMATS:
-            for variant, title in SAMPLE_VARIANTS.items():
-                for frontend in SAMPLE_FRONTENDS:
-                    section = samples.get((fmt, variant, frontend))
-                    if not section:
-                        continue
-                    report.write(f"## Format: {fmt}, Frontend {frontend.upper()}, {title}\n\n````text\n")
-                    for backend in SEQUENTIAL_BACKENDS_MAP:
-                        if backend in section:
-                            first, *rest = section[backend]
-                            label = backend.upper() + ":"
-                            report.write(f"{label:<{label_width}}{first}\n")
-                            for line in rest:
-                                report.write(" " * label_width + line + "\n")
-                    report.write("````\n\n")
+            for with_exception in (False, True):
+                for message_type in VALID_MESSAGE_TYPES:
+                    title = message_type + (" (with exception)" if with_exception else "")
+                    for frontend in SAMPLE_FRONTENDS:
+                        section = samples.get((fmt, message_type, with_exception, frontend))
+                        if not section:
+                            continue
+                        report.write(f"## Format: {fmt}, Frontend {frontend.upper()}, {title}\n\n````text\n")
+                        for backend in SEQUENTIAL_BACKENDS_MAP:
+                            if backend in section:
+                                first, *rest = section[backend]
+                                label = backend.upper() + ":"
+                                report.write(f"{label:<{label_width}}{first}\n")
+                                for line in rest:
+                                    report.write(" " * label_width + line + "\n")
+                        report.write("````\n\n")
 
 def collect_backend_samples(backend, formats, frontends, directory, dryrun, samples):
     include = f"{SEQUENTIAL_BACKENDS_MAP[backend]}\\.sampleOutput$"
     params = [
         "outputToFile=true", "category=CONSOLE", "messageType=CONSTANT",
         f"format={','.join(formats)}", f"sampleFrontend={','.join(frontends)}",
-        f"sampleVariant={','.join(SAMPLE_VARIANTS)}", f"sampleDirectory={directory}",
+        f"sampleMessageType={','.join(VALID_MESSAGE_TYPES)}", "sampleException=false,true",
+        f"sampleDirectory={directory}",
     ]
     command = benchmark_run_command(backend) + f" -Pjmh.includes='{include}'"
     command += " -Pjmh.parameters=" + shlex.quote(";".join(params))
@@ -263,10 +260,12 @@ def collect_backend_samples(backend, formats, frontends, directory, dryrun, samp
         raise RuntimeError(f"Sample output collection failed for backend: {backend}")
     for fmt in formats:
         for frontend in frontends:
-            for variant in SAMPLE_VARIANTS:
-                path = os.path.join(directory, f"{fmt}-{frontend}-{variant}.out")
-                lines = read_sample_output(path, variant == "CONSTANT_EXCEPTION")
-                samples.setdefault((fmt, variant, frontend), {})[backend] = lines
+            for message_type in VALID_MESSAGE_TYPES:
+                for with_exception in (False, True):
+                    suffix = "-EXCEPTION" if with_exception else ""
+                    path = os.path.join(directory, f"{fmt}-{frontend}-{message_type}{suffix}.out")
+                    lines = read_sample_output(path, with_exception)
+                    samples.setdefault((fmt, message_type, with_exception, frontend), {})[backend] = lines
 
 def collect_sample_output(args, results_dir, report_path):
     formats = [fmt for fmt in VALID_FORMATS if not args.formats or fmt in args.formats]
@@ -347,7 +346,7 @@ def calculate_runtime(args):
         selected_backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
         num_formats = len(args.formats or VALID_FORMATS)
         num_frontends = len(args.frontends or SAMPLE_FRONTENDS)
-        num_samples = len(SAMPLE_VARIANTS) * num_formats * num_frontends
+        num_samples = len(VALID_MESSAGE_TYPES) * 2 * num_formats * num_frontends
         total_runtime += len(selected_backends) * (gradle_startup_overhead + num_samples * 0.1)
 
     return total_runtime
@@ -941,7 +940,7 @@ def create_argument_parser():
     parser.add_argument("--frontends", nargs="+", help="Frontends to test")
     parser.add_argument("--handlers", nargs="+", help="Handlers to test (CONSOLE, FILE)")
     parser.add_argument("--formats", nargs="+", help="Formats to test (COMPACT, DEFAULT, DETAILED)")
-    parser.add_argument("--message-types", nargs="+", help="Message types to test (CONSTANT, ARGUMENTS, LAMBDA)")
+    parser.add_argument("--message-types", nargs="+", help=f"Message types to test ({', '.join(VALID_MESSAGE_TYPES)})")
     parser.add_argument("--warmup", type=int, help="Number of warmup iterations")
     parser.add_argument("--iterations", type=int, help="Number of measurement iterations")
     parser.add_argument("--time", help="Time per iteration (e.g. 1s)")

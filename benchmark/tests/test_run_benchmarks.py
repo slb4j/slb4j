@@ -42,12 +42,12 @@ class SampleOutputRunnerTest(unittest.TestCase):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
             report = Path(directory) / "SAMPLE_OUTPUT.md"
             samples = {
-                ("COMPACT", "CONSTANT_EXCEPTION", "jul"): {"jul": ["message", "Exception", "\tat caller"]},
-                ("DEFAULT", "CONSTANT", "slf4j"): {"jul": ["later"]},
-                ("COMPACT", "LAMBDA", "jul"): {"jul": ["lambda"]},
-                ("COMPACT", "ARGUMENTS", "jul"): {"jul": ["arguments"]},
-                ("COMPACT", "CONSTANT", "jcl"): {"jul": ["jcl message"]},
-                ("COMPACT", "CONSTANT", "jul"): {"jul": ["second"], "slb4j": ["first"]},
+                ("COMPACT", "CONSTANT", True, "jul"): {"jul": ["message", "Exception", "\tat caller"]},
+                ("DEFAULT", "CONSTANT", False, "slf4j"): {"jul": ["later"]},
+                ("COMPACT", "MESSAGE_SUPPLIER", False, "jul"): {"jul": ["supplier"]},
+                ("COMPACT", "ARGUMENTS", False, "jul"): {"jul": ["arguments"]},
+                ("COMPACT", "CONSTANT", False, "jcl"): {"jul": ["jcl message"]},
+                ("COMPACT", "CONSTANT", False, "jul"): {"jul": ["second"], "slb4j": ["first"]},
             }
             run_benchmarks.write_sample_output(report, samples)
             self.assertEqual(
@@ -56,7 +56,7 @@ class SampleOutputRunnerTest(unittest.TestCase):
                 "SLB4J:      first\nJUL:        second\n````\n\n"
                 "## Format: COMPACT, Frontend JCL, CONSTANT\n\n````text\nJUL:        jcl message\n````\n\n"
                 "## Format: COMPACT, Frontend JUL, ARGUMENTS\n\n````text\nJUL:        arguments\n````\n\n"
-                "## Format: COMPACT, Frontend JUL, LAMBDA\n\n````text\nJUL:        lambda\n````\n\n"
+                "## Format: COMPACT, Frontend JUL, MESSAGE_SUPPLIER\n\n````text\nJUL:        supplier\n````\n\n"
                 "## Format: COMPACT, Frontend JUL, CONSTANT (with exception)\n\n````text\n"
                 "JUL:        message\n            Exception\n            \tat caller\n````\n\n"
                 "## Format: DEFAULT, Frontend SLF4J, CONSTANT\n\n````text\nJUL:        later\n````\n\n",
@@ -74,11 +74,14 @@ class SampleOutputRunnerTest(unittest.TestCase):
                 params = command.split("sampleDirectory=", 1)[1].split("'", 1)[0]
                 for fmt in ("DEFAULT", "COMPACT"):
                     for frontend in ("slf4j", "jcl"):
-                        for variant in ("CONSTANT", "ARGUMENTS", "LAMBDA", "CONSTANT_EXCEPTION"):
-                            text = f"{variant} message\n"
-                            if variant == "CONSTANT_EXCEPTION":
-                                text += "Exception\n\tat caller\n\n"
-                            (Path(params) / f"{fmt}-{frontend}-{variant}.out").write_text(text, encoding="utf-8")
+                        for message_type in run_benchmarks.VALID_MESSAGE_TYPES:
+                            for with_exception in (False, True):
+                                suffix = "-EXCEPTION" if with_exception else ""
+                                text = f"{message_type} message\n"
+                                if with_exception:
+                                    text += "Exception\n\tat caller\n\n"
+                                (Path(params) / f"{fmt}-{frontend}-{message_type}{suffix}.out").write_text(
+                                    text, encoding="utf-8")
                 return True
 
             with patch.object(run_benchmarks, "run_command", side_effect=capture) as command:
@@ -86,12 +89,16 @@ class SampleOutputRunnerTest(unittest.TestCase):
 
             command.assert_called_once()
             self.assertIn("sampleFrontend=jcl,slf4j", command.call_args.args[0])
-            self.assertIn("sampleVariant=CONSTANT,ARGUMENTS,LAMBDA,CONSTANT_EXCEPTION", command.call_args.args[0])
+            self.assertIn(
+                "sampleMessageType=CONSTANT,ARGUMENTS,MESSAGE_SUPPLIER,LAMBDA_PARAMETER",
+                command.call_args.args[0])
+            self.assertIn("sampleException=false,true", command.call_args.args[0])
             text = report.read_text(encoding="utf-8")
-            self.assertEqual(16, text.count("## Format:"))
+            self.assertEqual(32, text.count("## Format:"))
             self.assertIn("Frontend JCL, ARGUMENTS\n\n````text\nJUL:        ARGUMENTS message\n", text)
-            self.assertIn("Frontend SLF4J, LAMBDA\n\n````text\nJUL:        LAMBDA message\n", text)
-            self.assertEqual(4, text.count("            \tat caller\n````\n"))
+            self.assertIn(
+                "Frontend SLF4J, LAMBDA_PARAMETER\n\n````text\nJUL:        LAMBDA_PARAMETER message\n", text)
+            self.assertEqual(16, text.count("            \tat caller\n````\n"))
 
     def test_reads_single_line_benchmark_output(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
