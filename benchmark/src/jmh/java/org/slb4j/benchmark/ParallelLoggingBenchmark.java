@@ -33,6 +33,7 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
@@ -72,7 +73,7 @@ public abstract class ParallelLoggingBenchmark {
         System.setOut(new PrintStream(stdoutOutput, false, StandardCharsets.UTF_8));
         System.setErr(new PrintStream(stderrOutput, false, StandardCharsets.UTF_8));
 
-        String format = params.getParam("format");
+        String format = Objects.requireNonNullElse(params.getParam("format"), "DEFAULT");
         tempFile = Files.createTempFile(backend() + "-parallel-bench", ".log");
         configurator = createConfigurator(category(), format, tempFile);
         configurator.setup();

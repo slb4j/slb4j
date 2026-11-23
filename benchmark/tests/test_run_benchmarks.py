@@ -264,6 +264,56 @@ class SampleOutputRunnerTest(unittest.TestCase):
                         self.assertAlmostEqual(height / score, scale)
                         previous_right = x + width
 
+    def test_parallel_report_keeps_targets_formats_and_frontends_separate(self):
+        results = []
+        for category, fmt, backend, frontend, threads, score in (
+                ("FILE", None, "rainbowgum", "jcl", 1, 900),
+                ("CONSOLE", "COMPACT", "jul", "jcl", 1, 800),
+                ("CONSOLE", None, "rainbowgum", "slf4j", 1, 700),
+                ("CONSOLE", None, "rainbowgum", "jcl", 16, 300),
+                ("CONSOLE", "DEFAULT", "jul", "jcl", 1, 100),
+                ("CONSOLE", "DEFAULT", "jul", "jcl", 16, 200),
+                ("CONSOLE", "DEFAULT", "jul", "jcl", 2, 150)):
+            params = {"category": category}
+            if fmt is not None:
+                params["format"] = fmt
+            results.append({"backend_param": backend, "benchmark": f"benchmark.{frontend}_{threads}",
+                            "params": params, "primaryMetric": {"score": score}})
+
+        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
+            run_benchmarks.generate_markdown_parallel(
+                results, SimpleNamespace(), "timestamp", directory, "system", "command")
+            report = (Path(directory) / "PARALLEL_BENCHMARK_RESULTS.md").read_text(encoding="utf-8")
+            console, file = report.split("### Handler: FILE")
+            compact, default = console.split("#### Format: DEFAULT")
+            self.assertEqual(1, compact.count("](parallel-benchmark-chart-"))
+            self.assertEqual(2, default.count("](parallel-benchmark-chart-"))
+            self.assertEqual(1, file.count("](parallel-benchmark-chart-"))
+            self.assertIn("| rainbowgum | jcl | — | — | **300.00** |", default)
+
+            ns = {"": "http://www.w3.org/2000/svg"}
+            chart = ET.parse(Path(directory) / "parallel-benchmark-chart-2-1.svg").getroot()
+            self.assertEqual("Frontend jcl, Target CONSOLE, Throughput (higher is better)",
+                             chart.findtext("title", namespaces=ns))
+            legend = chart.findall(".//g[@class='legend-item']", ns)
+            self.assertEqual(["1 Thread", "2 Threads", "16 Threads"],
+                             [item.findtext("text", namespaces=ns) for item in legend])
+            colors = [item.find("rect", ns).get("fill") for item in legend]
+            self.assertEqual(3, len(set(colors)))
+            jul, rainbowgum = chart.findall(".//g[@class='backend']", ns)
+            self.assertEqual(["jul", "rainbowgum"],
+                             [group.findtext("text", namespaces=ns) for group in (jul, rainbowgum)])
+            bars = jul.findall("rect", ns)
+            self.assertEqual(colors, [bar.get("fill") for bar in bars])
+            for left, right in zip(bars, bars[1:]):
+                self.assertLess(float(left.get("x")) + float(left.get("width")), float(right.get("x")))
+            bar, = rainbowgum.findall("rect", ns)
+            self.assertEqual(colors[2], bar.get("fill"))
+            self.assertIn("16 Threads: 300.00 ops/s", bar.findtext("title", namespaces=ns))
+            chart = ET.parse(Path(directory) / "parallel-benchmark-chart-3-1.svg").getroot()
+            self.assertEqual("Frontend jcl, Target FILE, Throughput (higher is better)",
+                             chart.findtext("title", namespaces=ns))
+
 
 if __name__ == "__main__":
     unittest.main()

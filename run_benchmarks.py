@@ -682,10 +682,10 @@ def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, 
                 
     print(f"Markdown report generated: {report_path}")
 
-def write_sequential_chart_svg(path, title, backends, series):
+def write_grouped_chart_svg(path, title, backends, series):
     title = escape(title)
-    width, height = 760, 360
-    left, right, top, bottom = 112, 732, 54, 286
+    width, height = max(760, len(series) * 100 + 40), 360
+    left, right, top, bottom = 112, width - 28, 54, 286
     max_score = max(score for _, _, scores in series for score in scores if score is not None)
     rough_step = max(1, math.ceil(max_score * 1.1 / 5))
     magnitude = 10 ** (len(str(rough_step)) - 1)
@@ -728,8 +728,9 @@ def write_sequential_chart_svg(path, title, backends, series):
                           f'fill="{color}"><title>{escape(backend)} — {label}: {score:,.2f} ops/s</title></rect>\n')
             svg.write('</g>\n')
 
+        legend_spacing = min(150, (width - 40) / len(series))
         for index, (label, color, _) in enumerate(series):
-            x = (width - len(series) * 150) / 2 + index * 150
+            x = (width - len(series) * legend_spacing) / 2 + index * legend_spacing
             svg.write(f'<g class="legend-item"><rect x="{x}" y="329" width="12" height="12" fill="{color}"/>'
                       f'<text x="{x + 18}" y="340">{label}</text></g>\n')
         svg.write('</g>\n</svg>\n')
@@ -759,7 +760,7 @@ def write_sequential_charts(report, rows, results_dir, section_index, category):
 
         filename = f"benchmark-chart-{section_index}-{frontend_index}.svg"
         title = f"Frontend {frontend}, Target {category}, Throughput (higher is better)"
-        write_sequential_chart_svg(os.path.join(results_dir, filename), title, backends, series)
+        write_grouped_chart_svg(os.path.join(results_dir, filename), title, backends, series)
         report.write(f"#### Frontend: {frontend}\n\n")
         report.write(f"![Throughput by backend and message type]({filename})\n\n")
 
@@ -928,6 +929,23 @@ def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info
 
     print(f"Markdown report generated: {report_path}")
 
+def write_parallel_charts(report, backends, thread_series, results_dir, section_index, category):
+    frontends = sorted({frontend for data in backends.values() for frontend in data})
+    for frontend_index, frontend in enumerate(frontends, start=1):
+        frontend_backends = sorted(backend for backend, data in backends.items() if frontend in data)
+        series = []
+        for threads, label, color in thread_series:
+            scores = [backends[backend][frontend].get(threads) for backend in frontend_backends]
+            if any(score is not None for score in scores):
+                series.append((label, color, scores))
+
+        filename = f"parallel-benchmark-chart-{section_index}-{frontend_index}.svg"
+        title = f"Frontend {frontend}, Target {category}, Throughput (higher is better)"
+        write_grouped_chart_svg(os.path.join(results_dir, filename), title, frontend_backends, series)
+        report.write(f"##### Frontend: {frontend}\n\n")
+        report.write(f"![Throughput by backend and thread count]({filename})\n\n")
+
+
 def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line):
     if not results:
         print("No results to process.")
@@ -978,31 +996,36 @@ def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, 
                         min_max_parallel[category][format][frontend][t] = (None, None)
 
     report_path = os.path.join(results_dir, "PARALLEL_BENCHMARK_RESULTS.md")
-    with open(report_path, "w") as f:
+    with open(report_path, "w", encoding="utf-8") as f:
         f.write("# Parallel Logging Benchmark Results\n\n")
         f.write(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
         f.write("## Command Line\n```bash\n" + cmd_line + "\n```\n\n")
         f.write("## System Information\n```\n" + sys_info + "\n```\n\n")
         f.write("Throughput (ops/s) for different thread counts.\n\n")
-        
-        all_threads = sorted(list(present_threads))
-        sorted_categories = sorted(grouped.keys())
 
-        for category in sorted_categories:
+        colors = ("#0072b2", "#009e73", "#d55e00", "#a54987", "#e69f00", "#56b4e9", "#767676")
+        thread_series = [(t, f"{t} {'Thread' if t == 1 else 'Threads'}", colors[i % len(colors)])
+                         for i, t in enumerate(sorted(present_threads))]
+        section_index = 0
+
+        for category in sorted(grouped):
             f.write(f"### Handler: {category}\n\n")
             for format in sorted(grouped[category].keys()):
+                section_index += 1
+                backends = grouped[category][format]
                 f.write(f"#### Format: {format}\n\n")
-                header = "| Backend | Frontend | " + " | ".join([f"{t} Threads" for t in all_threads]) + " |"
-                separator = "| :--- | :--- | " + " | ".join([":---:" for _ in all_threads]) + " |"
+                header = "| Backend | Frontend | " + " | ".join(label for _, label, _ in thread_series) + " |"
+                separator = "| :--- | :--- | " + " | ".join(":---:" for _ in thread_series) + " |"
                 f.write(header + "\n" + separator + "\n")
 
-                sorted_backends = sorted(grouped[category][format].keys())
-                for backend in sorted_backends:
-                    sorted_frontends = sorted(grouped[category][format][backend].keys())
-                    for frontend in sorted_frontends:
+                for backend in sorted(backends):
+                    for frontend in sorted(backends[backend]):
                         row = f"| {backend} | {frontend} |"
-                        for t in all_threads:
-                            score = grouped[category][format][backend][frontend].get(t, 0)
+                        for t, _, _ in thread_series:
+                            score = backends[backend][frontend].get(t)
+                            if score is None:
+                                row += " — |"
+                                continue
                             score_str = f"{score:,.2f}"
                             if score > 0 and t in min_max_parallel[category][format].get(frontend, {}):
                                 min_val, max_val = min_max_parallel[category][format][frontend][t]
@@ -1015,6 +1038,7 @@ def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, 
                         f.write(row + "\n")
 
                 f.write("\n")
+                write_parallel_charts(f, backends, thread_series, results_dir, section_index, category)
                 
     print(f"Markdown report generated: {report_path}")
 
