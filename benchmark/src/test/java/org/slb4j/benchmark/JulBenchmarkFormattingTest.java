@@ -17,6 +17,8 @@ package org.slb4j.benchmark;
 
 import org.junit.jupiter.api.Test;
 
+import java.nio.file.Path;
+import java.text.MessageFormat;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Locale;
@@ -136,6 +138,48 @@ class JulBenchmarkFormattingTest {
             assertTrue(output.contains(" - Hello world" + System.lineSeparator() + "java.lang.IllegalStateException: Sample exception"));
             assertTrue(output.contains("JulBenchmarkFormattingTest.exceptionsAndMessageParametersArePreserved"));
         }
+    }
+
+    @Test
+    void parallelBenchmarkUsesJulMessageFormatPlaceholders() {
+        StringBuilder output = new StringBuilder();
+        Logger logger = Logger.getAnonymousLogger();
+        logger.setUseParentHandlers(false);
+        logger.addHandler(new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                output.append(MessageFormat.format(record.getMessage(), record.getParameters()));
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        });
+        ParallelLoggingBenchmark benchmark = new ParallelLoggingBenchmark() {
+            @Override
+            public String backend() {
+                return "test";
+            }
+
+            @Override
+            public String category() {
+                return "FILE";
+            }
+
+            @Override
+            protected BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile) {
+                return null;
+            }
+        };
+        benchmark.julLogger = logger;
+
+        benchmark.jul_1();
+
+        assertEquals("Parallel benchmark jul backend=test", output.toString());
     }
 
     @Test

@@ -299,7 +299,7 @@ public abstract class ParallelLoggingBenchmark {
     }
 
     private void jul() {
-        julLogger.log(java.util.logging.Level.INFO, "Parallel benchmark slf4j backend={}", backend());
+        julLogger.log(java.util.logging.Level.INFO, "Parallel benchmark jul backend={0}", backend());
     }
 
     private void jcl() {
