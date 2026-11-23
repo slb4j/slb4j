@@ -682,9 +682,19 @@ def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, 
                 
     print(f"Markdown report generated: {report_path}")
 
+def chart_title(frontend, category, backends, message_type):
+    parts = [f"Frontend {frontend}", f"Target {category}"]
+    if len(backends) == 1:
+        parts.append(f"Backend {backends[0]}")
+    if message_type is not None:
+        parts.append(f"Message Type {message_type}")
+    parts.append("Throughput (higher is better)")
+    return ", ".join(parts)
+
+
 def write_grouped_chart_svg(path, title, backends, series):
+    width, height = max(760, len(series) * 100 + 40, len(title) * 10 + 40), 360
     title = escape(title)
-    width, height = max(760, len(series) * 100 + 40), 360
     left, right, top, bottom = 112, width - 28, 54, 286
     max_score = max(score for _, _, scores in series for score in scores if score is not None)
     rough_step = max(1, math.ceil(max_score * 1.1 / 5))
@@ -759,10 +769,11 @@ def write_sequential_charts(report, rows, results_dir, section_index, category):
                 series.append((label, color, scores))
 
         filename = f"benchmark-chart-{section_index}-{frontend_index}.svg"
-        title = f"Frontend {frontend}, Target {category}, Throughput (higher is better)"
+        message_type = series[0][0] if len(series) == 1 else None
+        title = chart_title(frontend, category, backends, message_type)
         write_grouped_chart_svg(os.path.join(results_dir, filename), title, backends, series)
         report.write(f"#### Frontend: {frontend}\n\n")
-        report.write(f"![Throughput by backend and message type]({filename})\n\n")
+        report.write(f"![{title}]({filename})\n\n")
 
 
 def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line):
@@ -930,6 +941,9 @@ def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info
     print(f"Markdown report generated: {report_path}")
 
 def write_parallel_charts(report, backends, thread_series, results_dir, section_index, category):
+    # ParallelLoggingBenchmark uses one fixed logging call per frontend.
+    message_types = {"jcl": "Preformatted", "jul": "Argument",
+                     "log4j": "Message Supplier", "slf4j": "Argument"}
     frontends = sorted({frontend for data in backends.values() for frontend in data})
     for frontend_index, frontend in enumerate(frontends, start=1):
         frontend_backends = sorted(backend for backend, data in backends.items() if frontend in data)
@@ -940,10 +954,10 @@ def write_parallel_charts(report, backends, thread_series, results_dir, section_
                 series.append((label, color, scores))
 
         filename = f"parallel-benchmark-chart-{section_index}-{frontend_index}.svg"
-        title = f"Frontend {frontend}, Target {category}, Throughput (higher is better)"
+        title = chart_title(frontend, category, frontend_backends, message_types.get(frontend))
         write_grouped_chart_svg(os.path.join(results_dir, filename), title, frontend_backends, series)
         report.write(f"##### Frontend: {frontend}\n\n")
-        report.write(f"![Throughput by backend and thread count]({filename})\n\n")
+        report.write(f"![{title}]({filename})\n\n")
 
 
 def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line):

@@ -211,6 +211,7 @@ class SampleOutputRunnerTest(unittest.TestCase):
         for frontend, backend, message_type, score in (
                 ("jcl", "jul", "CONSTANT", 100.0),
                 ("jcl", "slb4j", "CONSTANT", 300.0),
+                ("log4j", "logback", "MESSAGE_SUPPLIER", 250.0),
                 ("slf4j", "jul", "CONSTANT", 200.0),
                 ("slf4j", "jul", "ARGUMENTS", 150.0),
                 ("slf4j", "jul", "MESSAGE_SUPPLIER", 175.0),
@@ -229,15 +230,23 @@ class SampleOutputRunnerTest(unittest.TestCase):
             run_benchmarks.generate_markdown_sequential(
                 results, SimpleNamespace(), "timestamp", directory, "system", "command")
             report = (Path(directory) / "BENCHMARK_RESULTS.md").read_text(encoding="utf-8")
-            self.assertEqual(2, report.count("](benchmark-chart-"))
-            for index, frontend, expected_groups in (
-                    (1, "jcl", [[100.0], [300.0]]),
-                    (2, "slf4j", [[200.0, 150.0, 175.0, 125.0], [400.0, 350.0, None, 325.0]])):
+            self.assertEqual(3, report.count("](benchmark-chart-"))
+            ns = {"": "http://www.w3.org/2000/svg"}
+            for index, frontend, details in (
+                    (1, "jcl", ", Message Type Constant"),
+                    (2, "log4j", ", Backend logback, Message Type Message Supplier"),
+                    (3, "slf4j", "")):
                 filename = f"benchmark-chart-1-{index}.svg"
-                self.assertIn(f"#### Frontend: {frontend}\n\n![Throughput by backend and message type]({filename})",
-                              report)
+                title = f"Frontend {frontend}, Target CONSOLE{details}, Throughput (higher is better)"
+                self.assertIn(f"#### Frontend: {frontend}\n\n![{title}]({filename})", report)
                 chart = ET.parse(Path(directory) / filename).getroot()
-                ns = {"": "http://www.w3.org/2000/svg"}
+                self.assertEqual(title, chart.findtext("title", namespaces=ns))
+                self.assertEqual(title, chart.findtext("g/text", namespaces=ns))
+
+            for index, expected_groups in (
+                    (1, [[100.0], [300.0]]),
+                    (3, [[200.0, 150.0, 175.0, 125.0], [400.0, 350.0, None, 325.0]])):
+                chart = ET.parse(Path(directory) / f"benchmark-chart-1-{index}.svg").getroot()
                 legend = chart.findall(".//g[@class='legend-item']", ns)
                 labels = [item.findtext("text", namespaces=ns) for item in legend]
                 self.assertEqual(["Constant", "Argument", "Message Supplier", "Lambda Parameter"]
@@ -292,9 +301,19 @@ class SampleOutputRunnerTest(unittest.TestCase):
             self.assertIn("| rainbowgum | jcl | — | — | **300.00** |", default)
 
             ns = {"": "http://www.w3.org/2000/svg"}
+            for filename, details in (
+                    ("1-1", "Frontend jcl, Target CONSOLE, Backend jul, Message Type Preformatted"),
+                    ("2-1", "Frontend jcl, Target CONSOLE, Message Type Preformatted"),
+                    ("2-2", "Frontend slf4j, Target CONSOLE, Backend rainbowgum, Message Type Argument"),
+                    ("3-1", "Frontend jcl, Target FILE, Backend rainbowgum, Message Type Preformatted")):
+                filename = f"parallel-benchmark-chart-{filename}.svg"
+                title = f"{details}, Throughput (higher is better)"
+                self.assertIn(f"![{title}]({filename})", report)
+                chart = ET.parse(Path(directory) / filename).getroot()
+                self.assertEqual(title, chart.findtext("title", namespaces=ns))
+                self.assertEqual(title, chart.findtext("g/text", namespaces=ns))
+
             chart = ET.parse(Path(directory) / "parallel-benchmark-chart-2-1.svg").getroot()
-            self.assertEqual("Frontend jcl, Target CONSOLE, Throughput (higher is better)",
-                             chart.findtext("title", namespaces=ns))
             legend = chart.findall(".//g[@class='legend-item']", ns)
             self.assertEqual(["1 Thread", "2 Threads", "16 Threads"],
                              [item.findtext("text", namespaces=ns) for item in legend])
@@ -310,9 +329,6 @@ class SampleOutputRunnerTest(unittest.TestCase):
             bar, = rainbowgum.findall("rect", ns)
             self.assertEqual(colors[2], bar.get("fill"))
             self.assertIn("16 Threads: 300.00 ops/s", bar.findtext("title", namespaces=ns))
-            chart = ET.parse(Path(directory) / "parallel-benchmark-chart-3-1.svg").getroot()
-            self.assertEqual("Frontend jcl, Target FILE, Throughput (higher is better)",
-                             chart.findtext("title", namespaces=ns))
 
 
 if __name__ == "__main__":
