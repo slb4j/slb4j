@@ -2,6 +2,7 @@ import importlib.util
 import os
 import tempfile
 import unittest
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from types import SimpleNamespace
 from unittest.mock import patch
@@ -204,6 +205,64 @@ class SampleOutputRunnerTest(unittest.TestCase):
                 self.assertTrue(Path(second).is_dir())
             finally:
                 os.chdir(previous)
+
+    def test_sequential_report_contains_side_by_side_message_type_bars_per_frontend(self):
+        results = []
+        for frontend, backend, message_type, score in (
+                ("jcl", "jul", "CONSTANT", 100.0),
+                ("jcl", "slb4j", "CONSTANT", 300.0),
+                ("slf4j", "jul", "CONSTANT", 200.0),
+                ("slf4j", "jul", "ARGUMENTS", 150.0),
+                ("slf4j", "jul", "MESSAGE_SUPPLIER", 175.0),
+                ("slf4j", "jul", "LAMBDA_PARAMETER", 125.0),
+                ("slf4j", "slb4j", "CONSTANT", 400.0),
+                ("slf4j", "slb4j", "ARGUMENTS", 350.0),
+                ("slf4j", "slb4j", "LAMBDA_PARAMETER", 325.0)):
+            results.append({
+                "backend_param": backend,
+                "benchmark": f"benchmark.{frontend}",
+                "params": {"category": "CONSOLE", "format": "DEFAULT", "messageType": message_type},
+                "primaryMetric": {"score": score, "scoreError": 1.0},
+            })
+
+        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
+            run_benchmarks.generate_markdown_sequential(
+                results, SimpleNamespace(), "timestamp", directory, "system", "command")
+            report = (Path(directory) / "BENCHMARK_RESULTS.md").read_text(encoding="utf-8")
+            self.assertEqual(2, report.count("](benchmark-chart-"))
+            for index, frontend, expected_groups in (
+                    (1, "jcl", [[100.0], [300.0]]),
+                    (2, "slf4j", [[200.0, 150.0, 175.0, 125.0], [400.0, 350.0, None, 325.0]])):
+                filename = f"benchmark-chart-1-{index}.svg"
+                self.assertIn(f"#### Frontend: {frontend}\n\n![Throughput by backend and message type]({filename})",
+                              report)
+                chart = ET.parse(Path(directory) / filename).getroot()
+                ns = {"": "http://www.w3.org/2000/svg"}
+                legend = chart.findall(".//g[@class='legend-item']", ns)
+                labels = [item.findtext("text", namespaces=ns) for item in legend]
+                self.assertEqual(["Constant", "Argument", "Message Supplier", "Lambda Parameter"]
+                                 [:len(expected_groups[0])], labels)
+                colors = [item.find("rect", ns).get("fill") for item in legend]
+                self.assertEqual(len(colors), len(set(colors)))
+
+                groups = chart.findall(".//g[@class='backend']", ns)
+                self.assertEqual(["jul", "slb4j"], [group.findtext("text", namespaces=ns) for group in groups])
+                previous_right = 0
+                scale = None
+                for group, scores in zip(groups, expected_groups):
+                    bars = group.findall("rect", ns)
+                    expected = [(score, color) for score, color in zip(scores, colors) if score is not None]
+                    self.assertEqual(len(expected), len(bars))
+                    for bar, (score, color) in zip(bars, expected):
+                        x, width, height = (float(bar.get(attr)) for attr in ("x", "width", "height"))
+                        self.assertGreater(x, previous_right)
+                        self.assertGreater(width, 0)
+                        self.assertGreater(height, 0)
+                        self.assertEqual(color, bar.get("fill"))
+                        if scale is None:
+                            scale = height / score
+                        self.assertAlmostEqual(height / score, scale)
+                        previous_right = x + width
 
 
 if __name__ == "__main__":

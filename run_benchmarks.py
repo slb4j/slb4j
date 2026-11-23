@@ -26,6 +26,7 @@ import platform
 import math
 import shlex
 import tempfile
+from html import escape
 
 # Constants
 SEQUENTIAL_BACKENDS_MAP = {
@@ -681,6 +682,88 @@ def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, 
                 
     print(f"Markdown report generated: {report_path}")
 
+def write_sequential_chart_svg(path, title, backends, series):
+    title = escape(title)
+    width, height = 760, 360
+    left, right, top, bottom = 112, 732, 54, 286
+    max_score = max(score for _, _, scores in series for score in scores if score is not None)
+    rough_step = max(1, math.ceil(max_score * 1.1 / 5))
+    magnitude = 10 ** (len(str(rough_step)) - 1)
+    step = next(i * magnitude for i in (1, 2, 5, 10) if i * magnitude >= rough_step)
+    tick_count = max(1, math.ceil(max_score * 1.1 / step))
+    scale = (bottom - top) / (step * tick_count)
+    group_width = (right - left) / len(backends)
+    bar_width = min(46, group_width * 0.8 / len(series) - 4)
+    slot_width = bar_width + 4
+
+    with open(path, "w", encoding="utf-8") as svg:
+        svg.write(f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+                  f'viewBox="0 0 {width} {height}">\n')
+        svg.write(f'<title>{title}</title>\n')
+        svg.write(f'<rect width="{width}" height="{height}" fill="#ffffff"/>\n')
+        svg.write('<g font-family="sans-serif" font-size="13" fill="#24292f">\n')
+        svg.write(f'<text x="{width / 2}" y="28" text-anchor="middle" font-size="18">'
+                  f'{title}</text>\n')
+        svg.write(f'<text transform="translate(22 {(top + bottom) / 2}) rotate(-90)" text-anchor="middle">'
+                  'Operations per second</text>\n')
+        for tick in range(tick_count + 1):
+            value = tick * step
+            y = bottom - value * scale
+            stroke = "#57606a" if tick == 0 else "#d8dee4"
+            svg.write(f'<line x1="{left}" x2="{right}" y1="{y}" y2="{y}" stroke="{stroke}"/>\n')
+            svg.write(f'<text x="{left - 8}" y="{y + 4}" text-anchor="end">{value:,}</text>\n')
+
+        for backend_index, backend in enumerate(backends):
+            center = left + (backend_index + 0.5) * group_width
+            first_x = center - (len(series) * slot_width - 4) / 2
+            svg.write('<g class="backend">\n')
+            svg.write(f'<text x="{center}" y="{bottom + 22}" text-anchor="middle">{escape(backend)}</text>\n')
+            for series_index, (label, color, scores) in enumerate(series):
+                score = scores[backend_index]
+                if score is None:
+                    continue
+                x = first_x + series_index * slot_width
+                bar_height = score * scale
+                svg.write(f'<rect x="{x}" y="{bottom - bar_height}" width="{bar_width}" height="{bar_height}" '
+                          f'fill="{color}"><title>{escape(backend)} — {label}: {score:,.2f} ops/s</title></rect>\n')
+            svg.write('</g>\n')
+
+        for index, (label, color, _) in enumerate(series):
+            x = (width - len(series) * 150) / 2 + index * 150
+            svg.write(f'<g class="legend-item"><rect x="{x}" y="329" width="12" height="12" fill="{color}"/>'
+                      f'<text x="{x + 18}" y="340">{label}</text></g>\n')
+        svg.write('</g>\n</svg>\n')
+
+
+def write_sequential_charts(report, rows, results_dir, section_index, category):
+    message_types = (
+        ("CONSTANT", "Constant", "#0072b2"),
+        ("ARGUMENTS", "Argument", "#009e73"),
+        ("MESSAGE_SUPPLIER", "Message Supplier", "#d55e00"),
+        ("LAMBDA_PARAMETER", "Lambda Parameter", "#a54987"),
+    )
+    frontends = sorted({row["frontend"] for row in rows})
+    for frontend_index, frontend in enumerate(frontends, start=1):
+        frontend_rows = sorted(
+            (row for row in rows if row["frontend"] == frontend and row["avg_score"]),
+            key=lambda row: row["backend"])
+        if not frontend_rows:
+            continue
+
+        backends = [row["backend"] for row in frontend_rows]
+        series = []
+        for message_type, label, color in message_types:
+            scores = [row["score_values"][message_type] for row in frontend_rows]
+            if any(score is not None for score in scores):
+                series.append((label, color, scores))
+
+        filename = f"benchmark-chart-{section_index}-{frontend_index}.svg"
+        title = f"Frontend {frontend}, Target {category}, Throughput (higher is better)"
+        write_sequential_chart_svg(os.path.join(results_dir, filename), title, backends, series)
+        report.write(f"#### Frontend: {frontend}\n\n")
+        report.write(f"![Throughput by backend and message type]({filename})\n\n")
+
+
 def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line):
     if not results:
         print("No results to process.")
@@ -722,8 +805,7 @@ def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info
         f.write("## Command Line\n```bash\n" + cmd_line + "\n```\n\n")
         f.write("## System Information\n```\n" + sys_info + "\n```\n\n")
         
-        sorted_keys = sorted(grouped.keys())
-        for key in sorted_keys:
+        for section_index, key in enumerate(sorted(grouped), start=1):
             category, fmt = key
             f.write(f"### Category: {category}, Format: {fmt}\n\n")
             pairs = grouped[key]
@@ -757,7 +839,7 @@ def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info
 
             rows = []
             for (backend, frontend), data in pairs.items():
-                row = {"backend": backend, "frontend": frontend, "scores": {}, "errors": {}}
+                row = {"backend": backend, "frontend": frontend, "scores": {}, "score_values": {}, "errors": {}}
                 total_score = 0.0
                 count = 0
                 for mt in all_msg_types:
@@ -765,6 +847,7 @@ def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info
                                   (frontend == "jul" and mt == "LAMBDA_PARAMETER")
                     if is_excluded:
                         row["scores"][mt] = "N/A"
+                        row["score_values"][mt] = None
                         row["errors"][mt] = "N/A"
                     elif mt in data:
                         s = data[mt]["score"]
@@ -778,11 +861,13 @@ def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info
                                 s_str = f"*{s_str}*"
                         
                         row["scores"][mt] = s_str
+                        row["score_values"][mt] = s
                         row["errors"][mt] = f"{e:,.2f}" if e is not None else "N/A"
                         total_score += s
                         count += 1
                     else:
                         row["scores"][mt] = ""
+                        row["score_values"][mt] = None
                         row["errors"][mt] = ""
                 
                 avg_score = total_score / count if count > 0 else 0.0
@@ -839,6 +924,7 @@ def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info
                         f"{r['avg_score']:>{col_widths['avg_score']}} | {r['avg_error']:>{col_widths['avg_error']}} |")
                 f.write(line + "\n")
             f.write("\n")
+            write_sequential_charts(f, rows, results_dir, section_index, category)
 
     print(f"Markdown report generated: {report_path}")
 
@@ -980,7 +1066,7 @@ if __name__ == "__main__":
                 backends.update(SEQUENTIAL_BACKENDS_MAP.keys())
             if "PARALLEL" in run_types:
                 backends.update(PARALLEL_BACKENDS_MAP.keys())
-            args.backends = sorted(list(backends))
+            args.backends = sorted(backends)
         if args.handlers is None: args.handlers = ["CONSOLE", "FILE"]
         if args.formats is None: args.formats = ["COMPACT", "DEFAULT", "DETAILED"]
         if args.message_types is None: args.message_types = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
