@@ -23,9 +23,6 @@ public class JulParallelBenchmark extends ParallelLoggingBenchmark {
     @Param({"CONSOLE", "FILE"})
     public String category;
 
-    @Param({"COMPACT", "DEFAULT", "DETAILED"})
-    public String format;
-
     @Override
     public String backend() {
         return "jul";

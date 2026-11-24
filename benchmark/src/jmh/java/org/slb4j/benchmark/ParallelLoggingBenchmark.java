@@ -23,6 +23,7 @@ import org.openjdk.jmh.annotations.Setup;
 import org.openjdk.jmh.annotations.State;
 import org.openjdk.jmh.annotations.BenchmarkMode;
 import org.openjdk.jmh.annotations.OutputTimeUnit;
+import org.openjdk.jmh.annotations.Param;
 import org.openjdk.jmh.annotations.TearDown;
 import org.openjdk.jmh.annotations.Threads;
 import org.slf4j.LoggerFactory;
@@ -33,13 +34,28 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Objects;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
 @BenchmarkMode(Mode.Throughput)
 @OutputTimeUnit(TimeUnit.SECONDS)
 public abstract class ParallelLoggingBenchmark {
+
+    private static final String CONSTANT = "CONSTANT";
+    private static final String ARGUMENTS = "ARGUMENTS";
+    private static final String MESSAGE_SUPPLIER = "MESSAGE_SUPPLIER";
+    private static final String LAMBDA_PARAMETER = "LAMBDA_PARAMETER";
+
+    private static final String LOG_MESSAGE = "Parallel benchmark %s backend=%s";
+    private static final String SLF4J_MESSAGE = "Parallel benchmark slf4j backend={}";
+    private static final String LOG4J_MESSAGE = "Parallel benchmark log4j backend={}";
+    private static final String JUL_MESSAGE = "Parallel benchmark jul backend={0}";
+
+    @Param({"COMPACT", "DEFAULT", "DETAILED"})
+    public String format;
+
+    @Param(CONSTANT)
+    public String messageType;
 
     protected Path tempFile;
     private BenchmarkConfigurator configurator;
@@ -48,6 +64,13 @@ public abstract class ParallelLoggingBenchmark {
     protected org.apache.commons.logging.Log jclLogger;
     protected org.slf4j.Logger slf4jLogger;
     protected org.apache.logging.log4j.Logger log4jLogger;
+
+    private String logMessage;
+    private Runnable slf4jWorkload;
+    private Runnable log4jWorkload;
+    // Preserve the original JUL argument path when invoked directly without JMH setup.
+    private Runnable julWorkload = this::julArguments;
+    private Runnable jclWorkload;
 
     private PrintStream originalOut;
     private PrintStream originalErr;
@@ -60,20 +83,21 @@ public abstract class ParallelLoggingBenchmark {
     @Setup(Level.Trial)
     @SuppressWarnings("java:S106")
     public void setup(org.openjdk.jmh.infra.BenchmarkParams params) throws IOException {
+        String benchmarkName = params.getBenchmark();
+        String benchmarkMethod = benchmarkName.substring(benchmarkName.lastIndexOf('.') + 1);
+        configureWorkload(benchmarkMethod.substring(0, benchmarkMethod.lastIndexOf('_')));
+
         originalOut = System.out;
         originalErr = System.err;
 
         // Print testing info only once per fork/trial
-        String benchmarkName = params.getBenchmark();
-        String frontend = benchmarkName.substring(benchmarkName.lastIndexOf('.') + 1);
-        originalOut.println("Testing parallel " + backend() + "-" + frontend + " ...");
+        originalOut.println("Testing parallel " + backend() + "-" + benchmarkMethod + " ...");
 
         stdoutOutput = new SwitchableOutputStream(originalOut);
         stderrOutput = new SwitchableOutputStream(originalErr);
         System.setOut(new PrintStream(stdoutOutput, false, StandardCharsets.UTF_8));
         System.setErr(new PrintStream(stderrOutput, false, StandardCharsets.UTF_8));
 
-        String format = Objects.requireNonNullElse(params.getParam("format"), "DEFAULT");
         tempFile = Files.createTempFile(backend() + "-parallel-bench", ".log");
         configurator = createConfigurator(category(), format, tempFile);
         configurator.setup();
@@ -100,6 +124,41 @@ public abstract class ParallelLoggingBenchmark {
         System.err.println("JCL: " + jclLogger.getClass());
         System.err.println("Log4J: " + log4jLogger.getClass());
         System.err.println("SLF4J: " + slf4jLogger.getClass());
+    }
+
+    void configureWorkload(String frontend) {
+        switch (frontend) {
+            case "slf4j" -> slf4jWorkload = switch (messageType) {
+                case CONSTANT -> () -> slf4jLogger.info(logMessage);
+                case ARGUMENTS -> () -> slf4jLogger.info(SLF4J_MESSAGE, backend());
+                case MESSAGE_SUPPLIER -> () -> slf4jLogger.atInfo().log(() -> logMessage);
+                case LAMBDA_PARAMETER -> () -> slf4jLogger.atInfo().addArgument(this::backend).log(SLF4J_MESSAGE);
+                default -> throw unsupportedWorkload(frontend);
+            };
+            case "log4j" -> log4jWorkload = switch (messageType) {
+                case CONSTANT -> () -> log4jLogger.info(logMessage);
+                case ARGUMENTS -> () -> log4jLogger.info(LOG4J_MESSAGE, backend());
+                case MESSAGE_SUPPLIER -> () -> log4jLogger.info(() -> logMessage);
+                case LAMBDA_PARAMETER -> () -> log4jLogger.info(LOG4J_MESSAGE, this::backend);
+                default -> throw unsupportedWorkload(frontend);
+            };
+            case "jul" -> julWorkload = switch (messageType) {
+                case CONSTANT -> () -> julLogger.info(logMessage);
+                case ARGUMENTS -> this::julArguments;
+                case MESSAGE_SUPPLIER -> () -> julLogger.info(() -> logMessage);
+                default -> throw unsupportedWorkload(frontend);
+            };
+            case "jcl" -> jclWorkload = switch (messageType) {
+                case CONSTANT -> () -> jclLogger.info(logMessage);
+                default -> throw unsupportedWorkload(frontend);
+            };
+            default -> throw new IllegalArgumentException("Unknown parallel benchmark frontend: " + frontend);
+        }
+        logMessage = LOG_MESSAGE.formatted(frontend, backend());
+    }
+
+    private IllegalArgumentException unsupportedWorkload(String frontend) {
+        return new IllegalArgumentException("Unsupported messageType " + messageType + " for parallel frontend " + frontend);
     }
 
     @TearDown(Level.Trial)
@@ -291,18 +350,22 @@ public abstract class ParallelLoggingBenchmark {
     }
 
     private void slf4j() {
-        slf4jLogger.info("Parallel benchmark slf4j backend={}", backend());
+        slf4jWorkload.run();
     }
 
     private void log4j() {
-        log4jLogger.info(() -> "Parallel benchmark log4j backend=" + backend());
+        log4jWorkload.run();
     }
 
     private void jul() {
-        julLogger.log(java.util.logging.Level.INFO, "Parallel benchmark jul backend={0}", backend());
+        julWorkload.run();
     }
 
     private void jcl() {
-        jclLogger.info("Parallel benchmark jcl backend=" + backend());
+        jclWorkload.run();
+    }
+
+    private void julArguments() {
+        julLogger.log(java.util.logging.Level.INFO, JUL_MESSAGE, backend());
     }
 }

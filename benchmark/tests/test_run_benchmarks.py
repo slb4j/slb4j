@@ -1,4 +1,8 @@
+import datetime
 import importlib.util
+import io
+import subprocess
+import sys
 import os
 import tempfile
 import unittest
@@ -16,32 +20,9 @@ SPEC.loader.exec_module(run_benchmarks)
 
 
 class SampleOutputRunnerTest(unittest.TestCase):
-    def test_initializes_report_only_when_requested(self):
-        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
-            report = Path(directory) / "SAMPLE_OUTPUT.md"
-            args = SimpleNamespace(dryrun=False, run=["SAMPLE_OUTPUT"])
-
-            result = run_benchmarks.initialize_sample_output(args, directory)
-
-            self.assertEqual(os.path.abspath(report), result)
-            self.assertEqual("# Benchmark Sample Outputs\n\n", report.read_text(encoding="utf-8"))
-
-            self.assertIsNone(run_benchmarks.initialize_sample_output(
-                SimpleNamespace(dryrun=False, run=["SERIAL"]), directory))
-
-    def test_dry_run_does_not_create_a_sample_report(self):
-        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
-            report = Path(directory) / "SAMPLE_OUTPUT.md"
-
-            result = run_benchmarks.initialize_sample_output(
-                SimpleNamespace(dryrun=True, run=["SAMPLE_OUTPUT"]), directory)
-
-            self.assertIsNone(result)
-            self.assertFalse(report.exists())
-
     def test_formats_samples_like_the_reference(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
-            report = Path(directory) / "SAMPLE_OUTPUT.md"
+            report = io.StringIO()
             samples = {
                 ("COMPACT", "CONSTANT", True, "jul"): {"jul": ["message", "Exception", "\tat caller"]},
                 ("DEFAULT", "CONSTANT", False, "slf4j"): {"jul": ["later"]},
@@ -52,16 +33,16 @@ class SampleOutputRunnerTest(unittest.TestCase):
             }
             run_benchmarks.write_sample_output(report, samples)
             self.assertEqual(
-                "# Benchmark Sample Outputs\n\n"
-                "## Format: COMPACT, Frontend JUL, CONSTANT\n\n````text\n"
+                "## Example Output\n\n<details>\n<summary>Show console output by format, frontend, and message type</summary>\n\n"
+                "### Format: COMPACT, Frontend JUL, CONSTANT\n\n````text\n"
                 "SLB4J:      first\nJUL:        second\n````\n\n"
-                "## Format: COMPACT, Frontend JCL, CONSTANT\n\n````text\nJUL:        jcl message\n````\n\n"
-                "## Format: COMPACT, Frontend JUL, ARGUMENTS\n\n````text\nJUL:        arguments\n````\n\n"
-                "## Format: COMPACT, Frontend JUL, MESSAGE_SUPPLIER\n\n````text\nJUL:        supplier\n````\n\n"
-                "## Format: COMPACT, Frontend JUL, CONSTANT (with exception)\n\n````text\n"
+                "### Format: COMPACT, Frontend JCL, CONSTANT\n\n````text\nJUL:        jcl message\n````\n\n"
+                "### Format: COMPACT, Frontend JUL, ARGUMENTS\n\n````text\nJUL:        arguments\n````\n\n"
+                "### Format: COMPACT, Frontend JUL, MESSAGE_SUPPLIER\n\n````text\nJUL:        supplier\n````\n\n"
+                "### Format: COMPACT, Frontend JUL, CONSTANT (with exception)\n\n````text\n"
                 "JUL:        message\n            Exception\n            \tat caller\n````\n\n"
-                "## Format: DEFAULT, Frontend SLF4J, CONSTANT\n\n````text\nJUL:        later\n````\n\n",
-                report.read_text(encoding="utf-8"))
+                "### Format: DEFAULT, Frontend SLF4J, CONSTANT\n\n````text\nJUL:        later\n````\n\n</details>\n\n",
+                report.getvalue())
 
     def test_collects_matrix_in_one_gradle_command_per_backend(self):
         args = run_benchmarks.parse_args([
@@ -69,7 +50,7 @@ class SampleOutputRunnerTest(unittest.TestCase):
             "--formats", "DEFAULT", "COMPACT", "--message-types", "LAMBDA_PARAMETER",
         ])
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
-            report = Path(directory) / "SAMPLE_OUTPUT.md"
+            report = io.StringIO()
 
             def capture(command):
                 params = command.split("sampleDirectory=", 1)[1].split("'", 1)[0]
@@ -86,7 +67,7 @@ class SampleOutputRunnerTest(unittest.TestCase):
                 return True
 
             with patch.object(run_benchmarks, "run_command", side_effect=capture) as command:
-                run_benchmarks.collect_sample_output(args, directory, report)
+                samples = run_benchmarks.collect_sample_output(args, directory)
 
             command.assert_called_once()
             self.assertIn("sampleFrontend=jcl,slf4j", command.call_args.args[0])
@@ -94,8 +75,9 @@ class SampleOutputRunnerTest(unittest.TestCase):
                 "sampleMessageType=CONSTANT,ARGUMENTS,MESSAGE_SUPPLIER,LAMBDA_PARAMETER",
                 command.call_args.args[0])
             self.assertIn("sampleException=false,true", command.call_args.args[0])
-            text = report.read_text(encoding="utf-8")
-            self.assertEqual(32, text.count("## Format:"))
+            run_benchmarks.write_sample_output(report, samples)
+            text = report.getvalue()
+            self.assertEqual(32, text.count("### Format:"))
             self.assertIn("Frontend JCL, ARGUMENTS\n\n````text\nJUL:        ARGUMENTS message\n", text)
             self.assertIn(
                 "Frontend SLF4J, LAMBDA_PARAMETER\n\n````text\nJUL:        LAMBDA_PARAMETER message\n", text)
@@ -123,18 +105,22 @@ class SampleOutputRunnerTest(unittest.TestCase):
 
         with patch("builtins.print") as output:
             run_benchmarks.collect_results(args, "timestamp", "results")
-            run_benchmarks.collect_sample_output(args, "results", None)
+            run_benchmarks.collect_sample_output(args, "results")
 
         commands = [call.args[0] for call in output.call_args_list if call.args and "Command:" in call.args[0]]
         self.assertEqual(2, len(commands))
 
         benchmark_command, sample_command = commands
         self.assertIn("outputToFile=false", benchmark_command)
+        self.assertNotIn("withException=", benchmark_command)
+        self.assertNotIn("sampleException=", benchmark_command)
         self.assertIn("-Pjmh.warmupIterations=2", benchmark_command)
         self.assertIn("-Pjmh.iterations=7", benchmark_command)
         self.assertNotIn("jmh.benchmarkMode", benchmark_command)
 
         self.assertIn("outputToFile=true", sample_command)
+        self.assertNotIn("withException=", sample_command)
+        self.assertIn("sampleException=false,true", sample_command)
         self.assertIn("-Pjmh.benchmarkMode=SingleShotTime", sample_command)
         self.assertIn("-Pjmh.warmupIterations=0", sample_command)
         self.assertIn("-Pjmh.iterations=1", sample_command)
@@ -148,7 +134,7 @@ class SampleOutputRunnerTest(unittest.TestCase):
             time="10ms", forks=1, profile=None, dryrun=True)
 
         with patch("builtins.print") as output:
-            run_benchmarks.collect_sample_output(args, "results", None)
+            run_benchmarks.collect_sample_output(args, "results")
 
         commands = [call.args[0] for call in output.call_args_list if call.args and "Command:" in call.args[0]]
         self.assertEqual(1, len(commands))
@@ -206,129 +192,162 @@ class SampleOutputRunnerTest(unittest.TestCase):
             finally:
                 os.chdir(previous)
 
-    def test_sequential_report_contains_side_by_side_message_type_bars_per_frontend(self):
-        results = []
-        for frontend, backend, message_type, score in (
-                ("jcl", "jul", "CONSTANT", 100.0),
-                ("jcl", "slb4j", "CONSTANT", 300.0),
-                ("log4j", "logback", "MESSAGE_SUPPLIER", 250.0),
-                ("slf4j", "jul", "CONSTANT", 200.0),
-                ("slf4j", "jul", "ARGUMENTS", 150.0),
-                ("slf4j", "jul", "MESSAGE_SUPPLIER", 175.0),
-                ("slf4j", "jul", "LAMBDA_PARAMETER", 125.0),
-                ("slf4j", "slb4j", "CONSTANT", 400.0),
-                ("slf4j", "slb4j", "ARGUMENTS", 350.0),
-                ("slf4j", "slb4j", "LAMBDA_PARAMETER", 325.0)):
-            results.append({
-                "backend_param": backend,
-                "benchmark": f"benchmark.{frontend}",
-                "params": {"category": "CONSOLE", "format": "DEFAULT", "messageType": message_type},
-                "primaryMetric": {"score": score, "scoreError": 1.0},
-            })
+class UnifiedReportTest(unittest.TestCase):
+    def test_formats_bars_in_eighths(self):
+        for score, blocks in enumerate(("▏", "▎", "▍", "▌", "▋", "▊", "▉", "█"), start=1):
+            with self.subTest(score=score):
+                self.assertEqual(f'<span style="color: #0072b2">{blocks}</span>',
+                                 run_benchmarks.format_table_bar(score, 128, "jul"))
+        self.assertEqual('<span style="color: #0072b2">█▏</span>',
+                         run_benchmarks.format_table_bar(8.6, 128, "jul"))
+        self.assertEqual('<span style="color: #0072b2">▏</span>',
+                         run_benchmarks.format_table_bar(0.01, 128, "jul"))
+        self.assertEqual("", run_benchmarks.format_table_bar(0, 0, "jul"))
+
+    def test_dry_run_always_schedules_samples_and_passes_formats_to_non_jul_backends(self):
+        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
+            completed = subprocess.run([
+                sys.executable, str(SCRIPT_PATH), "--dryrun", "--run", "PARALLEL", "--mode", "smoketest",
+                "--backends", "logback", "--frontends", "slf4j", "--formats", "COMPACT", "DETAILED",
+                "--message-types", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER",
+            ], cwd=directory, text=True, capture_output=True, check=True)
+            self.assertEqual(1, completed.stdout.count(r"LgbckBenchmark\.sampleOutput$"))
+            self.assertIn(r"LgbckParallelBenchmark\.(slf4j)_.*", completed.stdout)
+            self.assertIn(";format=COMPACT,DETAILED;messageType=MESSAGE_SUPPLIER,LAMBDA_PARAMETER'", completed.stdout)
+            self.assertFalse(list(Path(directory).rglob("*.md")))
+
+    def test_parallel_runner_groups_only_compatible_workloads(self):
+        args = run_benchmarks.parse_args(["--dryrun", "--run", "PARALLEL", "--backends", "jul",
+                                         "--frontends", "jul", "jcl", "log4j"])
+        with patch("builtins.print") as output:
+            run_benchmarks.collect_parallel_results(args, "timestamp", "results")
+
+        commands = [call.args[0] for call in output.call_args_list if "-Pjmh.includes=" in call.args[0]]
+        self.assertEqual(3, len(commands))
+        for frontends, types in (("jul|jcl|log4j", "CONSTANT"), ("jul|log4j", "ARGUMENTS,MESSAGE_SUPPLIER"),
+                                 ("log4j", "LAMBDA_PARAMETER")):
+            matching = [cmd for cmd in commands if f";messageType={types}'" in cmd]
+            self.assertEqual(1, len(matching))
+            self.assertIn(rf"JulParallelBenchmark\.({frontends})_.*", matching[0])
+            self.assertNotIn("Exception=", matching[0])
+
+    def test_combines_all_sections_and_keeps_measurement_dimensions_separate(self):
+        def result(method, handler, fmt, score, error=None, backend="logback", **params):
+            return {"backend_param": backend, "benchmark": f"benchmark.{method}", "jdkVersion": "27.0.1",
+                    "params": {"category": handler, "format": fmt, **params},
+                    "primaryMetric": {"score": score, "scoreError": error}}
+
+        serial = [
+            result("jul", "CONSOLE", "COMPACT", 100, 1.5, backend="jul", messageType="CONSTANT"),
+            result("jul", "CONSOLE", "COMPACT", 80, messageType="MESSAGE_SUPPLIER"),
+            result("jul", "CONSOLE", "DEFAULT", 42, messageType="ARGUMENTS"),
+            result("slf4j", "CONSOLE", "DETAILED", 56.25, None, messageType="CONSTANT"),
+            result("slf4j", "FILE", "COMPACT", 10, "NaN", messageType="CONSTANT"),
+            result("jul", "CONSOLE", "COMPACT", 125, 42, backend="jul", messageType="CONSTANT", withException="true"),
+        ]
+        parallel = [
+            result("jul_128", "CONSOLE", "COMPACT", 175, 2.5, backend="jul", messageType="ARGUMENTS"),
+            result("jul_2", "CONSOLE", "COMPACT", 0, backend="jul", messageType="CONSTANT"),
+            result("jul_2", "CONSOLE", "COMPACT", 75, backend="jul", messageType="MESSAGE_SUPPLIER"),
+            result("jul_2", "CONSOLE", "COMPACT", 65, messageType="ARGUMENTS"),
+            result("slf4j_1", "CONSOLE", "COMPACT", 50, backend="jul"),
+            result("slf4j_2", "FILE", "DETAILED", 1200, 60, messageType="LAMBDA_PARAMETER"),
+        ]
+        samples = {
+            ("COMPACT", "CONSTANT", False, "jul"): {"logback": ["actual example output"]},
+            ("COMPACT", "CONSTANT", True, "jul"): {"logback": ["example", "Sample exception stack trace"]},
+        }
+        args = run_benchmarks.parse_args(["--run", "SERIAL", "PARALLEL", "--frontends", "jul", "slf4j"])
 
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
-            run_benchmarks.generate_markdown_sequential(
-                results, SimpleNamespace(), "timestamp", directory, "system", "command")
-            report = (Path(directory) / "BENCHMARK_RESULTS.md").read_text(encoding="utf-8")
-            self.assertEqual(3, report.count("](benchmark-chart-"))
+            run_benchmarks.generate_markdown_report(serial[::-1], parallel[::-1], samples, args,
+                                                    datetime.datetime(2026, 11, 23, 16, 32, 20),
+                                                    directory, "test system", "test command")
+            output = Path(directory)
+            self.assertEqual(["BENCHMARK_RESULTS.md"], sorted(path.name for path in output.glob("*.md")))
+            self.assertCountEqual(["benchmark-chart-singlethreaded.svg", "benchmark-chart-multithreaded.svg"],
+                                  [path.name for path in output.glob("*.svg")])
+            report = (output / "BENCHMARK_RESULTS.md").read_text(encoding="utf-8")
+            self.assertEqual(2, report.count("| Frontend | Handler | Pattern | Backend |"))
+            self.assertEqual(2, report.count("](benchmark-chart-"))
+            self.assertIn("Date: 2026-11-23 16:32:20", report)
+            self.assertIn("Benchmark JVM: 27.0.1", report)
+            self.assertIn("test command", report)
+            self.assertIn("## Example Output", report)
+            examples, throughput = report.split("## Singlethreaded\n\n")
+            self.assertIn("actual example output", examples)
+            self.assertIn("CONSTANT (with exception)", examples)
+            self.assertIn("Sample exception stack trace", examples)
+            self.assertNotIn("with exception", throughput)
+            self.assertNotIn("125", throughput)
+
+            singlethreaded, multithreaded = throughput.split("## Multithreaded\n\n")
+            def table_rows(section):
+                return [[cell.strip() for cell in line[1:-1].split("|")]
+                        for line in section.splitlines() if line.startswith("|")]
+
+            serial_header, serial_alignment, *serial_rows = table_rows(singlethreaded)
+            parallel_header, parallel_alignment, *parallel_rows = table_rows(multithreaded)
+            labels = ["Frontend", "Handler", "Pattern", "Backend"]
+            columns = ["CONSTANT", "MESSAGE SUPPLIER", "ARGUMENTS", "LAMBDA_PARAMETER"]
+            self.assertEqual(labels + columns, serial_header)
+            self.assertEqual(labels + ["Threads"] + columns, parallel_header)
+            self.assertEqual(["---:"] * 4, serial_alignment[-4:])
+            self.assertEqual(["---:"] * 5, parallel_alignment[-5:])
+            self.assertEqual([
+                ["JUL", "CONSOLE", "COMPACT", "JUL"], ["", "", "", "LOGBACK"], ["", "", "DEFAULT", "LOGBACK"],
+                ["SLF4J", "CONSOLE", "DETAILED", "LOGBACK"], ["", "FILE", "COMPACT", "LOGBACK"],
+            ], [row[:4] for row in serial_rows])
+            self.assertEqual([
+                ["JUL", "CONSOLE", "COMPACT", "JUL", "2"], ["", "", "", "", "128"],
+                ["", "", "", "LOGBACK", "2"], ["SLF4J", "CONSOLE", "COMPACT", "JUL", "1"],
+                ["", "FILE", "DETAILED", "LOGBACK", "2"],
+            ], [row[:5] for row in parallel_rows])
+
+            self.assertRegex(serial_rows[0][4], r"████████████████</span>.*100&nbsp;±&nbsp;1</span>$")
+            self.assertRegex(serial_rows[1][5], r"████████████▊</span>.*80")
+            self.assertRegex(serial_rows[3][4], r"█████████</span>.*56")
+            self.assertIn("color: #0072b2", serial_rows[0][4])
+            self.assertIn("color: #d55e00", serial_rows[1][5])
+            self.assertIn("color: #d55e00", serial_rows[3][4])
+            self.assertEqual(["—", "—", "—"], serial_rows[0][5:])
+            self.assertEqual(["—", "—"], parallel_rows[0][-2:])
+            self.assertRegex(parallel_rows[0][5], r"0(?:</span>)?$")
+            self.assertRegex(parallel_rows[0][6], r"</span>.*75")
+            self.assertRegex(parallel_rows[3][7], r"</span>.*50")
+            self.assertRegex(parallel_rows[-1][-1], r"████████████████</span>.*1,200.*±.*60")
+            self.assertNotIn("NaN", report)
+            self.assertNotIn("<br>", throughput)
+
             ns = {"": "http://www.w3.org/2000/svg"}
-            for index, frontend, details in (
-                    (1, "jcl", ", Message Type Constant"),
-                    (2, "log4j", ", Backend logback, Message Type Message Supplier"),
-                    (3, "slf4j", "")):
-                filename = f"benchmark-chart-1-{index}.svg"
-                title = f"Frontend {frontend}, Target CONSOLE{details}, Throughput (higher is better)"
-                self.assertIn(f"#### Frontend: {frontend}\n\n![{title}]({filename})", report)
-                chart = ET.parse(Path(directory) / filename).getroot()
-                self.assertEqual(title, chart.findtext("title", namespaces=ns))
-                self.assertEqual(title, chart.findtext("g/text", namespaces=ns))
+            for suffix, count in (("singlethreaded", 5), ("multithreaded", 6)):
+                chart = ET.parse(output / f"benchmark-chart-{suffix}.svg").getroot()
+                bars = chart.findall(".//rect[@class='measurement']", ns)
+                self.assertEqual(count, len(bars))
+                self.assertEqual({"#0072b2", "#d55e00"}, {bar.get("fill") for bar in bars})
+                for bar in bars:
+                    backend = bar.findtext("title", namespaces=ns).split(" / ")[3]
+                    self.assertEqual({"JUL": "#0072b2", "LOGBACK": "#d55e00"}[backend], bar.get("fill"))
+                if suffix == "singlethreaded":
+                    widths = {bar.findtext("title", namespaces=ns): float(bar.get("width")) for bar in bars}
+                    console_max = widths["JUL / CONSOLE / COMPACT / JUL / CONSTANT: 100.00 ± 1.50 ops/s"]
+                    self.assertAlmostEqual(widths["SLF4J / CONSOLE / DETAILED / LOGBACK / CONSTANT: 56.25 ops/s"],
+                                           console_max * 0.5625)
+                    self.assertEqual(widths["SLF4J / FILE / COMPACT / LOGBACK / CONSTANT: 10.00 ops/s"], console_max)
 
-            for index, expected_groups in (
-                    (1, [[100.0], [300.0]]),
-                    (3, [[200.0, 150.0, 175.0, 125.0], [400.0, 350.0, None, 325.0]])):
-                chart = ET.parse(Path(directory) / f"benchmark-chart-1-{index}.svg").getroot()
-                legend = chart.findall(".//g[@class='legend-item']", ns)
-                labels = [item.findtext("text", namespaces=ns) for item in legend]
-                self.assertEqual(["Constant", "Argument", "Message Supplier", "Lambda Parameter"]
-                                 [:len(expected_groups[0])], labels)
-                colors = [item.find("rect", ns).get("fill") for item in legend]
-                self.assertEqual(len(colors), len(set(colors)))
-
-                groups = chart.findall(".//g[@class='backend']", ns)
-                self.assertEqual(["jul", "slb4j"], [group.findtext("text", namespaces=ns) for group in groups])
-                previous_right = 0
-                scale = None
-                for group, scores in zip(groups, expected_groups):
-                    bars = group.findall("rect", ns)
-                    expected = [(score, color) for score, color in zip(scores, colors) if score is not None]
-                    self.assertEqual(len(expected), len(bars))
-                    for bar, (score, color) in zip(bars, expected):
-                        x, width, height = (float(bar.get(attr)) for attr in ("x", "width", "height"))
-                        self.assertGreater(x, previous_right)
-                        self.assertGreater(width, 0)
-                        self.assertGreater(height, 0)
-                        self.assertEqual(color, bar.get("fill"))
-                        if scale is None:
-                            scale = height / score
-                        self.assertAlmostEqual(height / score, scale)
-                        previous_right = x + width
-
-    def test_parallel_report_keeps_targets_formats_and_frontends_separate(self):
-        results = []
-        for category, fmt, backend, frontend, threads, score in (
-                ("FILE", None, "rainbowgum", "jcl", 1, 900),
-                ("CONSOLE", "COMPACT", "jul", "jcl", 1, 800),
-                ("CONSOLE", None, "rainbowgum", "slf4j", 1, 700),
-                ("CONSOLE", None, "rainbowgum", "jcl", 16, 300),
-                ("CONSOLE", "DEFAULT", "jul", "jcl", 1, 100),
-                ("CONSOLE", "DEFAULT", "jul", "jcl", 16, 200),
-                ("CONSOLE", "DEFAULT", "jul", "jcl", 2, 150)):
-            params = {"category": category}
-            if fmt is not None:
-                params["format"] = fmt
-            results.append({"backend_param": backend, "benchmark": f"benchmark.{frontend}_{threads}",
-                            "params": params, "primaryMetric": {"score": score}})
-
+    def test_sample_only_report_does_not_create_empty_tables_or_charts(self):
+        args = run_benchmarks.parse_args(["--run", "SAMPLE_OUTPUT"])
+        samples = {("DEFAULT", "CONSTANT", True, "slf4j"): {"jul": ["example", "with exception"]}}
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
-            run_benchmarks.generate_markdown_parallel(
-                results, SimpleNamespace(), "timestamp", directory, "system", "command")
-            report = (Path(directory) / "PARALLEL_BENCHMARK_RESULTS.md").read_text(encoding="utf-8")
-            console, file = report.split("### Handler: FILE")
-            compact, default = console.split("#### Format: DEFAULT")
-            self.assertEqual(1, compact.count("](parallel-benchmark-chart-"))
-            self.assertEqual(2, default.count("](parallel-benchmark-chart-"))
-            self.assertEqual(1, file.count("](parallel-benchmark-chart-"))
-            self.assertIn("| rainbowgum | jcl | — | — | **300.00** |", default)
-
-            ns = {"": "http://www.w3.org/2000/svg"}
-            for filename, details in (
-                    ("1-1", "Frontend jcl, Target CONSOLE, Backend jul, Message Type Preformatted"),
-                    ("2-1", "Frontend jcl, Target CONSOLE, Message Type Preformatted"),
-                    ("2-2", "Frontend slf4j, Target CONSOLE, Backend rainbowgum, Message Type Argument"),
-                    ("3-1", "Frontend jcl, Target FILE, Backend rainbowgum, Message Type Preformatted")):
-                filename = f"parallel-benchmark-chart-{filename}.svg"
-                title = f"{details}, Throughput (higher is better)"
-                self.assertIn(f"![{title}]({filename})", report)
-                chart = ET.parse(Path(directory) / filename).getroot()
-                self.assertEqual(title, chart.findtext("title", namespaces=ns))
-                self.assertEqual(title, chart.findtext("g/text", namespaces=ns))
-
-            chart = ET.parse(Path(directory) / "parallel-benchmark-chart-2-1.svg").getroot()
-            legend = chart.findall(".//g[@class='legend-item']", ns)
-            self.assertEqual(["1 Thread", "2 Threads", "16 Threads"],
-                             [item.findtext("text", namespaces=ns) for item in legend])
-            colors = [item.find("rect", ns).get("fill") for item in legend]
-            self.assertEqual(3, len(set(colors)))
-            jul, rainbowgum = chart.findall(".//g[@class='backend']", ns)
-            self.assertEqual(["jul", "rainbowgum"],
-                             [group.findtext("text", namespaces=ns) for group in (jul, rainbowgum)])
-            bars = jul.findall("rect", ns)
-            self.assertEqual(colors, [bar.get("fill") for bar in bars])
-            for left, right in zip(bars, bars[1:]):
-                self.assertLess(float(left.get("x")) + float(left.get("width")), float(right.get("x")))
-            bar, = rainbowgum.findall("rect", ns)
-            self.assertEqual(colors[2], bar.get("fill"))
-            self.assertIn("16 Threads: 300.00 ops/s", bar.findtext("title", namespaces=ns))
+            run_benchmarks.generate_markdown_report([], [], samples, args, datetime.datetime.now(),
+                                                    directory, "test system", "test command")
+            report, = Path(directory).iterdir()
+            self.assertEqual("BENCHMARK_RESULTS.md", report.name)
+            text = report.read_text(encoding="utf-8")
+            self.assertIn("## Example Output", text)
+            self.assertIn("with exception", text)
+            self.assertEqual(2, text.count("Not requested for this run."))
+            self.assertNotIn("| Frontend | Handler | Pattern | Backend |", text)
 
 
 if __name__ == "__main__":

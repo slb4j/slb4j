@@ -7,7 +7,7 @@ jreleaser-plugin = { id = "org.jreleaser", version = "1.27.0" }
 spotbugs-plugin = { id = "com.github.spotbugs", version = "6.5.13" }
 
 [versions]
-projectVersion = "0.16.0-SNAPSHOT"
+projectVersion = "0.16.0"
 
 jdk = "21"
 jdkNative = "25"

@@ -20,6 +20,7 @@ import org.junit.jupiter.api.Test;
 import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -138,6 +139,50 @@ class JulBenchmarkFormattingTest {
             assertTrue(output.contains(" - Hello world" + System.lineSeparator() + "java.lang.IllegalStateException: Sample exception"));
             assertTrue(output.contains("JulBenchmarkFormattingTest.exceptionsAndMessageParametersArePreserved"));
         }
+    }
+
+    @Test
+    void serialBenchmarkPreservesJulArgumentsWithoutAnException() {
+        var records = new ArrayList<LogRecord>();
+        Logger logger = Logger.getAnonymousLogger();
+        logger.setUseParentHandlers(false);
+        logger.addHandler(new Handler() {
+            @Override
+            public void publish(LogRecord record) {
+                records.add(record);
+            }
+
+            @Override
+            public void flush() {
+            }
+
+            @Override
+            public void close() {
+            }
+        });
+        AbstractLoggingBenchmark benchmark = new AbstractLoggingBenchmark() {
+            @Override
+            public String backend() {
+                return "test";
+            }
+
+            @Override
+            protected BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile) {
+                return null;
+            }
+        };
+        benchmark.julLogger = logger;
+        benchmark.category = "CONSOLE";
+        benchmark.format = "DETAILED";
+        benchmark.messageType = "ARGUMENTS";
+
+        benchmark.jul();
+
+        assertEquals(1, records.size());
+        LogRecord record = records.getFirst();
+        assertNull(record.getThrown());
+        assertEquals("Benchmark backend=test frontend=jul category=CONSOLE format=DETAILED messageType=ARGUMENTS",
+                MessageFormat.format(record.getMessage(), record.getParameters()));
     }
 
     @Test

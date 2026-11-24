@@ -26,6 +26,7 @@ import platform
 import math
 import shlex
 import tempfile
+from itertools import product
 from html import escape
 
 # Constants
@@ -50,6 +51,23 @@ VALID_FORMATS = ["COMPACT", "DEFAULT", "DETAILED"]
 SAMPLE_FRONTENDS = ["jul", "jcl", "log4j", "slf4j"]
 VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
 VALID_RUN_TYPES = ["SERIAL", "PARALLEL", "SAMPLE_OUTPUT"]
+PARALLEL_THREADS = (1, 2, 4, 8, 16, 64, 128)
+REPORT_FRONTENDS = ("jul", "log4j", "slf4j", "jcl")
+MESSAGE_COLUMNS = {
+    "CONSTANT": "CONSTANT",
+    "MESSAGE_SUPPLIER": "MESSAGE SUPPLIER",
+    "ARGUMENTS": "ARGUMENTS",
+    "LAMBDA_PARAMETER": "LAMBDA_PARAMETER",
+}
+BACKEND_COLORS = {
+    "jul": "#0072b2",
+    "log4j": "#008659",
+    "logback": "#d55e00",
+    "rainbowgum": "#9c518a",
+    "slb4j": "#a6761d",
+}
+LEGACY_PARALLEL_MESSAGE_TYPES = {"jul": "ARGUMENTS", "log4j": "MESSAGE_SUPPLIER", "slf4j": "ARGUMENTS", "jcl": "CONSTANT"}
+TABLE_BAR_WIDTH = 16
 
 # ANSI colors
 BLACK = "\033[0;30m"
@@ -122,22 +140,14 @@ def get_system_info():
     return "\n".join(info)
 
 def validate_args(args):
-    run_types = set(args.run)
-    run_serial = "SERIAL" in run_types
-    run_parallel = "PARALLEL" in run_types
-    run_sample_output = "SAMPLE_OUTPUT" in run_types
-
     # Sample output uses the sequential benchmark implementations.
-    if run_serial or run_sample_output:
-        backends_map = SEQUENTIAL_BACKENDS_MAP
-        backends = args.backends if args.backends else list(backends_map.keys())
-        for b in backends:
-            if b not in backends_map:
-                print(f"{BOLD_RED}Error: Invalid sequential backend {b}. Valid backends are: {list(backends_map.keys())}{RESET}")
-                return False
+    for b in args.backends or SEQUENTIAL_BACKENDS_MAP:
+        if b not in SEQUENTIAL_BACKENDS_MAP:
+            print(f"{BOLD_RED}Error: Invalid sequential backend {b}. Valid backends are: {list(SEQUENTIAL_BACKENDS_MAP)}{RESET}")
+            return False
 
     # Validate backends for parallel if needed
-    if run_parallel:
+    if "PARALLEL" in args.run:
         backends_map = PARALLEL_BACKENDS_MAP
         backends = args.backends if args.backends else list(backends_map.keys())
         for b in backends:
@@ -145,7 +155,7 @@ def validate_args(args):
                 print(f"{BOLD_RED}Error: Invalid parallel backend {b}. Valid backends are: {list(backends_map.keys())}{RESET}")
                 return False
     
-    if run_sample_output and args.frontends and any(f not in SAMPLE_FRONTENDS for f in args.frontends):
+    if args.frontends and any(f not in SAMPLE_FRONTENDS for f in args.frontends):
         print(f"{BOLD_RED}Error: Sample frontends must be one of: {SAMPLE_FRONTENDS}{RESET}")
         return False
 
@@ -198,14 +208,6 @@ def compile_benchmarks(args):
         return True
     return run_command(command)
 
-def initialize_sample_output(args, results_dir):
-    if args.dryrun or "SAMPLE_OUTPUT" not in args.run:
-        return None
-
-    report_path = os.path.abspath(os.path.join(results_dir, "SAMPLE_OUTPUT.md"))
-    write_sample_output(report_path, {})
-    return report_path
-
 def read_sample_output(output_path, with_exception):
     with open(output_path, encoding="utf-8") as output:
         text = output.read()
@@ -219,27 +221,28 @@ def read_sample_output(output_path, with_exception):
         raise RuntimeError(f"Expected sample output with a stack trace in {output_path}")
     return lines
 
-def write_sample_output(report_path, samples):
+def write_sample_output(report, samples):
     label_width = max(map(len, SEQUENTIAL_BACKENDS_MAP)) + 2
-    with open(report_path, "w", encoding="utf-8") as report:
-        report.write("# Benchmark Sample Outputs\n\n")
-        for fmt in VALID_FORMATS:
-            for with_exception in (False, True):
-                for message_type in VALID_MESSAGE_TYPES:
-                    title = message_type + (" (with exception)" if with_exception else "")
-                    for frontend in SAMPLE_FRONTENDS:
-                        section = samples.get((fmt, message_type, with_exception, frontend))
-                        if not section:
-                            continue
-                        report.write(f"## Format: {fmt}, Frontend {frontend.upper()}, {title}\n\n````text\n")
-                        for backend in SEQUENTIAL_BACKENDS_MAP:
-                            if backend in section:
-                                first, *rest = section[backend]
-                                label = backend.upper() + ":"
-                                report.write(f"{label:<{label_width}}{first}\n")
-                                for line in rest:
-                                    report.write(" " * label_width + line + "\n")
-                        report.write("````\n\n")
+    report.write("## Example Output\n\n")
+    report.write("<details>\n<summary>Show console output by format, frontend, and message type</summary>\n\n")
+    for fmt in VALID_FORMATS:
+        for with_exception in (False, True):
+            for message_type in VALID_MESSAGE_TYPES:
+                title = message_type + (" (with exception)" if with_exception else "")
+                for frontend in SAMPLE_FRONTENDS:
+                    section = samples.get((fmt, message_type, with_exception, frontend))
+                    if not section:
+                        continue
+                    report.write(f"### Format: {fmt}, Frontend {frontend.upper()}, {title}\n\n````text\n")
+                    for backend in SEQUENTIAL_BACKENDS_MAP:
+                        if backend in section:
+                            first, *rest = section[backend]
+                            label = backend.upper() + ":"
+                            report.write(f"{label:<{label_width}}{first}\n")
+                            for line in rest:
+                                report.write(" " * label_width + line + "\n")
+                    report.write("````\n\n")
+    report.write("</details>\n\n")
 
 def collect_backend_samples(backend, formats, frontends, directory, dryrun, samples):
     include = f"{SEQUENTIAL_BACKENDS_MAP[backend]}\\.sampleOutput$"
@@ -268,7 +271,7 @@ def collect_backend_samples(backend, formats, frontends, directory, dryrun, samp
                     lines = read_sample_output(path, with_exception)
                     samples.setdefault((fmt, message_type, with_exception, frontend), {})[backend] = lines
 
-def collect_sample_output(args, results_dir, report_path):
+def collect_sample_output(args, results_dir):
     formats = [fmt for fmt in VALID_FORMATS if not args.formats or fmt in args.formats]
     frontends = [frontend for frontend in SAMPLE_FRONTENDS if not args.frontends or frontend in args.frontends]
     samples = {}
@@ -280,8 +283,7 @@ def collect_sample_output(args, results_dir, report_path):
         else:
             with tempfile.TemporaryDirectory(dir=os.path.abspath(results_dir)) as directory:
                 collect_backend_samples(backend, formats, frontends, directory, False, samples)
-    if not args.dryrun:
-        write_sample_output(report_path, samples)
+    return samples
 
 def create_results_directory(timestamp):
     os.makedirs("benchmark_results", exist_ok=True)
@@ -298,11 +300,20 @@ def create_results_directory(timestamp):
 def get_estimated_runtime(args):
     return calculate_runtime(args)
 
+def parallel_workload_groups(args):
+    groups = {}
+    for message in (args.message_types or VALID_MESSAGE_TYPES):
+        frontends = tuple(frontend for frontend in (args.frontends or SAMPLE_FRONTENDS)
+                          if (frontend != "jcl" or message == "CONSTANT")
+                          and (frontend != "jul" or message != "LAMBDA_PARAMETER"))
+        if frontends:
+            groups.setdefault(frontends, []).append(message)
+    return groups
+
 def calculate_runtime(args):
     run_types = set(args.run)
     run_serial = "SERIAL" in run_types
     run_parallel = "PARALLEL" in run_types
-    run_sample_output = "SAMPLE_OUTPUT" in run_types
     
     total_runtime = 0.0
     
@@ -322,33 +333,28 @@ def calculate_runtime(args):
         selected_backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
         num_backends = len(selected_backends)
         
-        num_frontends = len(args.frontends) if args.frontends else 4
-        num_handlers = len(args.handlers) if args.handlers else 2
-        num_formats = len(args.formats) if args.formats else 3
-        msg_types = args.message_types if args.message_types else VALID_MESSAGE_TYPES
-        num_msg_types = len(msg_types)
-        total_benchmarks_per_backend = num_frontends * num_handlers * num_formats * num_msg_types
+        num_handlers = len(args.handlers or VALID_HANDLERS)
+        num_formats = len(args.formats or VALID_FORMATS)
+        workloads = sum(1 for frontend in (args.frontends or SAMPLE_FRONTENDS)
+                        for message in (args.message_types or VALID_MESSAGE_TYPES)
+                        if (frontend != "jcl" or message == "CONSTANT")
+                        and (frontend != "jul" or message != "LAMBDA_PARAMETER"))
+        total_benchmarks_per_backend = workloads * num_handlers * num_formats
         
         total_runtime += num_backends * (gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark)
 
     if run_parallel:
         selected_backends = args.backends if args.backends else list(PARALLEL_BACKENDS_MAP.keys())
-        num_frontends = 2 # slf4j, log4j
-        num_threads = 7 # 1, 2, 4, 8, 16, 64, 128
-        num_handlers = len(args.handlers) if args.handlers else 2
-        total_benchmarks_per_backend = num_frontends * num_threads * num_handlers
-        num_formats = len(args.formats) if args.formats else len(VALID_FORMATS)
+        groups = parallel_workload_groups(args)
+        workloads = sum(len(frontends) * len(messages) for frontends, messages in groups.items())
+        total_benchmarks_per_backend = (workloads * len(PARALLEL_THREADS)
+                                        * len(args.handlers or VALID_HANDLERS) * len(args.formats or VALID_FORMATS))
+        total_runtime += len(selected_backends) * (len(groups) * gradle_startup_overhead
+                                                  + total_benchmarks_per_backend * time_per_benchmark)
 
-        for backend in selected_backends:
-            format_multiplier = num_formats if backend == "jul" else 1
-            total_runtime += gradle_startup_overhead + total_benchmarks_per_backend * format_multiplier * time_per_benchmark
-
-    if run_sample_output:
-        selected_backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
-        num_formats = len(args.formats or VALID_FORMATS)
-        num_frontends = len(args.frontends or SAMPLE_FRONTENDS)
-        num_samples = len(VALID_MESSAGE_TYPES) * 2 * num_formats * num_frontends
-        total_runtime += len(selected_backends) * (gradle_startup_overhead + num_samples * 0.1)
+    selected_backends = args.backends or SEQUENTIAL_BACKENDS_MAP
+    num_samples = len(VALID_MESSAGE_TYPES) * 2 * len(args.formats or VALID_FORMATS) * len(args.frontends or SAMPLE_FRONTENDS)
+    total_runtime += len(selected_backends) * (gradle_startup_overhead + num_samples * 0.1)
 
     return total_runtime
 
@@ -401,15 +407,15 @@ def move_profiler_outputs(backend, results_dir, profiler_subdir):
 def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None):
     all_results = []
     selected_backends = args.backends if args.backends else list(PARALLEL_BACKENDS_MAP.keys())
-    success = True
+    groups = parallel_workload_groups(args)
     
-    for backend in selected_backends:
-        print(f"{LIGHT_CYAN}Testing parallel backend: {backend}{RESET}")
+    for backend, (frontends, message_types) in product(selected_backends, groups.items()):
+        print(f"{LIGHT_CYAN}Testing parallel backend: {backend}, messageType={','.join(message_types)}{RESET}")
+        suffix = f"_{message_types[0].lower()}" if len(groups) > 1 else ""
+        run_profiler_subdir = os.path.join(profiler_subdir, backend + suffix) if profiler_subdir and suffix else profiler_subdir
         
         benchmark_class = PARALLEL_BACKENDS_MAP[backend]
-        effective_frontends = args.frontends if args.frontends else ["jul", "jcl", "slf4j", "log4j"]
-        
-        include_pattern = f"{benchmark_class}\\.({'|'.join(effective_frontends)})_.*"
+        include_pattern = f"{benchmark_class}\\.({'|'.join(frontends)})_.*"
         
         cmd = benchmark_run_command(backend)
         cmd += f" -Pjmh.includes='{include_pattern}'"
@@ -417,12 +423,10 @@ def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None)
         params = []
         if args.handlers:
             params.append(f"category={','.join(args.handlers)}")
-        if backend == "jul":
-            formats = args.formats if args.formats else VALID_FORMATS
-            params.append(f"format={','.join(formats)}")
+        params.append(f"format={','.join(args.formats or VALID_FORMATS)}")
+        params.append(f"messageType={','.join(message_types)}")
         
-        if params:
-            cmd += f" -Pjmh.parameters='{';'.join(params)}'"
+        cmd += f" -Pjmh.parameters='{';'.join(params)}'"
         
         if args.warmup is not None: cmd += f" -Pjmh.warmupIterations={args.warmup}"
         if args.iterations is not None: cmd += f" -Pjmh.iterations={args.iterations}"
@@ -433,8 +437,8 @@ def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None)
             cmd += " -Pjmh.forks=1"
         if args.profile: 
             cmd += f" -Pjmh.profilers='{','.join(args.profile)}'"
-            if profiler_subdir:
-                prof_dir = os.path.join(results_dir, profiler_subdir)
+            if run_profiler_subdir:
+                prof_dir = os.path.join(results_dir, run_profiler_subdir)
                 if not os.path.exists(prof_dir):
                     os.makedirs(prof_dir)
                 cmd += f" -Pjmh.profilerOutput='{prof_dir}'"
@@ -444,7 +448,7 @@ def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None)
         # We'll use this default and move it afterwards.
         # Note: We can't easily change the output file from property if not supported in build.gradle.kts
         results_file_src = os.path.join("benchmark", f"benchmark-{backend}", "build", "results", "jmh", "results.json")
-        results_file_dst = os.path.join(results_dir, f"parallel_results_{backend}.json")
+        results_file_dst = os.path.join(results_dir, f"parallel_results_{backend}{suffix}.json")
         
         if args.dryrun:
             print(f"{LIGHT_YELLOW}Dry run: {cmd}{RESET}")
@@ -453,7 +457,7 @@ def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None)
             if os.path.exists(results_file_src):
                 os.remove(results_file_src)
 
-            if run_command(cmd, os.path.join(results_dir, f"parallel_benchmark_{backend}.log")):
+            if run_command(cmd, os.path.join(results_dir, f"parallel_benchmark_{backend}{suffix}.log")):
                 if os.path.exists(results_file_src):
                     shutil.copy2(results_file_src, results_file_dst)
                     with open(results_file_dst, 'r') as f:
@@ -465,10 +469,9 @@ def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None)
                     print(f"{YELLOW}Warning: No results found for backend {backend} at {results_file_src}{RESET}")
             else:
                 print(f"{BOLD_RED}Parallel benchmark failed for backend: {backend}{RESET}")
-                success = False
         
         if not args.dryrun and args.profile:
-            move_profiler_outputs(backend, results_dir, profiler_subdir)
+            move_profiler_outputs(backend, results_dir, run_profiler_subdir)
                 
     return all_results
 
@@ -539,7 +542,7 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None):
             cmd = None
             if run_serial:
                 cmd_base = benchmark_run_command(backend)
-                include_pattern = f"{benchmark_class}\\.({'|'.join(effective_frontends)})"
+                include_pattern = f"{benchmark_class}\\.({'|'.join(effective_frontends)})$"
                 cmd_base += f" -Pjmh.includes='{include_pattern}'"
                 if run["exclude"]:
                     cmd_base += f" -Pjmh.excludes='{run['exclude']}'"
@@ -583,8 +586,10 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None):
                 output_file = os.path.join(results_dir, f"profile_{backend}{suffix}.txt")
 
             if cmd:
+                src_json = f"benchmark/benchmark-{backend}/build/results/jmh/results.json"
+                if os.path.exists(src_json):
+                    os.remove(src_json)
                 if run_command(cmd, output_file):
-                    src_json = f"benchmark/benchmark-{backend}/build/results/jmh/results.json"
                     dest_json = os.path.join(results_dir, f"results_{backend}_{i}.json")
                     if os.path.exists(src_json):
                         shutil.copy(src_json, dest_json)
@@ -606,460 +611,178 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None):
 
     return all_results
 
-def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line):
-    if not results:
-        print(f"{BOLD_RED}No results to generate parallel report.{RESET}")
-        return
+def measurement_value(value):
+    try:
+        value = float(value)
+    except (TypeError, ValueError):
+        return None
+    return value if math.isfinite(value) and value >= 0 else None
 
-    grouped = {}
-    present_threads = set()
-    for entry in results:
-        backend = entry["backend_param"]
-        benchmark_full_name = entry["benchmark"]
-        # benchmark_full_name is something like "org.slb4j.benchmark.Slb4jParallelBenchmark.slf4j_1"
-        benchmark_name = benchmark_full_name.split(".")[-1]
-        try:
-            frontend, thread_count = benchmark_name.split("_")
-            thread_count = int(thread_count)
-            present_threads.add(thread_count)
-            if backend not in grouped: grouped[backend] = {}
-            if frontend not in grouped[backend]: grouped[backend][frontend] = {}
-            score = entry.get("primaryMetric", {}).get("score", 0)
-            grouped[backend][frontend][thread_count] = score
-        except ValueError:
-            print(f"{BOLD_RED}Warning: Could not parse benchmark name: {benchmark_name}{RESET}")
-            continue
 
-    # Calculate min/max scores for each frontend and thread count
-    frontend_thread_scores = {} # frontend -> thread_count -> list of scores
-    for backend, frontends in grouped.items():
-        for frontend, threads in frontends.items():
-            if frontend not in frontend_thread_scores:
-                frontend_thread_scores[frontend] = {}
-            for t, score in threads.items():
-                if t not in frontend_thread_scores[frontend]:
-                    frontend_thread_scores[frontend][t] = []
-                frontend_thread_scores[frontend][t].append(score)
-    
-    min_max_parallel = {} # frontend -> thread_count -> (min, max)
-    for frontend, threads in frontend_thread_scores.items():
-        min_max_parallel[frontend] = {}
-        for t, scores in threads.items():
-            if scores:
-                min_max_parallel[frontend][t] = (min(scores), max(scores))
+def collect_report_measurements(serial_results, parallel_results):
+    serial, parallel = {}, {}
+    for is_parallel, results, measurements in ((False, serial_results, serial), (True, parallel_results, parallel)):
+        for entry in results:
+            params = entry["params"]
+            if str(params.get("withException", "false")).lower() == "true":
+                continue
+            frontend = entry["benchmark"].rsplit(".", 1)[-1]
+            threads = None
+            if is_parallel:
+                frontend, threads = frontend.rsplit("_", 1)
+                threads = int(threads)
+                message_type = params.get("messageType", LEGACY_PARALLEL_MESSAGE_TYPES[frontend])
             else:
-                min_max_parallel[frontend][t] = (None, None)
-
-    report_path = os.path.join(results_dir, "PARALLEL_BENCHMARK_RESULTS.md")
-    with open(report_path, "w") as f:
-        f.write("# Parallel Logging Benchmark Results\n\n")
-        f.write(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-        f.write("## Command Line\n```bash\n" + cmd_line + "\n```\n\n")
-        f.write("## System Information\n```\n" + sys_info + "\n```\n\n")
-        f.write("Throughput (ops/s) for different thread counts.\n\n")
-        
-        sorted_backends = sorted(grouped.keys())
-        all_threads = sorted(list(present_threads))
-        header = "| Backend | Frontend | " + " | ".join([f"{t} Threads" for t in all_threads]) + " |"
-        separator = "| :--- | :--- | " + " | ".join([":---:" for _ in all_threads]) + " |"
-        f.write(header + "\n" + separator + "\n")
-        for backend in sorted_backends:
-            sorted_frontends = sorted(grouped[backend].keys())
-            for frontend in sorted_frontends:
-                row = f"| {backend} | {frontend} |"
-                for t in all_threads:
-                    score = grouped[backend][frontend].get(t, 0)
-                    score_str = f"{score:,.2f}"
-                    if score > 0 and t in min_max_parallel.get(frontend, {}):
-                        min_val, max_val = min_max_parallel[frontend][t]
-                        if min_val is not None and max_val is not None and min_val != max_val:
-                            if score == max_val:
-                                score_str = f"**{score_str}**"
-                            elif score == min_val:
-                                score_str = f"*{score_str}*"
-                    row += f" {score_str} |"
-                f.write(row + "\n")
-                
-    print(f"Markdown report generated: {report_path}")
-
-def chart_title(frontend, category, backends, message_type):
-    parts = [f"Frontend {frontend}", f"Target {category}"]
-    if len(backends) == 1:
-        parts.append(f"Backend {backends[0]}")
-    if message_type is not None:
-        parts.append(f"Message Type {message_type}")
-    parts.append("Throughput (higher is better)")
-    return ", ".join(parts)
+                message_type = params["messageType"]
+            metric = entry["primaryMetric"]
+            score = measurement_value(metric.get("score"))
+            if score is not None:
+                row = (frontend, params["category"], params.get("format", "DEFAULT"), entry["backend_param"], threads)
+                measurements.setdefault(row, {})[message_type] = (score, measurement_value(metric.get("scoreError")))
+    return serial, parallel
 
 
-def write_grouped_chart_svg(path, title, backends, series):
-    width, height = max(760, len(series) * 100 + 40, len(title) * 10 + 40), 360
-    title = escape(title)
-    left, right, top, bottom = 112, width - 28, 54, 286
-    max_score = max(score for _, _, scores in series for score in scores if score is not None)
-    rough_step = max(1, math.ceil(max_score * 1.1 / 5))
-    magnitude = 10 ** (len(str(rough_step)) - 1)
-    step = next(i * magnitude for i in (1, 2, 5, 10) if i * magnitude >= rough_step)
-    tick_count = max(1, math.ceil(max_score * 1.1 / step))
-    scale = (bottom - top) / (step * tick_count)
-    group_width = (right - left) / len(backends)
-    bar_width = min(46, group_width * 0.8 / len(series) - 4)
-    slot_width = bar_width + 4
+def format_measurement(measurement, *, whole=False):
+    score, error = measurement
+    if whole:
+        return f"{int(score):,}" if error is None else f"{int(score):,} ± {int(error):,}"
+    return f"{score:,.2f}" if error is None else f"{score:,.2f} ± {error:,.2f}"
 
+
+def format_table_bar(score, maximum, backend, *, pad=False):
+    eighths = max(1, round(TABLE_BAR_WIDTH * 8 * (score / maximum))) if score else 0
+    full, remainder = divmod(eighths, 8)
+    bar = "█" * full + ("▏▎▍▌▋▊▉"[remainder - 1] if remainder else "")
+    padding = "&nbsp;" * (TABLE_BAR_WIDTH - len(bar)) if pad else ""
+    return (f'<span style="color: {BACKEND_COLORS[backend]}">{bar}</span>' if bar else "") + padding
+
+
+def write_report_chart(path, title, rows, measurements, maxima):
+    handler_rows = {handler: [row for row in rows if row[1] == handler] for handler in VALID_HANDLERS if handler in maxima}
+    label_width, panel_width = 330, 200
+    row_height = 19
+    width = label_width + len(MESSAGE_COLUMNS) * panel_width + 20
+    height = 75 + sum(57 + len(keys) * row_height for keys in handler_rows.values())
     with open(path, "w", encoding="utf-8") as svg:
-        svg.write(f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
-                  f'viewBox="0 0 {width} {height}">\n')
-        svg.write(f'<title>{title}</title>\n')
-        svg.write(f'<rect width="{width}" height="{height}" fill="#ffffff"/>\n')
+        svg.write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" '
+                  f'width="{width}" height="{height}" role="img">\n')
+        svg.write(f'<title>{escape(title)}</title><rect width="100%" height="100%" fill="#fff"/>\n')
         svg.write('<g font-family="sans-serif" font-size="13" fill="#24292f">\n')
-        svg.write(f'<text x="{width / 2}" y="28" text-anchor="middle" font-size="18">'
-                  f'{title}</text>\n')
-        svg.write(f'<text transform="translate(22 {(top + bottom) / 2}) rotate(-90)" text-anchor="middle">'
-                  'Operations per second</text>\n')
-        for tick in range(tick_count + 1):
-            value = tick * step
-            y = bottom - value * scale
-            stroke = "#57606a" if tick == 0 else "#d8dee4"
-            svg.write(f'<line x1="{left}" x2="{right}" y1="{y}" y2="{y}" stroke="{stroke}"/>\n')
-            svg.write(f'<text x="{left - 8}" y="{y + 4}" text-anchor="end">{value:,}</text>\n')
-
-        for backend_index, backend in enumerate(backends):
-            center = left + (backend_index + 0.5) * group_width
-            first_x = center - (len(series) * slot_width - 4) / 2
-            svg.write('<g class="backend">\n')
-            svg.write(f'<text x="{center}" y="{bottom + 22}" text-anchor="middle">{escape(backend)}</text>\n')
-            for series_index, (label, color, scores) in enumerate(series):
-                score = scores[backend_index]
-                if score is None:
-                    continue
-                x = first_x + series_index * slot_width
-                bar_height = score * scale
-                svg.write(f'<rect x="{x}" y="{bottom - bar_height}" width="{bar_width}" height="{bar_height}" '
-                          f'fill="{color}"><title>{escape(backend)} — {label}: {score:,.2f} ops/s</title></rect>\n')
-            svg.write('</g>\n')
-
-        legend_spacing = min(150, (width - 40) / len(series))
-        for index, (label, color, _) in enumerate(series):
-            x = (width - len(series) * legend_spacing) / 2 + index * legend_spacing
-            svg.write(f'<g class="legend-item"><rect x="{x}" y="329" width="12" height="12" fill="{color}"/>'
-                      f'<text x="{x + 18}" y="340">{label}</text></g>\n')
+        svg.write(f'<text x="16" y="25" font-size="19">{escape(title)}</text>\n')
+        for i, backend in enumerate(sorted({row[3] for row in rows})):
+            x = 16 + i * 125
+            color = BACKEND_COLORS[backend]
+            svg.write(f'<rect x="{x}" y="41" width="11" height="11" fill="{color}"/>'
+                      f'<text x="{x + 16}" y="51">{backend.upper()}</text>\n')
+        y = 72
+        for handler, keys in handler_rows.items():
+            maximum = maxima[handler]
+            svg.write(f'<text x="16" y="{y}" font-weight="bold">{escape(handler)}</text>\n')
+            for i, label in enumerate(MESSAGE_COLUMNS.values()):
+                x = label_width + i * panel_width
+                svg.write(f'<text x="{x}" y="{y}" font-weight="bold">{label}</text>'
+                          f'<text x="{x}" y="{y + 18}">Scale: 0–{maximum:,.2f} ops/s</text>\n')
+            y += 32
+            for i, row in enumerate(keys):
+                frontend, _, fmt, backend, threads = row
+                labels = (frontend.upper(), fmt, backend.upper())
+                if threads is not None:
+                    labels += (f"{threads} threads",)
+                if i % 2 == 0:
+                    svg.write(f'<rect x="12" y="{y - 2}" width="{width - 24}" height="{row_height}" fill="#f6f8fa"/>\n')
+                svg.write(f'<text x="16" y="{y + row_height // 2 + 3}">'
+                          f'{escape(" · ".join(labels))}</text>\n')
+                for column, (message_type, label) in enumerate(MESSAGE_COLUMNS.items()):
+                    measurement = measurements[row].get(message_type)
+                    if measurement is None:
+                        continue
+                    score = measurement[0]
+                    x = label_width + column * panel_width
+                    bar_width = score / maximum * (panel_width - 22) if maximum else 0
+                    color = BACKEND_COLORS[backend]
+                    tooltip = (" / ".join((frontend.upper(), handler, *labels[1:], label))
+                               + f": {format_measurement(measurement)} ops/s")
+                    svg.write(f'<rect class="measurement" x="{x}" y="{y + 1}" width="{bar_width:.4f}" '
+                              f'height="11" fill="{color}"><title>{escape(tooltip)}</title></rect>\n')
+                y += row_height
+            y += 25
         svg.write('</g>\n</svg>\n')
 
 
-def write_sequential_charts(report, rows, results_dir, section_index, category):
-    message_types = (
-        ("CONSTANT", "Constant", "#0072b2"),
-        ("ARGUMENTS", "Argument", "#009e73"),
-        ("MESSAGE_SUPPLIER", "Message Supplier", "#d55e00"),
-        ("LAMBDA_PARAMETER", "Lambda Parameter", "#a54987"),
-    )
-    frontends = sorted({row["frontend"] for row in rows})
-    for frontend_index, frontend in enumerate(frontends, start=1):
-        frontend_rows = sorted(
-            (row for row in rows if row["frontend"] == frontend and row["avg_score"]),
-            key=lambda row: row["backend"])
-        if not frontend_rows:
-            continue
-
-        backends = [row["backend"] for row in frontend_rows]
-        series = []
-        for message_type, label, color in message_types:
-            scores = [row["score_values"][message_type] for row in frontend_rows]
-            if any(score is not None for score in scores):
-                series.append((label, color, scores))
-
-        filename = f"benchmark-chart-{section_index}-{frontend_index}.svg"
-        message_type = series[0][0] if len(series) == 1 else None
-        title = chart_title(frontend, category, backends, message_type)
-        write_grouped_chart_svg(os.path.join(results_dir, filename), title, backends, series)
-        report.write(f"#### Frontend: {frontend}\n\n")
-        report.write(f"![{title}]({filename})\n\n")
-
-
-def generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line):
-    if not results:
-        print("No results to process.")
+def write_result_section(report, heading, filename, measurements, run_type, args, results_dir):
+    report.write(f"## {heading}\n\n")
+    if not measurements:
+        reason = "No usable throughput measurements were recorded." if run_type in args.run else "Not requested for this run."
+        report.write(reason + "\n\n")
         return
 
-    grouped = {}
-    for entry in results:
-        params = entry.get("params", {})
-        category = params.get("category", "N/A")
-        fmt = params.get("format", "N/A")
-        key = (category, fmt)
-        if key not in grouped:
-            grouped[key] = {}
-        
-        backend = entry["backend_param"]
-        frontend = entry["benchmark"].split(".")[-1]
-        pair_key = (backend, frontend)
-        if pair_key not in grouped[key]:
-            grouped[key][pair_key] = {}
-        
-        msg_type = params.get("messageType", "N/A")
-        primary_metric = entry.get("primaryMetric", {})
-        score = primary_metric.get("score", 0)
-        error = primary_metric.get("scoreError", 0)
-        
-        try: score = float(score)
-        except: score = 0.0
-        try:
-            error = float(error)
-            if math.isnan(error): error = None
-        except: error = None
-            
-        grouped[key][pair_key][msg_type] = {"score": score, "error": error}
+    rows = sorted(measurements, key=lambda row: (REPORT_FRONTENDS.index(row[0]), VALID_HANDLERS.index(row[1]),
+                                                 VALID_FORMATS.index(row[2]), row[3], row[4]))
+    maxima = {}
+    measurement_width = 0
+    for row, values in measurements.items():
+        handler = row[1]
+        maxima[handler] = max(maxima.get(handler, 0), *(score for score, _ in values.values()))
+        measurement_width = max(measurement_width, *(len(format_measurement(value, whole=True)) for value in values.values()))
 
+    def write_row(cells):
+        report.write("| " + " | ".join(cells) + " |\n")
+
+    has_threads = run_type == "PARALLEL"
+    write_row(["Frontend", "Handler", "Pattern", "Backend"] + (["Threads"] if has_threads else [])
+              + list(MESSAGE_COLUMNS.values()))
+    write_row(["---"] * 4 + ["---:"] * (len(MESSAGE_COLUMNS) + has_threads))
+    previous = ()
+    for row in rows:
+        _, handler, _, backend, threads = row
+        cells = [value.upper() if row[:i + 1] != previous[:i + 1] else "" for i, value in enumerate(row[:4])]
+        previous = row
+        if has_threads:
+            cells.append(str(threads))
+        for message_type in MESSAGE_COLUMNS:
+            measurement = measurements[row].get(message_type)
+            if measurement is None:
+                cells.append("—")
+                continue
+            bar = format_table_bar(measurement[0], maxima[handler], backend, pad=True)
+            score = format_measurement(measurement, whole=True).rjust(measurement_width).replace(" ", "&nbsp;")
+            cells.append(f'<span style="font-family: monospace">{bar}&nbsp;{score}</span>')
+        write_row(cells)
+
+    title = f"{heading}: throughput by message type"
+    write_report_chart(os.path.join(results_dir, filename), title, rows, measurements, maxima)
+    report.write(f"\n![{title}]({filename})\n\n")
+
+
+def generate_markdown_report(serial_results, parallel_results, samples, args, started_at, results_dir, sys_info, cmd_line):
+    serial, parallel = collect_report_measurements(serial_results, parallel_results)
+    benchmark_jvms = {" ".join(entry[key] for key in ("jdkVersion", "vmName", "vmVersion") if entry.get(key))
+                      for results in (serial_results, parallel_results) for entry in results if entry.get("jdkVersion")}
     report_path = os.path.join(results_dir, "BENCHMARK_RESULTS.md")
-    with open(report_path, "w") as f:
-        f.write("# Logging Benchmark Results\n\n")
-        f.write(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-        f.write("## Command Line\n```bash\n" + cmd_line + "\n```\n\n")
-        f.write("## System Information\n```\n" + sys_info + "\n```\n\n")
-        
-        for section_index, key in enumerate(sorted(grouped), start=1):
-            category, fmt = key
-            f.write(f"### Category: {category}, Format: {fmt}\n\n")
-            pairs = grouped[key]
-            all_msg_types = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
-
-            # Calculate min/max scores for each frontend and each column
-            frontend_scores = {} # frontend -> mt -> list of scores
-            for (backend, frontend), data in pairs.items():
-                if frontend not in frontend_scores:
-                    frontend_scores[frontend] = {mt: [] for mt in all_msg_types + ["AVERAGE"]}
-                
-                total_score = 0.0
-                count = 0
-                for mt in all_msg_types:
-                    if mt in data:
-                        s = data[mt]["score"]
-                        frontend_scores[frontend][mt].append(s)
-                        total_score += s
-                        count += 1
-                if count > 0:
-                    frontend_scores[frontend]["AVERAGE"].append(total_score / count)
-
-            min_max = {} # frontend -> mt -> (min, max)
-            for frontend, mts in frontend_scores.items():
-                min_max[frontend] = {}
-                for mt, scores in mts.items():
-                    if scores:
-                        min_max[frontend][mt] = (min(scores), max(scores))
-                    else:
-                        min_max[frontend][mt] = (None, None)
-
-            rows = []
-            for (backend, frontend), data in pairs.items():
-                row = {"backend": backend, "frontend": frontend, "scores": {}, "score_values": {}, "errors": {}}
-                total_score = 0.0
-                count = 0
-                for mt in all_msg_types:
-                    is_excluded = (frontend == "jcl" and mt in ["ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]) or \
-                                  (frontend == "jul" and mt == "LAMBDA_PARAMETER")
-                    if is_excluded:
-                        row["scores"][mt] = "N/A"
-                        row["score_values"][mt] = None
-                        row["errors"][mt] = "N/A"
-                    elif mt in data:
-                        s = data[mt]["score"]
-                        e = data[mt]["error"]
-                        
-                        s_str = f"{s:,.2f}"
-                        if min_max[frontend][mt][0] is not None and min_max[frontend][mt][1] is not None and min_max[frontend][mt][0] != min_max[frontend][mt][1]:
-                            if s == min_max[frontend][mt][1]:
-                                s_str = f"**{s_str}**"
-                            elif s == min_max[frontend][mt][0]:
-                                s_str = f"*{s_str}*"
-                        
-                        row["scores"][mt] = s_str
-                        row["score_values"][mt] = s
-                        row["errors"][mt] = f"{e:,.2f}" if e is not None else "N/A"
-                        total_score += s
-                        count += 1
-                    else:
-                        row["scores"][mt] = ""
-                        row["score_values"][mt] = None
-                        row["errors"][mt] = ""
-                
-                avg_score = total_score / count if count > 0 else 0.0
-                row["avg_score_val"] = avg_score
-                
-                avg_score_str = f"{avg_score:,.2f}" if count > 0 else ""
-                if count > 0 and min_max[frontend]["AVERAGE"][0] is not None and min_max[frontend]["AVERAGE"][1] is not None and min_max[frontend]["AVERAGE"][0] != min_max[frontend]["AVERAGE"][1]:
-                    if avg_score == min_max[frontend]["AVERAGE"][1]:
-                        avg_score_str = f"**{avg_score_str}**"
-                    elif avg_score == min_max[frontend]["AVERAGE"][0]:
-                        avg_score_str = f"*{avg_score_str}*"
-                
-                row["avg_score"] = avg_score_str
-                row["avg_error"] = "N/A" if count > 0 else ""
-                rows.append(row)
-        
-            rows.sort(key=lambda x: (x["backend"], x["frontend"]))
-            col_widths = {
-                "backend": max(len("Backend"), max(len(r["backend"]) for r in rows) if rows else 0),
-                "frontend": max(len("Frontend"), max(len(r["frontend"]) for r in rows) if rows else 0),
-                "CONSTANT_score": max(len("Constant (ops/s)"), max(len(r["scores"]["CONSTANT"]) for r in rows) if rows else 0),
-                "CONSTANT_error": max(len("Error"), max(len(r["errors"]["CONSTANT"]) for r in rows) if rows else 0),
-                "ARGUMENTS_score": max(len("Argument (ops/s)"), max(len(r["scores"]["ARGUMENTS"]) for r in rows) if rows else 0),
-                "ARGUMENTS_error": max(len("Error"), max(len(r["errors"]["ARGUMENTS"]) for r in rows) if rows else 0),
-                "MESSAGE_SUPPLIER_score": max(len("Msg Supp (ops/s)"), max(len(r["scores"]["MESSAGE_SUPPLIER"]) for r in rows) if rows else 0),
-                "MESSAGE_SUPPLIER_error": max(len("Error"), max(len(r["errors"]["MESSAGE_SUPPLIER"]) for r in rows) if rows else 0),
-                "LAMBDA_PARAMETER_score": max(len("Lambda Param (ops/s)"), max(len(r["scores"]["LAMBDA_PARAMETER"]) for r in rows) if rows else 0),
-                "LAMBDA_PARAMETER_error": max(len("Error"), max(len(r["errors"]["LAMBDA_PARAMETER"]) for r in rows) if rows else 0),
-                "avg_score": max(len("Average (ops/s)"), max(len(r["avg_score"]) for r in rows) if rows else 0),
-                "avg_error": max(len("Error"), max(len(r['avg_error']) for r in rows) if rows else 0),
-            }
-
-            header = (f"| {'Backend':<{col_widths['backend']}} | {'Frontend':<{col_widths['frontend']}} | "
-                     f"{'Constant (ops/s)':>{col_widths['CONSTANT_score']}} | {'Error':>{col_widths['CONSTANT_error']}} | "
-                     f"{'Argument (ops/s)':>{col_widths['ARGUMENTS_score']}} | {'Error':>{col_widths['ARGUMENTS_error']}} | "
-                     f"{'Msg Supp (ops/s)':>{col_widths['MESSAGE_SUPPLIER_score']}} | {'Error':>{col_widths['MESSAGE_SUPPLIER_error']}} | "
-                     f"{'Lambda Param (ops/s)':>{col_widths['LAMBDA_PARAMETER_score']}} | {'Error':>{col_widths['LAMBDA_PARAMETER_error']}} | "
-                     f"{'Average (ops/s)':>{col_widths['avg_score']}} | {'Error':>{col_widths['avg_error']}} |")
-        
-            separator = (f"| {'-' * col_widths['backend']} | {'-' * col_widths['frontend']} | "
-                        f"{'-' * (col_widths['CONSTANT_score'] - 1)}: | {'-' * (col_widths['CONSTANT_error'] - 1)}: | "
-                        f"{'-' * (col_widths['ARGUMENTS_score'] - 1)}: | {'-' * (col_widths['ARGUMENTS_error'] - 1)}: | "
-                        f"{'-' * (col_widths['MESSAGE_SUPPLIER_score'] - 1)}: | {'-' * (col_widths['MESSAGE_SUPPLIER_error'] - 1)}: | "
-                        f"{'-' * (col_widths['LAMBDA_PARAMETER_score'] - 1)}: | {'-' * (col_widths['LAMBDA_PARAMETER_error'] - 1)}: | "
-                        f"{'-' * (col_widths['avg_score'] - 1)}: | {'-' * (col_widths['avg_error'] - 1)}: |")
-        
-            f.write(header + "\n" + separator + "\n")
-            for r in rows:
-                line = (f"| {r['backend']:<{col_widths['backend']}} | {r['frontend']:<{col_widths['frontend']}} | "
-                        f"{r['scores']['CONSTANT']:>{col_widths['CONSTANT_score']}} | {r['errors']['CONSTANT']:>{col_widths['CONSTANT_error']}} | "
-                        f"{r['scores']['ARGUMENTS']:>{col_widths['ARGUMENTS_score']}} | {r['errors']['ARGUMENTS']:>{col_widths['ARGUMENTS_error']}} | "
-                        f"{r['scores']['MESSAGE_SUPPLIER']:>{col_widths['MESSAGE_SUPPLIER_score']}} | {r['errors']['MESSAGE_SUPPLIER']:>{col_widths['MESSAGE_SUPPLIER_error']}} | "
-                        f"{r['scores']['LAMBDA_PARAMETER']:>{col_widths['LAMBDA_PARAMETER_score']}} | {r['errors']['LAMBDA_PARAMETER']:>{col_widths['LAMBDA_PARAMETER_error']}} | "
-                        f"{r['avg_score']:>{col_widths['avg_score']}} | {r['avg_error']:>{col_widths['avg_error']}} |")
-                f.write(line + "\n")
-            f.write("\n")
-            write_sequential_charts(f, rows, results_dir, section_index, category)
-
+    with open(report_path, "w", encoding="utf-8") as report:
+        report.write("# Logging Benchmark Results\n\n")
+        report.write(f"Date: {started_at:%Y-%m-%d %H:%M:%S}\n\n")
+        report.write("**Command Line**\n\n```bash\n" + cmd_line + "\n```\n\n")
+        report.write("**System Information**\n\n```text\n" + sys_info + "\n")
+        for jvm in sorted(benchmark_jvms):
+            report.write(f"Benchmark JVM: {jvm}\n")
+        report.write("```\n\n")
+        write_sample_output(report, samples)
+        if serial or parallel:
+            report.write("Scores are in **ops/s** (higher is better), with JMH’s **± error** when available. "
+                         "A dash means no measurement. Bar colors identify backends. Table bars are scaled to the "
+                         "highest score for the same handler in each section and shown in eighth-block steps.\n\n")
+        write_result_section(report, "Singlethreaded", "benchmark-chart-singlethreaded.svg",
+                             serial, "SERIAL", args, results_dir)
+        write_result_section(report, "Multithreaded", "benchmark-chart-multithreaded.svg",
+                             parallel, "PARALLEL", args, results_dir)
     print(f"Markdown report generated: {report_path}")
 
-def write_parallel_charts(report, backends, thread_series, results_dir, section_index, category):
-    # ParallelLoggingBenchmark uses one fixed logging call per frontend.
-    message_types = {"jcl": "Preformatted", "jul": "Argument",
-                     "log4j": "Message Supplier", "slf4j": "Argument"}
-    frontends = sorted({frontend for data in backends.values() for frontend in data})
-    for frontend_index, frontend in enumerate(frontends, start=1):
-        frontend_backends = sorted(backend for backend, data in backends.items() if frontend in data)
-        series = []
-        for threads, label, color in thread_series:
-            scores = [backends[backend][frontend].get(threads) for backend in frontend_backends]
-            if any(score is not None for score in scores):
-                series.append((label, color, scores))
-
-        filename = f"parallel-benchmark-chart-{section_index}-{frontend_index}.svg"
-        title = chart_title(frontend, category, frontend_backends, message_types.get(frontend))
-        write_grouped_chart_svg(os.path.join(results_dir, filename), title, frontend_backends, series)
-        report.write(f"##### Frontend: {frontend}\n\n")
-        report.write(f"![{title}]({filename})\n\n")
-
-
-def generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line):
-    if not results:
-        print("No results to process.")
-        return
-
-    # grouped[category][format][backend][frontend][thread_count] = score
-    grouped = {}
-    present_threads = set()
-    for entry in results:
-        category = entry.get("params", {}).get("category", "DEFAULT")
-        format = entry.get("params", {}).get("format", "DEFAULT")
-        backend = entry["backend_param"]
-        benchmark_name = entry["benchmark"].split(".")[-1]
-        frontend, thread_count = benchmark_name.split("_")
-        thread_count = int(thread_count)
-        present_threads.add(thread_count)
-        
-        if category not in grouped: grouped[category] = {}
-        if format not in grouped[category]: grouped[category][format] = {}
-        if backend not in grouped[category][format]: grouped[category][format][backend] = {}
-        if frontend not in grouped[category][format][backend]: grouped[category][format][backend][frontend] = {}
-        
-        score = entry.get("primaryMetric", {}).get("score", 0)
-        grouped[category][format][backend][frontend][thread_count] = score
-
-    # Calculate min/max scores for each category, format, frontend and thread count
-    min_max_parallel = {} # category -> frontend -> thread_count -> (min, max)
-    for category, formats in grouped.items():
-        min_max_parallel[category] = {}
-        for format, backends in formats.items():
-            frontend_thread_scores = {} # frontend -> thread_count -> list of scores
-            for backend, frontends in backends.items():
-                for frontend, threads in frontends.items():
-                    if frontend not in frontend_thread_scores:
-                        frontend_thread_scores[frontend] = {}
-                    for t, score in threads.items():
-                        if t not in frontend_thread_scores[frontend]:
-                            frontend_thread_scores[frontend][t] = []
-                        frontend_thread_scores[frontend][t].append(score)
-
-            min_max_parallel[category][format] = {}
-            for frontend, threads in frontend_thread_scores.items():
-                min_max_parallel[category][format][frontend] = {}
-                for t, scores in threads.items():
-                    if scores:
-                        min_max_parallel[category][format][frontend][t] = (min(scores), max(scores))
-                    else:
-                        min_max_parallel[category][format][frontend][t] = (None, None)
-
-    report_path = os.path.join(results_dir, "PARALLEL_BENCHMARK_RESULTS.md")
-    with open(report_path, "w", encoding="utf-8") as f:
-        f.write("# Parallel Logging Benchmark Results\n\n")
-        f.write(f"Date: {datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n\n")
-        f.write("## Command Line\n```bash\n" + cmd_line + "\n```\n\n")
-        f.write("## System Information\n```\n" + sys_info + "\n```\n\n")
-        f.write("Throughput (ops/s) for different thread counts.\n\n")
-
-        colors = ("#0072b2", "#009e73", "#d55e00", "#a54987", "#e69f00", "#56b4e9", "#767676")
-        thread_series = [(t, f"{t} {'Thread' if t == 1 else 'Threads'}", colors[i % len(colors)])
-                         for i, t in enumerate(sorted(present_threads))]
-        section_index = 0
-
-        for category in sorted(grouped):
-            f.write(f"### Handler: {category}\n\n")
-            for format in sorted(grouped[category].keys()):
-                section_index += 1
-                backends = grouped[category][format]
-                f.write(f"#### Format: {format}\n\n")
-                header = "| Backend | Frontend | " + " | ".join(label for _, label, _ in thread_series) + " |"
-                separator = "| :--- | :--- | " + " | ".join(":---:" for _ in thread_series) + " |"
-                f.write(header + "\n" + separator + "\n")
-
-                for backend in sorted(backends):
-                    for frontend in sorted(backends[backend]):
-                        row = f"| {backend} | {frontend} |"
-                        for t, _, _ in thread_series:
-                            score = backends[backend][frontend].get(t)
-                            if score is None:
-                                row += " — |"
-                                continue
-                            score_str = f"{score:,.2f}"
-                            if score > 0 and t in min_max_parallel[category][format].get(frontend, {}):
-                                min_val, max_val = min_max_parallel[category][format][frontend][t]
-                                if min_val is not None and max_val is not None and min_val != max_val:
-                                    if score == max_val:
-                                        score_str = f"**{score_str}**"
-                                    elif score == min_val:
-                                        score_str = f"*{score_str}*"
-                            row += f" {score_str} |"
-                        f.write(row + "\n")
-
-                f.write("\n")
-                write_parallel_charts(f, backends, thread_series, results_dir, section_index, category)
-                
-    print(f"Markdown report generated: {report_path}")
 
 def create_argument_parser():
     parser = argparse.ArgumentParser(description="Run SLB4J benchmarks.")
     parser.add_argument("--run", nargs="+", choices=VALID_RUN_TYPES, required=True,
-                        help="Run types: SERIAL, PARALLEL, and/or SAMPLE_OUTPUT")
+                        help="Run SERIAL and/or PARALLEL, or SAMPLE_OUTPUT for examples only; all reports include examples")
     parser.add_argument("--backends", nargs="+", help="Backends to test")
     parser.add_argument("--frontends", nargs="+", help="Frontends to test")
     parser.add_argument("--handlers", nargs="+", help="Handlers to test (CONSOLE, FILE)")
@@ -1109,12 +832,9 @@ if __name__ == "__main__":
         if args.formats is None: args.formats = ["COMPACT", "DEFAULT", "DETAILED"]
         if args.message_types is None: args.message_types = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
 
-    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    started_at = datetime.datetime.now()
+    timestamp = started_at.strftime("%Y%m%d_%H%M%S")
     results_dir = create_results_directory(timestamp)
-
-    sample_output_path = initialize_sample_output(args, results_dir)
-    if sample_output_path:
-        print(f"Sample output report: {sample_output_path}")
 
     print(f"{BOLD_GREEN}Estimated total runtime: {format_duration(get_estimated_runtime(args))}{RESET}")
 
@@ -1122,29 +842,21 @@ if __name__ == "__main__":
         print(f"{BOLD_RED}Error: Benchmark compilation failed{RESET}")
         sys.exit(1)
 
-    cmd_line = "python3 " + " ".join(sys.argv)
-    sys_info = get_system_info()
-    
-    run_types = set(args.run)
-    run_serial = "SERIAL" in run_types
-    run_parallel = "PARALLEL" in run_types
-    run_sample_output = "SAMPLE_OUTPUT" in run_types
+    try:
+        samples = collect_sample_output(args, results_dir)
+    except (OSError, RuntimeError) as error:
+        print(f"{BOLD_RED}Error: {error}{RESET}", file=sys.stderr)
+        sys.exit(1)
 
-    if run_serial:
+    serial_results, parallel_results = [], []
+    if "SERIAL" in args.run:
         profiler_subdir = "profile-serial" if args.profile else None
-        results = collect_results(args, timestamp, results_dir, profiler_subdir=profiler_subdir)
-        if not args.dryrun:
-            generate_markdown_sequential(results, args, timestamp, results_dir, sys_info, cmd_line)
-    
-    if run_parallel:
-        profiler_subdir = "profile-parallel" if args.profile else None
-        results = collect_parallel_results(args, timestamp, results_dir, profiler_subdir=profiler_subdir)
-        if not args.dryrun:
-            generate_markdown_parallel(results, args, timestamp, results_dir, sys_info, cmd_line)
+        serial_results = collect_results(args, timestamp, results_dir, profiler_subdir=profiler_subdir)
 
-    if run_sample_output:
-        try:
-            collect_sample_output(args, results_dir, sample_output_path)
-        except (OSError, RuntimeError) as error:
-            print(f"{BOLD_RED}Error: {error}{RESET}", file=sys.stderr)
-            sys.exit(1)
+    if "PARALLEL" in args.run:
+        profiler_subdir = "profile-parallel" if args.profile else None
+        parallel_results = collect_parallel_results(args, timestamp, results_dir, profiler_subdir=profiler_subdir)
+
+    if not args.dryrun:
+        generate_markdown_report(serial_results, parallel_results, samples, args, started_at, results_dir,
+                                 get_system_info(), "python3 " + shlex.join(sys.argv))
