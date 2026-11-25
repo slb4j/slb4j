@@ -33,7 +33,6 @@ import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 @State(Scope.Benchmark)
@@ -55,9 +54,9 @@ public abstract class AbstractLoggingBenchmark {
 
     protected static String getPattern(String format) {
         return switch (format) {
-            case "COMPACT" -> "%d{HH:mm:ss.SSS} %-5p %-30.30c - %m%ex%n";
-            case "DETAILED" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5p %X{userId} (%C.%M(%F:%L)) - %m%ex%n";
-            case "DEFAULT" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %c{1.} - %msg%ex%n";
+            case "COMPACT" -> "%d{HH:mm:ss.SSS} %-5p %-30.30c - %m%n%ex";
+            case "DEFAULT" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %c - %msg%n%ex";
+            case "DETAILED" -> "%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5p %X{userId} (%C.%M(%F:%L)) - %m%n%ex";
             default -> throw new IllegalArgumentException("Invalid format: " + format);
         };
     }
@@ -97,10 +96,6 @@ public abstract class AbstractLoggingBenchmark {
     @SuppressWarnings("java:S106")
     public void setup(org.openjdk.jmh.infra.BenchmarkParams params) throws IOException {
         validateMessageType(messageType);
-        String sampleMessageType = params.getParam("sampleMessageType");
-        if (sampleMessageType != null) {
-            validateMessageType(sampleMessageType);
-        }
 
         originalOut = System.out;
         originalErr = System.err;
@@ -118,20 +113,19 @@ public abstract class AbstractLoggingBenchmark {
         String benchmarkCategory = params.getParam("category");
         String benchmarkFormat = params.getParam("format");
         if ("true".equals(outputToFile)) {
-            String sampleDirectory = params.getParam("sampleDirectory");
-            if (sampleDirectory == null) {
-                fileOut = new FileOutputStream("benchmark.out", true);
-            } else if (!sampleDirectory.isEmpty()) {
-                String exceptionSuffix = Boolean.parseBoolean(params.getParam("sampleException")) ? "-EXCEPTION" : "";
-                String filename = "%s-%s-%s%s.out".formatted(benchmarkFormat,
-                        params.getParam("sampleFrontend"), sampleMessageType, exceptionSuffix);
-                fileOut = new FileOutputStream(Path.of(sampleDirectory, filename).toFile(), true);
-            }
+            fileOut = new FileOutputStream("benchmark.out", true);
         }
         tempFile = Files.createTempFile(backend() + "-bench", ".log");
         configurator = createConfigurator(benchmarkCategory, benchmarkFormat, tempFile);
         configurator.setup();
+        initializeLoggers(benchmarkFormat);
 
+        OutputStream benchmarkOutput = fileOut != null ? fileOut : OutputStream.nullOutputStream();
+        stdoutOutput.setTarget(benchmarkOutput);
+        stderrOutput.setTarget(benchmarkOutput);
+    }
+
+    final void initializeLoggers(String benchmarkFormat) {
         Class<? extends AbstractLoggingBenchmark> benchmarkClass = getClass();
         slf4jLogger = org.slf4j.LoggerFactory.getLogger(benchmarkClass);
         log4jLogger = org.apache.logging.log4j.LogManager.getLogger(benchmarkClass);
@@ -144,10 +138,6 @@ public abstract class AbstractLoggingBenchmark {
             org.slf4j.MDC.put("userId", "benchUser");
             org.apache.logging.log4j.ThreadContext.put("userId", "benchUser");
         }
-
-        OutputStream benchmarkOutput = fileOut != null ? fileOut : OutputStream.nullOutputStream();
-        stdoutOutput.setTarget(benchmarkOutput);
-        stderrOutput.setTarget(benchmarkOutput);
     }
 
     protected void updateLogMessage(org.openjdk.jmh.infra.BenchmarkParams params, String category, String format) {
@@ -163,12 +153,16 @@ public abstract class AbstractLoggingBenchmark {
         if (fileOut != null) {
             fileOut.close();
         }
-        org.slf4j.MDC.clear();
-        org.apache.logging.log4j.ThreadContext.clearAll();
+        clearLoggingContext();
         if (configurator != null) {
             configurator.tearDown();
         }
         Files.deleteIfExists(tempFile);
+    }
+
+    static void clearLoggingContext() {
+        org.slf4j.MDC.clear();
+        org.apache.logging.log4j.ThreadContext.clearAll();
     }
 
     protected abstract BenchmarkConfigurator createConfigurator(String category, String format, Path tempFile);
@@ -176,55 +170,6 @@ public abstract class AbstractLoggingBenchmark {
     private static void validateMessageType(String type) {
         if (!CONSTANT.equals(type) && !ARGUMENTS.equals(type)) {
             throw new IllegalArgumentException("Unsupported messageType " + type);
-        }
-    }
-
-    @State(Scope.Benchmark)
-    public static class SampleParameters {
-        @Param({"jul"})
-        public String sampleFrontend;
-
-        @Param({CONSTANT, ARGUMENTS})
-        public String sampleMessageType;
-
-        @Param({"false", "true"})
-        public boolean sampleException;
-
-        @Param({""})
-        public String sampleDirectory;
-    }
-
-    @Benchmark
-    @BenchmarkMode(Mode.SingleShotTime)
-    public void sampleOutput(SampleParameters sample) {
-        String frontend = sample.sampleFrontend.toUpperCase(Locale.ROOT);
-        String message = "Sample log output generated by " + frontend + " frontend/" + backend() + " backend";
-        Throwable exception = sample.sampleException ? new IllegalStateException("Sample exception") : null;
-        switch (sample.sampleMessageType) {
-            case CONSTANT -> {
-                switch (sample.sampleFrontend) {
-                    case JUL -> julLogger.log(java.util.logging.Level.INFO, message, exception);
-                    case JCL -> jclLogger.info(message, exception);
-                    case LOG4J -> log4jLogger.info(message, exception);
-                    case SLF4J -> slf4jLogger.info(message, exception);
-                    default -> {/* ignore */}
-                }
-            }
-            case ARGUMENTS -> {
-                switch (sample.sampleFrontend) {
-                    case JUL -> {
-                        java.util.logging.LogRecord record = new java.util.logging.LogRecord(java.util.logging.Level.INFO,
-                                "Sample log output generated by {0} frontend/{1} backend");
-                        record.setLoggerName(julLogger.getName());
-                        record.setParameters(new Object[]{frontend, backend()});
-                        record.setThrown(exception);
-                        julLogger.log(record);
-                    }
-                    case LOG4J -> log4jLogger.info("Sample log output generated by {} frontend/{} backend", frontend, backend(), exception);
-                    case SLF4J -> slf4jLogger.info("Sample log output generated by {} frontend/{} backend", frontend, backend(), exception);
-                    default -> {/* ignore */}
-                }
-            }
         }
     }
 

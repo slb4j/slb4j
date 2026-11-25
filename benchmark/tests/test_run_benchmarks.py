@@ -1,6 +1,7 @@
 import datetime
 import importlib.util
 import io
+import shlex
 import subprocess
 import sys
 import os
@@ -44,40 +45,45 @@ class SampleOutputRunnerTest(unittest.TestCase):
 
     def test_collects_matrix_in_one_gradle_command_per_backend(self):
         args = run_benchmarks.parse_args([
-            "--run", "SAMPLE_OUTPUT", "--backends", "jul", "--frontends", "slf4j", "jcl",
+            "--run", "SAMPLE_OUTPUT", "--backends", "jul", "log4j", "--frontends", "slf4j", "jcl",
             "--formats", "DEFAULT", "COMPACT", "--message-types", "ARGUMENTS",
         ])
-        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
+        with tempfile.TemporaryDirectory(prefix="sample output's ", dir=PROJECT_ROOT) as directory:
             report = io.StringIO()
 
             def capture(command):
-                params = command.split("sampleDirectory=", 1)[1].split("'", 1)[0]
+                gradle_args = shlex.split(command)
+                backend = gradle_args[3].split(":")[2].removeprefix("benchmark-")
+                self.assertEqual(f":benchmark:benchmark-{backend}:sampleOutput", gradle_args[3])
+                self.assertIn("-PsampleFormats=COMPACT,DEFAULT", gradle_args)
+                self.assertIn("-PsampleFrontends=jcl,slf4j", gradle_args)
+                self.assertNotIn("jmh", command)
+                path, = (arg.removeprefix("-PsampleDirectory=") for arg in gradle_args
+                         if arg.startswith("-PsampleDirectory="))
                 for fmt in ("DEFAULT", "COMPACT"):
                     for frontend in ("slf4j", "jcl"):
                         for message_type in run_benchmarks.VALID_MESSAGE_TYPES:
                             for with_exception in (False, True):
                                 suffix = "-EXCEPTION" if with_exception else ""
-                                text = f"{message_type} message\n"
-                                if with_exception:
+                                text = ("" if (frontend, message_type) == ("jcl", "ARGUMENTS")
+                                        else f"{backend} {message_type} message\n")
+                                if with_exception and text:
                                     text += "Exception\n\tat caller\n\n"
-                                (Path(params) / f"{fmt}-{frontend}-{message_type}{suffix}.out").write_text(
+                                (Path(path) / f"{fmt}-{frontend}-{message_type}{suffix}.out").write_text(
                                     text, encoding="utf-8")
                 return True
 
             with patch.object(run_benchmarks, "run_command", side_effect=capture) as command:
                 samples = run_benchmarks.collect_sample_output(args, directory)
 
-            command.assert_called_once()
-            self.assertIn("sampleFrontend=jcl,slf4j", command.call_args.args[0])
-            self.assertIn(";sampleMessageType=CONSTANT,ARGUMENTS;", command.call_args.args[0])
-            self.assertIn("sampleException=false,true", command.call_args.args[0])
+            self.assertEqual(2, command.call_count)
             run_benchmarks.write_sample_output(report, samples)
             text = report.getvalue()
             self.assertEqual(16, text.count("### Format:"))
-            self.assertIn("Frontend JCL, ARGUMENTS\n\n````text\nJUL:        ARGUMENTS message\n", text)
+            self.assertIn("Frontend JCL, ARGUMENTS\n\n````text\nLOG4J:      N/A\nJUL:        N/A\n", text)
             self.assertIn(
-                "Frontend SLF4J, CONSTANT\n\n````text\nJUL:        CONSTANT message\n", text)
-            self.assertEqual(8, text.count("            \tat caller\n````\n"))
+                "Frontend SLF4J, CONSTANT\n\n````text\nLOG4J:      log4j CONSTANT message\nJUL:        jul CONSTANT message\n", text)
+            self.assertEqual(6, text.count("            \tat caller\n````\n"))
 
     def test_reads_single_line_benchmark_output(self):
         with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
@@ -93,7 +99,16 @@ class SampleOutputRunnerTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "Expected one line"):
                 run_benchmarks.read_sample_output(output, False)
 
-    def test_serial_and_sample_output_use_a_separate_single_shot_fork(self):
+    def test_rejects_empty_output_for_supported_samples(self):
+        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
+            output = Path(directory) / "benchmark.out"
+            output.touch()
+
+            for with_exception in (False, True):
+                with self.subTest(with_exception=with_exception), self.assertRaisesRegex(RuntimeError, "Expected"):
+                    run_benchmarks.read_sample_output(output, with_exception)
+
+    def test_serial_uses_jmh_but_sample_output_does_not(self):
         args = SimpleNamespace(
             backends=["jul"], message_types=["CONSTANT"], frontends=["jul"], formats=["DEFAULT"],
             handlers=["CONSOLE"], output_to_file=False, run=["SERIAL", "SAMPLE_OUTPUT"], warmup=2, iterations=7,
@@ -114,30 +129,17 @@ class SampleOutputRunnerTest(unittest.TestCase):
         self.assertIn("-Pjmh.iterations=7", benchmark_command)
         self.assertNotIn("jmh.benchmarkMode", benchmark_command)
 
-        self.assertIn("outputToFile=true", sample_command)
-        self.assertNotIn("withException=", sample_command)
-        self.assertIn("sampleException=false,true", sample_command)
-        self.assertIn("-Pjmh.benchmarkMode=SingleShotTime", sample_command)
-        self.assertIn("-Pjmh.warmupIterations=0", sample_command)
-        self.assertIn("-Pjmh.iterations=1", sample_command)
-        self.assertIn("-Pjmh.forks=1", sample_command)
-        self.assertNotIn("-Pjmh.timeOnIteration", sample_command)
+        self.assertIn(":benchmark:benchmark-jul:sampleOutput", sample_command)
+        self.assertNotIn("jmh", sample_command)
+        self.assertNotIn("outputToFile", sample_command)
 
-    def test_sample_only_runs_only_the_sample_fork(self):
-        args = SimpleNamespace(
-            backends=["jul"], message_types=["CONSTANT"], frontends=["jul"], formats=["DEFAULT"],
-            handlers=["CONSOLE"], output_to_file=False, run=["SAMPLE_OUTPUT"], warmup=2, iterations=7,
-            time="10ms", forks=1, profile=None, dryrun=True)
-
-        with patch("builtins.print") as output:
-            run_benchmarks.collect_sample_output(args, "results")
-
-        commands = [call.args[0] for call in output.call_args_list if call.args and "Command:" in call.args[0]]
-        self.assertEqual(1, len(commands))
-        self.assertIn("outputToFile=true", commands[0])
-        self.assertIn("-Pjmh.benchmarkMode=SingleShotTime", commands[0])
-        self.assertIn("-Pjmh.iterations=1", commands[0])
-        self.assertNotIn("outputToFile=false", commands[0])
+    def test_sample_only_does_not_build_jmh_jars(self):
+        with tempfile.TemporaryDirectory(dir=PROJECT_ROOT) as directory:
+            completed = subprocess.run([
+                sys.executable, str(SCRIPT_PATH), "--dryrun", "--run", "SAMPLE_OUTPUT", "--backends", "jul",
+            ], cwd=directory, text=True, capture_output=True, check=True)
+        self.assertEqual(1, completed.stdout.count(":benchmark:benchmark-jul:sampleOutput"))
+        self.assertNotIn("jmh", completed.stdout)
 
     def test_parallel_and_sample_output_are_valid_together(self):
         args = SimpleNamespace(
@@ -212,7 +214,8 @@ class UnifiedReportTest(unittest.TestCase):
                 sys.executable, str(SCRIPT_PATH), "--dryrun", "--run", "PARALLEL", "--mode", "smoketest",
                 "--backends", "logback", "--frontends", "slf4j", "--formats", "COMPACT", "DETAILED",
             ], cwd=directory, text=True, capture_output=True, check=True)
-            self.assertEqual(1, completed.stdout.count(r"LgbckBenchmark\.sampleOutput$"))
+            self.assertEqual(1, completed.stdout.count(":benchmark:benchmark-logback:sampleOutput"))
+            self.assertIn("-PsampleFormats=COMPACT,DETAILED", completed.stdout)
             self.assertIn(r"LgbckParallelBenchmark\.(slf4j)_.*", completed.stdout)
             self.assertIn(";format=COMPACT,DETAILED;messageType=CONSTANT,ARGUMENTS'", completed.stdout)
             self.assertFalse(list(Path(directory).rglob("*.md")))

@@ -133,7 +133,7 @@ def get_system_info():
     return "\n".join(info)
 
 def validate_args(args):
-    # Sample output uses the sequential benchmark implementations.
+    # The sample launcher uses the sequential benchmark backend configurations.
     for b in args.backends or SEQUENTIAL_BACKENDS_MAP:
         if b not in SEQUENTIAL_BACKENDS_MAP:
             print(f"{BOLD_RED}Error: Invalid sequential backend {b}. Valid backends are: {list(SEQUENTIAL_BACKENDS_MAP)}{RESET}")
@@ -201,10 +201,10 @@ def compile_benchmarks(args):
         return True
     return run_command(command)
 
-def read_sample_output(output_path, with_exception):
+def read_sample_output(output_path, with_exception, *, allow_empty=False):
     with open(output_path, encoding="utf-8") as output:
         text = output.read()
-    if len(text) == 0:
+    if not text and allow_empty:
         return ["N/A"]
 
     lines = (text.rstrip("\n") if with_exception else text).splitlines()
@@ -238,18 +238,12 @@ def write_sample_output(report, samples):
     report.write("</details>\n\n")
 
 def collect_backend_samples(backend, formats, frontends, directory, dryrun, samples):
-    include = f"{SEQUENTIAL_BACKENDS_MAP[backend]}\\.sampleOutput$"
-    params = [
-        "outputToFile=true", "category=CONSOLE", "messageType=CONSTANT",
-        f"format={','.join(formats)}", f"sampleFrontend={','.join(frontends)}",
-        f"sampleMessageType={','.join(VALID_MESSAGE_TYPES)}", "sampleException=false,true",
-        f"sampleDirectory={directory}",
-    ]
-    command = benchmark_run_command(backend) + f" -Pjmh.includes='{include}'"
-    command += " -Pjmh.parameters=" + shlex.quote(";".join(params))
-    command += " -Pjmh.benchmarkMode=SingleShotTime"
-    command += " -Pjmh.warmupIterations=0 -Pjmh.iterations=1 -Pjmh.forks=1"
-    command += " -Pjmh.jvmArgs='-Djmh.ignoreLock=true'"
+    command = shlex.join([
+        "./gradlew", "--offline", "--quiet", f":benchmark:benchmark-{backend}:sampleOutput",
+        f"-PsampleBenchmark={SEQUENTIAL_BACKENDS_MAP[backend]}",
+        f"-PsampleDirectory={directory}", f"-PsampleFormats={','.join(formats)}",
+        f"-PsampleFrontends={','.join(frontends)}",
+    ])
     if dryrun:
         print(f"  Command: {command}")
         return
@@ -261,7 +255,8 @@ def collect_backend_samples(backend, formats, frontends, directory, dryrun, samp
                 for with_exception in (False, True):
                     suffix = "-EXCEPTION" if with_exception else ""
                     path = os.path.join(directory, f"{fmt}-{frontend}-{message_type}{suffix}.out")
-                    lines = read_sample_output(path, with_exception)
+                    lines = read_sample_output(path, with_exception,
+                                               allow_empty=frontend == "jcl" and message_type == "ARGUMENTS")
                     samples.setdefault((fmt, message_type, with_exception, frontend), {})[backend] = lines
 
 def collect_sample_output(args, results_dir):
@@ -342,8 +337,7 @@ def calculate_runtime(args):
                                                   + total_benchmarks_per_backend * time_per_benchmark)
 
     selected_backends = args.backends or SEQUENTIAL_BACKENDS_MAP
-    num_samples = len(VALID_MESSAGE_TYPES) * 2 * len(args.formats or VALID_FORMATS) * len(args.frontends or SAMPLE_FRONTENDS)
-    total_runtime += len(selected_backends) * (gradle_startup_overhead + num_samples * 0.1)
+    total_runtime += len(selected_backends) * gradle_startup_overhead
 
     return total_runtime
 
@@ -734,7 +728,7 @@ if __name__ == "__main__":
 
     print(f"{BOLD_GREEN}Estimated total runtime: {format_duration(get_estimated_runtime(args))}{RESET}")
 
-    if not compile_benchmarks(args):
+    if {"SERIAL", "PARALLEL"}.intersection(args.run) and not compile_benchmarks(args):
         print(f"{BOLD_RED}Error: Benchmark compilation failed{RESET}")
         sys.exit(1)
 
