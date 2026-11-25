@@ -1,17 +1,24 @@
-Version next (to be released)
------------------------------
+Version 0.16
+------------
 
-- benchmarks: refactor; make sure patterns are consistent; rename Logback and Rainbow Gum benchmarks (the class name is 
-  written to the log, same length class names should avoid effects when the backend needs to shorten logger names in 
-  putput)
+- feature: add context support to JCL and JUL. Both will test for presence of Log4J ThreadContext and SLF4J MDC on the 
+  classpath (in that order) and use the first one found. If neither is found, an immutable empty default MDC is used.
+- feature: add ISO offset pattern compatibility
+- feature: add Log4j date preset compatibility
 - emit a warning when a timezone or locale lookup is used that is not supported by Log4J
-- add logging sample output to verify all backends produce similar results in benchmarks
-- upddate logback
-- add MDC support to JCL and JUL. Both will test for presence of Log4J ThreadContext and SLF4J MDC on the classpath
-  (in that order) and use the first one found. If neither is found, an immutable empty default MDC is used. 
 - declare PatternLayout entry classes private
-- add ISO offset pattern compatibility
-- add Log4j date preset compatibility
+- benchmark changes: 
+  - make sure patterns are consistent across backends (all tests now use patterns that give the same results
+    for the different backends except for the JUL backend which misses some features)
+  - rename Logback and Rainbow Gum benchmarks (the class name is written to the log, same length class names should
+    avoid effects when the backend needs to shorten logger names in putput and almost write the same amount of data per
+    logging call)
+  - remove benchmarking of message supplier and lambda parameter; the results closely mirror those  of CONSTANT and 
+    ARGUMENT and so unnecessarily increase benchmark runtime
+  - add logging sample output to verify all backends produce similar results in benchmarks
+  - upddate logback
+  - combine singlethreaded and multithreaded reports into a single one
+  - add bars for better visualizing benchmark results
 
 Version 0.15.0
 --------------
