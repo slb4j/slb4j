@@ -14,7 +14,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-import re
 import os
 import subprocess
 import json
@@ -27,7 +26,6 @@ import math
 import shlex
 import tempfile
 from itertools import product
-from html import escape
 
 # Constants
 SEQUENTIAL_BACKENDS_MAP = {
@@ -49,16 +47,10 @@ PARALLEL_BACKENDS_MAP = {
 VALID_HANDLERS = ["CONSOLE", "FILE"]
 VALID_FORMATS = ["COMPACT", "DEFAULT", "DETAILED"]
 SAMPLE_FRONTENDS = ["jul", "jcl", "log4j", "slf4j"]
-VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
+VALID_MESSAGE_TYPES = ["CONSTANT", "ARGUMENTS"]
 VALID_RUN_TYPES = ["SERIAL", "PARALLEL", "SAMPLE_OUTPUT"]
 PARALLEL_THREADS = (1, 2, 4, 8, 16, 64, 128)
 REPORT_FRONTENDS = ("jul", "log4j", "slf4j", "jcl")
-MESSAGE_COLUMNS = {
-    "CONSTANT": "CONSTANT",
-    "MESSAGE_SUPPLIER": "MESSAGE SUPPLIER",
-    "ARGUMENTS": "ARGUMENTS",
-    "LAMBDA_PARAMETER": "LAMBDA_PARAMETER",
-}
 BACKEND_COLORS = {
     "jul": "#0072b2",
     "log4j": "#008659",
@@ -66,7 +58,8 @@ BACKEND_COLORS = {
     "rainbowgum": "#9c518a",
     "slb4j": "#a6761d",
 }
-LEGACY_PARALLEL_MESSAGE_TYPES = {"jul": "ARGUMENTS", "log4j": "MESSAGE_SUPPLIER", "slf4j": "ARGUMENTS", "jcl": "CONSTANT"}
+# Legacy Log4j trials without a messageType used the removed supplier workload.
+LEGACY_PARALLEL_MESSAGE_TYPES = {"jul": "ARGUMENTS", "slf4j": "ARGUMENTS", "jcl": "CONSTANT"}
 TABLE_BAR_WIDTH = 16
 
 # ANSI colors
@@ -300,12 +293,11 @@ def create_results_directory(timestamp):
 def get_estimated_runtime(args):
     return calculate_runtime(args)
 
-def parallel_workload_groups(args):
+def workload_groups(args):
     groups = {}
     for message in (args.message_types or VALID_MESSAGE_TYPES):
         frontends = tuple(frontend for frontend in (args.frontends or SAMPLE_FRONTENDS)
-                          if (frontend != "jcl" or message == "CONSTANT")
-                          and (frontend != "jul" or message != "LAMBDA_PARAMETER"))
+                          if frontend != "jcl" or message == "CONSTANT")
         if frontends:
             groups.setdefault(frontends, []).append(message)
     return groups
@@ -328,6 +320,8 @@ def calculate_runtime(args):
     jmh_fork_overhead = 0.1 if forks > 0 else 0
     
     time_per_benchmark = (warmup + iterations) * time_per_iter + jmh_fork_overhead
+    groups = workload_groups(args)
+    workloads = sum(len(frontends) * len(messages) for frontends, messages in groups.items())
 
     if run_serial:
         selected_backends = args.backends if args.backends else list(SEQUENTIAL_BACKENDS_MAP.keys())
@@ -335,18 +329,13 @@ def calculate_runtime(args):
         
         num_handlers = len(args.handlers or VALID_HANDLERS)
         num_formats = len(args.formats or VALID_FORMATS)
-        workloads = sum(1 for frontend in (args.frontends or SAMPLE_FRONTENDS)
-                        for message in (args.message_types or VALID_MESSAGE_TYPES)
-                        if (frontend != "jcl" or message == "CONSTANT")
-                        and (frontend != "jul" or message != "LAMBDA_PARAMETER"))
         total_benchmarks_per_backend = workloads * num_handlers * num_formats
         
-        total_runtime += num_backends * (gradle_startup_overhead + total_benchmarks_per_backend * time_per_benchmark)
+        total_runtime += num_backends * (len(groups) * gradle_startup_overhead
+                                         + total_benchmarks_per_backend * time_per_benchmark)
 
     if run_parallel:
         selected_backends = args.backends if args.backends else list(PARALLEL_BACKENDS_MAP.keys())
-        groups = parallel_workload_groups(args)
-        workloads = sum(len(frontends) * len(messages) for frontends, messages in groups.items())
         total_benchmarks_per_backend = (workloads * len(PARALLEL_THREADS)
                                         * len(args.handlers or VALID_HANDLERS) * len(args.formats or VALID_FORMATS))
         total_runtime += len(selected_backends) * (len(groups) * gradle_startup_overhead
@@ -407,7 +396,7 @@ def move_profiler_outputs(backend, results_dir, profiler_subdir):
 def collect_parallel_results(args, timestamp, results_dir, profiler_subdir=None):
     all_results = []
     selected_backends = args.backends if args.backends else list(PARALLEL_BACKENDS_MAP.keys())
-    groups = parallel_workload_groups(args)
+    groups = workload_groups(args)
     
     for backend, (frontends, message_types) in product(selected_backends, groups.items()):
         print(f"{LIGHT_CYAN}Testing parallel backend: {backend}, messageType={','.join(message_types)}{RESET}")
@@ -481,78 +470,29 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None):
     run_types = set(args.run)
     run_serial = "SERIAL" in run_types
     success = True
+    groups = workload_groups(args)
     
     for backend in selected_backends:
         print(f"{LIGHT_CYAN}Testing backend: {backend}{RESET}")
         
-        msg_types = args.message_types if args.message_types else VALID_MESSAGE_TYPES
-        
-        # We need to handle JCL and JUL specially.
-        # JCL: doesn't support ARGUMENTS, MESSAGE_SUPPLIER, and LAMBDA_PARAMETER.
-        # JUL: doesn't support LAMBDA_PARAMETER.
-        runs = []
-        if "CONSTANT" in msg_types:
-            runs.append({
-                "msg_types": ["CONSTANT"],
-                "exclude": None
-            })
-        
-        other_types = [mt for mt in msg_types if mt != "CONSTANT"]
-        if other_types:
-            if "LAMBDA_PARAMETER" in other_types:
-                # Run other types except LAMBDA_PARAMETER for JCL (already excluded below)
-                # and run LAMBDA_PARAMETER only for those that support it.
-                non_lambda_others = [mt for mt in other_types if mt != "LAMBDA_PARAMETER"]
-                if non_lambda_others:
-                    runs.append({
-                        "msg_types": non_lambda_others,
-                        "exclude": ".*jcl.*" if not args.frontends or "jcl" in args.frontends else None
-                    })
-                
-                # LAMBDA_PARAMETER is not supported by JCL and JUL
-                runs.append({
-                    "msg_types": ["LAMBDA_PARAMETER"],
-                    "exclude": ".*(jcl|jul).*" if not args.frontends or any(f in args.frontends for f in ["jcl", "jul"]) else None
-                })
-            else:
-                runs.append({
-                    "msg_types": other_types,
-                    "exclude": ".*jcl.*" if not args.frontends or "jcl" in args.frontends else None
-                })
-
-        for i, run in enumerate(runs):
+        for i, (frontends, message_types) in enumerate(groups.items()):
             benchmark_class = SEQUENTIAL_BACKENDS_MAP[backend]
-            effective_frontends = args.frontends if args.frontends else ["jul", "jcl", "slf4j", "log4j"]
-            
-            # Filter out incompatible frontends for the current message types
-            if run["exclude"]:
-                effective_frontends = [f for f in effective_frontends if not re.search(run["exclude"], f)]
-            
-            if not effective_frontends:
-                if args.dryrun:
-                    print(f"{LIGHT_YELLOW}Dry run (Run {i+1}/{len(runs)}): Skipping backend {backend} for messageTypes {run['msg_types']} (no frontends to test){RESET}")
-                else:
-                    print(f"  Skipping Run {i+1}/{len(runs)} for backend {backend} (no frontends to test)")
-                continue
-
-            if not args.dryrun and len(runs) > 1:
-                print(f"  Run {i+1}/{len(runs)}: messageType={run['msg_types']}, exclude={run['exclude']}")
+            if not args.dryrun and len(groups) > 1:
+                print(f"  Run {i+1}/{len(groups)}: messageType={','.join(message_types)}")
             
             jvm_args = ["-Djmh.ignoreLock=true"]
             cmd = None
             if run_serial:
                 cmd_base = benchmark_run_command(backend)
-                include_pattern = f"{benchmark_class}\\.({'|'.join(effective_frontends)})$"
+                include_pattern = f"{benchmark_class}\\.({'|'.join(frontends)})$"
                 cmd_base += f" -Pjmh.includes='{include_pattern}'"
-                if run["exclude"]:
-                    cmd_base += f" -Pjmh.excludes='{run['exclude']}'"
 
                 params = [f"outputToFile={'true' if args.output_to_file else 'false'}"]
                 if args.formats:
                     params.append(f"format={','.join(args.formats)}")
                 if args.handlers:
                     params.append(f"category={','.join(args.handlers)}")
-                params.append(f"messageType={','.join(run['msg_types'])}")
+                params.append(f"messageType={','.join(message_types)}")
                 cmd = cmd_base + f" -Pjmh.parameters='{';'.join(params)}'"
 
                 if args.warmup is not None:
@@ -575,14 +515,14 @@ def collect_results(args, timestamp, results_dir, profiler_subdir=None):
                 cmd += f" -Pjmh.jvmArgs='{' '.join(jvm_args)}'"
 
             if args.dryrun:
-                print(f"{LIGHT_YELLOW}Dry run (Run {i+1}/{len(runs)}): Would execute command for backend {backend}:{RESET}")
+                print(f"{LIGHT_YELLOW}Dry run (Run {i+1}/{len(groups)}): Would execute command for backend {backend}:{RESET}")
                 if cmd:
                     print(f"  Command: {cmd}")
                 continue
 
             output_file = None
             if args.profile:
-                suffix = f"_{i}" if len(runs) > 1 else ""
+                suffix = f"_{i}" if len(groups) > 1 else ""
                 output_file = os.path.join(results_dir, f"profile_{backend}{suffix}.txt")
 
             if cmd:
@@ -631,9 +571,11 @@ def collect_report_measurements(serial_results, parallel_results):
             if is_parallel:
                 frontend, threads = frontend.rsplit("_", 1)
                 threads = int(threads)
-                message_type = params.get("messageType", LEGACY_PARALLEL_MESSAGE_TYPES[frontend])
+                message_type = params.get("messageType", LEGACY_PARALLEL_MESSAGE_TYPES.get(frontend))
             else:
                 message_type = params["messageType"]
+            if message_type not in VALID_MESSAGE_TYPES:
+                continue
             metric = entry["primaryMetric"]
             score = measurement_value(metric.get("score"))
             if score is not None:
@@ -657,105 +599,67 @@ def format_table_bar(score, maximum, backend, *, pad=False):
     return (f'<span style="color: {BACKEND_COLORS[backend]}">{bar}</span>' if bar else "") + padding
 
 
-def write_report_chart(path, title, rows, measurements, maxima):
-    handler_rows = {handler: [row for row in rows if row[1] == handler] for handler in VALID_HANDLERS if handler in maxima}
-    label_width, panel_width = 330, 200
-    row_height = 19
-    width = label_width + len(MESSAGE_COLUMNS) * panel_width + 20
-    height = 75 + sum(57 + len(keys) * row_height for keys in handler_rows.values())
-    with open(path, "w", encoding="utf-8") as svg:
-        svg.write(f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {width} {height}" '
-                  f'width="{width}" height="{height}" role="img">\n')
-        svg.write(f'<title>{escape(title)}</title><rect width="100%" height="100%" fill="#fff"/>\n')
-        svg.write('<g font-family="sans-serif" font-size="13" fill="#24292f">\n')
-        svg.write(f'<text x="16" y="25" font-size="19">{escape(title)}</text>\n')
-        for i, backend in enumerate(sorted({row[3] for row in rows})):
-            x = 16 + i * 125
-            color = BACKEND_COLORS[backend]
-            svg.write(f'<rect x="{x}" y="41" width="11" height="11" fill="{color}"/>'
-                      f'<text x="{x + 16}" y="51">{backend.upper()}</text>\n')
-        y = 72
-        for handler, keys in handler_rows.items():
-            maximum = maxima[handler]
-            svg.write(f'<text x="16" y="{y}" font-weight="bold">{escape(handler)}</text>\n')
-            for i, label in enumerate(MESSAGE_COLUMNS.values()):
-                x = label_width + i * panel_width
-                svg.write(f'<text x="{x}" y="{y}" font-weight="bold">{label}</text>'
-                          f'<text x="{x}" y="{y + 18}">Scale: 0–{maximum:,.2f} ops/s</text>\n')
-            y += 32
-            for i, row in enumerate(keys):
-                frontend, _, fmt, backend, threads = row
-                labels = (frontend.upper(), fmt, backend.upper())
-                if threads is not None:
-                    labels += (f"{threads} threads",)
-                if i % 2 == 0:
-                    svg.write(f'<rect x="12" y="{y - 2}" width="{width - 24}" height="{row_height}" fill="#f6f8fa"/>\n')
-                svg.write(f'<text x="16" y="{y + row_height // 2 + 3}">'
-                          f'{escape(" · ".join(labels))}</text>\n')
-                for column, (message_type, label) in enumerate(MESSAGE_COLUMNS.items()):
-                    measurement = measurements[row].get(message_type)
-                    if measurement is None:
-                        continue
-                    score = measurement[0]
-                    x = label_width + column * panel_width
-                    bar_width = score / maximum * (panel_width - 22) if maximum else 0
-                    color = BACKEND_COLORS[backend]
-                    tooltip = (" / ".join((frontend.upper(), handler, *labels[1:], label))
-                               + f": {format_measurement(measurement)} ops/s")
-                    svg.write(f'<rect class="measurement" x="{x}" y="{y + 1}" width="{bar_width:.4f}" '
-                              f'height="11" fill="{color}"><title>{escape(tooltip)}</title></rect>\n')
-                y += row_height
-            y += 25
-        svg.write('</g>\n</svg>\n')
+def write_result_table(report, measurements, has_threads):
+    rows = sorted(measurements, key=lambda row: (REPORT_FRONTENDS.index(row[0]), VALID_FORMATS.index(row[2]),
+                                                 row[3], row[4]))
+    maximum = 0
+    measurement_width = 0
+    for values in measurements.values():
+        maximum = max(maximum, *(score for score, _ in values.values()))
+        measurement_width = max(measurement_width, *(len(format_measurement(value, whole=True)) for value in values.values()))
+
+    def write_row(cells):
+        report.write("| " + " | ".join(cells) + " |\n")
+
+    write_row(["Frontend", "Pattern", "Backend"] + (["Threads"] if has_threads else [])
+              + VALID_MESSAGE_TYPES)
+    write_row(["---"] * 3 + ["---:"] * (len(VALID_MESSAGE_TYPES) + has_threads))
+    previous = ()
+    for row in rows:
+        frontend, _, pattern, backend, threads = row
+        labels = (frontend, pattern, backend)
+        cells = [value.upper() if labels[:i + 1] != previous[:i + 1] else "" for i, value in enumerate(labels)]
+        previous = labels
+        if has_threads:
+            cells.append(str(threads))
+        for message_type in VALID_MESSAGE_TYPES:
+            measurement = measurements[row].get(message_type)
+            if measurement is None:
+                cells.append("—")
+                continue
+            bar = format_table_bar(measurement[0], maximum, backend, pad=True)
+            score = format_measurement(measurement, whole=True).rjust(measurement_width).replace(" ", "&nbsp;")
+            cells.append(f'<span style="font-family: monospace">{bar}&nbsp;{score}</span>')
+        write_row(cells)
+
+    report.write("\n")
 
 
-def write_result_section(report, heading, filename, measurements, run_type, args, results_dir):
+def write_result_section(report, heading, measurements, run_type, args):
     report.write(f"## {heading}\n\n")
     if not measurements:
         reason = "No usable throughput measurements were recorded." if run_type in args.run else "Not requested for this run."
         report.write(reason + "\n\n")
         return
 
-    rows = sorted(measurements, key=lambda row: (REPORT_FRONTENDS.index(row[0]), VALID_HANDLERS.index(row[1]),
-                                                 VALID_FORMATS.index(row[2]), row[3], row[4]))
-    maxima = {}
-    measurement_width = 0
-    for row, values in measurements.items():
-        handler = row[1]
-        maxima[handler] = max(maxima.get(handler, 0), *(score for score, _ in values.values()))
-        measurement_width = max(measurement_width, *(len(format_measurement(value, whole=True)) for value in values.values()))
+    for handler in VALID_HANDLERS:
+        handler_measurements = {row: values for row, values in measurements.items() if row[1] == handler}
+        if handler_measurements:
+            report.write(f"### {handler}\n\n")
+            write_result_table(report, handler_measurements, run_type == "PARALLEL")
 
-    def write_row(cells):
-        report.write("| " + " | ".join(cells) + " |\n")
 
-    has_threads = run_type == "PARALLEL"
-    write_row(["Frontend", "Handler", "Pattern", "Backend"] + (["Threads"] if has_threads else [])
-              + list(MESSAGE_COLUMNS.values()))
-    write_row(["---"] * 4 + ["---:"] * (len(MESSAGE_COLUMNS) + has_threads))
-    previous = ()
-    for row in rows:
-        _, handler, _, backend, threads = row
-        cells = [value.upper() if row[:i + 1] != previous[:i + 1] else "" for i, value in enumerate(row[:4])]
-        previous = row
-        if has_threads:
-            cells.append(str(threads))
-        for message_type in MESSAGE_COLUMNS:
-            measurement = measurements[row].get(message_type)
-            if measurement is None:
-                cells.append("—")
-                continue
-            bar = format_table_bar(measurement[0], maxima[handler], backend, pad=True)
-            score = format_measurement(measurement, whole=True).rjust(measurement_width).replace(" ", "&nbsp;")
-            cells.append(f'<span style="font-family: monospace">{bar}&nbsp;{score}</span>')
-        write_row(cells)
-
-    title = f"{heading}: throughput by message type"
-    write_report_chart(os.path.join(results_dir, filename), title, rows, measurements, maxima)
-    report.write(f"\n![{title}]({filename})\n\n")
+def write_throughput_results(report, serial_results, parallel_results, args):
+    serial, parallel = collect_report_measurements(serial_results, parallel_results)
+    if serial or parallel:
+        report.write("Scores are in **ops/s** (higher is better), with JMH’s **± error** when available. "
+                     "A dash means no measurement. Bar colors identify backends. All bars in a table share the same "
+                     "scale: a full bar represents that table’s highest score.\n\n")
+    write_result_section(report, "Singlethreaded", serial, "SERIAL", args)
+    write_result_section(report, "Multithreaded", parallel, "PARALLEL", args)
 
 
 def generate_markdown_report(serial_results, parallel_results, samples, args, started_at, results_dir, sys_info, cmd_line):
-    serial, parallel = collect_report_measurements(serial_results, parallel_results)
     benchmark_jvms = {" ".join(entry[key] for key in ("jdkVersion", "vmName", "vmVersion") if entry.get(key))
                       for results in (serial_results, parallel_results) for entry in results if entry.get("jdkVersion")}
     report_path = os.path.join(results_dir, "BENCHMARK_RESULTS.md")
@@ -768,14 +672,7 @@ def generate_markdown_report(serial_results, parallel_results, samples, args, st
             report.write(f"Benchmark JVM: {jvm}\n")
         report.write("```\n\n")
         write_sample_output(report, samples)
-        if serial or parallel:
-            report.write("Scores are in **ops/s** (higher is better), with JMH’s **± error** when available. "
-                         "A dash means no measurement. Bar colors identify backends. Table bars are scaled to the "
-                         "highest score for the same handler in each section and shown in eighth-block steps.\n\n")
-        write_result_section(report, "Singlethreaded", "benchmark-chart-singlethreaded.svg",
-                             serial, "SERIAL", args, results_dir)
-        write_result_section(report, "Multithreaded", "benchmark-chart-multithreaded.svg",
-                             parallel, "PARALLEL", args, results_dir)
+        write_throughput_results(report, serial_results, parallel_results, args)
     print(f"Markdown report generated: {report_path}")
 
 
@@ -814,11 +711,11 @@ if __name__ == "__main__":
         elif args.mode == "smoketest":
             if args.warmup is None: args.warmup = 1
             if args.iterations is None: args.iterations = 1
-            if args.time is None: args.time = "10ms"
+            if args.time is None: args.time = "1s"
         elif args.mode == "quick":
             if args.warmup is None: args.warmup = 3
             if args.iterations is None: args.iterations = 3
-            if args.time is None: args.time = "1s"
+            if args.time is None: args.time = "2s"
             
         if args.backends is None:
             run_types = set(args.run)
@@ -830,7 +727,6 @@ if __name__ == "__main__":
             args.backends = sorted(backends)
         if args.handlers is None: args.handlers = ["CONSOLE", "FILE"]
         if args.formats is None: args.formats = ["COMPACT", "DEFAULT", "DETAILED"]
-        if args.message_types is None: args.message_types = ["CONSTANT", "ARGUMENTS", "MESSAGE_SUPPLIER", "LAMBDA_PARAMETER"]
 
     started_at = datetime.datetime.now()
     timestamp = started_at.strftime("%Y%m%d_%H%M%S")

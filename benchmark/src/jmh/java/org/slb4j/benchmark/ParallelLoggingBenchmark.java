@@ -43,8 +43,6 @@ public abstract class ParallelLoggingBenchmark {
 
     private static final String CONSTANT = "CONSTANT";
     private static final String ARGUMENTS = "ARGUMENTS";
-    private static final String MESSAGE_SUPPLIER = "MESSAGE_SUPPLIER";
-    private static final String LAMBDA_PARAMETER = "LAMBDA_PARAMETER";
 
     private static final String LOG_MESSAGE = "Parallel benchmark %s backend=%s";
     private static final String SLF4J_MESSAGE = "Parallel benchmark slf4j backend={}";
@@ -131,21 +129,16 @@ public abstract class ParallelLoggingBenchmark {
             case "slf4j" -> slf4jWorkload = switch (messageType) {
                 case CONSTANT -> () -> slf4jLogger.info(logMessage);
                 case ARGUMENTS -> () -> slf4jLogger.info(SLF4J_MESSAGE, backend());
-                case MESSAGE_SUPPLIER -> () -> slf4jLogger.atInfo().log(() -> logMessage);
-                case LAMBDA_PARAMETER -> () -> slf4jLogger.atInfo().addArgument(this::backend).log(SLF4J_MESSAGE);
                 default -> throw unsupportedWorkload(frontend);
             };
             case "log4j" -> log4jWorkload = switch (messageType) {
                 case CONSTANT -> () -> log4jLogger.info(logMessage);
                 case ARGUMENTS -> () -> log4jLogger.info(LOG4J_MESSAGE, backend());
-                case MESSAGE_SUPPLIER -> () -> log4jLogger.info(() -> logMessage);
-                case LAMBDA_PARAMETER -> () -> log4jLogger.info(LOG4J_MESSAGE, this::backend);
                 default -> throw unsupportedWorkload(frontend);
             };
             case "jul" -> julWorkload = switch (messageType) {
                 case CONSTANT -> () -> julLogger.info(logMessage);
                 case ARGUMENTS -> this::julArguments;
-                case MESSAGE_SUPPLIER -> () -> julLogger.info(() -> logMessage);
                 default -> throw unsupportedWorkload(frontend);
             };
             case "jcl" -> jclWorkload = switch (messageType) {

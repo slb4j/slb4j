@@ -18,12 +18,12 @@ package org.slb4j.benchmark;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.openjdk.jmh.annotations.Param;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Supplier;
 import java.util.logging.LogRecord;
 import java.util.logging.Logger;
 import java.util.logging.SimpleFormatter;
@@ -41,8 +41,8 @@ class ParallelLoggingBenchmarkTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"CONSTANT, false", "ARGUMENTS, false", "MESSAGE_SUPPLIER, true"})
-    void julWorkloadsUseTheExpectedApiAndRenderTheSameMessage(String messageType, boolean usesSupplier) {
+    @ValueSource(strings = {"CONSTANT", "ARGUMENTS"})
+    void julWorkloadsUseTheExpectedApiAndRenderTheSameMessage(String messageType) {
         var benchmark = new TestBenchmark();
         var logger = new RecordingJulLogger();
         benchmark.julLogger = logger;
@@ -51,7 +51,6 @@ class ParallelLoggingBenchmarkTest {
 
         benchmark.jul_1();
 
-        assertEquals(usesSupplier, logger.usedSupplier);
         assertEquals(1, logger.records.size());
         LogRecord record = logger.records.getFirst();
         assertNull(record.getThrown());
@@ -64,7 +63,7 @@ class ParallelLoggingBenchmarkTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"jcl, ARGUMENTS", "jcl, MESSAGE_SUPPLIER", "jcl, LAMBDA_PARAMETER", "jul, LAMBDA_PARAMETER", "slf4j, UNKNOWN"})
+    @CsvSource({"jcl, ARGUMENTS", "jul, MESSAGE_SUPPLIER", "slf4j, LAMBDA_PARAMETER", "slf4j, UNKNOWN"})
     void rejectsUnsupportedPairsBeforeMeasurement(String frontend, String messageType) {
         var benchmark = new TestBenchmark();
         benchmark.messageType = messageType;
@@ -93,7 +92,6 @@ class ParallelLoggingBenchmarkTest {
 
     private static final class RecordingJulLogger extends Logger {
         private final List<LogRecord> records = new ArrayList<>();
-        private boolean usedSupplier;
 
         RecordingJulLogger() {
             super("test", null);
@@ -102,12 +100,6 @@ class ParallelLoggingBenchmarkTest {
         @Override
         public void log(LogRecord record) {
             records.add(record);
-        }
-
-        @Override
-        public void info(Supplier<String> msgSupplier) {
-            usedSupplier = true;
-            super.info(msgSupplier);
         }
     }
 }
